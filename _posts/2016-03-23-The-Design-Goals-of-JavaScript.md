@@ -3,7 +3,7 @@ layout: post
 title:  "The Design Goals of JavaScript"
 date:   2016-11-23
 banner_image: js.jpg
-tags: [web development, JavaScript, ES2015]
+tags: [Web Development, JavaScript, Programming]
 comments: true
 ---
 
