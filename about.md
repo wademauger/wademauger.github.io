@@ -2,13 +2,13 @@
 layout: page
 title: About this blog
 description: An optional about page for BlogInn Jekyll theme
-banner_image: aboutPage.jpg
+banner_image: aboutPageFace.jpg
 ---
 
 **Wade Mauger** is a student at Rochester Institute of Technology, enrolled in
 the Bachelor's of Science in Software Engineering, expected to graduate in May 2019.
 
-As part of RIT's cooperative education program, he has worked at Intuit in San Diego,
+As part of RIT's cooperative education program, he has worked as an engineer at Intuit in San Diego,
 California, on a sofware team in their Consumer Tax Group organization.
 
 In his free time, Wade enjoys playing any of his five ukuleles, or hacking on a personal side project.
