@@ -15,7 +15,7 @@ layout: default
                     </div><!-- .entry-header-wrap -->
                     <div class="entry-meta">
                         by <span class="post-author">{{ site.author_name }}</span> on <time class="published" datetime="{{ post.date | date: "%Y-%m-%d" }}">{{ post.date | date: "%B %-d, %Y" }}</time>
-                        <br /><a href="{{ site.url }}{{ post.url }}#disqus_thread"></a>
+                        <br /><a href="{{ site.url }}{{ post.url }}index.html#disqus_thread" data-disqus-identifier="{{post.url}}" ></a>
                     </div><!-- .entry-meta -->
                 </header><!-- .entry-header -->
                 <div class="entry-content">
