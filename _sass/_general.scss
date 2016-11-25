@@ -301,6 +301,11 @@ a:hover img {
     opacity: 0.8;
 }
 
+/* mobile responsive author block */
+.mobileBreak {
+  display: none;
+}
+
 /* Image alignment */
 .alignleft {
     float: left;
