@@ -306,6 +306,11 @@ a:hover img {
   display: none;
 }
 
+/* inline code color */
+.highlighter-rouge {
+  color: $picton-blue;
+}
+
 /* Image alignment */
 .alignleft {
     float: left;

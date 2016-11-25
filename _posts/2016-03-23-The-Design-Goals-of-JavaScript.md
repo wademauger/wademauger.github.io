@@ -17,15 +17,15 @@ opinions.
 <!--more-->
 
 Out of the discussions I've had with my friends and co-workers, I've gathered
-that there are two primary goals of the JavaScript language and runtime:
+that there are two primary goals in the design of the JavaScript language and runtime:
 
 # JavaScript is designed to be *fast*.
 
-Like, really fast. There are plenty of comparison of languages' performances,
-but I particularly like [this one][comparison]. Even though the test they ran is
+Like, really fast. There are plenty of comparisons of languages' performances,
+but I particularly like [this one][comparison] (Even though the test they ran is
 a little arbitrary and unrealistic, its analysis seems pretty thorough and
 compares a wide variety of runtimes, even pitting Chrome / NodeJS's V8 against
-Mozilla Firefox's SpiderMonkey. Notably, as this writer mentions, according to
+Mozilla Firefox's SpiderMonkey). Notably, as this writer mentions, according to
 their data,
 
 > Javascript V8 completed [this] test slightly faster than C++.
@@ -86,17 +86,18 @@ it looks like this:
 When you try to add a Number to a String, the number gets cast to a String, and then
 the two get concatonated together-- and it doesn't stop there, an implicit casting
 exists for pretty much any two types. This allows your JavaScript to continue running where
-other interpreters and compilers would stop and say, "Yeah, I don't thing you wanted to do that. I don't know
+other interpreters and compilers would stop and say, "Yeah, I don't think you wanted to do that. I don't know
 what to do here". Sure, most languages have some implicit "gotchas" somewhere along
 the way, but trying to remember how things get coersed can be tedious at first, and
-in my experience, it never stops feeling hacky.
+in my experience, using coersions never stops feeling hacky. More often than not, it's
+something you try to avoid using, and leads to cryptic behavior and errors on occasion.
 
 # Where's the line between speed and tolerance?
 
-While it's nice to know that my script won't stop running because of a TypeError tucked away in
+While it's nice to know that my script won't stop running because of a `TypeError` tucked away in
 an `if` block that I happened to miss in my unit tests, it's not like you're at all *guaranteed*
-that your entire script will get executed. For example, when the following script get executed, the
-first `console.log` get output, but the second does not:
+that your entire script will get executed. For example, when the following script gets run, the
+first `console.log` gets written, but the second does not:
 
 
 {% highlight javascript %}
@@ -127,19 +128,54 @@ to gracefully access object members:
 
 {% highlight javascript %}
 
+  // Lodash's get function
   function get(object, path, defaultValue) {
     var result = object == null ? undefined : baseGet(object, path);
     return result === undefined ? defaultValue : result;
   }
 
+  function baseGet(object, path) {
+    path = castPath(path, object);
+    var index = 0,
+      length = path.length;
+    while (object != null && index < length) {
+      object = object[toKey(path[index++])];
+    }
+    return (index && index == length) ? object : undefined;
+  }
+
+  ...
+
+  const _ = require('lodash');
+  
+  const foo = {
+    a: 1,
+    b: 2,
+    bar: {
+      c: 3,
+      d: 4
+    }
+  };
+
+  _.get(foo, 'bar.c');
+  // 3
+
+  _.get(foo, 'c.baz');
+  // undefined
+
+  var data = foo.c.baz;
+  // Uncaught TypeError: Cannot read property 'baz' of undefined
+
 {% endhighlight %}
 
-This would gives developers the peace of mind that, should they ever try to access the data on a member of an 
-undefined member, their program would happily move on with out it. So what's the deal, here? Would performance
-really take a hit if `undefined.foo` resolved to `undefined`? Should you instead use a `try / catch` block every
+This gives developers the peace of mind that, should they ever try to access the data on a member of an 
+anything undefined, their program would happily move on with out it. So what's the deal, here? Would performance
+really take a hit if `undefined.foo` resolved to `undefined`? Should you instead use a `try/catch` block every
 time you access the members of an object that you have any shadow of a doubt about?
 
-Let me know what you think in the comments below!
+Would you like to see something like Lodash's get functionality built into native dot
+syntax in a future JavaScript spec? Does any code that risks hitting a `TypeError`
+indicate something needs refactored? Let me know what you think in the comments below!
 
 {% if page.comments %}
 
