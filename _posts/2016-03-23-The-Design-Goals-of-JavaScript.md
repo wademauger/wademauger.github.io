@@ -63,7 +63,7 @@ design goal of JavaScript:
 There's one particular part of JavaScript that supports this philosopy: coersion.
 Where other languages would crash and burn, JavaScript defaults to an implicit
 result, and keeps on chugging. If you're not familiar with coersion, Kyle Simpson
-describes them in depth in his [You Don't Know JavaScript][coersion]. Basically,
+describes it in depth in his [You Don't Know JavaScript][coersion]. Basically,
 it looks like this:
 
 {% highlight javascript %}
