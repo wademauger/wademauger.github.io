@@ -90,7 +90,7 @@ other interpreters and compilers would stop and say, "Yeah, I don't think you wa
 what to do here". Sure, most languages have some implicit "gotchas" somewhere along
 the way, but trying to remember how things get coersed can be tedious at first, and
 in my experience, using coersions never stops feeling hacky. More often than not, it's
-something you try to avoid using, and leads to cryptic behavior and errors on occasion.
+something you try to avoid using, and leads to cryptic behavior and errors.
 
 # Where's the line between speed and tolerance?
 
