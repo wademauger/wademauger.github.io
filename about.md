@@ -9,7 +9,8 @@ banner_image: aboutPageFace.jpg
 the Bachelor's of Science in Software Engineering program, expected to graduate in May 2019.
 
 As part of RIT's cooperative education program, he has worked as an engineer at Intuit in San Diego,
-California, on a sofware team in their Consumer Tax Group organization.
+California, on the Open Platform sofware team in their Consumer Tax Group organization. In the summer
+of 2017, he plans to join Microsoft in Seattle, Washington as an engineering intern.
 
 In his free time, Wade enjoys playing any of his five ukuleles, or hacking on a personal side project.
 
