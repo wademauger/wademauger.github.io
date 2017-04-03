@@ -88,7 +88,7 @@ the two get concatonated together-- and it doesn't stop there, an implicit casti
 exists for pretty much any two types. This allows your JavaScript to continue running where
 other interpreters and compilers would stop and say, "Yeah, I don't think you wanted to do that. I don't know
 what to do here". Sure, most languages have some implicit "gotchas" somewhere along
-the way, but trying to remember how things get coersed can be tedious at first, and
+the way, but trying to remember how things get coerced can be tedious at first, and
 in my experience, using coersions never stops feeling hacky. More often than not, it's
 something you try to avoid using, and leads to cryptic behavior and errors.
 
