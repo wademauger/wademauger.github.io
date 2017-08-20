@@ -6,6 +6,10 @@ machine:
   java:
     version: openjdk8
 
+test:
+  override:
+    - bundle exec jekyll build
+
 deployment:
   prod:
     branch: master
