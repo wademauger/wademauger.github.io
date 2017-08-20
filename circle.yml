@@ -6,10 +6,6 @@ machine:
   java:
     version: openjdk8
 
-test:
-  pre:
-    - ./script/cibuild
-
 deployment:
   prod:
     branch: master
