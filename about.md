@@ -5,7 +5,9 @@ description: An optional about page for BlogInn Jekyll theme
 banner_image: aboutPageFace.jpg
 ---
 
-**I'm** a student at Rochester Institute of Technology, enrolled in
+# Hey!
+
+**My name is Wade**, and I'm a student at Rochester Institute of Technology, enrolled in
 the Bachelor's of Science in Software Engineering program, expecting to graduate in May 2019.
 
 As part of RIT's cooperative education program, I've has worked as an engineer at Intuit in San Diego,
