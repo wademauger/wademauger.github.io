@@ -1,0 +1,17 @@
+machine:
+  ruby:
+    version: 2.3.0
+  node:
+    version: 6.1.0
+  java:
+    version: openjdk8
+
+test:
+  override:
+    - bundle exec jekyll build
+
+deployment:
+  prod:
+    branch: master
+    commands:
+      - aws configure set default.s3.signature_version s3v4 && aws s3 sync _site/ s3://wademauger.com/ --delete --region us-east-2
