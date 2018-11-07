@@ -9,13 +9,13 @@
 title: "console.blog"
 
 # A description of your site for social meta tag, search engines, and feed.xml
-description: "Mediocre posts about half-baked software by an engineer of questionable knowledge"
+description: "This is where I write about things"
 
 # Just for SEO
 author: "Wade Mauger"
 
 # Tagline near the site title
-tagline: "Mediocre posts about half-baked software by an engineer of quesionable knowledge"
+tagline: "This is where I write about things"
 
 # The subpath of your site, e.g. /blog, for generating urls
 baseurl:
@@ -39,11 +39,11 @@ navigation:
 disqus:
 
 # Author information - author info at the bottom of the post
-author_name: "Wade Mauger"
-author_bio: "Wade is a BS Software Engineering student at RIT, expected to graduate in May 2019."
+#author_name: "Wade Mauger"
+#author_bio: "Wade is a BS Software Engineering student at RIT, expected to graduate in May 2019."
 author_url:  "http://wademauger.com"
 author_location: "Rochester, New York"
-author_image: /images/authorimage.png
+#author_image: /images/authorimage.png
 
 # Sidebar Add banner
 # banner_url: "http://justgoodthemes.com"
