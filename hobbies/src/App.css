@@ -1,0 +1,43 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+.steps-list {
+  list-style: upper-roman;
+  margin:30px;
+}
+
+.ingredient-table {
+  margin: 30px;
+}
+
+.recipe-title {
+  font-size: x-large;
+  font-weight: bold;
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
