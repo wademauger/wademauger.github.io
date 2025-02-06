@@ -1,7 +1,65 @@
+/**
+ * a template for creating new recipe entries:
+    {
+        "title": "",
+        "description": "",
+        "permalink": "",
+        "defaultServings": ,
+        "servingUnits": "",
+        "ingredients": [
+            {
+                'name': '',
+                'quantity': ,
+                'unit': ''
+            },
+        ],
+        "steps": [
+            ""
+        ],
+        "notes": [],
+    },
+
+ */
 export default [
     {
+        "title": "Turkey Breast Sous Vide",
+        "description": "One of the juciest and most tender Turkies ever!",
+        "permalink": "sous-vide-turkey-breast",
+        "defaultServings": 5,
+        "servingUnits": "servings",
+        "ingredients": [
+            {
+                'name': 'Butterball or similar Turkey Breast',
+                'quantity': 5,
+                'unit': 'Lbs'
+            },
+            {
+                'name': 'Garlic Powder',
+                'quantity': undefined,
+                'unit': 'to taste'
+            },
+            {
+                'name': 'Pepper',
+                'quantity': undefined,
+                'unit': 'to taste'
+            },
+            {
+                'name': 'Salt',
+                'quantity': undefined,
+                'unit': 'to taste'
+            },
+        ],
+        "steps": [
+            "Setup a sous vide water bath at 145 degrees F",
+            "Unpackage the turkey breast. Pat it dry, rub it with spices to taste, and place it in a ziploc bag, using the immersion method to remove most of the air so the breast will sink.",
+            "Cook the breast in the bath for 3 hours",
+            "Remove the breast from the bath. Pan sear the surface to brown the skin and meat."
+        ],
+        "notes": ["Substitute Garlic Powder with Old Bay or Mrs. Dash for different flavors"],
+    },
+    {
         "title": "Old Bay Popcorn",
-        "description": "A healthy treat with a crabby tang",
+        "description": "A healthy snack with a crabby tang",
         "permalink": "old-bay-pop",
         "defaultServings": 4,
         "servingUnits": "servings",
@@ -90,4 +148,4 @@ export default [
         ],
         "notes": [],
     },
-];
+]

@@ -17,6 +17,7 @@ root.render(
         <Route path="recipes" element={<Recipes />} />
         <Route path="recipes/:id" element={<Recipes />} />
         <Route path="patterns" element={<Patterns />} />
+        <Route path="patterns/:id" element={<Patterns />} />
         <Route path="tabs" element={<Tabs />} />
       </Routes>
     </BrowserRouter>

@@ -14,6 +14,7 @@ function Recipes() {
       <main class="container mx-auto mt-8 px-4">
         {recipe ? <>
           <h1 className='text-2xl text-left'><b>{recipe.title}</b></h1>
+          <p className='text-left'><i>Makes {recipe.defaultServings} {recipe.servingUnits}</i></p>
           <p className='text-left'>{recipe.description}</p>
           <Table titles={['Ingredient', 'Amt', 'Units']} elements={recipe.ingredients} />
           <h1 className='text-2xl text-left'><b>Steps:</b></h1>
