@@ -145,16 +145,43 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     return elements;
 };
 
-const TrapezoidDisplay = ({ trapezoid, scale = 10 }) => {
+const TrapezoidDisplay = ({ trapezoid, size = 200, padding = 10 }) => {
+    let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
-    const dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    const elements = renderHierarchy(trapezoid, scale, 0, 0, dimensions);
+    // First pass: Compute bounding box *including negative coordinates*
+    renderHierarchy(trapezoid, 1, 0, 0, dimensions);
+
     const width = dimensions.maxX - dimensions.minX;
     const height = dimensions.maxY - dimensions.minY;
 
+    // Calculate scale factor
+    const availableWidth = size - 2 * padding;
+    const availableHeight = size - 2 * padding;
+    const scaleFactor = Math.min(availableWidth / width, availableHeight / height);
+
+    // Calculate scaled dimensions and translation
+    const scaledWidth = width * scaleFactor;
+    const scaledHeight = height * scaleFactor;
+
+    // *** KEY CHANGE: Adjust translation to account for negative minX and minY ***
+    const translateX = (size - scaledWidth) / 2 - dimensions.minX * scaleFactor + padding;
+    const translateY = (size - scaledHeight) / 2 - dimensions.minY * scaleFactor + padding;
+
+    // Second pass: Render with the calculated scale.  This isn't strictly necessary, but is good practice.
+    dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+    const elements = renderHierarchy(trapezoid, scaleFactor, 0, 0, dimensions);
+
+
     return (
-        <svg width={width} height={height} viewBox={`${dimensions.minX} ${dimensions.minY} ${width} ${height}`}>
-            {elements}
+        <svg
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            preserveAspectRatio="none" // Or "xMidYMid meet" if you want to maintain aspect ratio
+        >
+            <g transform={`translate(${translateX}, ${translateY})`}>
+                {elements}
+            </g>
         </svg>
     );
 };
