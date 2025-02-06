@@ -3,14 +3,14 @@ import Footer from './footer';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
 import patterns from '../data/patterns';
-import { PanelDiagram, Trapezoid, KnittingGuide } from '../knitting.ai';
+import { PanelDiagram, Trapezoid, Panel } from '../knitting.ai';
 
-const PatternInstructions = ({ instructions = [] }) => (
+const PatternInstructions = ({ id, instructions = [] }) => (
   <div>
-    <h3>Instructions:</h3>
+    <h3>{id} Instructions:</h3>
     <ol>
       {instructions.map((step, index) => (
-        <li key={index}><b>{index+1}</b>: {step.pattern} (row count = {step.rowNumber})</li>
+        <li key={index}><b>{index+1}</b>: {step}</li>
       ))}
     </ol>
   </div>
@@ -20,10 +20,13 @@ function KnittingPatterns() {
   const { id } = useParams();
   const pattern = patterns.find(pattern => pattern.permalink === id);
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
-    .map(panel => pattern.shapes[panel])
-    .map(panel => Trapezoid.fromJSON(panel))
-    .map(trapezoid => new Panel(trapezoid))
-    .map(panel => panel.generateKnittingInstructions());
+    .map(panelId => { 
+        const panelData = pattern.shapes[panelId];
+        const trapezoid = Trapezoid.fromJSON(panelData);
+        const panel = new Panel(trapezoid);
+        const instructions = panel.generateKnittingInstructions();
+        return { id: panelId, instructions: instructions };
+    });
   return (
     <div className="knitting-patterns-page">
       <Header />
@@ -37,7 +40,7 @@ function KnittingPatterns() {
                 <PanelDiagram shape={pattern.shapes[shape]} label={shape} />
               )}
             </div>
-            {patternInstructions.map(instructions => <PatternInstructions instructions={instructions} />)}
+            {patternInstructions.map(instructions => <PatternInstructions id={instructions.id} instructions={instructions.instructions} />)}
           </>
         ) : <p>Note that the pattern diagrams are not shown to scale. These patterns are only tested lightly, generally with a mens' medium. Please use discretion before casting on, and report issues on <a href="https://github.com/wademauger/wademauger.github.io/issues">github</a>. Thanks!</p>}
 

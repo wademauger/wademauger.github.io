@@ -9,9 +9,11 @@ export default [
                 "baseA": 25,
                 "baseB": 25,
                 "successors": [
-                    {"height": 8, "baseA": 5, "baseB": 3},
+                    {"height": 0, "baseA": 1, "baseB": 1},
+                    {"height": 8, "baseA": 10, "baseB": 3},
                     {"height": 0, "baseA": 2, "baseB": 2},
-                    {"height": 8, "baseA": 5, "baseB": 3},
+                    {"height": 8, "baseA": 10, "baseB": 3},
+                    {"height": 0, "baseA": 1, "baseB": 1},
                 ]
             },
             "Back": {
@@ -19,7 +21,9 @@ export default [
                 "baseA": 25,
                 "baseB": 25,
                 "successors": [
-                    {"height": 8, "baseA": 12, "baseB": 10},
+                    {"height": 0, "baseA": 1, "baseB": 1},
+                    {"height": 8, "baseA": 23, "baseB": 15},
+                    {"height": 0, "baseA": 1, "baseB": 1},
                 ]
             },
             "Sleeves (make 2)": {

@@ -30,7 +30,27 @@ class Trapezoid {
         this.successors = successors;
     }
 
-    generateKnittingInstructions(gauge, sizeModifier) {
+    static fromJSON(json, parent = null) {
+        if (!json || json.length == 0) {
+            return json; // Handle null or undefined JSON
+        }
+
+        const successors = (json.successors && Array.isArray(json.successors))
+            ? json.successors.filter(successorJson => successorJson != null).map(successorJson => Trapezoid.fromJSON(successorJson, this)) // Filter out nulls/undefineds *before* mapping
+            : [];
+
+        const trapezoid = new Trapezoid(
+            json.height,
+            json.baseA,
+            json.baseB,
+            json.topLeftOffset || 0,
+            json.topRightOffset || 0,
+            successors
+        );
+        return trapezoid;
+    }
+
+    generateKnittingInstructions(gauge, sizeModifier) { // currentStitches is no longer needed here
         const adjustedHeight = this.height * sizeModifier;
         const adjustedBaseA = this.baseA * sizeModifier;
         const adjustedBaseB = this.baseB * sizeModifier;
@@ -47,7 +67,7 @@ class Trapezoid {
 
         for (let i = 0; i < rows; i++) {
             let rowInstructions = "";
-            let currentStitchesForRow = stitchesPerRowB;
+            let currentStitchesForRow = stitchesPerRowB; // Initialize for each row
 
             if (stitchDifference !== 0) {
                 const stitchesToDecrease = Math.round(changePerSide * (1 - (i / rowsToChange)));
@@ -84,37 +104,28 @@ class Panel {
 
     generateKnittingInstructions() {
         let instructions = [];
-        let currentTrapezoid = this.shape;
-        let currentStitches = 0;
+        const shapesToProcess = [{ trapezoid: this.shape, currentStitches: Math.round(this.shape.baseB * this.sizeModifier * this.gauge.getStitchesPerInch()) }];
 
-        instructions.push(`Cast on ${Math.round(currentTrapezoid.baseB * this.sizeModifier * this.gauge)} stitches.`);
-        currentStitches = Math.round(currentTrapezoid.baseB * this.sizeModifier * this.gauge);
+        instructions.push(`Cast on ${shapesToProcess[0].currentStitches} stitches.`);
 
-        while (currentTrapezoid) {
-            const trapezoidInstructions = currentTrapezoid.generateKnittingInstructions(this.gauge, this.sizeModifier, currentStitches);
+        while (shapesToProcess.length > 0) {
+            const { trapezoid, currentStitches } = shapesToProcess.shift(); // Process the next shape
+            const trapezoidInstructions = trapezoid.generateKnittingInstructions(this.gauge, this.sizeModifier);
             instructions.push(...trapezoidInstructions);
 
-            if (currentTrapezoid.successors.length > 0) {
-                const nextTrapezoid = currentTrapezoid.successors[0];
-                const nextStitches = Math.round(nextTrapezoid.baseB * this.sizeModifier * this.gauge);
-
-                if (nextTrapezoid.height === 0) {
-                    currentStitches = nextStitches;
-                } else {
-                    instructions.push(`Bind off ${Math.round(currentTrapezoid.baseA * this.sizeModifier * this.gauge)} stitches.`);
-                    instructions.push(`Cast on ${nextStitches} stitches.`);
-                    currentStitches = nextStitches;
-                }
-
-                currentTrapezoid = nextTrapezoid;
-
+            if (trapezoid.successors.length > 0) {
+                trapezoid.successors.forEach(successor => {
+                    shapesToProcess.push({
+                        trapezoid: successor,
+                        currentStitches: currentStitches // Carry over stitches for parallel branches
+                    });
+                });
             } else {
-                instructions.push(`Bind off ${Math.round(currentTrapezoid.baseA * this.sizeModifier * this.gauge)} stitches.`);
-                currentTrapezoid = null;
+                instructions.push(`Bind off ${Math.round(trapezoid.baseB * this.sizeModifier * this.gauge.getStitchesPerInch())} stitches.`);
             }
         }
 
-        return instructions.join("\n");
+        return instructions;
     }
 }
 
