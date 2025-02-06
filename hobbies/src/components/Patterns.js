@@ -1,37 +1,16 @@
 import Header from './header';
 import Footer from './footer';
-import Table from './table'; // Or a custom component for knitting details
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
-import patterns from '../data/patterns'; // Import your knitting patterns JSON
-import { TrapezoidDisplay } from '../AIknitting';
+import patterns from '../data/patterns';
+import { PanelDiagram, Trapezoid, KnittingGuide } from '../knitting.ai';
 
-// Example custom component for displaying gauge (adapt as needed)
-const PatternGauge = ({ gauge }) => (
-  <div>
-    <h3>Gauge:</h3>
-    <p>{gauge}</p> {/* Format gauge as needed */}
-  </div>
-);
-
-// Example custom component for materials
-const PatternMaterials = ({ materials }) => (
-  <div>
-    <h3>Materials:</h3>
-    <ul>
-      {materials.map((material, index) => (
-        <li key={index}>{material}</li>
-      ))}
-    </ul>
-  </div>
-);
-
-const PatternInstructions = ({ instructions }) => (
+const PatternInstructions = ({ instructions = [] }) => (
   <div>
     <h3>Instructions:</h3>
     <ol>
       {instructions.map((step, index) => (
-        <li key={index}>{step}</li>
+        <li key={index}><b>{index+1}</b>: {step.pattern} (row count = {step.rowNumber})</li>
       ))}
     </ol>
   </div>
@@ -40,7 +19,11 @@ const PatternInstructions = ({ instructions }) => (
 function KnittingPatterns() {
   const { id } = useParams();
   const pattern = patterns.find(pattern => pattern.permalink === id);
-
+  const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
+    .map(panel => pattern.shapes[panel])
+    .map(panel => Trapezoid.fromJSON(panel))
+    .map(trapezoid => new Panel(trapezoid))
+    .map(panel => panel.generateKnittingInstructions());
   return (
     <div className="knitting-patterns-page">
       <Header />
@@ -49,19 +32,14 @@ function KnittingPatterns() {
           <>
             <h1 className="text-2xl text-left"><b>{pattern.title}</b></h1>
             <p className="text-left">{pattern.description}</p>
-            {Object.keys(pattern.shapes).map(shape => 
-              <TrapezoidDisplay trapezoid={pattern.shapes[shape]} label={shape} />
-            )}
-            {/* Use custom components or adapt your Table component */}
-            {pattern.gauge && <PatternGauge gauge={pattern.gauge} />}
-            {pattern.materials && <PatternMaterials materials={pattern.materials} />}
-            {pattern.instructions && <PatternInstructions instructions={pattern.instructions} />}
-
-            {/* Example adapting the table component if applicable */}
-            {/* {pattern.details && <Table titles={['Needle Size', 'Yarn Weight']} elements={pattern.details} />} */}
-
+            <div className='diagrams'>
+              {Object.keys(pattern.shapes).map(shape => 
+                <PanelDiagram shape={pattern.shapes[shape]} label={shape} />
+              )}
+            </div>
+            {patternInstructions.map(instructions => <PatternInstructions instructions={instructions} />)}
           </>
-        ) : null}
+        ) : <p>Note that the pattern diagrams are not shown to scale. These patterns are only tested lightly, generally with a mens' medium. Please use discretion before casting on, and report issues on <a href="https://github.com/wademauger/wademauger.github.io/issues">github</a>. Thanks!</p>}
 
         <ul className="space-y-4">
           {patterns.map(pattern => {
@@ -69,7 +47,7 @@ function KnittingPatterns() {
             return (
               <NavLink to={permalink} className="text-gray-300 hover:text-white mx-2" key={pattern.permalink}> {/* Add key prop */}
                 <li className="bg-gray-800 p-4 rounded-lg shadow-lg">
-                  <span className="pattern-title">{pattern.title}</span><br />
+                  <span className="list-item-title">{pattern.title}</span><br />
                   {pattern.description}
                 </li>
               </NavLink>

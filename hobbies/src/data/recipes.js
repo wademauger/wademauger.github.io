@@ -23,7 +23,7 @@
 export default [
     {
         "title": "Turkey Breast Sous Vide",
-        "description": "One of the juciest and most tender Turkies ever!",
+        "description": "A very tender turkey breast",
         "permalink": "sous-vide-turkey-breast",
         "defaultServings": 5,
         "servingUnits": "servings",

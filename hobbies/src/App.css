@@ -20,9 +20,13 @@
   margin: 30px;
 }
 
-.recipe-title {
+.list-item-title {
   font-size: x-large;
   font-weight: bold;
+}
+
+.diagrams {
+  display: inline-block;
 }
 
 footer {

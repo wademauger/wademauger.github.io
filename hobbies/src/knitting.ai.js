@@ -21,56 +21,100 @@ class Gauge {
 const defaultGauge = new Gauge(19, 30);
 
 class Trapezoid {
-    /**
-     * Represents a trapezoidal knitting panel section.
-     * @param {number} height - The vertical height of the trapezoid.
-     * @param {number} baseA - The width of the top of the trapezoid.
-     * @param {number} baseB - The width of the bottom of the trapezoid.
-     * @param {number} [topLeftOffset=0] - The horizontal offset of the top-left corner relative to the bottom-left.
-     * @param {number} [topRightOffset=0] - The horizontal offset of the top-right corner relative to the bottom-right.
-     * @param {Trapezoid[]} [successors=[]] - The trapezoids that follow this one, forming a sequence.
-     */
     constructor(height, baseA, baseB, topLeftOffset = 0, topRightOffset = 0, successors = []) {
         this.height = height;
-        this.baseA = baseA; // Top width
-        this.baseB = baseB; // Bottom width
-        this.topLeftOffset = topLeftOffset; // Horizontal offset of top-left corner
-        this.topRightOffset = topRightOffset; // Horizontal offset of top-right corner
+        this.baseA = baseA;
+        this.baseB = baseB;
+        this.topLeftOffset = topLeftOffset;
+        this.topRightOffset = topRightOffset;
         this.successors = successors;
     }
 
-    getRows(gauge = defaultGauge) {
-        return Math.round(this.height * gauge.getRowsPerInch());
-    }
+    generateKnittingInstructions(gauge, sizeModifier) {
+        const adjustedHeight = this.height * sizeModifier;
+        const adjustedBaseA = this.baseA * sizeModifier;
+        const adjustedBaseB = this.baseB * sizeModifier;
 
-    validateSuccessors() {
-        const totalWidth = this.successors.reduce((sum, shape) => sum + shape.baseA, 0);
-        return totalWidth === this.baseB;
+        const stitchesPerRowA = Math.round(adjustedBaseA * gauge);
+        const stitchesPerRowB = Math.round(adjustedBaseB * gauge);
+        const rows = Math.round(adjustedHeight * gauge);
+
+        let instructions = [];
+
+        const stitchDifference = stitchesPerRowB - stitchesPerRowA;
+        const rowsToChange = rows;
+        const changePerSide = stitchDifference / 2;
+
+        for (let i = 0; i < rows; i++) {
+            let rowInstructions = "";
+            let currentStitchesForRow = stitchesPerRowB;
+
+            if (stitchDifference !== 0) {
+                const stitchesToDecrease = Math.round(changePerSide * (1 - (i / rowsToChange)));
+                const decreaseLeft = Math.floor(stitchesToDecrease);
+                const decreaseRight = Math.ceil(stitchesToDecrease);
+
+                currentStitchesForRow = stitchesPerRowB - decreaseLeft - decreaseRight;
+
+                if(decreaseLeft > 0) {
+                    rowInstructions += `K${decreaseLeft}, `;
+                }
+                rowInstructions += `Knit ${currentStitchesForRow} `;
+                if(decreaseRight > 0) {
+                    rowInstructions += `K${decreaseRight}`;
+                }
+
+            } else {
+                rowInstructions = `Knit ${currentStitchesForRow}`;
+            }
+
+            instructions.push(`Row ${i + 1}: ${rowInstructions}`);
+        }
+
+        return instructions;
     }
 }
 
 class Panel {
-    /**
-     * Represents a knitting panel, composed of a main trapezoidal shape and gauge information.
-     * @param {Trapezoid} trapezoid - The trapezoidal shape of the panel.
-     * @param {Gauge} [gauge=defaultGauge] - The knitting gauge used for the panel.
-     */
-    constructor(trapezoid, gauge = defaultGauge) {
-        this.trapezoid = trapezoid;
+    constructor(shape, gauge = defaultGauge, sizeModifier = 1) {
+        this.shape = shape;
         this.gauge = gauge;
+        this.sizeModifier = sizeModifier;
     }
 
-    generateInstructions() {
-        let rows = this.trapezoid.getRows(this.gauge);
-        let widthChange = (this.trapezoid.baseA - this.trapezoid.baseB) / rows;
+    generateKnittingInstructions() {
         let instructions = [];
+        let currentTrapezoid = this.shape;
+        let currentStitches = 0;
 
-        for (let i = 0; i < rows; i++) {
-            let currentWidth = Math.round(this.trapezoid.baseA - i * widthChange);
-            instructions.push(`Row ${i + 1}: Knit ${currentWidth} stitches`);
+        instructions.push(`Cast on ${Math.round(currentTrapezoid.baseB * this.sizeModifier * this.gauge)} stitches.`);
+        currentStitches = Math.round(currentTrapezoid.baseB * this.sizeModifier * this.gauge);
+
+        while (currentTrapezoid) {
+            const trapezoidInstructions = currentTrapezoid.generateKnittingInstructions(this.gauge, this.sizeModifier, currentStitches);
+            instructions.push(...trapezoidInstructions);
+
+            if (currentTrapezoid.successors.length > 0) {
+                const nextTrapezoid = currentTrapezoid.successors[0];
+                const nextStitches = Math.round(nextTrapezoid.baseB * this.sizeModifier * this.gauge);
+
+                if (nextTrapezoid.height === 0) {
+                    currentStitches = nextStitches;
+                } else {
+                    instructions.push(`Bind off ${Math.round(currentTrapezoid.baseA * this.sizeModifier * this.gauge)} stitches.`);
+                    instructions.push(`Cast on ${nextStitches} stitches.`);
+                    currentStitches = nextStitches;
+                }
+
+                currentTrapezoid = nextTrapezoid;
+
+            } else {
+                instructions.push(`Bind off ${Math.round(currentTrapezoid.baseA * this.sizeModifier * this.gauge)} stitches.`);
+                currentTrapezoid = null;
+            }
         }
 
-        return instructions;
+        return instructions.join("\n");
     }
 }
 
@@ -146,11 +190,11 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     return elements;
 };
 
-const TrapezoidDisplay = ({ trapezoid, label = "", size = 200, padding = 10 }) => {
+const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
     let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     // First pass: Compute bounding box *including negative coordinates*
-    renderHierarchy(trapezoid, 1, 0, 0, dimensions);
+    renderHierarchy(shape, 1, 0, 0, dimensions);
 
     const width = dimensions.maxX - dimensions.minX;
     const height = dimensions.maxY - dimensions.minY;
@@ -170,10 +214,10 @@ const TrapezoidDisplay = ({ trapezoid, label = "", size = 200, padding = 10 }) =
 
     // Second pass: Render with the calculated scale.  This isn't strictly necessary, but is good practice.
     dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    const elements = renderHierarchy(trapezoid, scaleFactor, 0, 0, dimensions);
+    const elements = renderHierarchy(shape, scaleFactor, 0, 0, dimensions);
 
     return (
-        <div style={{width:size+padding*2, height:size+padding*3}}>
+        <div style={{ width: size + padding * 2, height: size + padding * 3, float: 'left' }}>
             <svg
                 width={size}
                 height={size}
@@ -190,4 +234,4 @@ const TrapezoidDisplay = ({ trapezoid, label = "", size = 200, padding = 10 }) =
     );
 };
 
-export { Trapezoid, TrapezoidDisplay };
+export { Trapezoid, Gauge, PanelDiagram, defaultGauge, Panel};
