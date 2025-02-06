@@ -89,6 +89,7 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
             fill="lightblue"
             stroke="white"
             strokeWidth={3}
+            stroke-linejoin="round"
         />
     );
 };
@@ -145,7 +146,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     return elements;
 };
 
-const TrapezoidDisplay = ({ trapezoid, size = 200, padding = 10 }) => {
+const TrapezoidDisplay = ({ trapezoid, label = "", size = 200, padding = 10 }) => {
     let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     // First pass: Compute bounding box *including negative coordinates*
@@ -163,7 +164,7 @@ const TrapezoidDisplay = ({ trapezoid, size = 200, padding = 10 }) => {
     const scaledWidth = width * scaleFactor;
     const scaledHeight = height * scaleFactor;
 
-    // *** KEY CHANGE: Adjust translation to account for negative minX and minY ***
+    // Adjust translation to account for negative minX and minY ***
     const translateX = (size - scaledWidth) / 2 - dimensions.minX * scaleFactor + padding;
     const translateY = (size - scaledHeight) / 2 - dimensions.minY * scaleFactor + padding;
 
@@ -171,18 +172,21 @@ const TrapezoidDisplay = ({ trapezoid, size = 200, padding = 10 }) => {
     dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
     const elements = renderHierarchy(trapezoid, scaleFactor, 0, 0, dimensions);
 
-
     return (
-        <svg
-            width={size}
-            height={size}
-            viewBox={`0 0 ${size} ${size}`}
-            preserveAspectRatio="none" // Or "xMidYMid meet" if you want to maintain aspect ratio
-        >
-            <g transform={`translate(${translateX}, ${translateY})`}>
-                {elements}
-            </g>
-        </svg>
+        <div style={{width:size+padding*2, height:size+padding*3}}>
+            <svg
+                width={size}
+                height={size}
+                viewBox={`0 0 ${size} ${size + 4}`}
+                preserveAspectRatio="none" // Or "xMidYMid meet" if you want to maintain aspect ratio
+                stroke-linecap="round"
+            >
+                <g transform={`translate(${translateX}, ${translateY})`}>
+                    {elements}
+                </g>
+            </svg>
+            {label}
+        </div>
     );
 };
 
