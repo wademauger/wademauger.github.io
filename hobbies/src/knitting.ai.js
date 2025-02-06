@@ -55,9 +55,9 @@ class Trapezoid {
         const adjustedBaseA = this.baseA * sizeModifier;
         const adjustedBaseB = this.baseB * sizeModifier;
 
-        const stitchesPerRowA = Math.round(adjustedBaseA * gauge);
-        const stitchesPerRowB = Math.round(adjustedBaseB * gauge);
-        const rows = Math.round(adjustedHeight * gauge);
+        const stitchesPerRowA = Math.round(adjustedBaseA * gauge.getStitchesPerInch());
+        const stitchesPerRowB = Math.round(adjustedBaseB * gauge.getStitchesPerInch());
+        const rows = Math.round(adjustedHeight * gauge.getRowsPerInch());
 
         let instructions = [];
 
@@ -144,7 +144,7 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
             fill="lightblue"
             stroke="white"
             strokeWidth={3}
-            stroke-linejoin="round"
+            strokeLinejoin="round"
         />
     );
 };
@@ -234,7 +234,6 @@ const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
                 height={size}
                 viewBox={`0 0 ${size} ${size + 4}`}
                 preserveAspectRatio="none" // Or "xMidYMid meet" if you want to maintain aspect ratio
-                stroke-linecap="round"
             >
                 <g transform={`translate(${translateX}, ${translateY})`}>
                     {elements}

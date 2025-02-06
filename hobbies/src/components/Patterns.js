@@ -36,19 +36,19 @@ function KnittingPatterns() {
             <h1 className="text-2xl text-left"><b>{pattern.title}</b></h1>
             <p className="text-left">{pattern.description}</p>
             <div className='diagrams'>
-              {Object.keys(pattern.shapes).map(shape => 
-                <PanelDiagram shape={pattern.shapes[shape]} label={shape} />
+              {Object.keys(pattern.shapes).map((shape, index) => 
+                <PanelDiagram key={index} shape={pattern.shapes[shape]} label={shape} />
               )}
             </div>
-            {patternInstructions.map(instructions => <PatternInstructions id={instructions.id} instructions={instructions.instructions} />)}
+            {patternInstructions.map((instructions, index) => <PatternInstructions key={index} id={instructions.id} instructions={instructions.instructions} />)}
           </>
         ) : <p>Note that the pattern diagrams are not shown to scale. These patterns are only tested lightly, generally with a mens' medium. Please use discretion before casting on, and report issues on <a href="https://github.com/wademauger/wademauger.github.io/issues">github</a>. Thanks!</p>}
 
         <ul className="space-y-4">
-          {patterns.map(pattern => {
+          {patterns.map((pattern, index) => {
             const permalink = `/patterns/${pattern.permalink}`; // Correct permalink
             return (
-              <NavLink to={permalink} className="text-gray-300 hover:text-white mx-2" key={pattern.permalink}> {/* Add key prop */}
+              <NavLink key={index} to={permalink} className="text-gray-300 hover:text-white mx-2" key={pattern.permalink}> {/* Add key prop */}
                 <li className="bg-gray-800 p-4 rounded-lg shadow-lg">
                   <span className="list-item-title">{pattern.title}</span><br />
                   {pattern.description}
