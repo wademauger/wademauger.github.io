@@ -21,6 +21,9 @@ class Gauge {
 const defaultGauge = new Gauge(19, 30);
 
 class Trapezoid {
+    /**
+     * Responsible for increases and decreases in instructions
+     */
     constructor(height, baseA, baseB, topLeftOffset = 0, topRightOffset = 0, successors = []) {
         this.height = height;
         this.baseA = baseA;
@@ -49,53 +52,23 @@ class Trapezoid {
         );
         return trapezoid;
     }
-
-    generateKnittingInstructions(gauge, sizeModifier) { // currentStitches is no longer needed here
-        const adjustedHeight = this.height * sizeModifier;
-        const adjustedBaseA = this.baseA * sizeModifier;
-        const adjustedBaseB = this.baseB * sizeModifier;
-
-        const stitchesPerRowA = Math.round(adjustedBaseA * gauge.getStitchesPerInch());
-        const stitchesPerRowB = Math.round(adjustedBaseB * gauge.getStitchesPerInch());
-        const rows = Math.round(adjustedHeight * gauge.getRowsPerInch());
-
-        let instructions = [];
-
-        const stitchDifference = stitchesPerRowB - stitchesPerRowA;
-        const rowsToChange = rows;
-        const changePerSide = stitchDifference / 2;
-
-        for (let i = 0; i < rows; i++) {
-            let rowInstructions = "";
-            let currentStitchesForRow = stitchesPerRowB; // Initialize for each row
-
-            if (stitchDifference !== 0) {
-                const stitchesToDecrease = Math.round(changePerSide * (1 - (i / rowsToChange)));
-                const decreaseLeft = Math.floor(stitchesToDecrease);
-                const decreaseRight = Math.ceil(stitchesToDecrease);
-
-                currentStitchesForRow = stitchesPerRowB - decreaseLeft - decreaseRight;
-
-                if(decreaseLeft > 0) {
-                    rowInstructions += `K${decreaseLeft}, `;
-                }
-                rowInstructions += `Knit ${currentStitchesForRow} `;
-                if(decreaseRight > 0) {
-                    rowInstructions += `K${decreaseRight}`;
-                }
-
-            } else {
-                rowInstructions = `Knit ${currentStitchesForRow}`;
-            }
-
-            instructions.push(`Row ${i + 1}: ${rowInstructions}`);
-        }
-
-        return instructions;
+    
+    generateKnittingInstructions(gauge, sizeModifier, startRow = 0, initialStitches) {
+        // TODO implement
+        // divide the shape into a rectangle and two triangles
+        // calculate the slope of each side
+        // calculate how many stitches are in the first and last rows
+        // calculate how many rows are needed to get to the right length
+        // calculate how frequently increases or decreases will be needed on each side
+        // combine consecutive rows without increases or decreases
+        // return an object with the rowcount and the resulting instruction steps.
     }
 }
 
 class Panel {
+    /**
+     * Responsible for cast on-s, bind-offs, connecting parent/successor trapezoids, and emitting instructions for the whole panel
+     */
     constructor(shape, gauge = defaultGauge, sizeModifier = 1) {
         this.shape = shape;
         this.gauge = gauge;
@@ -103,30 +76,13 @@ class Panel {
     }
 
     generateKnittingInstructions() {
-        let instructions = [];
-        const shapesToProcess = [{ trapezoid: this.shape, currentStitches: Math.round(this.shape.baseB * this.sizeModifier * this.gauge.getStitchesPerInch()) }];
-
-        instructions.push(`Cast on ${shapesToProcess[0].currentStitches} stitches.`);
-
-        while (shapesToProcess.length > 0) {
-            const { trapezoid, currentStitches } = shapesToProcess.shift(); // Process the next shape
-            const trapezoidInstructions = trapezoid.generateKnittingInstructions(this.gauge, this.sizeModifier);
-            instructions.push(...trapezoidInstructions);
-
-            if (trapezoid.successors.length > 0) {
-                trapezoid.successors.forEach(successor => {
-                    shapesToProcess.push({
-                        trapezoid: successor,
-                        currentStitches: currentStitches // Carry over stitches for parallel branches
-                    });
-                });
-            } else {
-                instructions.push(`Bind off ${Math.round(trapezoid.baseB * this.sizeModifier * this.gauge.getStitchesPerInch())} stitches.`);
-            }
-        }
-
-        return instructions;
+        // TODO implement
+        // perform a depth-first-search of the tree of trapezoids on this.shape
+        // emit a bind-off instruction for 0-height successors
+        // otherwise, add an instruction step for the user to put all but N stitches on hold, to build up the next successor trapezoid
+        // emit a bind-off instruction after any trapezoid with no successors
     }
+
 }
 
 const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
@@ -244,4 +200,4 @@ const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
     );
 };
 
-export { Trapezoid, Gauge, PanelDiagram, defaultGauge, Panel};
+export { Trapezoid, Gauge, PanelDiagram, defaultGauge, Panel };
