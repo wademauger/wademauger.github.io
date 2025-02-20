@@ -1,5 +1,54 @@
 export default [
     {
+        "permalink": "test-square",
+        "title": "Test shape: square",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 30,
+                "baseA": 30,
+                "baseB": 30,
+                "successors": []
+            }
+        }
+    }, {
+        "permalink": "test-rectangle",
+        "title": "Test shape: rectangle",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 10,
+                "baseA": 25,
+                "baseB": 25,
+                "successors": []
+            }
+        }
+    }, {
+        "permalink": "test-trapezoid",
+        "title": "Test shape: isosceles trapezoid",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 20,
+                "baseA": 30,
+                "baseB": 20,
+                "successors": []
+            }
+        }
+    }, {
+        "permalink": "test-trapezoid-ii",
+        "title": "Test shape: slanted trapezoid",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 20,
+                "baseA": 20,
+                "baseB": 20,
+                "baseBHorizontalOffset": 10,
+                "successors": []
+            }
+        }
+    }, {
         "permalink": "cozy-raglan-sweater",
         "title": "Cozy Raglan Sweater",
         "description": "A simple sweater with Raglan sleeves",
