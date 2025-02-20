@@ -46,12 +46,12 @@ export default [
                 "height": 4,
                 "baseA": 22,
                 "baseB": 22,
-                "stitchPattern": "stockinette-hem",
                 "successors": [
                     {
                     "height": 10,
                     "baseA": 22,
                     "baseB": 22,
+                    "finishingSteps": ["Hang hem."],
                     "successors": [
                             {"height": 4, "baseA": 5.5, "baseB": 0.2},
                             {"height": 4, "baseA": 5.5, "baseB": 0.2},

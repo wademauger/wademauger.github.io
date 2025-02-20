@@ -13,7 +13,7 @@ function Home() {
             <p className="mt-2">I enjoy knitting, cooking, and playing the ukulele. These pages have some of my favorite patterns, songs, and recipes!</p>
           </section>
           <section className="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
-            <h2 className="text-xl font-semibold">Featured Content</h2>
+            <h2 className="text-xl font-semibold">Featured Content</h2> I'm workin' on it, eh!
           </section>
         </main>
         <Footer extras={< Tips/>} />

@@ -22,52 +22,99 @@ const defaultGauge = new Gauge(19, 30);
 
 class Trapezoid {
     /**
-     * Responsible for increases and decreases in instructions
+     * Represents a trapezoidal section of the knitting panel.
+     * Responsible for increases and decreases in instructions.
      */
-    constructor(height, baseA, baseB, topLeftOffset = 0, topRightOffset = 0, successors = []) {
+    constructor(height, baseA, baseB, topLeftOffset = 0, topRightOffset = 0, successors = [], finishingSteps = []) {
         this.height = height;
         this.baseA = baseA;
         this.baseB = baseB;
         this.topLeftOffset = topLeftOffset;
         this.topRightOffset = topRightOffset;
         this.successors = successors;
+        this.finishingSteps = finishingSteps; // Array of extra instructions for finishing
     }
 
-    static fromJSON(json, parent = null) {
-        if (!json || json.length == 0) {
-            return json; // Handle null or undefined JSON
+    static fromJSON(json) {
+        if (!json || json.length === 0) {
+            return null; // Handle empty JSON
         }
 
         const successors = (json.successors && Array.isArray(json.successors))
-            ? json.successors.filter(successorJson => successorJson != null).map(successorJson => Trapezoid.fromJSON(successorJson, this)) // Filter out nulls/undefineds *before* mapping
+            ? json.successors.filter(s => s != null).map(s => Trapezoid.fromJSON(s))
             : [];
 
-        const trapezoid = new Trapezoid(
+        return new Trapezoid(
             json.height,
             json.baseA,
             json.baseB,
             json.topLeftOffset || 0,
             json.topRightOffset || 0,
-            successors
+            successors,
+            json.finishingSteps || [] // Ensure finishingSteps is an array
         );
-        return trapezoid;
     }
-    
-    generateKnittingInstructions(gauge, sizeModifier, startRow = 0, initialStitches) {
-        // TODO implement
-        // divide the shape into a rectangle and two triangles
-        // calculate the slope of each side
-        // calculate how many stitches are in the first and last rows
-        // calculate how many rows are needed to get to the right length
-        // calculate how frequently increases or decreases will be needed on each side
-        // combine consecutive rows without increases or decreases
-        // return an object with the rowcount and the resulting instruction steps.
+
+    getStitchPlan(gauge, sizeModifier, startRow = 1) {
+        const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
+        const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
+
+        const startStitches = Math.round(this.baseA * stitchesPerInch);
+        const endStitches = Math.round(this.baseB * stitchesPerInch);
+        const totalRows = Math.round(this.height * rowsPerInch);
+
+        const leftSlope = this.topLeftOffset * stitchesPerInch / totalRows;
+        const rightSlope = this.topRightOffset * stitchesPerInch / totalRows;
+
+        const stitchPlan = new StitchPlan();
+
+        for (let rowNumber = startRow; rowNumber < startRow + totalRows; rowNumber++) {
+            const leftStitchesInWork = startStitches + Math.round(leftSlope * (rowNumber - startRow + 1));
+            const rightStitchesInWork = startStitches + Math.round(rightSlope * (rowNumber - startRow + 1));
+            stitchPlan.addRow(new StitchPlan.Row(rowNumber, leftStitchesInWork, rightStitchesInWork));
+        }
+
+        return stitchPlan;
+    }
+
+    generateKnittingInstructions(gauge, sizeModifier, startRow = 1) {
+        const stitchPlan = this.getStitchPlan(gauge, sizeModifier, startRow);
+        let instructions = [];
+
+        if (startRow === 1) {
+            const castOnStitches = Math.round(this.baseA * gauge.getStitchesPerInch() * sizeModifier);
+            instructions.push(`Cast on ${castOnStitches} stitches.`);
+        }
+
+        instructions = instructions.concat(stitchPlan.generateInstructions());
+
+        if (this.successors.length === 0) {
+            instructions.push(`Bind off all stitches.`);
+        } else {
+            let successorStartStitch = 0;
+            const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
+
+            this.successors.forEach(successor => {
+                const successorWidth = Math.round(successor.baseA * stitchesPerInch);
+
+                if (successor.height === 0) {
+                    instructions.push(`Bind off ${successorWidth} stitches starting from stitch ${successorStartStitch + 1}.`);
+                } else {
+                    instructions.push(`Put stitches ${successorStartStitch + 1}-${successorStartStitch + successorWidth} on hold.`);
+                    instructions = instructions.concat(successor.generateKnittingInstructions(gauge, sizeModifier, startRow + stitchPlan.rows.length));
+                }
+
+                successorStartStitch += successorWidth;
+            });
+        }
+
+        return instructions;
     }
 }
 
 class Panel {
     /**
-     * Responsible for cast on-s, bind-offs, connecting parent/successor trapezoids, and emitting instructions for the whole panel
+     * Responsible for cast-ons, bind-offs, connecting parent/successor trapezoids, and emitting instructions for the whole panel.
      */
     constructor(shape, gauge = defaultGauge, sizeModifier = 1) {
         this.shape = shape;
@@ -76,14 +123,36 @@ class Panel {
     }
 
     generateKnittingInstructions() {
-        // TODO implement
-        // perform a depth-first-search of the tree of trapezoids on this.shape
-        // emit a bind-off instruction for 0-height successors
-        // otherwise, add an instruction step for the user to put all but N stitches on hold, to build up the next successor trapezoid
-        // emit a bind-off instruction after any trapezoid with no successors
+        if (!this.shape) return [];
+        return this.shape.generateKnittingInstructions(this.gauge, this.sizeModifier);
+    }
+}
+
+class StitchPlan {
+    constructor() {
+        this.rows = [];
     }
 
+    addRow(row) {
+        this.rows.push(row);
+    }
+
+    generateInstructions() {
+        let instructions = [];
+        this.rows.forEach(row => {
+            instructions.push(`Row ${row.rowNumber}: Knit ${row.leftStitchesInWork} stitches on the left, ${row.rightStitchesInWork} stitches on the right.`);
+        });
+        return instructions;
+    }
 }
+
+StitchPlan.Row = class {
+    constructor(rowNumber, leftStitchesInWork, rightStitchesInWork) {
+        this.rowNumber = rowNumber;
+        this.leftStitchesInWork = leftStitchesInWork;
+        this.rightStitchesInWork = rightStitchesInWork;
+    }
+};
 
 const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
     const width = Math.max(shape.baseA, shape.baseB) * scale;

@@ -4,7 +4,7 @@ import { NavLink } from 'react-router';
 export default function Header() {
     return <header className="App-header bg-gray-800 text-white py-4">
     <NavLink to="/" className="container mx-auto text-center text-2xl font-bold">
-        Secret Stash
+        Super Secret Emporium
     </NavLink>
     <nav className="mt-2 text-center">
         <NavLink to="/recipes" className="text-gray-300 hover:text-white mx-2">Recipes</NavLink>
