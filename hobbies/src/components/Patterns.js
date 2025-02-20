@@ -3,7 +3,8 @@ import Footer from './footer';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
 import patterns from '../data/patterns';
-import { PanelDiagram, Trapezoid, Panel } from '../knitting.ai';
+import { Trapezoid, Panel } from '../knitting.ai';
+import { PanelDiagram } from './PanelDiagram';
 
 const PatternInstructions = ({ id, instructions = [] }) => (
   <div>

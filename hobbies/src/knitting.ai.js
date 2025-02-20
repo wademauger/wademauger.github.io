@@ -309,4 +309,4 @@ const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
     );
 };
 
-export { Trapezoid, Gauge, PanelDiagram, defaultGauge, Panel };
+export { Trapezoid, Gauge, defaultGauge, Panel };
