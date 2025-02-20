@@ -7,11 +7,11 @@ import { Trapezoid, Panel } from '../knitting.ai';
 import { PanelDiagram } from './PanelDiagram';
 
 const PatternInstructions = ({ id, instructions = [] }) => (
-  <div>
-    <h3>{id} Instructions:</h3>
+  <div className="panel-instructions">
+    <h3 className="panel-instruction-header">{id} Instructions:</h3>
     <ol>
       {instructions.map((step, index) => (
-        <li key={index}><b>{index+1}</b>: {step}</li>
+        <li key={index}>{step}</li>
       ))}
     </ol>
   </div>

@@ -57,12 +57,12 @@ class Trapezoid {
         const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
         const startStitches = Math.round(this.baseA * stitchesPerInch);
-        const startStitchesLeft = Math.floor(startStitches/2);
-        const startStitchesRight = startStitches % 2 == 0 ? startStitchesLeft : startStitchesLeft + 1;
+        const startStitchesLeft = Math.floor(startStitches / 2);
+        const startStitchesRight = startStitches % 2 === 0 ? startStitchesLeft : startStitchesLeft + 1;
         const totalRows = Math.round(this.height * rowsPerInch);
 
         // calculate the number of stitches to be increased on the left and right edges of the trapezoid
-        const baseWidthDifference = Math.abs(this.baseA-this.baseB);
+        const baseWidthDifference = this.baseB - this.baseA;
         const leftIncreaseWidth = baseWidthDifference / 2 - this.baseBHorizontalOffset;
         const rightIncreaseWidth = baseWidthDifference / 2 + this.baseBHorizontalOffset;
         const leftIncreaseStitches = Math.round(leftIncreaseWidth * stitchesPerInch);
@@ -86,7 +86,7 @@ class Trapezoid {
                     // increase 1 stitch on the left edge
                     leftShapingModifier = 1;
                 } else {
-                    // decrease i stitch on the left edge
+                    // decrease 1 stitch on the left edge
                     leftShapingModifier = -1;
                 }
                 leftShapingCounter -= 1;
@@ -96,7 +96,7 @@ class Trapezoid {
                     // increase 1 stitch on the right edge
                     rightShapingModifier = 1;
                 } else {
-                    // decrease i stitch on the right edge
+                    // decrease 1 stitch on the right edge
                     rightShapingModifier = -1;
                 }
                 rightShapingCounter -= 1;
@@ -124,7 +124,24 @@ class Panel {
 
     generateKnittingInstructions() {
         if (!this.shape) return [];
-        return this.shape.getStitchPlan(this.gauge, this.sizeModifier).generateKnittingInstructions();
+        // Generate instructions for the trapezoid
+        const stitchPlan = this.shape.getStitchPlan(this.gauge, this.sizeModifier);
+        // start instructions with cast-on based on stitchPlan first row
+        const instructions = [`Cast on ${stitchPlan.rows[0].leftStitchesInWork + stitchPlan.rows[0].rightStitchesInWork} stitches.`];
+        // add instructions for each row
+        instructions.push(...stitchPlan.generateKnittingInstructions());
+        // add finishing steps
+        instructions.push(...this.shape.finishingSteps);
+        // recursively generate instructions for each successor
+        for (const successor of this.shape.successors) {
+            const successorStitchPlan = successor.getStitchPlan(this.gauge, this.sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+            instructions.push(...successorStitchPlan.generateKnittingInstructions());
+        }
+        // add bind-off instructions
+        instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);
+        return instructions;
+
+        //return this.shape.getStitchPlan(this.gauge, this.sizeModifier).generateKnittingInstructions();
     }
 }
 
@@ -175,8 +192,8 @@ class StitchPlan {
                         instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''} on the right edge. `;
                     }
                     prevRow = row;
+                    instruction = consecutiveRows > 1 ? `${instruction} Knit ${consecutiveRows} rows. ` : `${instruction} Knit 1 row. `;
                     instruction += `Finish on row ${row.rowNumber}.`;
-                    instruction = consecutiveRows > 1 ? `Knit ${consecutiveRows} rows. ${instruction}` : `Knit 1 row. ${instruction}`;
                     consecutiveRows = 1;
                     instructions.push(instruction);
                 }

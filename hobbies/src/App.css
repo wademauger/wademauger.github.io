@@ -29,6 +29,15 @@
   display: inline-block;
 }
 
+.panel-instructions {
+  text-align: left;
+  margin-bottom: 14px;
+  h3 {
+    text-decoration: underline;
+    font-size: x-large;
+  }
+}
+
 footer {
   position: fixed;
   bottom: 0;
