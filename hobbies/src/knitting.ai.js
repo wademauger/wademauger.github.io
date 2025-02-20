@@ -56,20 +56,56 @@ class Trapezoid {
     getStitchPlan(gauge, sizeModifier, startRow = 1) {
         const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
-
         const startStitches = Math.round(this.baseA * stitchesPerInch);
-        const endStitches = Math.round(this.baseB * stitchesPerInch);
+        const startStitchesLeft = Math.floor(startStitches/2);
+        const startStitchesRight = startStitches % 2 == 0 ? startStitchesLeft : startStitchesLeft + 1;
         const totalRows = Math.round(this.height * rowsPerInch);
 
-        // calculate the slope of each edge of the trapezoid
-        const horizontalOffset = this.baseBHorizontalOffset * stitchesPerInch / totalRows;
+        // calculate the number of stitches to be increased on the left and right edges of the trapezoid
+        const baseWidthDifference = Math.abs(this.baseA-this.baseB);
+        const leftIncreaseWidth = baseWidthDifference / 2 - this.baseBHorizontalOffset;
+        const rightIncreaseWidth = baseWidthDifference / 2 + this.baseBHorizontalOffset;
+        const leftIncreaseStitches = Math.round(leftIncreaseWidth * stitchesPerInch);
+        const rightIncreaseStitches = Math.round(rightIncreaseWidth * stitchesPerInch);
+
+        // calculate how often to increase or decrease stitches
+        const increaseLeftFrequency = Math.abs(leftIncreaseStitches / totalRows);
+        const increaseRightFrequency = Math.abs(rightIncreaseStitches / totalRows);
+
+        let leftShapingCounter = 0, rightShapingCounter = 0;
 
         const stitchPlan = new StitchPlan(gauge, sizeModifier);
-
+        let prevRow = new StitchPlan.Row(startRow - 1, startStitchesLeft, startStitchesRight);
         for (let rowNumber = startRow; rowNumber < startRow + totalRows; rowNumber++) {
-            const leftStitchesInWork = startStitches + Math.round(horizontalOffset * (rowNumber - startRow + 1));
-            const rightStitchesInWork = startStitches + Math.round(horizontalOffset * (rowNumber - startRow + 1));
-            stitchPlan.addRow(new StitchPlan.Row(rowNumber, leftStitchesInWork, rightStitchesInWork));
+            let leftShapingModifier = 0;
+            let rightShapingModifier = 0;
+            leftShapingCounter += increaseLeftFrequency;
+            rightShapingCounter += increaseRightFrequency;
+            if (leftShapingCounter >= 1) {
+                if (leftIncreaseStitches > 0) {
+                    // increase 1 stitch on the left edge
+                    leftShapingModifier = 1;
+                } else {
+                    // decrease i stitch on the left edge
+                    leftShapingModifier = -1;
+                }
+                leftShapingCounter -= 1;
+            }
+            if (rightShapingCounter >= 1) {
+                if (rightIncreaseStitches > 0) {
+                    // increase 1 stitch on the right edge
+                    rightShapingModifier = 1;
+                } else {
+                    // decrease i stitch on the right edge
+                    rightShapingModifier = -1;
+                }
+                rightShapingCounter -= 1;
+            }
+            const leftStitchesInWork = prevRow.leftStitchesInWork + leftShapingModifier;
+            const rightStitchesInWork = prevRow.rightStitchesInWork + rightShapingModifier;
+            const newRow = new StitchPlan.Row(rowNumber, leftStitchesInWork, rightStitchesInWork);
+            stitchPlan.addRow(newRow);
+            prevRow = newRow;
         }
 
         return stitchPlan;
@@ -93,10 +129,8 @@ class Panel {
 }
 
 class StitchPlan {
-    constructor(gauge, sizeModifier) {
+    constructor() {
         this.rows = [];
-        this.gauge = gauge;
-        this.sizeModifier = sizeModifier;
     }
 
     addRow(row) {
@@ -115,11 +149,38 @@ class StitchPlan {
         const upperLeft = this.rows[this.rows.length - 1].leftStitchesInWork;
         const upperRight = this.rows[this.rows.length - 1].rightStitchesInWork;
         if (lowerLeft === upperLeft && lowerRight === upperRight) {
-            instructions.push(`Knit ${this.rows.length} rows from L${lowerLeft} to R${lowerRight}.`);
+            instructions.push(`Knit ${this.rows.length} rows.`);
         }
         // case: trapezoidal panel
         else {
-            
+            const firstRow = this.rows[0];
+            let consecutiveRows = 1;
+            let prevRow = firstRow;
+            for (const row of this.rows) {
+                const leftDiff = row.leftStitchesInWork - prevRow.leftStitchesInWork;
+                const rightDiff = row.rightStitchesInWork - prevRow.rightStitchesInWork;
+                if (leftDiff === 0 && rightDiff === 0) {
+                    consecutiveRows++;
+                    continue;
+                } else {
+                    let instruction = '';
+                    if (leftDiff > 0) {
+                        instruction += `Increase ${leftDiff} stitch${leftDiff > 1 ? `es` : ''} on the left edge. `;
+                    } else if (leftDiff < 0) {
+                        instruction += `Decrease ${-leftDiff} stitch${leftDiff < -1 ? `es` : ''} on the left edge. `;
+                    }
+                    if (rightDiff > 0) {
+                        instruction += `Increase ${rightDiff} stitch${rightDiff > 1 ? `es` : ''} on the right edge. `;
+                    } else if (rightDiff < 0) {
+                        instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''} on the right edge. `;
+                    }
+                    prevRow = row;
+                    instruction += `Finish on row ${row.rowNumber}.`;
+                    instruction = consecutiveRows > 1 ? `Knit ${consecutiveRows} rows. ${instruction}` : `Knit 1 row. ${instruction}`;
+                    consecutiveRows = 1;
+                    instructions.push(instruction);
+                }
+            }
         }
         return instructions;
     }
