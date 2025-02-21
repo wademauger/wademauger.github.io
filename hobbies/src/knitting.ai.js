@@ -140,13 +140,22 @@ class Trapezoid {
                 const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
                 if (successor.height > 0) {
                     instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
-                    const successorStitchPlan = successor.getStitchPlan(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
-                    instructions.push(...successorStitchPlan.generateKnittingInstructions());
+                    const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+                    instructions.push(...successorInstructions);
                 } else {
                     instructions.push(`Section ${i + 1}: bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
                 }
             }
-        } else if (this.successors.length === 0) {
+        } else if (this.successors.length === 1) {
+            const successor = this.successors[0];
+            const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
+            if (successor.height > 0) {
+                const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+                instructions.push(...successorInstructions);
+            } else {
+                instructions.push(`Bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
+            }
+        } else {
             instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);
         }
         return instructions;
@@ -155,7 +164,7 @@ class Trapezoid {
 
 class Panel {
     /**
-     * Responsible for cast-ons, bind-offs, connecting parent/successor trapezoids, and emitting instructions for the whole panel.
+     * Responsible for gauge and sizing
      */
     constructor(shape, gauge = defaultGauge, sizeModifier = 1) {
         this.shape = shape;
