@@ -1,13 +1,25 @@
 export default [
     {
         "permalink": "test-square",
-        "title": "Test shape: square",
+        "title": "Test shape: 4x4 gauge swatch",
         "description": "test",
         "shapes": {
             "Front": {
-                "height": 30,
-                "baseA": 30,
-                "baseB": 30,
+                "height": 4,
+                "baseA": 4,
+                "baseB": 4,
+                "successors": []
+            }
+        }
+    }, {
+        "permalink": "test-square-ii",
+        "title": "Test shape: 15x15 gauge swatch",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 15,
+                "baseA": 15,
+                "baseB": 15,
                 "successors": []
             }
         }
@@ -36,6 +48,30 @@ export default [
             }
         }
     }, {
+        "permalink": "test-trapezoid-iii",
+        "title": "Test shape: wide, short trapezoid",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 4,
+                "baseA": 2,
+                "baseB": 30,
+                "successors": []
+            }
+        }
+    }, {
+        "permalink": "test-trapezoid-iv",
+        "title": "Test shape: tall, narrow trapezoid",
+        "description": "test",
+        "shapes": {
+            "Front": {
+                "height": 60,
+                "baseA": 2,
+                "baseB": 10,
+                "successors": []
+            }
+        }
+    }, {
         "permalink": "test-trapezoid-ii",
         "title": "Test shape: slanted trapezoid",
         "description": "test",
@@ -50,7 +86,7 @@ export default [
         }
     }, {
         "permalink": "cozy-raglan-sweater",
-        "title": "Cozy Raglan Sweater",
+        "title": "Cozy Raglan V-Neck Sweater",
         "description": "A simple sweater with Raglan sleeves",
         "shapes": {
             "Front": {
@@ -95,12 +131,12 @@ export default [
                 "height": 4,
                 "baseA": 22,
                 "baseB": 22,
+                "finishingSteps": ["Hang hem."],
                 "successors": [
                     {
                     "height": 10,
                     "baseA": 22,
                     "baseB": 22,
-                    "finishingSteps": ["Hang hem."],
                     "successors": [
                             {"height": 4, "baseA": 5.5, "baseB": 0.2},
                             {"height": 4, "baseA": 5.5, "baseB": 0.2},

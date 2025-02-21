@@ -53,6 +53,13 @@ class Trapezoid {
         );
     }
 
+    getBaseWidthInStitches(gauge = defaultGauge, sizeModifier = 1) {
+        const gaugeStitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
+        const value = Math.round(this.baseA * (gauge.getStitchesPerInch() * sizeModifier))
+        window.value = value;
+        return value;
+    }
+
     getStitchPlan(gauge, sizeModifier, startRow = 1) {
         const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
@@ -81,26 +88,30 @@ class Trapezoid {
             let rightShapingModifier = 0;
             leftShapingCounter += increaseLeftFrequency;
             rightShapingCounter += increaseRightFrequency;
-            if (leftShapingCounter >= 1) {
+
+            // Handle multiple increases or decreases in a single row
+            while (leftShapingCounter >= 1) {
                 if (leftIncreaseStitches > 0) {
                     // increase 1 stitch on the left edge
-                    leftShapingModifier = 1;
+                    leftShapingModifier += 1;
                 } else {
                     // decrease 1 stitch on the left edge
-                    leftShapingModifier = -1;
+                    leftShapingModifier -= 1;
                 }
                 leftShapingCounter -= 1;
             }
-            if (rightShapingCounter >= 1) {
+
+            while (rightShapingCounter >= 1) {
                 if (rightIncreaseStitches > 0) {
                     // increase 1 stitch on the right edge
-                    rightShapingModifier = 1;
+                    rightShapingModifier += 1;
                 } else {
                     // decrease 1 stitch on the right edge
-                    rightShapingModifier = -1;
+                    rightShapingModifier -= 1;
                 }
                 rightShapingCounter -= 1;
             }
+
             const leftStitchesInWork = prevRow.leftStitchesInWork + leftShapingModifier;
             const rightStitchesInWork = prevRow.rightStitchesInWork + rightShapingModifier;
             const newRow = new StitchPlan.Row(rowNumber, leftStitchesInWork, rightStitchesInWork);
@@ -109,6 +120,36 @@ class Trapezoid {
         }
 
         return stitchPlan;
+    }
+
+    generateKnittingInstructions(gauge, sizeModifier, startRow = 1, isRoot = false) {
+        const stitchPlan = this.getStitchPlan(gauge, sizeModifier, startRow);
+        const instructions = [];
+
+        if (isRoot) {
+            instructions.push(`Cast on ${stitchPlan.rows[0].leftStitchesInWork + stitchPlan.rows[0].rightStitchesInWork} stitches.`);
+        }
+
+        instructions.push(...stitchPlan.generateKnittingInstructions());
+        instructions.push(...this.finishingSteps);
+
+        if (this.successors.length > 1) {
+            instructions.push(`Divide into ${this.successors.length} sections:`);
+            for (let i = 0; i < this.successors.length; i++) {
+                const successor = this.successors[i];
+                const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
+                if (successor.height > 0) {
+                    instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
+                    const successorStitchPlan = successor.getStitchPlan(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+                    instructions.push(...successorStitchPlan.generateKnittingInstructions());
+                } else {
+                    instructions.push(`Section ${i + 1}: bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
+                }
+            }
+        } else if (this.successors.length === 0) {
+            instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);
+        }
+        return instructions;
     }
 }
 
@@ -124,24 +165,7 @@ class Panel {
 
     generateKnittingInstructions() {
         if (!this.shape) return [];
-        // Generate instructions for the trapezoid
-        const stitchPlan = this.shape.getStitchPlan(this.gauge, this.sizeModifier);
-        // start instructions with cast-on based on stitchPlan first row
-        const instructions = [`Cast on ${stitchPlan.rows[0].leftStitchesInWork + stitchPlan.rows[0].rightStitchesInWork} stitches.`];
-        // add instructions for each row
-        instructions.push(...stitchPlan.generateKnittingInstructions());
-        // add finishing steps
-        instructions.push(...this.shape.finishingSteps);
-        // recursively generate instructions for each successor
-        for (const successor of this.shape.successors) {
-            const successorStitchPlan = successor.getStitchPlan(this.gauge, this.sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
-            instructions.push(...successorStitchPlan.generateKnittingInstructions());
-        }
-        // add bind-off instructions
-        instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);
-        return instructions;
-
-        //return this.shape.getStitchPlan(this.gauge, this.sizeModifier).generateKnittingInstructions();
+        return this.shape.generateKnittingInstructions(this.gauge, this.sizeModifier, 1, true);
     }
 }
 
@@ -182,18 +206,18 @@ class StitchPlan {
                 } else {
                     let instruction = '';
                     if (leftDiff > 0) {
-                        instruction += `Increase ${leftDiff} stitch${leftDiff > 1 ? `es` : ''} on the left edge. `;
+                        instruction += `Increase left ${leftDiff} stitch${leftDiff > 1 ? `es` : ''}. `;
                     } else if (leftDiff < 0) {
-                        instruction += `Decrease ${-leftDiff} stitch${leftDiff < -1 ? `es` : ''} on the left edge. `;
+                        instruction += `Decrease left ${-leftDiff} stitch${leftDiff < -1 ? `es` : ''}. `;
                     }
                     if (rightDiff > 0) {
-                        instruction += `Increase ${rightDiff} stitch${rightDiff > 1 ? `es` : ''} on the right edge. `;
+                        instruction += `Increase right ${rightDiff} stitch${rightDiff > 1 ? `es` : ''}. `;
                     } else if (rightDiff < 0) {
-                        instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''} on the right edge. `;
+                        instruction += `Decrease right ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''}. `;
                     }
                     prevRow = row;
                     instruction = consecutiveRows > 1 ? `${instruction} Knit ${consecutiveRows} rows. ` : `${instruction} Knit 1 row. `;
-                    instruction += `Finish on row ${row.rowNumber}.`;
+                    instruction += `(RC = ${row.rowNumber}, ${row.leftStitchesInWork+row.rightStitchesInWork} sts in work)`;
                     consecutiveRows = 1;
                     instructions.push(instruction);
                 }
