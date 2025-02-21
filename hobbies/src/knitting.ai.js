@@ -147,7 +147,7 @@ class Trapezoid {
         const stitchPlan = this.getStitchPlan(gauge, sizeModifier, startRow);
         const instructions = [];
 
-        if (isRoot) {
+        if (isRoot && stitchPlan.rows.length > 0) {
             instructions.push(`Cast on ${stitchPlan.rows[0].leftStitchesInWork + stitchPlan.rows[0].rightStitchesInWork} stitches.`);
         }
 
@@ -161,7 +161,7 @@ class Trapezoid {
                 const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
                 if (successor.getHeight() > 0) {
                     instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
-                    const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+                    const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow);
                     instructions.push(...successorInstructions);
                 } else {
                     instructions.push(`Section ${i + 1}: bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
@@ -171,12 +171,12 @@ class Trapezoid {
             const successor = this.successors[0];
             const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
             if (successor.getHeight() > 0) {
-                const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
+                const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow);
                 instructions.push(...successorInstructions);
             } else {
                 instructions.push(`Bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
             }
-        } else {
+        } else if (stitchPlan.rows.length > 0) {
             instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);
         }
         return instructions;

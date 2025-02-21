@@ -11,7 +11,7 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
             key={`${xOffset}-${yOffset}`}
             points={`${xTopLeft},${yTop} ${xTopRight},${yTop} ${xBottomRight},${yBottom} ${xBottomLeft},${yBottom}`}
             fill="#68a2b9"
-            stroke="white"
+            stroke="#dcdcdc"
             strokeWidth={3}
             strokeLinejoin="round"
         />

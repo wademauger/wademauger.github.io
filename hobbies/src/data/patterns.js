@@ -88,6 +88,11 @@ export default [
         "permalink": "cozy-raglan-sweater",
         "title": "Cozy Raglan V-Neck Sweater",
         "description": "A simple sweater with Raglan sleeves",
+        "sizes": {
+            "small": 0.9,
+            "medium": 1,
+            "large": 1.085,
+        },
         "shapes": {
             "Front": 
             {

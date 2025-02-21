@@ -62,3 +62,22 @@ footer {
   }
 }
 
+select {
+  background-color: #ffffff; /* White background */
+  color: #333333; /* Dark text color */
+  padding: 8px 12px; /* Padding for better spacing */
+  border-radius: 4px; /* Rounded corners */
+  border: 1px solid #cccccc; /* Light gray border */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+}
+
+select:focus {
+  border-color: #888888; /* Darker border on focus */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* More pronounced shadow on focus */
+}
+
+select:hover {
+  border-color: #888888; /* Darker border on hover */
+}
+
