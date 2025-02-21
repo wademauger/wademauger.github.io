@@ -2,21 +2,10 @@
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-.bg-gray-900 {
-  background-color: #001628e7;
-}
-
-.bg-gray-800 {
-  background-color: #001628;
+.size-selector {
+  .ant-select-selector {
+    margin-left: 30px;
+  }
 }
 
 .steps-list {
@@ -46,6 +35,20 @@
   }
 }
 
+.description {
+  margin-bottom: 14px;
+}
+
+.ant-card-body {
+  p {
+    margin-bottom: 10px;
+  }
+}
+
+main {
+  margin-bottom: 40px;
+}
+
 footer {
   position: fixed;
   bottom: 0;
@@ -61,23 +64,3 @@ footer {
     transform: rotate(360deg);
   }
 }
-
-select {
-  background-color: #ffffff; /* White background */
-  color: #333333; /* Dark text color */
-  padding: 8px 12px; /* Padding for better spacing */
-  border-radius: 4px; /* Rounded corners */
-  border: 1px solid #cccccc; /* Light gray border */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
-}
-
-select:focus {
-  border-color: #888888; /* Darker border on focus */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* More pronounced shadow on focus */
-}
-
-select:hover {
-  border-color: #888888; /* Darker border on hover */
-}
-

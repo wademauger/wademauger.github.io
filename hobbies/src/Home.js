@@ -1,12 +1,8 @@
-import Header from './components/header';
-import Footer from './components/footer';
-import Tips from './components/tips';
 import './App.css';
 
 function Home() {
   return (
     <>
-        <Header />
         <main className="container mx-auto mt-8 px-4">
           <section className="text-center mb-8">
             <h2 className="text-2xl font-semibold">About Me</h2>
@@ -16,7 +12,6 @@ function Home() {
             <h2 className="text-xl font-semibold">Featured Content</h2> I'm workin' on it, eh!
           </section>
         </main>
-        <Footer extras={< Tips/>} />
     </>
   );
 }
