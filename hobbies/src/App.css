@@ -1,0 +1,66 @@
+.App {
+  text-align: center;
+}
+
+.size-selector {
+  .ant-select-selector {
+    margin-left: 30px;
+  }
+}
+
+.steps-list {
+  list-style: upper-roman;
+  margin:30px;
+}
+
+.ingredient-table {
+  margin: 30px;
+}
+
+.list-item-title {
+  font-size: x-large;
+  font-weight: bold;
+}
+
+.diagrams {
+  display: inline-block;
+}
+
+.panel-instructions {
+  text-align: left;
+  margin-bottom: 14px;
+  h3 {
+    text-decoration: underline;
+    font-size: x-large;
+  }
+}
+
+.description {
+  margin-bottom: 14px;
+}
+
+.ant-card-body {
+  p {
+    margin-bottom: 10px;
+  }
+}
+
+main {
+  margin-bottom: 40px;
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
