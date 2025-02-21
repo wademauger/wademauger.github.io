@@ -146,6 +146,9 @@ export default [
         "permalink": "seam-top-hat",
         "title": "Seam-Top Hat",
         "description": "A simple hat with an elegant construction",
+        "sizes": {
+            "One Size": 1,
+        },
         "shapes": {
             "Hat": {
                 "height": 4,
