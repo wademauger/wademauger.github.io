@@ -25,13 +25,34 @@ class Trapezoid {
      * Represents a trapezoidal section of the knitting panel.
      * Responsible for increases and decreases in instructions.
      */
-    constructor(height, baseA, baseB, baseBHorizontalOffset = 0, successors = [], finishingSteps = []) {
+    constructor(height, baseA, baseB, baseBHorizontalOffset = 0, successors = [], finishingSteps = [], sizeModifier = 1) {
         this.height = height;
         this.baseA = baseA;
         this.baseB = baseB;
         this.baseBHorizontalOffset = baseBHorizontalOffset;
         this.successors = successors;
+        this.modificationScale = sizeModifier;
         this.finishingSteps = finishingSteps; // Array of extra instructions for finishing
+    }
+
+    setSizeModifier(sizeModifier) {
+        this.modificationScale = sizeModifier;
+    }
+
+    getHeight() {
+        return this.height * this.modificationScale;
+    }
+
+    getLowerBase() {
+        return this.baseA * this.modificationScale;
+    }
+
+    getUpperBase() {
+        return this.baseB * this.modificationScale;
+    }
+
+    getOffset() {
+        return this.baseBHorizontalOffset * this.modificationScale;
     }
 
     static fromJSON(json) {
@@ -55,7 +76,7 @@ class Trapezoid {
 
     getBaseWidthInStitches(gauge = defaultGauge, sizeModifier = 1) {
         const gaugeStitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
-        const value = Math.round(this.baseA * (gauge.getStitchesPerInch() * sizeModifier))
+        const value = Math.round(this.getLowerBase() * (gauge.getStitchesPerInch() * sizeModifier))
         window.value = value;
         return value;
     }
@@ -63,15 +84,15 @@ class Trapezoid {
     getStitchPlan(gauge, sizeModifier, startRow = 1) {
         const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
-        const startStitches = Math.round(this.baseA * stitchesPerInch);
+        const startStitches = Math.round(this.getLowerBase() * stitchesPerInch);
         const startStitchesLeft = Math.floor(startStitches / 2);
         const startStitchesRight = startStitches % 2 === 0 ? startStitchesLeft : startStitchesLeft + 1;
-        const totalRows = Math.round(this.height * rowsPerInch);
+        const totalRows = Math.round(this.getHeight() * rowsPerInch);
 
         // calculate the number of stitches to be increased on the left and right edges of the trapezoid
-        const baseWidthDifference = this.baseB - this.baseA;
-        const leftIncreaseWidth = baseWidthDifference / 2 - this.baseBHorizontalOffset;
-        const rightIncreaseWidth = baseWidthDifference / 2 + this.baseBHorizontalOffset;
+        const baseWidthDifference = this.getUpperBase() - this.getLowerBase();
+        const leftIncreaseWidth = baseWidthDifference / 2 - this.getOffset();
+        const rightIncreaseWidth = baseWidthDifference / 2 + this.getOffset();
         const leftIncreaseStitches = Math.round(leftIncreaseWidth * stitchesPerInch);
         const rightIncreaseStitches = Math.round(rightIncreaseWidth * stitchesPerInch);
 
@@ -138,7 +159,7 @@ class Trapezoid {
             for (let i = 0; i < this.successors.length; i++) {
                 const successor = this.successors[i];
                 const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
-                if (successor.height > 0) {
+                if (successor.getHeight() > 0) {
                     instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
                     const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
                     instructions.push(...successorInstructions);
@@ -149,7 +170,7 @@ class Trapezoid {
         } else if (this.successors.length === 1) {
             const successor = this.successors[0];
             const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
-            if (successor.height > 0) {
+            if (successor.getHeight() > 0) {
                 const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1);
                 instructions.push(...successorInstructions);
             } else {
@@ -166,10 +187,11 @@ class Panel {
     /**
      * Responsible for gauge and sizing
      */
-    constructor(shape, gauge = defaultGauge, sizeModifier = 1) {
+    constructor(shape, gauge = defaultGauge, sizeModifier = 1.005) {
         this.shape = shape;
         this.gauge = gauge;
         this.sizeModifier = sizeModifier;
+        this.shape.setSizeModifier(sizeModifier)
     }
 
     generateKnittingInstructions() {
