@@ -11,6 +11,14 @@
   color: #61dafb;
 }
 
+.bg-gray-900 {
+  background-color: #001628e7;
+}
+
+.bg-gray-800 {
+  background-color: #001628;
+}
+
 .steps-list {
   list-style: upper-roman;
   margin:30px;

@@ -187,7 +187,7 @@ class Panel {
     /**
      * Responsible for gauge and sizing
      */
-    constructor(shape, gauge = defaultGauge, sizeModifier = 1.005) {
+    constructor(shape, gauge = defaultGauge, sizeModifier = 1.006) {
         this.shape = shape;
         this.gauge = gauge;
         this.sizeModifier = sizeModifier;
@@ -278,7 +278,6 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
         <polygon
             key={`${xOffset}-${yOffset}`}
             points={`${xTopLeft},${yTop} ${xTopRight},${yTop} ${xBottomRight},${yBottom} ${xBottomLeft},${yBottom}`}
-            fill="lightblue"
             stroke="white"
             strokeWidth={3}
             strokeLinejoin="round"
