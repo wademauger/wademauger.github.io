@@ -10,12 +10,14 @@ const buttonClass = 'rounded-md border border-slate-300 py-2 px-4 text-center te
 
 const { Panel: AntPanel } = Collapse;
 
-const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
+const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const handleNextStep = useCallback(() => {
     console.log(currentStep, instructions.length);
     if (currentStep + 1 === instructions.length) {
+      setIsCompleted(true);
       handleCancel(true); // Pass true to skip confirmation
     } else {
       setCurrentStep(prevStep => (prevStep + 1) % instructions.length);
@@ -44,6 +46,12 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting,
     };
   }, [isKnitting, handleNextStep, handlePreviousStep]);
 
+  useEffect(() => {
+    // Reset currentStep and isCompleted when the pattern or panel changes
+    setCurrentStep(0);
+    setIsCompleted(false);
+  }, [patternId, panelId]);
+
   const getKnittingControls = () => (isKnitting ? (
     <div className="row flex">
       <Radio.Group buttonStyle="solid">
@@ -53,13 +61,13 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting,
       </Radio.Group>
     </div>
   ) : (
-    <Button type="primary" className={buttonClass} onClick={() => setIsKnitting(id, setCurrentStep)}>Start Knitting</Button>
+    <Button type="primary" className={buttonClass} onClick={() => { setIsKnitting(`${patternId}-${panelId}`, setCurrentStep); setIsCompleted(false); }}>Start Knitting</Button>
   ));
 
   return (
     <div className="panel-instructions">
       <Collapse>
-        <AntPanel header={id} key="1">
+        <AntPanel header={panelId} key="1">
           {getKnittingControls()}
           <ol>
             {instructions.map((step, index) => (
@@ -68,6 +76,11 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting,
               </li>
             ))}
           </ol>
+          {isCompleted && (
+            <div className="completion-message">
+              You have completed the panel!
+            </div>
+          )}
         </AntPanel>
       </Collapse>
     </div>
@@ -75,12 +88,12 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting,
 };
 
 function KnittingPatterns() {
-  const { id } = useParams();
+  const { id: patternId } = useParams();
   const [currentKnittingPanel, setCurrentKnittingPanel] = useState(null);
   const [sizeModifier, setSizeModifier] = useState(1); // Add state for size modifier
   const [gauge, setGauge] = useState({ stitches: 19, rows: 30 }); // Add state for gauge
 
-  const pattern = patterns.find(pattern => pattern.permalink === id);
+  const pattern = patterns.find(pattern => pattern.permalink === patternId);
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
     .map(panelId => {
       const panelData = pattern.shapes[panelId];
@@ -93,7 +106,7 @@ function KnittingPatterns() {
   useEffect(() => {
     // Reset knitting state when pattern changes
     setCurrentKnittingPanel(null);
-  }, [id]);
+  }, [patternId]);
 
   const setIsKnitting = (panelId, resetCurrentStep) => {
     if (currentKnittingPanel && currentKnittingPanel !== panelId) {
@@ -179,9 +192,10 @@ function KnittingPatterns() {
             {patternInstructions.map((instructions, index) => (
               <PatternInstructions
                 key={index}
-                id={instructions.id}
+                patternId={patternId}
+                panelId={instructions.id}
                 instructions={instructions.instructions}
-                isKnitting={currentKnittingPanel === instructions.id}
+                isKnitting={currentKnittingPanel === `${patternId}-${instructions.id}`}
                 setIsKnitting={setIsKnitting}
                 handleCancel={handleCancel}
               />
