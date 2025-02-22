@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useParams } from 'react-router';
 import patterns from '../data/patterns';
 import { Trapezoid, Panel, Gauge } from '../knitting.ai';
@@ -13,18 +13,18 @@ const { Panel: AntPanel } = Collapse;
 const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
-  const handleNextStep = () => {
+  const handleNextStep = useCallback(() => {
     console.log(currentStep, instructions.length);
     if (currentStep + 1 === instructions.length) {
       handleCancel(true); // Pass true to skip confirmation
     } else {
       setCurrentStep(prevStep => (prevStep + 1) % instructions.length);
     }
-  };
+  }, [currentStep, instructions.length, handleCancel]);
 
-  const handlePreviousStep = () => {
+  const handlePreviousStep = useCallback(() => {
     setCurrentStep(prevStep => (prevStep - 1 + instructions.length) % instructions.length);
-  };
+  }, [instructions.length]);
 
   useEffect(() => {
     if (!isKnitting) return;
@@ -42,7 +42,7 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting,
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isKnitting]);
+  }, [isKnitting, handleNextStep, handlePreviousStep]);
 
   const getKnittingControls = () => (isKnitting ? (
     <div className="row flex">
