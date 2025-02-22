@@ -171,5 +171,60 @@ export default [
             }
         },
         "finishingSteps": ["Either use sew-as-you-go to join the top panels on the machine, or sew with a tapestry needle after binding off.", "Sew up the back seam.", "Add braided ear strings if desired."],
+    }, {
+        "permalink": "drop-shoulder-crew-neck-sweater",
+        "title": "Drop-Shoulder Crew Neck Sweater",
+        "description": "A cozy drop-shoulder sweater with a classic crew neck",
+        "sizes": {
+            "men's small / women's medium": 0.9,
+            "men's medium / women's large": 1,
+            "men's large / women's XL": 1.085,
+        },
+        "shapes": { // TODO: Shape the neckline/shoulders for this sweater
+            "Front": {
+                "height": 5,
+                "baseA": 30,
+                "baseB": 30,
+                "finishingSteps": ["Hang hem."],
+                "successors": [{
+                    "height": 20,
+                    "baseA": 30,
+                    "baseB": 30,
+                    "successors": [
+                        { "height": 0, "baseA": 3, "baseB": 3 },
+                        { "height": 10, "baseA": 10, "baseB": 10 },
+                        { "height": 0, "baseA": 4, "baseB": 4 },
+                        { "height": 10, "baseA": 10, "baseB": 10 },
+                        { "height": 0, "baseA": 3, "baseB": 3 },
+                    ]
+                }],
+            },
+            "Back": {
+                "height": 5,
+                "baseA": 30,
+                "baseB": 30,
+                "finishingSteps": ["Hang hem."],
+                "successors": [{
+                    "height": 20,
+                    "baseA": 30,
+                    "baseB": 30,
+                    "successors": [
+                        { "height": 0, "baseA": 3, "baseB": 3 },
+                        { "height": 10, "baseA": 10, "baseB": 10 },
+                        { "height": 0, "baseA": 4, "baseB": 4 },
+                        { "height": 10, "baseA": 10, "baseB": 10 },
+                        { "height": 0, "baseA": 3, "baseB": 3 },
+                    ],
+                }],
+            },
+            "Sleeves (make 2)": {
+                "height": 4,
+                "baseA": 10,
+                "baseB": 10,
+                "successors": [
+                    { "height": 20, "baseA": 10, "baseB": 21 },
+                ]
+            }
+        }
     }
 ];

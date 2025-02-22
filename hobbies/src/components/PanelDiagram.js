@@ -1,4 +1,6 @@
-const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
+import { theme } from 'antd'; // Import theme from antd
+
+const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0, fillColor) => {
     const width = Math.max(shape.baseA, shape.baseB) * scale;
     const xTopLeft = xOffset + (width - shape.baseB * scale) / 2 + (shape.baseBHorizontalOffset || 0) * scale;
     const xTopRight = xOffset + (width + shape.baseB * scale) / 2 + (shape.baseBHorizontalOffset || 0) * scale;
@@ -10,15 +12,15 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0) => {
         <polygon
             key={`${xOffset}-${yOffset}`}
             points={`${xTopLeft},${yTop} ${xTopRight},${yTop} ${xBottomRight},${yBottom} ${xBottomLeft},${yBottom}`}
-            fill="#156064"
-            stroke="#1e1e1e"
+            fill={fillColor}
+            stroke="#a1a8af"
             strokeWidth={3}
             strokeLinejoin="round"
         />
     );
 };
 
-const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
+const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor) => {
     const elements = [];
     const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
 
@@ -37,7 +39,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
 
     // Render the current trapezoid
-    elements.push(renderTrapezoid(trap, scale, xOffset, yOffset));
+    elements.push(renderTrapezoid(trap, scale, xOffset, yOffset, fillColor));
 
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
@@ -54,7 +56,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
 
             // Place each successor ABOVE the parent (but now in the correct order)
             const childDimensions = { minX: dimensions.minX, maxX: dimensions.maxX, minY: dimensions.minY, maxY: dimensions.maxY };
-            elements.push(...renderHierarchy(successor, scale, childXOffset, yTop - successor.height * scale, childDimensions));
+            elements.push(...renderHierarchy(successor, scale, childXOffset, yTop - successor.height * scale, childDimensions, fillColor));
 
             // Update dimensions
             dimensions.minX = childDimensions.minX;
@@ -71,10 +73,13 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
 };
 
 const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
+    const { token } = theme.useToken(); // Get the theme token
+    const fillColor = token.colorPrimary; // Get the primary color from the theme
+
     let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     // First pass: Compute bounding box *including negative coordinates*
-    renderHierarchy(shape, 1, 0, 0, dimensions);
+    renderHierarchy(shape, 1, 0, 0, dimensions, fillColor);
 
     const width = dimensions.maxX - dimensions.minX;
     const height = dimensions.maxY - dimensions.minY;
@@ -94,7 +99,7 @@ const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
 
     // Second pass: Render with the calculated scale.  This isn't strictly necessary, but is good practice.
     dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    const elements = renderHierarchy(shape, scaleFactor, 0, 0, dimensions);
+    const elements = renderHierarchy(shape, scaleFactor, 0, 0, dimensions, fillColor);
 
     return (
         <div style={{ width: size + padding * 2, height: size + padding * 3, float: 'left' }}>

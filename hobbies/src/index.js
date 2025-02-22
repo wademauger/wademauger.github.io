@@ -12,11 +12,13 @@ import reportWebVitals from './reportWebVitals';
 import { ConfigProvider, theme, Layout } from 'antd';
 const { Content } = Layout;
 
+const accentColors = ['#631521', '#633D15', '#616315', '#15632C', '#152E63', '#5C1563'];
+
 const customTheme = {
   token: {
-    colorPrimary: '#156064', // Change this to your desired primary color
-    colorBgContainer: '#f0f2f5', // Change this to your desired background color
-    borderRadiusLG: '8px', // Change this to your desired border radius
+    colorPrimary: accentColors.at(Math.random() * accentColors.length),
+    colorBgContainer: '#f0f2f5',
+    borderRadiusLG: '16px',
   },
 };
 

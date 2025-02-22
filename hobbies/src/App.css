@@ -8,6 +8,17 @@
   }
 }
 
+.knitting-controls {
+  margin-bottom: 14px;
+}
+
+.sticky-controls {
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 70px;
+  z-index: 1000; /* Adjust as needed to ensure it stays on top */
+}
+
 .steps-list {
   list-style: upper-roman;
   margin:30px;

@@ -25,7 +25,7 @@
  */
 export default [
     {
-        "title": "Pork and lamb shepherd's pie",
+        "title": "Pork & Lamb Shepherd's Pie",
         "description": "A hearty and savory dish full of meat and veggies",
         "permalink": "shepherds-pie",
         "defaultServings": 3,
@@ -243,7 +243,7 @@ export default [
     },
     {
         "title": "Old Bay-con Popcorn",
-        "description": "A snack with a delicious savory umami, and a spicy tang",
+        "description": "Bacon fat, butter, and Old Bay seasoning makes this my favorite popcorn",
         "permalink": "old-bay-pop",
         "defaultServings": 2,
         "servingUnits": "servings",
@@ -389,7 +389,7 @@ export default [
     },
     {
         "title": "Brown Butter Chocolate Chip Cookies",
-        "description": "Rich and flavorful chocolate chip cookies made with brown butter and enhanced with dry milk powder.",
+        "description": "Rich and flavorful chocolate chip cookies made with an enriched brown butter",
         "permalink": "brown-butter-chocolate-chip-cookies",
         "defaultServings": 24,
         "servingUnits": "cookies",
@@ -468,6 +468,180 @@ export default [
             "For an extra touch, sprinkle a pinch of flaky sea salt on top of the cookies before baking.",
             "These cookies are even better if you let the dough rest in the fridge for 24 hours before baking.",
             "For a more uniform cookie, use a food scale to portion the dough. a 35-gram cookie is a good size for fitting more than a couple of cookies on one baking sheet."
+        ]
+    },
+    {
+        "title": "Ham Loaf",
+        "description": "A savory and slightly sweet loaf made with a mix of ground pork and beef",
+        "permalink": "ham-loaf",
+        "defaultServings": 6,
+        "servingUnits": "servings",
+        "scalable": true,
+        "ingredients": [
+            {
+                'name': 'Ground Ham',
+                'quantity': 1,
+                'unit': 'lbs'
+            },
+            {
+                'name': 'Ground Beef',
+                'quantity': 1,
+                'unit': 'lbs'
+            },
+            {
+                'name': 'Eggs',
+                'quantity': 2,
+                'unit': 'whole eggs'
+            },
+            {
+                'name': 'Milk',
+                'quantity': 80,
+                'unit': 'ml'
+            },
+            {
+                'name': 'Breadcrumbs',
+                'quantity': 75,
+                'unit': 'g'
+            },
+            {
+                'name': 'Salt',
+                'quantity': 0.5,
+                'unit': 'tsp'
+            },
+            {
+                'name': 'Black Pepper',
+                'quantity': 0.5,
+                'unit': 'tsp'
+            },
+            {
+                'name': 'Paprika',
+                'quantity': 0.5,
+                'unit': 'tsp'
+            },
+            {
+                'name': 'Brown Sugar',
+                'quantity': 150,
+                'unit': 'g'
+            },
+            {
+                'name': 'Water',
+                'quantity': 60,
+                'unit': 'ml'
+            },
+            {
+                'name': 'Vinegar',
+                'quantity': 30,
+                'unit': 'ml'
+            },
+            {
+                'name': 'Dry Mustard',
+                'quantity': 1,
+                'unit': 'tsp'
+            }
+        ],
+        "steps": [
+            "Preheat the oven to 350°F",
+            "Grind the ham and beef in a food processor or meat grinder.",
+            "Add the eggs, milk, 1/4 cup of the brown sugar glaze, the breadcrumbs, salt, pepper, and paprika to the meat mixture. Mix until well combined.",
+            "Shape the mixture into a loaf and place it on a wire rack over a baking sheet.",
+            "Bake for 1 hour, or until the internal temperature reaches 160°F.",
+            "While the loaf is baking, prepare the brown sugar glaze. In a small saucepan, combine the brown sugar, water, vinegar, and dry mustard. Bring to a boil over medium heat, stirring constantly. Reduce the heat and simmer for 5 minutes, or until the glaze has thickened slightly. Remove from heat and let cool.",
+            "During the last 15 minutes of baking, brush the loaf with the brown sugar glaze.",
+            "Let the ham loaf rest for 10 minutes before slicing and serving."
+        ],
+        "notes": [
+            "For a sweeter glaze, mix 1/4 cup of brown sugar with 1/4 cup of pineapple juice and brush it over the loaf during the last 15 minutes of baking.",
+            "Leftovers can be stored in an airtight container in the refrigerator for up to 5 days.",
+            "Preground meats will work, but I prefer working with freshly ground meats when possible",
+        ]
+    },
+    {
+        "title": "Amish Chicken Pot Pie Soup",
+        "description": "A comforting and hearty soup with homemade pot pie noodles",
+        "permalink": "amish-chicken-pot-pie-soup",
+        "defaultServings": 6,
+        "servingUnits": "servings",
+        "scalable": true,
+        "ingredients": [
+            {
+                'name': 'Hard Red Wheat Berries',
+                'quantity': 1,
+                'unit': 'cup'
+            },
+            {
+                'name': 'Egg',
+                'quantity': 1,
+                'unit': 'whole'
+            },
+            {
+                'name': 'Whole Milk',
+                'quantity': 0.25,
+                'unit': 'cups'
+            },
+            {
+                'name': 'Unsalted butter',
+                'quantity': 1,
+                'unit': 'tbsp'
+            },
+            {
+                'name': 'Salt',
+                'quantity': 1,
+                'unit': 'pinch'
+            },
+            {
+                'name': 'Chicken Breasts or thighs',
+                'quantity': 3,
+                'unit': 'lbs'
+            },
+            {
+                'name': 'Chicken Bone Broth',
+                'quantity': 8,
+                'unit': 'cups'
+            },
+            {
+                'name': 'Yukon gold potatoes',
+                'quantity': 4,
+                'unit': 'medium'
+            },
+            {
+                'name': 'Carrots',
+                'quantity': 3,
+                'unit': 'medium'
+            },
+            {
+                'name': 'Celery',
+                'quantity': 2,
+                'unit': 'large stalks'
+            },
+            {
+                'name': 'Sweet Onion',
+                'quantity': 1,
+                'unit': 'medium'
+            },
+            {
+                'name': 'Salt & pepper',
+                'quantity': undefined,
+                'unit': 'to taste'
+            },
+            {
+                'name': 'Ground turmeric',
+                'quantity': 1,
+                'unit': 'pinch'
+            }
+        ],
+        "steps": [
+            "In a large pot, bring the chicken bone broth to a boil. Add the chicken breasts and cook until the chicken is fully cooked, about 20-25 minutes. Remove the chicken and set aside to cool.",
+            "Mill the hard red wheat berries into flour.",
+            "Wash and chop the potatoes, carrots, celery, and onion.",
+            "Add the cut potatoes, carrots, celery, and onion to the broth. Season with salt, pepper, and a pinch of ground turmeric. Simmer until the vegetables are tender, about 15-20 minutes.",
+            "In a bowl, combine 1 cup of freshly ground flour, egg, milk, melted butter, and a pinch of salt. Mix until a dough forms. Roll out the dough on a floured surface and cut into small squares. Set aside.",
+            "Shred the cooled chicken and return it to the pot.",
+            "Add the homemade pot pie noodles to the soup one at a time, and cook until they are tender, about 10 minutes.",
+            "Adjust seasoning with salt and pepper to taste. Serve hot."
+        ],
+        "notes": [
+            "For a richer flavor, you can use chicken thighs instead of chicken breasts.",
+            "Leftovers can be stored in an airtight container in the refrigerator for up to 3 days."
         ]
     }
 ]

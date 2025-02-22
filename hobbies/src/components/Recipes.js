@@ -3,19 +3,25 @@ import { Slider, InputNumber, Row, Col } from 'antd';
 import Table from './table';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
-import recipes from '../data/recipes';
+import recipes from '../data/recipes/index';
 
-const RecipeIndex = () => {
-  return <><h1 className="text-2xl font-semibold">All Recipes:</h1>
-    <ul>
-      {recipes.map(recipe => <li key={recipe.permalink}><NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
-    </ul>
-  </>;
-};
+const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
+  return (
+    <div key={index}>
+      <h1 className="text-2xl font-semibold">{category}</h1>
+      <ul>
+        {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
+      </ul>
+    </div>
+  );
+});
 
 function Recipes() {
   const { id } = useParams();
-  const recipe = recipes.find(recipe => recipe.permalink == id);
+  const recipe = Object.keys(recipes).reduce((acc, category) => {
+    const found = recipes[category].find(recipe => recipe.permalink == id);
+    return found ? found : acc;
+  }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
 
   useEffect(() => {
@@ -84,7 +90,7 @@ function Recipes() {
               </ul>
             </>
             : null}
-        </> : <RecipeIndex/>}
+        </> : <RecipeIndex />}
       </main>
     </div>
   );

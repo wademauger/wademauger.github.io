@@ -1,47 +1,59 @@
-import { NavLink } from 'react-router-dom'; // Update the import statement
+import { NavLink, useLocation } from 'react-router-dom';
 import React from 'react';
 import patterns from '../data/patterns';
-import recipes from '../data/recipes';
+import newRecipes from '../data/recipes/index';
 import { Layout, Menu, theme } from 'antd';
 const { Header, Content, Footer } = Layout;
 
 const items = [
     {
-        key: '1',
+        key: '/',
         label: <NavLink to="/">Super Secret Emporium</NavLink>,
-    }, {
-        key: '2',
+    },
+    {
+        key: '/recipes',
         label: <NavLink to="/recipes">Recipes</NavLink>,
-        children: recipes.map(recipe => ({
-            key: recipe.id,
-            label: <NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
+        children: Object.keys(newRecipes).map((category, index) => ({
+            key: `/recipes/${category}`,
+            label: <NavLink to={`/recipes/${category}`}>{category}</NavLink>,
+            children: newRecipes[category].map(recipe => ({
+                key: `/recipes/${recipe.permalink}`,
+                label: <NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
+            })),
         })),
-    }, {
-        key: '3',
+    },
+    {
+        key: '/patterns',
         label: <NavLink to="/patterns">Knitting Patterns</NavLink>,
         children: patterns.map(pattern => ({
-            key: pattern.id,
+            key: `/patterns/${pattern.permalink}`,
             label: <NavLink to={`/patterns/${pattern.permalink}`}>{pattern.title}</NavLink>,
         })),
-    }, {
-        key: '4',
+    },
+    {
+        key: '/ukulele-tabs',
         label: <NavLink to="/ukulele-tabs">Ukulele Tabs</NavLink>,
-    }, {
-        key: '5',
+    },
+    {
+        key: '/record-catalog',
         label: <NavLink to="/record-catalog">Record Catalog</NavLink>,
-    }, {
-        key: '6',
+    },
+    {
+        key: '/houseplants',
         label: <NavLink to="/houseplants">Houseplants</NavLink>,
-    }, {
-        key: '7',
+    },
+    {
+        key: '/professional',
         label: <NavLink to="/professional">Professional</NavLink>,
     }
 ];
 
 export default function AppFrame(props) {
+    const location = useLocation();
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
+
     return (
         <Layout>
             <Header
@@ -58,7 +70,7 @@ export default function AppFrame(props) {
                 <Menu
                     theme="dark"
                     mode="horizontal"
-                    defaultSelectedKeys={['2']}
+                    selectedKeys={[location.pathname]}
                     items={items}
                     style={{
                         flex: 1,

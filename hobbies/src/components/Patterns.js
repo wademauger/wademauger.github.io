@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { NavLink, useParams } from 'react-router';
 import patterns from '../data/patterns';
 import { Trapezoid, Panel, Gauge } from '../knitting.ai';
 import { PanelDiagram } from './PanelDiagram';
-import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber } from "antd";
+import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps } from "antd";
 import '../App.css';
 
 const buttonClass = 'rounded-md border border-slate-300 py-2 px-4 text-center text-sm transition-all shadow-sm hover:shadow-lg hover:bg-slate-800 hover:border-slate-800 focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none';
 
 const { Panel: AntPanel } = Collapse;
+const { Step } = Steps; // Destructure Step from Steps
 
 const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const currentStepRef = useRef(null); // Create a ref for the current step element
 
   const handleNextStep = useCallback(() => {
     console.log(currentStep, instructions.length);
@@ -52,8 +54,15 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
     setIsCompleted(false);
   }, [patternId, panelId]);
 
+  useEffect(() => {
+    // Scroll the current step element into view when the step changes
+    if (currentStepRef.current) {
+      currentStepRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentStep]);
+
   const getKnittingControls = () => (isKnitting ? (
-    <div className="row flex">
+    <div className="row flex knitting-controls sticky-controls">
       <Radio.Group buttonStyle="solid">
         <Radio.Button onClick={handlePreviousStep}>Previous Step</Radio.Button>
         <Radio.Button onClick={handleNextStep}> Next Step </Radio.Button>
@@ -61,7 +70,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
       </Radio.Group>
     </div>
   ) : (
-    <Button type="primary" className={buttonClass} onClick={() => { setIsKnitting(`${patternId}-${panelId}`, setCurrentStep); setIsCompleted(false); }}>Start Knitting</Button>
+    <Button type="primary" className="knitting-controls" onClick={() => { setIsKnitting(`${patternId}-${panelId}`, setCurrentStep); setIsCompleted(false); }}>Start Knitting</Button>
   ));
 
   return (
@@ -69,13 +78,11 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
       <Collapse>
         <AntPanel header={panelId} key="1">
           {getKnittingControls()}
-          <ol>
+          <Steps size="small" current={currentStep} direction="vertical">
             {instructions.map((step, index) => (
-              <li key={index} style={{ fontWeight: index === currentStep ? 'bold' : 'normal' }}>
-                {step}
-              </li>
+              <Step key={index} title={step} ref={index === currentStep ? currentStepRef : null} />
             ))}
-          </ol>
+          </Steps>
           {isCompleted && (
             <div className="completion-message">
               You have completed the panel!
