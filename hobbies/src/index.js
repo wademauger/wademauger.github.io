@@ -9,8 +9,16 @@ import Recipes from './components/Recipes';
 import Patterns from './components/Patterns';
 import Tabs from './components/Tabs';
 import reportWebVitals from './reportWebVitals';
-import { theme, Layout } from 'antd';
+import { ConfigProvider, theme, Layout } from 'antd';
 const { Content } = Layout;
+
+const customTheme = {
+  token: {
+    colorPrimary: '#156064', // Change this to your desired primary color
+    colorBgContainer: '#f0f2f5', // Change this to your desired background color
+    borderRadiusLG: '8px', // Change this to your desired border radius
+  },
+};
 
 const App = () => {
   const {
@@ -50,7 +58,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ConfigProvider theme={customTheme}>
+        <App />
+      </ConfigProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

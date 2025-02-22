@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'; // Update the import statement
 import React from 'react';
 import patterns from '../data/patterns';
+import recipes from '../data/recipes';
 import { Layout, Menu, theme } from 'antd';
 const { Header, Content, Footer } = Layout;
 
@@ -11,6 +12,10 @@ const items = [
     }, {
         key: '2',
         label: <NavLink to="/recipes">Recipes</NavLink>,
+        children: recipes.map(recipe => ({
+            key: recipe.id,
+            label: <NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
+        })),
     }, {
         key: '3',
         label: <NavLink to="/patterns">Knitting Patterns</NavLink>,
@@ -83,7 +88,7 @@ export default function AppFrame(props) {
                     textAlign: 'center',
                 }}
             >
-                Wade Ahlstrom ©{new Date().getFullYear()}
+                Wade Ahlstrom © {new Date().getFullYear()}
             </Footer>
         </Layout>
     );

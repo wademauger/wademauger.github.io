@@ -89,9 +89,9 @@ export default [
         "title": "Cozy Raglan V-Neck Sweater",
         "description": "A simple sweater with Raglan sleeves",
         "sizes": {
-            "small": 0.9,
-            "medium": 1,
-            "large": 1.085,
+            "men's small / women's medium": 0.9,
+            "men's medium / women's large": 1,
+            "men's large / women's XL": 1.085,
         },
         "shapes": {
             "Front": 
@@ -169,6 +169,7 @@ export default [
                     }
                 ]
             }
-        }
+        },
+        "finishingSteps": ["Either use sew-as-you-go to join the top panels on the machine, or sew with a tapestry needle after binding off.", "Sew up the back seam.", "Add braided ear strings if desired."],
     }
 ];

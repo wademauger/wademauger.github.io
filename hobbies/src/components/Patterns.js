@@ -124,19 +124,16 @@ function KnittingPatterns() {
             <h1 className="text-2xl text-left"><b>{pattern.title}</b></h1>
             <p className="text-left description">{pattern.description}</p>
             <Row>
-              <Col xs={24} sm={24} md={6} lg={6} xl={4}>
-                <Card hoverable
+              <Col xs={24} sm={24} md={24} lg={10} xl={10}>
+                <Card
                   title="Size and Gauge Settings"
-                  style={{
-                    width: 350,
-                  }}
                 >
                   <p>
                     Choose a size:
                     <span className="card-input">
                       <Select
                         style={{
-                          width: 120,
+                          width: 240,
                         }}
                         onChange={handleSizeChange}
                         defaultValue={1}
@@ -157,7 +154,7 @@ function KnittingPatterns() {
                   </p>
                 </Card>
               </Col>
-              <Col xs={24} sm={24} md={18} lg={18} xl={20}>
+              <Col xs={24} sm={24} md={24} lg={14} xl={14}>
                 <div className='diagrams'>
                   {Object.keys(pattern.shapes).map((shape, index) =>
                     <PanelDiagram key={index} shape={pattern.shapes[shape]} label={shape} sizeModifier={sizeModifier} />
