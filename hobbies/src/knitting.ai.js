@@ -221,7 +221,7 @@ class StitchPlan {
         const upperLeft = this.rows[this.rows.length - 1].leftStitchesInWork;
         const upperRight = this.rows[this.rows.length - 1].rightStitchesInWork;
         if (lowerLeft === upperLeft && lowerRight === upperRight) {
-            instructions.push(`Knit ${this.rows.length} rows.`);
+            instructions.push(`Knit ${this.rows.length} rows (RC=${this.rows[this.rows.length - 1].rowNumber}, ${this.rows[this.rows.length - 1].leftStitchesInWork + this.rows[this.rows.length - 1].rightStitchesInWork} sts in work).`);
         }
         // case: trapezoidal panel
         else {

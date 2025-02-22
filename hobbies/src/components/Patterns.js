@@ -10,20 +10,20 @@ const buttonClass = 'rounded-md border border-slate-300 py-2 px-4 text-center te
 
 const { Panel: AntPanel } = Collapse;
 
-const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting }) => {
+const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNextStep = () => {
-    setCurrentStep(prevStep => (prevStep + 1) % instructions.length);
+    console.log(currentStep, instructions.length);
+    if (currentStep + 1 === instructions.length) {
+      handleCancel(true); // Pass true to skip confirmation
+    } else {
+      setCurrentStep(prevStep => (prevStep + 1) % instructions.length);
+    }
   };
 
   const handlePreviousStep = () => {
     setCurrentStep(prevStep => (prevStep - 1 + instructions.length) % instructions.length);
-  };
-
-  const handleCancel = () => {
-    setIsKnitting(null);
-    setCurrentStep(0);
   };
 
   useEffect(() => {
@@ -49,11 +49,11 @@ const PatternInstructions = ({ id, instructions = [], isKnitting, setIsKnitting 
       <Radio.Group buttonStyle="solid">
         <Radio.Button onClick={handlePreviousStep}>Previous Step</Radio.Button>
         <Radio.Button onClick={handleNextStep}> Next Step </Radio.Button>
-        <Radio.Button onClick={handleCancel}>Cancel</Radio.Button>
+        <Radio.Button onClick={() => handleCancel(false)}>Cancel</Radio.Button>
       </Radio.Group>
     </div>
   ) : (
-    <Button type="primary" className={buttonClass} onClick={() => setIsKnitting(id)}>Start Knitting</Button>
+    <Button type="primary" className={buttonClass} onClick={() => setIsKnitting(id, setCurrentStep)}>Start Knitting</Button>
   ));
 
   return (
@@ -90,14 +90,28 @@ function KnittingPatterns() {
       return { id: panelId, instructions: instructions };
     });
 
-  const setIsKnitting = (panelId) => {
+  useEffect(() => {
+    // Reset knitting state when pattern changes
+    setCurrentKnittingPanel(null);
+  }, [id]);
+
+  const setIsKnitting = (panelId, resetCurrentStep) => {
     if (currentKnittingPanel && currentKnittingPanel !== panelId) {
       if (window.confirm("A panel is currently in progress. Do you want to cancel it?")) {
         setCurrentKnittingPanel(panelId);
+        resetCurrentStep(0); // Reset current step to 0
       }
     } else {
       setCurrentKnittingPanel(panelId);
+      resetCurrentStep(0); // Reset current step to 0
     }
+  };
+
+  const handleCancel = (skipConfirm) => {
+    if (!skipConfirm && !window.confirm("Are you sure you want to cancel?")) {
+      return;
+    }
+    setCurrentKnittingPanel(null);
   };
 
   const handleSizeChange = (event) => {
@@ -169,6 +183,7 @@ function KnittingPatterns() {
                 instructions={instructions.instructions}
                 isKnitting={currentKnittingPanel === instructions.id}
                 setIsKnitting={setIsKnitting}
+                handleCancel={handleCancel}
               />
             ))}
           </>
