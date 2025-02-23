@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { NavLink, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import patterns from '../data/patterns';
 import { Trapezoid, Panel, Gauge } from '../knitting.ai';
 import { PanelDiagram } from './PanelDiagram';
 import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps } from "antd";
 import '../App.css';
-
-const buttonClass = 'rounded-md border border-slate-300 py-2 px-4 text-center text-sm transition-all shadow-sm hover:shadow-lg hover:bg-slate-800 hover:border-slate-800 focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none';
 
 const { Panel: AntPanel } = Collapse;
 const { Step } = Steps; // Destructure Step from Steps
