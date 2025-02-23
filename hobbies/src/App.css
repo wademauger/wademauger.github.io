@@ -75,3 +75,25 @@ footer {
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 600px) {
+  .steps-list {
+    margin: 15px;
+  }
+
+  .ingredient-table {
+    margin: 15px;
+  }
+
+  .panel-instructions {
+    margin-bottom: 10px;
+  }
+
+  .description {
+    margin-bottom: 10px;
+  }
+
+  main {
+    margin-bottom: 20px;
+  }
+}

@@ -45,7 +45,7 @@ function Recipes() {
 
   return (
     <div className="recipes-page">
-      <main className="container mx-auto mt-8 px-4">
+       <main className="container mx-auto mt-8 px-4 sm:px-2">
         {recipe ? <>
           <h1 className='text-2xl text-left'><b>{recipe.title}</b></h1>
           <p className='text-left'>{recipe.description}</p>
