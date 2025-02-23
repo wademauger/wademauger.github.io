@@ -19,7 +19,7 @@ const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
 function Recipes() {
   const { id } = useParams();
   const recipe = Object.keys(recipes).reduce((acc, category) => {
-    const found = recipes[category].find(recipe => recipe.permalink == id);
+    const found = recipes[category].find(recipe => recipe.permalink === id);
     return found ? found : acc;
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);

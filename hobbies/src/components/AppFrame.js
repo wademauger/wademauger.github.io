@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import patterns from '../data/patterns';
 import newRecipes from '../data/recipes/index';
-import { Layout, Menu, Drawer, Button, theme, ConfigProvider } from 'antd';
+import { Layout, Menu, Drawer, Button, ConfigProvider } from 'antd';
 import { CloseOutlined, MenuOutlined } from '@ant-design/icons';
 import { createStyles, useTheme } from 'antd-style';
 const { Header, Content, Footer } = Layout;
