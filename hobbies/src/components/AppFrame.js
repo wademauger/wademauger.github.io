@@ -135,14 +135,14 @@ export default function AppFrame(props) {
                             className="desktop-menu"
                         />
                     )}
-                </Header>
                 <Button
                     type="primary"
                     icon={<MenuOutlined />}
                     onClick={showDrawer}
                     className="menu-button"
-                    style={{ display: isMobile ? 'block' : 'none' }}
+                    style={{ display: isMobile ? '' : 'none' }}
                 />
+                </Header>
                 <Content className="app-content">
                     <div className="content-container">
                         {props.children}
