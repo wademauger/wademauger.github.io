@@ -20,49 +20,6 @@ const useStyle = createStyles(({ token }) => ({
   },
 }));
 
-const items = [
-    {
-        key: '/hobbies',
-        label: <NavLink to="/hobbies">Super Secret Emporium</NavLink>,
-    },
-    {
-        key: '/hobbies/recipes',
-        label: <NavLink to="/hobbies/recipes">Recipes</NavLink>,
-        children: Object.keys(newRecipes).map((category, index) => ({
-            key: `/hobbies/recipes/${category}`,
-            label: category,
-            children: newRecipes[category].map(recipe => ({
-                key: `/hobbies/recipes/${recipe.permalink}`,
-                label: <NavLink to={`/hobbies/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
-            })),
-        })),
-    },
-    {
-        key: '/hobbies/patterns',
-        label: <NavLink to="/hobbies/patterns">Knitting Patterns</NavLink>,
-        children: patterns.map(pattern => ({
-            key: `/hobbies/patterns/${pattern.permalink}`,
-            label: <NavLink to={`/hobbies/patterns/${pattern.permalink}`}>{pattern.title}</NavLink>,
-        })),
-    },
-    {
-        key: '/hobbies/tabs',
-        label: <NavLink to="/tabs">Ukulele Tabs</NavLink>,
-    },
-    {
-        key: '/hobbies/record-catalog',
-        label: <NavLink to="/record-catalog">Record Catalog</NavLink>,
-    },
-    {
-        key: '/hobbies/houseplants',
-        label: <NavLink to="/houseplants">Houseplants</NavLink>,
-    },
-    {
-        key: '/',
-        label: <NavLink to="/">Professional</NavLink>,
-    }
-];
-
 const MOBILE_NAVIGATION_BREAKPOINT = 900;
 
 export default function AppFrame(props) {
@@ -102,6 +59,49 @@ export default function AppFrame(props) {
             fontSize: token.fontSizeLG,
         },
     };
+
+    const items = [
+        {
+            key: '/hobbies',
+            label: <NavLink to="/hobbies" onClick={closeDrawer}>Super Secret Emporium</NavLink>,
+        },
+        {
+            key: '/hobbies/recipes',
+            label: <NavLink to="/hobbies/recipes" onClick={closeDrawer}>Recipes</NavLink>,
+            children: Object.keys(newRecipes).map((category, index) => ({
+                key: `/hobbies/recipes/${category}`,
+                label: category,
+                children: newRecipes[category].map(recipe => ({
+                    key: `/hobbies/recipes/${recipe.permalink}`,
+                    label: <NavLink to={`/hobbies/recipes/${recipe.permalink}`} onClick={closeDrawer}>{recipe.title}</NavLink>,
+                })),
+            })),
+        },
+        {
+            key: '/hobbies/patterns',
+            label: <NavLink to="/hobbies/patterns" onClick={closeDrawer}>Knitting Patterns</NavLink>,
+            children: patterns.map(pattern => ({
+                key: `/hobbies/patterns/${pattern.permalink}`,
+                label: <NavLink to={`/hobbies/patterns/${pattern.permalink}`} onClick={closeDrawer}>{pattern.title}</NavLink>,
+            })),
+        },
+        {
+            key: '/hobbies/tabs',
+            label: <NavLink to="/tabs" onClick={closeDrawer}>Ukulele Tabs</NavLink>,
+        },
+        {
+            key: '/hobbies/record-catalog',
+            label: <NavLink to="/record-catalog" onClick={closeDrawer}>Record Catalog</NavLink>,
+        },
+        {
+            key: '/hobbies/houseplants',
+            label: <NavLink to="/houseplants" onClick={closeDrawer}>Houseplants</NavLink>,
+        },
+        {
+            key: '/',
+            label: <NavLink to="/" onClick={closeDrawer}>Professional</NavLink>,
+        }
+    ];
 
     return (
         <ConfigProvider

@@ -51,14 +51,14 @@ export default [
         "title": "Brown Butter Chocolate Chip Cookies",
         "description": "Rich and flavorful chocolate chip cookies made with an enriched brown butter",
         "permalink": "brown-butter-chocolate-chip-cookies",
-        "defaultServings": 24,
+        "defaultServings": 35,
         "servingUnits": "cookies",
         "scalable": true,
         "ingredients": [
             {
                 'name': 'Unsalted Butter',
-                'quantity': 170,
-                'unit': 'g'
+                'quantity': 2,
+                'unit': 'sticks'
             },
             {
                 'name': 'Dry Milk Powder',
@@ -119,15 +119,161 @@ export default [
             "In a separate bowl, whisk together the flour, baking soda, and salt. Gradually add the dry ingredients to the wet ingredients, mixing until just combined.",
             "Fold in the chocolate chips.",
             "Cover the dough and refrigerate for at least 1 hour, or overnight for best results.",
-            "Scoop the dough into balls (about 2 tablespoons each) and place them on the prepared baking sheets, spacing them about 2 inches apart.",
-            "Bake for 10-12 minutes, or until the edges are golden brown and the centers are still slightly soft.",
+            "Weigh out the dough into about 45 gram portions. Shape them into balls, and place them on the prepared baking sheets, spacing them about 2 inches apart.",
+            "Chill in the fridge overnight, or flash freeze for 30 minutes before baking.",
+            "Add flake salt, then bake for 18 minutes, or until the edges are golden brown and the centers are still slightly soft.",
             "Remove from the oven and let the cookies cool on the baking sheets for 5 minutes before transferring them to a wire rack to cool completely."
         ],
         "notes": [
+            "These cookies are even better if you let the dough rest in the fridge for 24 hours before baking.",
+            "After flash freezing, dough balls can be frozen for 2-3 months, then baked straight from frozen. Add 2-3 minutes to the bake time.",
             "Store the cookies in an airtight container at room temperature for up to a week, or freeze for up to 3 months.",
             "For an extra touch, sprinkle a pinch of flaky sea salt on top of the cookies before baking.",
-            "These cookies are even better if you let the dough rest in the fridge for 24 hours before baking.",
             "For a more uniform cookie, use a food scale to portion the dough. a 35-gram cookie is a good size for fitting more than a couple of cookies on one baking sheet."
         ]
     },
-]
+    {
+        "title": "Amish Wet Bottom Shoofly Pie",
+        "description": "A traditional Amish breakfast molasses pie",
+        "permalink": "amish-wet-bottom-shoofly-pie",
+        "defaultServings": 2,
+        "servingUnits": "pies",
+        "scalable": true,
+        "ingredients": [
+            {
+                "name": "unbaked pie crusts",
+                "quantity": 2,
+                "unit": "9-inch"
+            },
+            {
+                "name": "brown sugar (wet mixture)",
+                "quantity": 70,
+                "unit": "g"
+            },
+            {
+                "name": "brown sugar (crumb mixture)",
+                "quantity": 200,
+                "unit": "g"
+            },
+            {
+                "name": "baking soda (wet mixture)",
+                "quantity": 1,
+                "unit": "tsp"
+            },
+            {
+                "name": "baking soda (crumb mixture)",
+                "quantity": 0.5,
+                "unit": "tsp"
+            },
+            {
+                "name": "large eggs",
+                "quantity": 4,
+                "unit": "whole eggs"
+            },
+            {
+                "name": "molasses",
+                "quantity": 1.5,
+                "unit": "cups"
+            },
+            {
+                "name": "boiling water",
+                "quantity": 1.5,
+                "unit": "cups"
+            },
+            {
+                "name": "flour",
+                "quantity": 360,
+                "unit": "g"
+            },
+            {
+                "name": "salt",
+                "quantity": 0.25,
+                "unit": "tsp"
+            },
+            {
+                "name": "cream of tartar",
+                "quantity": 0.125,
+                "unit": "tsp"
+            },
+            {
+                "name": "lard, shortening, or butter",
+                "quantity": 0.75,
+                "unit": "cup"
+            }
+        ],
+        "steps": [
+            "Preheat oven to 425°F.",
+            "Prepare the pie crusts in pie plates, and set aside.",
+            "Make the \"wet mixture\", mix brown sugar and eggs, then incorporate the molasses.",
+            "Boil the water. Remove from heat and stir in the baking soda.",
+            "Let the water cool enough to not cook the eggs. Combine the baking soda water and the egg mixture, and set aside.",
+            "Make the \"crumb mixture\", in a mixing bowl add flour, brown sugar, salt, baking soda, & cream of tartar and whisk to combine.",
+            "Add shortening of choice. Using a pastry blender or your mixer, mix until you have fine crumbs.",
+            "Add a scant 2 cups of the crumbs to the wet molasses mixture. Then divide the wet batter between the two pie crusts.",
+            "Quickly cover with the reserved crumb mixture (try to get all the edges covered as well).",
+            "Bake immediately, at 425°F for 10 minutes. Reduce temperature to 350°F and continue baking for another 40 minutes or until the pie is set and not too jiggly.",
+            "Cool and store, loosely covered, at room temperature. You can also wrap and freeze one pie for later."
+        ],
+        "notes": [
+            "I prefer Golden Barrel baking molasses, as it has a mild flavor.",
+            "Makes 2 x 9-inch pies",
+            "You can use all purpose flour, but I prefer using my freshly milled flour for this recipe. A soft white wheat is a good pick, einkorn or other ancient grains make a decent substitute.",
+        ]
+    },
+    {
+        "title": "Fresh Flour Pie Crust",
+        "description": "A basic pie crust for sweet or savory pies.",
+        "permalink": "perfect-pie-crust-fresh-milled-flour",
+        "defaultServings": 2,
+        "servingUnits": "pie crusts",
+        "scalable": true,
+        "ingredients": [
+            {
+                "name": "flour",
+                "quantity": 360,
+                "unit": "g"
+            },
+            {
+                "name": "sugar",
+                "quantity": 2,
+                "unit": "tsp"
+            },
+            {
+                "name": "salt",
+                "quantity": 1,
+                "unit": "tsp"
+            },
+            {
+                "name": "very cold unsalted butter",
+                "quantity": 2,
+                "unit": "sticks"
+            },
+            {
+                "name": "ice water",
+                "quantity": 120,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Firstly, mill the flour. Mill more flour than called for, so you have extra to dust your work surface with. Place the flour in the fridge to cool while you prepare the other ingredients.",
+            "Cut the butter into small cubes, and place in the fridge to cool while the flour is cooling.",
+            "After all ingredients are chilled, add the sugar and salt to the flour, and stir to combine.",
+            "Then, add the cubed butter into the dry mix. Cut the butter in using a pastry cutter or two forks, or a food processor.",
+            "Once the butter & flour resemble pebble or pea size pieces, slowly drizzle in the ice cold water, 1 Tablespoon at a time.",
+            "Mix the water in each time before adding more water. You just want the dough to form large clumps. So, when you squeeze the dough with your hand it will stay together, but not be wet.",
+            "Divide the dough into required portions. Wrap each portion with plastic and place in the refrigerator to let the dough hydrate and the bran soften. Rest for at least an hour, up to 3 days, or freeze for 2-3 months.",
+            "Preheat the oven to 350 degrees F.",
+            "Dust the work surface and place cold dough on the counter for about 5 minutes to soften.",
+            "Roll out each portion about 1/8 inch thick.",
+            "Carefully place one rolled out pie crust into a pie pan. Gently lift each edge and allow the dough to fall into place. Do not stretch the dough.",
+            "Cut off excess pie dough around the edge. Line the crust with parchment and fill with beans or pie weights. Bake for 20 minutes.",
+            "Remove the parchment and beans, add an egg wash, and bake for another 10 minutes, or until the crust is golden brown.",
+            "Let the crust cool before Freezing and storing, or fill it right away and cover with a top crust.",
+            "Brush an egg wash on the top crust, and sprinkle with sugar for sweet pies. Cut slits in the top crust for steam to escape.",
+            "Bake according to the pie recipe instructions."
+        ],
+        "notes": [
+            "Most wheat varieties will work for this recipe, but I prefer a soft white wheat for a tender crust. Ancient grains are a decent alternative.",
+        ]
+    }
+];

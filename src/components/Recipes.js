@@ -34,10 +34,13 @@ function Recipes() {
     setServings(value);
   };
 
-  const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => ({
-    ...ingredient,
-    quantity: (ingredient.quantity * servings / recipe.defaultServings).toFixed(1),
-  })) : [];
+  const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
+    const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
+    return {
+      ...ingredient,
+      quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity,
+    };
+  }) : [];
 
   const minServings = recipe ? Math.max(1, Math.floor(recipe.defaultServings / 5)) : 1;
   const maxServings = recipe ? recipe.defaultServings * 5 : 20;
@@ -77,7 +80,7 @@ function Recipes() {
               <p className='text-left'><i>Makes {servings} {recipe.servingUnits}</i></p>
             }
           </div>
-          <Table titles={['Ingredient', 'Amt', 'Units']} elements={scaledIngredients} />
+          <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
           <h1 className='text-2xl text-left'><b>Steps:</b></h1>
           <ul className='text-left steps-list'>
             {recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
