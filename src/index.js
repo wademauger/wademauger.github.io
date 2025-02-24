@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import { Routes, Route } from "react-router";
 import './index.css';
 import Home from './Home';
@@ -69,11 +69,11 @@ const App = () => {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/">
+    <HashRouter basename="/">
       <ConfigProvider theme={customTheme}>
         <App />
       </ConfigProvider>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );
 
