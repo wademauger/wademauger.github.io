@@ -25,7 +25,7 @@ export default [
             {
                 'name': 'onion',
                 'quantity': 1,
-                'unit': 'whole onion'
+                'unit': 'yellow onion'
             },
             {
                 'name': 'butter',
