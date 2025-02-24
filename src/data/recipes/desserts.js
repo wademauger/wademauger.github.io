@@ -255,7 +255,7 @@ export default [
             }
         ],
         "steps": [
-            "Firstly, mill the flour. Mill more flour than called for, so you have extra to dust your work surface with. Place the flour in the fridge to cool while you prepare the other ingredients.",
+            "Firstly, mill the flour. Mill more flour than called for, so you have extra to dust your work surface with. Place the flour in the fridge to cool for at least 30 minutes.",
             "Cut the butter into small cubes, and place in the fridge to cool while the flour is cooling.",
             "After all ingredients are chilled, add the sugar and salt to the flour, and stir to combine.",
             "Then, add the cubed butter into the dry mix. Cut the butter in using a pastry cutter or two forks, or a food processor.",
