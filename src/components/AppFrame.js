@@ -22,44 +22,44 @@ const useStyle = createStyles(({ token }) => ({
 
 const items = [
     {
-        key: '/',
-        label: <NavLink to="/">Super Secret Emporium</NavLink>,
+        key: '/hobbies',
+        label: <NavLink to="/hobbies">Super Secret Emporium</NavLink>,
     },
     {
-        key: '/recipes',
-        label: <NavLink to="/recipes">Recipes</NavLink>,
+        key: '/hobbies/recipes',
+        label: <NavLink to="/hobbies/recipes">Recipes</NavLink>,
         children: Object.keys(newRecipes).map((category, index) => ({
-            key: `/recipes/${category}`,
-            label: <NavLink to={`/recipes/${category}`}>{category}</NavLink>,
+            key: `/hobbies/recipes/${category}`,
+            label: <NavLink to={`/hobbies/recipes/${category}`}>{category}</NavLink>,
             children: newRecipes[category].map(recipe => ({
-                key: `/recipes/${recipe.permalink}`,
-                label: <NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
+                key: `/hobbies/recipes/${recipe.permalink}`,
+                label: <NavLink to={`/hobbies/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,
             })),
         })),
     },
     {
-        key: '/patterns',
-        label: <NavLink to="/patterns">Knitting Patterns</NavLink>,
+        key: '/hobbies/patterns',
+        label: <NavLink to="/hobbies/patterns">Knitting Patterns</NavLink>,
         children: patterns.map(pattern => ({
-            key: `/patterns/${pattern.permalink}`,
-            label: <NavLink to={`/patterns/${pattern.permalink}`}>{pattern.title}</NavLink>,
+            key: `/hobbies/patterns/${pattern.permalink}`,
+            label: <NavLink to={`/hobbies/patterns/${pattern.permalink}`}>{pattern.title}</NavLink>,
         })),
     },
     {
-        key: '/ukulele-tabs',
-        label: <NavLink to="/ukulele-tabs">Ukulele Tabs</NavLink>,
+        key: '/hobbies/tabs',
+        label: <NavLink to="/tabs">Ukulele Tabs</NavLink>,
     },
     {
-        key: '/record-catalog',
+        key: '/hobbies/record-catalog',
         label: <NavLink to="/record-catalog">Record Catalog</NavLink>,
     },
     {
-        key: '/houseplants',
+        key: '/hobbies/houseplants',
         label: <NavLink to="/houseplants">Houseplants</NavLink>,
     },
     {
-        key: '/professional',
-        label: <NavLink to="/professional">Professional</NavLink>,
+        key: '/',
+        label: <NavLink to="/">Professional</NavLink>,
     }
 ];
 

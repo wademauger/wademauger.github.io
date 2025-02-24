@@ -10,7 +10,7 @@ const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
     <div key={index}>
       <h1 className="text-2xl font-semibold">{category}</h1>
       <ul>
-        {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
+        {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/hobbies/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
       </ul>
     </div>
   );
