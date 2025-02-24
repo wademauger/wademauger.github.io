@@ -30,7 +30,7 @@ const items = [
         label: <NavLink to="/hobbies/recipes">Recipes</NavLink>,
         children: Object.keys(newRecipes).map((category, index) => ({
             key: `/hobbies/recipes/${category}`,
-            label: <NavLink to={`/hobbies/recipes/${category}`}>{category}</NavLink>,
+            label: category,
             children: newRecipes[category].map(recipe => ({
                 key: `/hobbies/recipes/${recipe.permalink}`,
                 label: <NavLink to={`/hobbies/recipes/${recipe.permalink}`}>{recipe.title}</NavLink>,

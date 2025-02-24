@@ -1,10 +1,15 @@
-# Getting Started with Create React App
+# Developing this website
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 
 In the project directory, you can run:
+
+
+### `npm run deploy`
+
+Pushes a build from the latest commit to the gh-pages branch, publishing the website. Do this after testing with `npm start` and `npm test`.
 
 ### `npm start`
 
