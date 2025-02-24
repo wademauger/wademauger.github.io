@@ -63,10 +63,12 @@ const items = [
     }
 ];
 
+const MOBILE_NAVIGATION_BREAKPOINT = 900;
+
 export default function AppFrame(props) {
     const location = useLocation();
     const [drawerVisible, setDrawerVisible] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_NAVIGATION_BREAKPOINT);
     const { styles } = useStyle();
     const token = useTheme();
 
@@ -80,7 +82,7 @@ export default function AppFrame(props) {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth <= 600);
+            setIsMobile(window.innerWidth <= MOBILE_NAVIGATION_BREAKPOINT);
         };
 
         window.addEventListener('resize', handleResize);

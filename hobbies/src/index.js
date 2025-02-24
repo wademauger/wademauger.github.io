@@ -16,7 +16,7 @@ const accentColors = ['#631521', '#633D15', '#616315', '#15632C', '#152E63', '#5
 
 const customTheme = {
   token: {
-    colorPrimary: accentColors.at(Math.random() * accentColors.length),
+    colorPrimary: accentColors[Math.floor(Math.random() * accentColors.length)],
     colorBgContainer: '#f0f2f5',
     borderRadiusLG: '16px',
   },
@@ -59,7 +59,7 @@ const App = () => {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/hobbies">
       <ConfigProvider theme={customTheme}>
         <App />
       </ConfigProvider>
