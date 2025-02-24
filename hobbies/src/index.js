@@ -10,6 +10,7 @@ import Patterns from './components/Patterns';
 import Tabs from './components/Tabs';
 import reportWebVitals from './reportWebVitals';
 import { ConfigProvider, theme, Layout } from 'antd';
+import LandingPage from './components/ProfessionalLanding';
 const { Content } = Layout;
 
 const accentColors = ['#631521', '#633D15', '#616315', '#15632C', '#152E63', '#5C1563'];
@@ -27,39 +28,48 @@ const App = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   return (
-    <AppFrame>
-      <Content
-        style={{
-          padding: '0 48px',
-        }}
-      >
-        <div
-          style={{
-            marginTop: 24,
-            padding: 24,
-            minHeight: 380,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Routes>
-            <Route index element={<Home />} />
-            <Route path="recipes" element={<Recipes />} />
-            <Route path="recipes/:id" element={<Recipes />} />
-            <Route path="patterns" element={<Patterns />} />
-            <Route path="patterns/:id" element={<Patterns />} />
-            <Route path="tabs" element={<Tabs />} />
-          </Routes>
-        </div>
-      </Content>
-    </AppFrame>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route
+        path="*"
+        element={
+          <AppFrame>
+            <Content
+              style={{
+                padding: '0 48px',
+              }}
+            >
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: 24,
+                  minHeight: 380,
+                  background: colorBgContainer,
+                  borderRadius: borderRadiusLG,
+                }}
+              >
+                <Routes>
+                  <Route path="hobbies/" element={<Home />}>
+                    <Route path="recipes" element={<Recipes />} />
+                    <Route path="recipes/:id" element={<Recipes />} />
+                    <Route path="patterns" element={<Patterns />} />
+                    <Route path="patterns/:id" element={<Patterns />} />
+                    <Route path="tabs" element={<Tabs />} />
+                  </Route>
+                </Routes>
+              </div>
+            </Content>
+          </AppFrame>
+        }
+      />
+    </Routes>
   );
-}
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/hobbies">
+    <BrowserRouter basename="/">
       <ConfigProvider theme={customTheme}>
         <App />
       </ConfigProvider>

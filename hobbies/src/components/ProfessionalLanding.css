@@ -1,0 +1,82 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: "Work Sans", sans-serif;
+    color: rgb(85, 104, 115);
+    text-rendering: optimizelegibility;
+    -webkit-font-smoothing: antialiased;
+}
+.css-1jmej02 {
+    width: 100vw;
+    height: 100vh;
+}
+.css-18dmi9v {
+    height: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.css-liixgw {
+    height: 150px;
+    width: 150px;
+    border-radius: 50%;
+}
+.css-17ahnq4 {
+    font-size: 3rem;
+    letter-spacing: -1px;
+    font-weight: 700;
+    margin: 10px 0;
+}
+.css-so0bfi {
+    font-size: 1.7rem;
+    font-weight: 400;
+    margin: 0;
+    margin-bottom: 20px;
+    letter-spacing: -0.6px;
+}
+.css-18btm6k {
+    color: #83afe5;
+    transition: color 225ms ease-in-out;
+}
+.css-18btm6k:hover {
+    color: #6f94c2;
+}
+@media (prefers-color-scheme: dark) {
+    .css-18btm6k {
+        color: #7fc1ca;
+    }
+    .css-18btm6k:hover {
+        color: #6ba4ab;
+    }
+}
+.css-gmuwbf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.css-195yi6t {
+    color: #83afe5;
+    transition: color 225ms ease-in-out;
+    margin-right: 16px;
+}
+.css-195yi6t:hover {
+    color: #6f94c2;
+}
+@media (prefers-color-scheme: dark) {
+    .css-195yi6t {
+        color: #7fc1ca;
+    }
+    .css-195yi6t:hover {
+        color: #6ba4ab;
+    }
+}
+.css-195yi6t:last-child {
+    margin-right: 0;
+}
+.css-kqzqgg {
+    fill: currentColor;
+}
