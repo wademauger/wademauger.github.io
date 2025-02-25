@@ -10,12 +10,12 @@ const { Panel: AntPanel } = Collapse;
 const { Step } = Steps; // Destructure Step from Steps
 
 const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0); // State of which knitting instruction the user is on
+  const [isCompleted, setIsCompleted] = useState(false); // State to control the completion message
+  const [activeKey, setActiveKey] = useState([]); // State to control the collapse panel, initially empty to keep it closed
   const currentStepRef = useRef(null); // Create a ref for the current step element
 
   const handleNextStep = useCallback(() => {
-    console.log(currentStep, instructions.length);
     if (currentStep + 1 === instructions.length) {
       setIsCompleted(true);
       handleCancel(true); // Pass true to skip confirmation
@@ -64,17 +64,43 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
       <Radio.Group buttonStyle="solid">
         <Radio.Button onClick={handlePreviousStep}>Previous Step</Radio.Button>
         <Radio.Button onClick={handleNextStep}> Next Step </Radio.Button>
-        <Radio.Button onClick={() => handleCancel(false)}>Cancel</Radio.Button>
+        <Radio.Button onClick={() => handleCancelClick(false)}>Cancel</Radio.Button>
       </Radio.Group>
     </div>
-  ) : (
-    <Button type="primary" className="knitting-controls" onClick={() => { setIsKnitting(`${patternId}-${panelId}`, setCurrentStep); setIsCompleted(false); }}>Start Knitting</Button>
-  ));
+  ) : null);
+
+  const handleButtonClick = (event) => {
+    event.stopPropagation(); // Prevent collapse from toggling
+    setIsKnitting(`${patternId}-${panelId}`, setCurrentStep);
+    setIsCompleted(false);
+    setActiveKey(['1']); // Ensure the collapse is open
+  };
+
+  const handleCancelClick = (skipConfirm) => {
+    handleCancel(skipConfirm);
+    setActiveKey([]); // Close the collapse
+  };
 
   return (
     <div className="panel-instructions">
-      <Collapse>
-        <AntPanel header={panelId} key="1">
+      <Collapse size="large" activeKey={activeKey} onChange={setActiveKey}>
+        <AntPanel 
+          header={
+            <div className="panel-header">
+              {panelId}
+              {!isKnitting && (
+                <Button 
+                  type="primary" 
+                  className="start-knitting-button spaced-button" 
+                  onClick={handleButtonClick}
+                >
+                  Start Knitting
+                </Button>
+              )}
+            </div>
+          } 
+          key="1"
+        >
           {getKnittingControls()}
           <Steps size="small" current={currentStep} direction="vertical">
             {instructions.map((step, index) => (
@@ -157,19 +183,16 @@ function KnittingPatterns() {
             <p className="text-left description">{pattern.description}</p>
             <Row>
               <Col xs={24} sm={24} md={24} lg={10} xl={10}>
-                <Card
-                  title="Size and Gauge Settings"
-                >
+                <Card title="Size and Gauge Settings">
                   <p>
                     Choose a size:
                     <span className="card-input">
                       <Select
-                        style={{
-                          width: 240,
-                        }}
+                        style={{ width: 240 }}
                         onChange={handleSizeChange}
                         defaultValue={1}
-                        options={Object.entries(pattern?.sizes || {}).map(([label, value]) => ({ label, value }))} />
+                        options={Object.entries(pattern?.sizes || {}).map(([label, value]) => ({ label, value }))}
+                      />
                     </span>
                   </p>
                   <p>
@@ -205,9 +228,18 @@ function KnittingPatterns() {
                 handleCancel={handleCancel}
               />
             ))}
+            {pattern.finishingSteps && pattern.finishingSteps.length > 0 && (
+              <>
+                <h1 className='text-2xl text-left'><b>Finishing Steps:</b></h1>
+                <ul className='text-left steps-list'>
+                  {pattern.finishingSteps.map((step, index) => <li key={index}>{step}</li>)}
+                </ul>
+              </>
+            )}
           </>
-        ) : <p>Note that the pattern diagrams are not shown to scale. These patterns are only tested lightly, generally with a mens' medium. Please use discretion before casting on, and report issues on <a href="https://github.com/wademauger/wademauger.github.io/issues">github</a>. Thanks!</p>}
-
+        ) : (
+          <p>Note that the pattern diagrams are not shown to scale. These patterns are only tested lightly, generally with a mens' medium. Please use discretion before casting on, and report issues on <a href="https://github.com/wademauger/wademauger.github.io/issues">github</a>. Thanks!</p>
+        )}
       </main>
     </div>
   );

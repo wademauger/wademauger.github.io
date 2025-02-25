@@ -50,6 +50,15 @@
   }
 }
 
+.panel-header {
+  display: flex;
+  align-items: center;
+}
+
+.spaced-button {
+  margin-left: 10px;
+}
+
 .description {
   margin-bottom: 14px;
 }

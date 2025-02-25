@@ -56,7 +56,12 @@ export default [
                     },
                 ]
             }
-        }
+        },
+        "finishingSteps": [
+            "Lay out the panels and sleeves, right sides together, and knit the collar in whatever style you prefer.",
+            "Sew up the side seams and sleeve seams.",
+            "Weave in all ends.",
+        ]
     }, {
         "permalink": "seam-top-hat",
         "title": "Seam-Top Hat",

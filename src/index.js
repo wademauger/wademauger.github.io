@@ -34,15 +34,9 @@ const App = () => {
         path="*"
         element={
           <AppFrame>
-            <Content
-              style={{
-                padding: '0 48px',
-              }}
-            >
+            <Content>
               <div
                 style={{
-                  marginTop: 24,
-                  padding: 24,
                   minHeight: 380,
                   background: colorBgContainer,
                   borderRadius: borderRadiusLG,
