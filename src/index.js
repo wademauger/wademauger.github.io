@@ -37,6 +37,7 @@ const App = () => {
             <Content>
               <div
                 style={{
+                  paddingBottom: 24,
                   minHeight: 380,
                   background: colorBgContainer,
                   borderRadius: borderRadiusLG,
