@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chord as chordtools, Interval } from 'tonal'; // Tonal.js for chord transposition
 import allTabs from '../data/tabs';
 import {
@@ -6,6 +6,8 @@ import {
   ArrowDownOutlined
 } from '@ant-design/icons';
 import { Typography, Flex, Button, Space } from 'antd';
+import UkuleleChordChart from './UkuleleChordChart'; // Import the UkuleleChordChart component
+
 const { Title } = Typography;
 
 const LineWithChords = ({ line }) => (
@@ -25,6 +27,7 @@ const Tabs = () => {
   // Initialize state
   const [lyrics, setLyrics] = useState(song.lyrics);
   const [keyShift, setKeyShift] = useState(0);  // Track how much the key has shifted in semitones
+  const [allChords, setAllChords] = useState([]);
 
   // Function to transpose a single chord by a given interval
   const transposeChord = (chord, interval) => {
@@ -44,6 +47,12 @@ const Tabs = () => {
     setLyrics(newLyrics);  // Update lyrics state
   };
 
+  // Update allChords whenever lyrics change
+  useEffect(() => {
+    const uniqueChords = Array.from(new Set(lyrics.flatMap(line => line.flatMap(section => section.chords))));
+    setAllChords(uniqueChords);
+  }, [lyrics]);
+
   return (
     <div>
       <Title level={3}>{song.title} by <i>{song.artist}</i></Title>
@@ -55,6 +64,16 @@ const Tabs = () => {
       </Space>
       <div>
         <strong>Current key shift: {keyShift} semitones</strong>
+      </div>
+      {/* Display all the charts for the chords in the current song */}
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <Flex justify="center" wrap="wrap">
+          {allChords.map((chord, index) => (
+            <div key={index} style={{ margin: '10px' }}>
+              <UkuleleChordChart chord={chord} />
+            </div>
+          ))}
+        </Flex>
       </div>
 
       {/* Display lyrics with chords */}
