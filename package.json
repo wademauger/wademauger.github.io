@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://wadeahlstrom.com",
   "dependencies": {
+    "@tombatossals/react-chords": "^0.2.10",
     "antd": "^5.24.1",
     "antd-style": "^3.7.1",
     "convert-units": "^2.3.4",
@@ -13,6 +14,7 @@
     "react-router": "^7.1.5",
     "react-router-dom": "^7.1.5",
     "react-scripts": "5.0.1",
+    "tonal": "^6.4.0",
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {

@@ -50,6 +50,13 @@
   }
 }
 
+.dark-footer {
+  background-color: #001529;
+  color: #ffffff;
+  text-align: center;
+  padding: 12px;
+}
+
 .panel-header {
   display: flex;
   align-items: center;

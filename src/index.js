@@ -35,24 +35,15 @@ const App = () => {
         element={
           <AppFrame>
             <Content>
-              <div
-                style={{
-                  paddingBottom: 24,
-                  minHeight: 380,
-                  background: colorBgContainer,
-                  borderRadius: borderRadiusLG,
-                }}
-              >
-                <Routes>
-                  <Route path="hobbies/" element={<Home />}>
-                    <Route path="recipes" element={<Recipes />} />
-                    <Route path="recipes/:id" element={<Recipes />} />
-                    <Route path="patterns" element={<Patterns />} />
-                    <Route path="patterns/:id" element={<Patterns />} />
-                    <Route path="tabs" element={<Tabs />} />
-                  </Route>
-                </Routes>
-              </div>
+              <Routes>
+                <Route path="hobbies/" element={<Home />}>
+                  <Route path="recipes" element={<Recipes />} />
+                  <Route path="recipes/:id" element={<Recipes />} />
+                  <Route path="patterns" element={<Patterns />} />
+                  <Route path="patterns/:id" element={<Patterns />} />
+                  <Route path="tabs" element={<Tabs />} />
+                </Route>
+              </Routes>
             </Content>
           </AppFrame>
         }

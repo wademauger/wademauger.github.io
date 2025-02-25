@@ -176,7 +176,7 @@ function KnittingPatterns() {
 
   return (
     <div className="knitting-patterns-page">
-      <main className="container mx-auto mt-8 px-4">
+      <main className="container mx-auto">
         {pattern ? (
           <>
             <h1 className="text-2xl text-left"><b>{pattern.title}</b></h1>

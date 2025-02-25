@@ -5,6 +5,8 @@ import newRecipes from '../data/recipes/index';
 import { Layout, Menu, Drawer, Button, ConfigProvider } from 'antd';
 import { CloseOutlined, MenuOutlined } from '@ant-design/icons';
 import { createStyles, useTheme } from 'antd-style';
+import '../App.css'; // Ensure you import the CSS file
+
 const { Header, Content, Footer } = Layout;
 
 const useStyle = createStyles(({ token }) => ({
@@ -87,11 +89,11 @@ export default function AppFrame(props) {
         },
         {
             key: '/hobbies/tabs',
-            label: <NavLink to="/tabs" onClick={closeDrawer}>Ukulele Tabs</NavLink>,
+            label: <NavLink to="/hobbies/tabs" onClick={closeDrawer}>Ukulele Tabs</NavLink>,
         },
         {
             key: '/hobbies/record-catalog',
-            label: <NavLink to="/record-catalog" onClick={closeDrawer}>Record Catalog</NavLink>,
+            label: <a href="https://www.discogs.com/user/wadeanthony0100/collection" onClick={closeDrawer}>Record Catalog</a>,
         },
         {
             key: '/hobbies/houseplants',
@@ -104,12 +106,7 @@ export default function AppFrame(props) {
     ];
 
     return (
-        <ConfigProvider
-            drawer={{
-                classNames,
-                styles: drawerStyles,
-            }}
-        >
+        <ConfigProvider>
             <Layout>
                 <Header className="app-header">
                     {isMobile ? (
@@ -150,7 +147,7 @@ export default function AppFrame(props) {
                         {props.children}
                     </div>
                 </Content>
-                <Footer className="app-footer">
+                <Footer className="app-footer dark-footer">
                     Wade Ahlstrom © {new Date().getFullYear()}
                 </Footer>
             </Layout>
