@@ -113,19 +113,14 @@ const UkuleleChordChart = ({ chord }) => {
     container.innerHTML = ''; // Clear the container before drawing the new chart
 
     const chordBox = new ChordBox(container, {
-      width: 100,
-      height: 120,
-      circleRadius: 5,
+      width: 60,
+      height: 72,
+      circleRadius: 4,
       numStrings: 4,
       numFrets: 5,
       showTuning: true,
-      defaultColor: '#666',
+      defaultColor: '#000',
       bgColor: '#FFF',
-      strokeColor: '#666',
-      textColor: '#666',
-      stringColor: '#666',
-      fretColor: '#666',
-      labelColor: '#666',
       fretWidth: 1,
       stringWidth: 1,
     });
@@ -136,7 +131,7 @@ const UkuleleChordChart = ({ chord }) => {
     });
   }, [chord]);
 
-  return <div><div ref={containerRef}></div>{chord}</div>;
+  return <div className="chord-chart"><div ref={containerRef}></div>{chord}</div>;
 };
 
 export default UkuleleChordChart;

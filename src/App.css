@@ -81,7 +81,7 @@ html {
 }
 
 main {
-  margin-bottom: 40px;
+  margin-bottom: 60px;
 }
 
 footer {
@@ -89,6 +89,12 @@ footer {
   bottom: 0;
   left: 0;
   right: 0;
+}
+
+.chord-chart {
+  font-family: monospace;
+  font-size: smaller;
+  font-weight: bolder;
 }
 
 .menu-button {

@@ -1,5 +1,5 @@
 import React from 'react';
-import './ProfessionalLanding.css';
+import '../ProfessionalLanding.css';
 
 const HomePage = () => {
     return (
