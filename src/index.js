@@ -11,6 +11,7 @@ import Tabs from './components/Tabs';
 import reportWebVitals from './reportWebVitals';
 import { ConfigProvider, theme, Layout } from 'antd';
 import LandingPage from './components/ProfessionalLanding';
+import Houseplants from './components/Houseplants';
 const { Content } = Layout;
 
 const accentColors = ['#631521', '#633D15', '#616315', '#15632C', '#152E63', '#5C1563'];
@@ -42,6 +43,7 @@ const App = () => {
                   <Route path="patterns" element={<Patterns />} />
                   <Route path="patterns/:id" element={<Patterns />} />
                   <Route path="tabs" element={<Tabs />} />
+                  <Route path="houseplants" element={<Houseplants />} />
                 </Route>
               </Routes>
             </Content>

@@ -14,6 +14,7 @@
     "react-router": "^7.1.5",
     "react-router-dom": "^7.1.5",
     "react-scripts": "5.0.1",
+    "react-social-media-embed": "^2.5.18",
     "tonal": "^6.4.0",
     "vexchords": "^1.2.0",
     "web-vitals": "^4.2.4"
