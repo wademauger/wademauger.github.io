@@ -97,7 +97,7 @@ export default function AppFrame(props) {
         },
         {
             key: '/hobbies/houseplants',
-            label: <NavLink to="/houseplants" onClick={closeDrawer}>Houseplants</NavLink>,
+            label: <NavLink to="/hobbies/houseplants" onClick={closeDrawer}>Houseplants</NavLink>,
         },
         {
             key: '/',
