@@ -62,8 +62,8 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
   const getKnittingControls = () => (isKnitting ? (
     <div className="row flex knitting-controls sticky-controls">
       <Radio.Group buttonStyle="solid">
-        <Radio.Button onClick={handlePreviousStep}>Previous Step</Radio.Button>
-        <Radio.Button onClick={handleNextStep}> Next Step </Radio.Button>
+        <Radio.Button onClick={handlePreviousStep}>Step Back</Radio.Button>
+        <Radio.Button onClick={handleNextStep}> Next Step</Radio.Button>
         <Radio.Button onClick={() => handleCancelClick(false)}>Cancel</Radio.Button>
       </Radio.Group>
     </div>
