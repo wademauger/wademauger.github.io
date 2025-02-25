@@ -10,16 +10,16 @@ import '../App.css'; // Ensure you import the CSS file
 const { Header, Content, Footer } = Layout;
 
 const useStyle = createStyles(({ token }) => ({
-  'custom-drawer-body': {
-    background: token.colorPrimary,
-  },
-  'custom-drawer-header': {
-    background: token.colorPrimary,
-    color: token.colorTextLightSolid,
-  },
-  'custom-drawer-close': {
-    color: token.colorTextLightSolid,
-  },
+    'custom-drawer-body': {
+        background: token.colorPrimary,
+    },
+    'custom-drawer-header': {
+        background: token.colorPrimary,
+        color: token.colorTextLightSolid,
+    },
+    'custom-drawer-close': {
+        color: token.colorTextLightSolid,
+    },
 }));
 
 const MOBILE_NAVIGATION_BREAKPOINT = 900;
@@ -106,7 +106,10 @@ export default function AppFrame(props) {
     ];
 
     return (
-        <ConfigProvider>
+        <ConfigProvider drawer={{
+            classNames,
+            styles: drawerStyles,
+        }}>
             <Layout>
                 <Header className="app-header">
                     {isMobile ? (
@@ -134,13 +137,13 @@ export default function AppFrame(props) {
                             className="desktop-menu"
                         />
                     )}
-                <Button
-                    type="primary"
-                    icon={<MenuOutlined />}
-                    onClick={showDrawer}
-                    className="menu-button"
-                    style={{ display: isMobile ? '' : 'none' }}
-                />
+                    <Button
+                        type="primary"
+                        icon={<MenuOutlined />}
+                        onClick={showDrawer}
+                        className="menu-button"
+                        style={{ display: isMobile ? '' : 'none' }}
+                    />
                 </Header>
                 <Content className="app-content">
                     <div className="content-container">
