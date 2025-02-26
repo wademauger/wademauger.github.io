@@ -131,6 +131,11 @@ footer {
   .print-button {
     margin: 0 100px;
   }
+  
+  .recipe-flexbox { 
+    padding: '1rem';
+    margin: '0 15vw';
+   }
 }
 
 @media (max-width: 600px) {

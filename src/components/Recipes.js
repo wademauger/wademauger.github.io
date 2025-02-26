@@ -55,7 +55,7 @@ function Recipes() {
     <div className="recipes-page">
       <main className="container mx-auto">
         {recipe ? (
-          <Flex vertical justify="center" gap="small" style={{ padding: '1rem', margin: '0 15vw' }}>
+          <Flex vertical justify="center" gap="small" className="recipe-flexbox">
             <h1 className='text-2xl text-left'>
               <b>{recipe.title}</b>
             </h1>
