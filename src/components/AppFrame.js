@@ -111,7 +111,7 @@ export default function AppFrame(props) {
             styles: drawerStyles,
         }}>
             <Layout>
-                <Header className="app-header">
+                <Header className="app-header print-hide">
                     {isMobile ? (
                         <Drawer
                             placement="left"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Slider, InputNumber, Row, Col } from 'antd';
+import { Button, Slider, InputNumber, Flex } from 'antd';
+import { PrinterOutlined } from '@ant-design/icons';
 import Table from './table';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
@@ -52,26 +53,25 @@ function Recipes() {
 
   return (
     <div className="recipes-page">
-       <main className="container mx-auto">
-        {recipe ? <>
-          <h1 className='text-2xl text-left'>
-            <b>{recipe.title}</b>
-          </h1>
-          <p className='text-left'>{recipe.description}</p>
-          <Button onClick={handlePrint} className="print-button">Print Recipe</Button>
-          <div className="slider-container print-hide">
-            {recipe.scalable ?
-              <Row>
-                <Col span={10}>
-                  <Slider
-                    min={minServings}
-                    max={maxServings}
-                    onChange={handleSliderChange}
-                    value={typeof servings === 'number' ? servings : 0}
-                    defaultValue={defaultSliderValue}
-                  />
-                </Col>
-                <Col span={6}>
+      <main className="container mx-auto">
+        {recipe ? (
+          <Flex vertical justify="center" gap="small" style={{ padding: '1rem', margin: '0 15vw' }}>
+            <h1 className='text-2xl text-left'>
+              <b>{recipe.title}</b>
+            </h1>
+            <p className='text-left'>{recipe.description}</p>
+            <div className="slider-container print-hide">
+              {recipe.scalable ? (<Flex>
+                <Slider
+                  min={minServings}
+                  max={maxServings}
+                  onChange={handleSliderChange}
+                  value={typeof servings === 'number' ? servings : 0}
+                  defaultValue={defaultSliderValue}
+                  style={{ flex: 2 }}
+                />
+                <span style={{ flex: 1 }}>
+
                   Makes
                   <InputNumber
                     min={minServings}
@@ -81,29 +81,31 @@ function Recipes() {
                     onChange={handleSliderChange}
                   />
                   {recipe.servingUnits}
-                </Col>
-              </Row>
-              :
-              <p className='text-left'><i>Makes {servings} {recipe.servingUnits}</i></p>
-            }
-          </div>
-          <p className="text-left print-show" style={{ display: 'none' }}>
-            <i>Makes {servings} {recipe.servingUnits}</i>
-          </p>
-          <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
-          <h1 className='text-2xl text-left'><b>Steps:</b></h1>
-          <ul className='text-left steps-list'>
-            {recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
-          </ul>
-          {recipe.notes.length > 0 ?
-            <>
-              <h1 className='text-2xl text-left'><b>Notes:</b></h1>
-              <ul className='text-left steps-list'>
-                {recipe.notes.map((note, index) => <li key={index}>{note}</li>)}
-              </ul>
-            </>
-            : null}
-        </> : <RecipeIndex />}
+                </span>
+              </Flex>
+              ) : (
+                <p className='text-left'><i>Makes {servings} {recipe.servingUnits}</i></p>
+              )}
+            </div>
+            <p className="text-left print-show" style={{ display: 'none' }}>
+              <i>Makes {servings} {recipe.servingUnits}</i>
+            </p>
+            <Button onClick={handlePrint} className="print-button"><PrinterOutlined />Print Recipe</Button>
+            <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
+            <h1 className='text-2xl text-left'><b>Steps:</b></h1>
+            <ul className='text-left steps-list'>
+              {recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
+            </ul>
+            {recipe.notes.length > 0 ? (
+              <>
+                <h1 className='text-2xl text-left'><b>Notes:</b></h1>
+                <ul className='text-left steps-list'>
+                  {recipe.notes.map((note, index) => <li key={index}>{note}</li>)}
+                </ul>
+              </>
+            ) : null}
+          </Flex>
+        ) : <RecipeIndex />}
       </main>
     </div>
   );

@@ -127,6 +127,12 @@ footer {
   }
 }
 
+@media (min-width:599px) {
+  .print-button {
+    margin: 0 100px;
+  }
+}
+
 @media (max-width: 600px) {
   .steps-list {
     margin: 15px;
