@@ -1,46 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chord as chordtools, Interval } from 'tonal'; // Tonal.js for chord transposition
 import allTabs from '../data/tabs';
-import {
-  ArrowUpOutlined,
-  ArrowDownOutlined
-} from '@ant-design/icons';
-import { Typography, Flex, Button, Collapse, Input } from 'antd';
+import { Typography, Flex, Button, Tree, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import UkuleleChordChart from './UkuleleChordChart'; // Import the UkuleleChordChart component
+import SongDetails from './SongDetails'; // Import the new SongDetails component
+import moment from 'moment';
 
-const { Title, Text } = Typography;
-const { Panel } = Collapse;
-const { TextArea } = Input;
+const { Text } = Typography;
 
-const LineWithChords = ({ line, togglePinChord }) => (
-  <Flex style={{ fontFamily: 'monospace', whiteSpace: 'pre' }} align="end" wrap="wrap">
-    {line.map((section, idx) => (
-      <div key={idx} style={{ float: 'left' }}>
-        {section.chords.map((chord, chordIdx) => (
-          <strong
-            key={chordIdx}
-            style={{ textAlign: 'left', width: '100%', display: 'inline-block', cursor: 'pointer' }}
-            onClick={() => togglePinChord(chord)} // Toggle pin on chord click
-          >
-            {chord}
-          </strong>
-        ))}
-        <div>{section.text}</div>
-      </div>
-    ))}
-  </Flex>
-);
+const formatExample = `
+{
+  "title": "Song Title",
+  "artist": "Artist Name",
+  "album": "Album Name", // Optional
+  "lyrics": [
+    [
+      [
+        {
+          "chords": ["Am", "G"],
+          "text": "Verse 1 line 1"
+        }
+      ],
+      [
+        {
+          "chords": ["C", "F"],
+          "text": "Verse 1 line 2"
+        }
+      ]
+    ],
+    [
+      [
+        {
+          "chords": ["Am", "G"],
+          "text": "Chorus line 1"
+        }
+      ],
+      [
+        {
+          "chords": ["C", "F"],
+          "text": "Chorus line 2"
+        }
+      ]
+    ]
+  ]
+}`;
 
 const Tabs = () => {
-  // const song = allTabs[0];  // Assuming we're working with the first song
   const [song, setSong] = useState(allTabs[0]);
-  // Initialize state
   const [lyrics, setLyrics] = useState(song.lyrics);
   const [keyShift, setKeyShift] = useState(0);  // Track how much the key has shifted in semitones
   const [allChords, setAllChords] = useState([]);
   const [pinnedChords, setPinnedChords] = useState([]); // new state for pinned chords
   const [jsonInput, setJsonInput] = useState(JSON.stringify(song, null, 2)); // Initialize with the stringified version of the first song
   const [showFormatError, setShowFormatError] = useState(false);
+  const textareaRef = useRef(null);
 
   // Function to transpose a single chord by a given interval
   const transposeChord = (chord, interval) => {
@@ -82,128 +96,128 @@ const Tabs = () => {
     setPinnedChords(pinnedChords.filter((pinnedChord) => pinnedChord !== chord));
   };
 
-  const handleJsonInputChange = (e) => {
-    setJsonInput(e.target.value);
-  };
-
-  const handleJsonSubmit = () => {
-    try {
-      const parsedSong = JSON.parse(jsonInput);
-      if (Object.keys(parsedSong).length === 0) {
-        // If the parsed object is empty, show the format description
-        setShowFormatError(true);
-        setSong({ title: '', artist: '', lyrics: [] });
-        setLyrics([]);
-      } else {
-        setShowFormatError(false);
-        setSong(parsedSong);
-        setLyrics(parsedSong.lyrics);
-      }
-    } catch (error) {
-      console.error("Invalid JSON:", error);
-      setShowFormatError(true);
-      // Optionally, display an error message to the user
-    }
-  };
-
   useEffect(() => {
     setLyrics(song.lyrics);
     setShowFormatError(false); // Hide the error when a valid song is loaded
   }, [song]);
 
+  // Function to generate tree data from song data
+  const generateTreeData = (songs) => {
+    const artists = {};
+
+    songs.forEach(song => {
+      if (!artists[song.artist]) {
+        artists[song.artist] = { _no_album: [] };
+      }
+      if (song.album) {
+        if (!artists[song.artist][song.album]) {
+          artists[song.artist][song.album] = [];
+        }
+        artists[song.artist][song.album].push({ title: song.title, key: song.title });
+      } else {
+        artists[song.artist]._no_album.push({ title: song.title, key: song.title });
+      }
+    });
+
+    return Object.keys(artists).sort().map(artist => ({
+      title: artist,
+      key: artist,
+      children: [
+        ...artists[artist]._no_album.sort((a, b) => a.title.localeCompare(b.title)),
+        ...Object.keys(artists[artist]).filter(album => album !== '_no_album').sort().map(album => ({
+          title: album,
+          key: `${artist}-${album}`,
+          children: artists[artist][album].sort((a, b) => a.title.localeCompare(b.title))
+        }))
+      ]
+    }));
+  };
+
+  const treeData = generateTreeData(allTabs);
+
+  const onSelect = (selectedKeys, info) => {
+    const selectedSong = allTabs.find(song => song.title === selectedKeys[0]);
+    if (selectedSong) {
+      setSong(selectedSong);
+      setJsonInput(JSON.stringify(selectedSong, null, 2));
+    }
+  };
+
+  const handleFileUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const uploadedSongs = JSON.parse(e.target.result);
+        // Assuming the uploaded JSON is an array of songs
+        if (Array.isArray(uploadedSongs)) {
+          setShowFormatError(false);
+          // Update allTabs with the uploaded songs
+          allTabs.splice(0, allTabs.length, ...uploadedSongs);
+          // Update the tree data
+          const newTreeData = generateTreeData(allTabs);
+          setJsonInput(JSON.stringify(allTabs[0], null, 2));
+          setSong(allTabs[0]);
+          setLyrics(allTabs[0].lyrics);
+        } else {
+          setShowFormatError(true);
+        }
+      } catch (error) {
+        console.error("Invalid JSON:", error);
+        setShowFormatError(true);
+      }
+    };
+    reader.readAsText(file);
+    return false; // Prevent automatic upload
+  };
+
+  const handleFileDownload = () => {
+    const json = JSON.stringify(allTabs, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = moment();
+    a.href = url;
+    a.download = `songs_${now.format('YYYY-MM-DD_HH-mm-ss')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
-      <Collapse defaultActiveKey={['1']}>
-        <Panel header="Edit Song JSON" key="1">
-          <TextArea
-            rows={4}
-            value={jsonInput}
-            onChange={handleJsonInputChange}
-          />
-          <Button onClick={handleJsonSubmit}>Update Song</Button>
-        </Panel>
-      </Collapse>
+      <Flex justify="center" gap="small" wrap="wrap">
+        <Upload
+          accept=".json"
+          beforeUpload={handleFileUpload}
+          showUploadList={false}
+        >
+          <Button icon={<UploadOutlined />}>Upload a Song Library file</Button>
+        </Upload>
+        <Button onClick={handleFileDownload}>Download Song Library</Button>
+      </Flex>
+      <Tree
+        showLine
+        onSelect={onSelect}
+        treeData={treeData}
+        showLeafIcon={'custom'}
+      />
       {showFormatError ? (
         <div>
           <Text>
             <Text type="danger">JSON Format Error</Text>
             The JSON should have the following format:
           </Text>
-          <pre style={{ textAlign: 'left' }}>
-            <Text code>
-              {`
-{
-  "title": "Song Title",
-  "artist": "Artist Name",
-  "lyrics": [
-    [
-      [
-        {
-          "chords": ["Am", "G"],
-          "text": "Verse 1 line 1"
-        }
-      ],
-      [
-        {
-          "chords": ["C", "F"],
-          "text": "Verse 1 line 2"
-        }
-      ]
-    ],
-    [
-      [
-        {
-          "chords": ["Am", "G"],
-          "text": "Chorus line 1"
-        }
-      ],
-      [
-        {
-          "chords": ["C", "F"],
-          "text": "Chorus line 2"
-        }
-      ]
-    ]
-  ]
-}
-              `}
-            </Text>
-          </pre>
+          <code>{formatExample}</code>
         </div>
       ) : (
-        <div>
-          <Title level={3}>{song.title} by <i>{song.artist}</i></Title>
-
-          {/* Controls for transposing the song */}
-          <Flex justify="center" gap="small" wrap="wrap">
-            <Button onClick={() => transposeSong(1)}>Transpose Up <ArrowUpOutlined /></Button>
-            <Button onClick={() => transposeSong(-1)}>Transpose Down <ArrowDownOutlined /></Button>
-          </Flex>
-          <div>
-            <strong>Current key shift: {keyShift} semitones</strong>
-          </div>
-          {/* Display all the charts for the chords in the current song */}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Flex justify="center" gap="small" wrap="wrap">
-              {allChords.map((chord, index) => (
-                <div key={index} onClick={() => handlePinChord(chord)} style={{ cursor: 'pointer' }}>
-                  <UkuleleChordChart chord={chord} />
-                </div>
-              ))}
-            </Flex>
-          </div>
-
-          {/* Display lyrics with chords */}
-          <Flex align="center" vertical={true}>
-            {lyrics.map((line, lineIndex) => (
-              <div key={lineIndex} style={{ marginBottom: '20px', display: 'flex' }}>
-                <LineWithChords key={lineIndex} line={line} togglePinChord={handlePinChord} />
-              </div>
-            ))}
-          </Flex>
-        </div>
+        <SongDetails
+          song={song}
+          keyShift={keyShift}
+          transposeSong={transposeSong}
+          allChords={allChords}
+          handlePinChord={handlePinChord}
+          lyrics={lyrics}
+        />
       )}
-
 
       {/* Pinned Chords Display in Footer */}
       <div style={{

@@ -115,6 +115,18 @@ footer {
   }
 }
 
+@media print {
+  .appFrame-navigation,
+  .appFrame-footer,
+  .print-hide,
+  .print-button {
+    display: none !important;
+  }
+  .print-show {
+    display: block !important;
+  }
+}
+
 @media (max-width: 600px) {
   .steps-list {
     margin: 15px;

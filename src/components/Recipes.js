@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Slider, InputNumber, Row, Col } from 'antd';
+import { Button, Slider, InputNumber, Row, Col } from 'antd';
 import Table from './table';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
@@ -34,6 +34,10 @@ function Recipes() {
     setServings(value);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
     const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
     return {
@@ -50,9 +54,12 @@ function Recipes() {
     <div className="recipes-page">
        <main className="container mx-auto">
         {recipe ? <>
-          <h1 className='text-2xl text-left'><b>{recipe.title}</b></h1>
+          <h1 className='text-2xl text-left'>
+            <b>{recipe.title}</b>
+          </h1>
           <p className='text-left'>{recipe.description}</p>
-          <div className="slider-container">
+          <Button onClick={handlePrint} className="print-button">Print Recipe</Button>
+          <div className="slider-container print-hide">
             {recipe.scalable ?
               <Row>
                 <Col span={10}>
@@ -80,6 +87,9 @@ function Recipes() {
               <p className='text-left'><i>Makes {servings} {recipe.servingUnits}</i></p>
             }
           </div>
+          <p className="text-left print-show" style={{ display: 'none' }}>
+            <i>Makes {servings} {recipe.servingUnits}</i>
+          </p>
           <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
           <h1 className='text-2xl text-left'><b>Steps:</b></h1>
           <ul className='text-left steps-list'>
