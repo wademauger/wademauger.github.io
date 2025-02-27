@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
-import patterns from '../data/patterns';
+import { garments, visualMotifs } from '../data/garments';
 import { Trapezoid, Panel, Gauge } from '../knitting.ai';
 import { PanelDiagram } from './PanelDiagram';
 import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps } from "antd";
@@ -123,13 +123,14 @@ function KnittingPatterns() {
   const [currentKnittingPanel, setCurrentKnittingPanel] = useState(null);
   const [sizeModifier, setSizeModifier] = useState(1); // Add state for size modifier
   const [gauge, setGauge] = useState({ stitches: 19, rows: 30 }); // Add state for gauge
+  const [selectedMotif, setSelectedMotif] = useState(null); // Add state for selected visual motif
 
-  const pattern = patterns.find(pattern => pattern.permalink === patternId);
+  const pattern = garments.find(pattern => pattern.permalink === patternId);
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
     .map(panelId => {
       const panelData = pattern.shapes[panelId];
       const trapezoid = Trapezoid.fromJSON(panelData);
-      const panel = new Panel(trapezoid, new Gauge(gauge.stitches, gauge.rows), sizeModifier); // Pass gauge and sizeModifier to Panel
+      const panel = new Panel(trapezoid, new Gauge(gauge.stitches, gauge.rows), sizeModifier, selectedMotif); // Pass gauge, sizeModifier, and selectedMotif to Panel
       const instructions = panel.generateKnittingInstructions();
       return { id: panelId, instructions: instructions };
     });
@@ -174,6 +175,10 @@ function KnittingPatterns() {
     setGauge(prevGauge => ({ ...prevGauge, [type]: value }));
   };
 
+  const handleMotifChange = (value) => {
+    setSelectedMotif(value ? visualMotifs[value] : null);
+  };
+
   return (
     <div className="knitting-patterns-page">
       <main className="container mx-auto">
@@ -205,6 +210,19 @@ function KnittingPatterns() {
                     Gauge rows per 4 inches
                     <span className="card-input">
                       <InputNumber min={1} defaultValue={30} onChange={(value) => handleGaugeChange('rows', value)} />
+                    </span>
+                  </p>
+                  <p>
+                    Choose a visual motif:
+                    <span className="card-input">
+                      <Select
+                        style={{ width: 240 }}
+                        onChange={handleMotifChange}
+                        options={[
+                          { label: 'None', value: null },
+                          ...Object.keys(visualMotifs).map(key => ({ label: key, value: key }))
+                        ]}
+                      />
                     </span>
                   </p>
                 </Card>

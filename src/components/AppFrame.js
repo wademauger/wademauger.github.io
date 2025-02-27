@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import patterns from '../data/patterns';
+import { garments } from '../data/garments';
 import newRecipes from '../data/recipes/index';
 import { Layout, Menu, Drawer, Button, ConfigProvider } from 'antd';
 import { CloseOutlined, MenuOutlined } from '@ant-design/icons';
@@ -61,7 +61,6 @@ export default function AppFrame(props) {
             fontSize: token.fontSizeLG,
         },
     };
-
     const items = [
         {
             key: '/hobbies',
@@ -82,7 +81,7 @@ export default function AppFrame(props) {
         {
             key: '/hobbies/patterns',
             label: <NavLink to="/hobbies/patterns" onClick={closeDrawer}>Knitting Patterns</NavLink>,
-            children: patterns.map(pattern => ({
+            children: garments.map(pattern => ({
                 key: `/hobbies/patterns/${pattern.permalink}`,
                 label: <NavLink to={`/hobbies/patterns/${pattern.permalink}`} onClick={closeDrawer}>{pattern.title}</NavLink>,
             })),
