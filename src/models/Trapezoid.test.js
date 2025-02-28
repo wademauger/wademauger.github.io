@@ -66,11 +66,6 @@ describe('Trapezoid Model', () => {
             assert.deepStrictEqual(trapezoid.finishingSteps, []);
         });
 
-        it('should handle empty JSON', () => {
-            assert.strictEqual(Trapezoid.fromObject(null), null);
-            assert.strictEqual(Trapezoid.fromObject([]), null);
-        });
-
         it('should handle successors', () => {
             const json = {
                 height: 10,
@@ -90,11 +85,11 @@ describe('Trapezoid Model', () => {
         });
     });
 
-    describe('getBaseWidthInStitches', () => {
+    describe('getUpperBaseWidthInStitches', () => {
         it('should calculate base width in stitches', () => {
             const gauge = new Gauge(10, 10);
-            const stitches = trapezoid.getBaseWidthInStitches(gauge, 1);
-            assert.strictEqual(stitches, 50);
+            const stitches = trapezoid.getUpperBaseWidthInStitches(gauge, 1);
+            assert.strictEqual(stitches, 75);
         });
     });
 

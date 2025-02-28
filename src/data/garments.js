@@ -105,20 +105,17 @@ const garments = [
         "shapes": { // TODO: Shape the neckline/shoulders for this sweater
             "Front": {
                 "height": 5,
-                "baseA": 30,
-                "baseB": 30,
-                "finishingSteps": ["Hang hem."],
+                "baseA": 5,
+                "baseB": 5,
                 "successors": [{
-                    "height": 20,
-                    "baseA": 30,
-                    "baseB": 30,
-                    "successors": [
-                        { "height": 0, "baseA": 3, "baseB": 3 },
-                        { "height": 10, "baseA": 10, "baseB": 10 },
-                        { "height": 0, "baseA": 4, "baseB": 4 },
-                        { "height": 10, "baseA": 10, "baseB": 10 },
-                        { "height": 0, "baseA": 3, "baseB": 3 },
-                    ]
+                    "height": 5,
+                    "baseA": 5,
+                    "baseB": 5,
+                    "successors": [{
+                        "height": 5,
+                        "baseA": 5,
+                        "baseB": 5,
+                    }]
                 }],
             },
             "Back": {

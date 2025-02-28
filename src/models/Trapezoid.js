@@ -1,4 +1,6 @@
 import { StitchPlan } from "./StitchPlan";
+import { defaultGauge } from "./Gauge";
+
 class Trapezoid {
     /**
      * Represents a trapezoidal section of the knitting panel.
@@ -53,9 +55,8 @@ class Trapezoid {
         );
     }
 
-    getBaseWidthInStitches(gauge = defaultGauge, sizeModifier = 1) {
-        const value = Math.round(this.getUpperBase() * (gauge.getStitchesPerInch() * sizeModifier))
-        return value;
+    getUpperBaseWidthInStitches(gauge = defaultGauge) {
+        return Math.round(this.getUpperBase() * (gauge.getStitchesPerInch()));
     }
 
     getStitchPlan(gauge, sizeModifier, startRow = 1) {
@@ -136,23 +137,23 @@ class Trapezoid {
             instructions.push(`Divide into ${this.successors.length} sections:`);
             for (let i = 0; i < this.successors.length; i++) {
                 const successor = this.successors[i];
-                const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
+                const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge, sizeModifier);
                 if (successor.getHeight() > 0) {
                     instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
                     const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
                     instructions.push(...successorInstructions);
                 } else {
-                    instructions.push(`Section ${i + 1}: bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
+                    instructions.push(`Section ${i + 1}: bind off ${successor.getUpperBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
                 }
             }
         } else if (this.successors.length === 1) {
             const successor = this.successors[0];
-            const successorBaseWidth = successor.getBaseWidthInStitches(gauge, sizeModifier);
+            const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge, sizeModifier);
             if (successor.getHeight() > 0) {
                 const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
                 instructions.push(...successorInstructions);
             } else {
-                instructions.push(`Bind off all ${successorBaseWidth} stitches.`);
+                instructions.push(`Bind off ${successorBaseWidth} stitches.`);
             }
         } else if (stitchPlan.rows.length > 0) {
             instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);

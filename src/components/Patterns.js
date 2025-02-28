@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
 import { garments, visualMotifs } from '../data/garments';
-import { Trapezoid, Panel, Gauge } from '../knitting.ai';
+import { Trapezoid } from '../models/Trapezoid';
+import { Panel } from '../models/Panel';
+import { Gauge } from '../models/Gauge';
 import { PanelDiagram } from './PanelDiagram';
 import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps } from "antd";
 import '../App.css';
