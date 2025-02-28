@@ -249,7 +249,7 @@ class StitchPlan {
                         instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''} on the right. `;
                     }
                     prevRow = row;
-                    instruction = consecutiveRows > 1 ? `${instruction} Knit ${consecutiveRows} rows. ` : `${instruction} Knit 1 row. `;
+                    instruction = consecutiveRows > 1 ? `${instruction}Knit ${consecutiveRows} rows. ` : `${instruction}Knit 1 row. `;
                     instruction += `(RC=${row.rowNumber}, ${row.leftStitchesInWork+row.rightStitchesInWork} sts in work)`;
                     consecutiveRows = 1;
                     instructions.push(instruction);

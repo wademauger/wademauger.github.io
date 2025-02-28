@@ -1,23 +1,34 @@
-const assert = require('assert');
-const Panel = require('./Panel');
+import assert from 'assert';
+import { Panel } from './Panel';
+import { Trapezoid } from './Trapezoid';
+import { Gauge } from './Gauge';
 
 describe('Panel Model', () => {
-    it('should create a panel with default properties', () => {
-        const panel = new Panel();
-        assert.strictEqual(panel.property1, 'defaultValue1');
-        assert.strictEqual(panel.property2, 'defaultValue2');
+    let panel;
+    let shape;
+    let gauge;
+
+    beforeEach(() => {
+        shape = new Trapezoid(10, 20, 30);
+        gauge = new Gauge(10, 12);
+        panel = new Panel(shape, gauge, 1.006);
     });
 
-    it('should update properties correctly', () => {
-        const panel = new Panel();
-        panel.updateProperty('property1', 'newValue');
-        assert.strictEqual(panel.property1, 'newValue');
+    it('should create a Panel instance', () => {
+        assert.ok(panel instanceof Panel);
+        assert.strictEqual(panel.shape, shape);
+        assert.strictEqual(panel.gauge, gauge);
+        assert.strictEqual(panel.sizeModifier, 1.006);
     });
 
-    it('should throw an error when invalid data is provided', () => {
-        const panel = new Panel();
-        assert.throws(() => {
-            panel.updateProperty('property1', null);
-        }, Error);
+    it('should generate knitting instructions', () => {
+        const instructions = panel.generateKnittingInstructions();
+        assert.ok(Array.isArray(instructions));
+    });
+
+    it('should return empty array if shape is null', () => {
+        panel.shape = null;
+        const instructions = panel.generateKnittingInstructions();
+        assert.deepStrictEqual(instructions, []);
     });
 });

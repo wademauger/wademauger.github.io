@@ -1,5 +1,5 @@
-const assert = require('assert');
-const Gauge = require('./Gauge');
+import assert from 'assert';
+import { Gauge } from './Gauge';
 
 describe('Gauge Model', () => {
     let gauge;
@@ -8,22 +8,25 @@ describe('Gauge Model', () => {
         gauge = new Gauge();
     });
 
-    it('should have a default value', () => {
-        assert.strictEqual(gauge.value, 0);
+    describe('getStitchesPerInch', () => {
+        it('should return the number of stitches per four inches divided by 4', () => {
+            gauge.stitchesPerFourInches = 20;
+            assert.strictEqual(gauge.getStitchesPerInch(), 5);
+            gauge.stitchesPerFourInches = 40;
+            assert.strictEqual(gauge.getStitchesPerInch(), 10);
+            gauge.stitchesPerFourInches = 200;
+            assert.strictEqual(gauge.getStitchesPerInch(), 50);
+        });  
     });
 
-    it('should set value correctly', () => {
-        gauge.setValue(10);
-        assert.strictEqual(gauge.value, 10);
-    });
-
-    it('should not allow value to exceed maximum', () => {
-        gauge.setValue(110);
-        assert.strictEqual(gauge.value, 100); // assuming 100 is the max
-    });
-
-    it('should return correct percentage', () => {
-        gauge.setValue(50);
-        assert.strictEqual(gauge.getPercentage(), 50);
+    describe('getRowsPerInch', () => {
+        it('should return the number of rows per four inches divided by 4', () => {
+            gauge.rowsPerFourInches = 20;
+            assert.strictEqual(gauge.getRowsPerInch(), 5);
+            gauge.rowsPerFourInches = 40;
+            assert.strictEqual(gauge.getRowsPerInch(), 10);
+            gauge.rowsPerFourInches = 200;
+            assert.strictEqual(gauge.getRowsPerInch(), 50);
+        });
     });
 });

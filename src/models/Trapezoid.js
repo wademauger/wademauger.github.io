@@ -1,3 +1,4 @@
+import { StitchPlan } from "./StitchPlan";
 class Trapezoid {
     /**
      * Represents a trapezoidal section of the knitting panel.
@@ -55,7 +56,6 @@ class Trapezoid {
     getBaseWidthInStitches(gauge = defaultGauge, sizeModifier = 1) {
         const gaugeStitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const value = Math.round(this.getLowerBase() * (gauge.getStitchesPerInch() * sizeModifier))
-        window.value = value;
         return value;
     }
 
