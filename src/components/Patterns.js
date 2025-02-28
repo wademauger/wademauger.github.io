@@ -129,7 +129,7 @@ function KnittingPatterns() {
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
     .map(panelId => {
       const panelData = pattern.shapes[panelId];
-      const trapezoid = Trapezoid.fromJSON(panelData);
+      const trapezoid = Trapezoid.fromObject(panelData);
       const panel = new Panel(trapezoid, new Gauge(gauge.stitches, gauge.rows), sizeModifier, selectedMotif); // Pass gauge, sizeModifier, and selectedMotif to Panel
       const instructions = panel.generateKnittingInstructions();
       return { id: panelId, instructions: instructions };

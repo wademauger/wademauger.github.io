@@ -25,7 +25,7 @@ const testTrapezoidData = {
 const gauge = new Gauge(19, 30);
 const sizeModifier = 1;
 
-const testTrapezoid = Trapezoid.fromJSON(testTrapezoidData);
+const testTrapezoid = Trapezoid.fromObject(testTrapezoidData);
 const panel = new Panel(testTrapezoid, gauge, sizeModifier);
 
 const instructions = panel.generateKnittingInstructions();

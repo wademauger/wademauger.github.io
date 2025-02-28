@@ -34,13 +34,13 @@ class Trapezoid {
         return this.baseBHorizontalOffset * this.modificationScale;
     }
 
-    static fromJSON(json) {
-        if (!json || json.length === 0) {
+    static fromObject(json) {
+        if (!json || json == [] || json == {}) {
             return null; // Handle empty JSON
         }
 
         const successors = (json.successors && Array.isArray(json.successors))
-            ? json.successors.filter(s => s != null).map(s => Trapezoid.fromJSON(s))
+            ? json.successors.filter(s => s != null).map(s => Trapezoid.fromObject(s))
             : [];
 
         return new Trapezoid(
@@ -54,8 +54,7 @@ class Trapezoid {
     }
 
     getBaseWidthInStitches(gauge = defaultGauge, sizeModifier = 1) {
-        const gaugeStitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
-        const value = Math.round(this.getLowerBase() * (gauge.getStitchesPerInch() * sizeModifier))
+        const value = Math.round(this.getUpperBase() * (gauge.getStitchesPerInch() * sizeModifier))
         return value;
     }
 
@@ -153,7 +152,7 @@ class Trapezoid {
                 const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
                 instructions.push(...successorInstructions);
             } else {
-                instructions.push(`Bind off ${successor.getBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
+                instructions.push(`Bind off all ${successorBaseWidth} stitches.`);
             }
         } else if (stitchPlan.rows.length > 0) {
             instructions.push(`Bind off ${stitchPlan.rows[stitchPlan.rows.length - 1].leftStitchesInWork + stitchPlan.rows[stitchPlan.rows.length - 1].rightStitchesInWork} stitches.`);

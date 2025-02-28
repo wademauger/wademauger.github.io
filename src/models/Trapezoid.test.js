@@ -46,7 +46,7 @@ describe('Trapezoid Model', () => {
         assert.strictEqual(trapezoid.getOffset(), 7.5);
     });
 
-    describe('fromJSON', () => {
+    describe('fromObject', () => {
         it('should create a Trapezoid instance from JSON', () => {
             const json = {
                 height: 10,
@@ -56,7 +56,7 @@ describe('Trapezoid Model', () => {
                 successors: [],
                 finishingSteps: []
             };
-            const trapezoid = Trapezoid.fromJSON(json);
+            const trapezoid = Trapezoid.fromObject(json);
             assert.ok(trapezoid instanceof Trapezoid);
             assert.strictEqual(trapezoid.height, 10);
             assert.strictEqual(trapezoid.baseA, 20);
@@ -67,8 +67,8 @@ describe('Trapezoid Model', () => {
         });
 
         it('should handle empty JSON', () => {
-            assert.strictEqual(Trapezoid.fromJSON(null), null);
-            assert.strictEqual(Trapezoid.fromJSON([]), null);
+            assert.strictEqual(Trapezoid.fromObject(null), null);
+            assert.strictEqual(Trapezoid.fromObject([]), null);
         });
 
         it('should handle successors', () => {
@@ -80,7 +80,7 @@ describe('Trapezoid Model', () => {
                 successors: [{ height: 5, baseA: 10, baseB: 15 }],
                 finishingSteps: []
             };
-            const trapezoid = Trapezoid.fromJSON(json);
+            const trapezoid = Trapezoid.fromObject(json);
             assert.ok(trapezoid instanceof Trapezoid);
             assert.strictEqual(trapezoid.successors.length, 1);
             assert.ok(trapezoid.successors[0] instanceof Trapezoid);

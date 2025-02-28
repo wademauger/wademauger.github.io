@@ -2,6 +2,7 @@ import assert from 'assert';
 import { Panel } from './Panel';
 import { Trapezoid } from './Trapezoid';
 import { Gauge } from './Gauge';
+import testGarments from '../data/garments.testdata';
 
 describe('Panel Model', () => {
     let panel;
@@ -22,8 +23,11 @@ describe('Panel Model', () => {
     });
 
     it('should generate knitting instructions', () => {
-        const instructions = panel.generateKnittingInstructions();
-        assert.ok(Array.isArray(instructions));
+        assert.ok(Array.isArray(panel.generateKnittingInstructions()));
+        for (const testcase of testGarments) {
+            panel = Panel.fromObject(testcase);
+            assert.deepStrictEqual(panel.generateKnittingInstructions(), testcase.expectInstructions);
+        }
     });
 
     it('should return empty array if shape is null', () => {
