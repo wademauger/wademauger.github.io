@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Slider, InputNumber, Flex } from 'antd';
-import { PrinterOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PrinterOutlined, CloseCircleOutlined, ZoomOutOutlined, ZoomInOutlined } from '@ant-design/icons';
 import Table from './table';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
 import recipes from '../data/recipes/index';
 import { useSelector, useDispatch } from 'react-redux';
-import { setIsPrintMode } from '../reducers/recipes.reducer';
+import { setIsPrintMode, setFontSize } from '../reducers/recipes.reducer';
 
 const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
   return (
@@ -26,9 +26,9 @@ function Recipes() {
     return found ? found : acc;
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
-
   const dispatch = useDispatch();
   const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
+  const fontSize = useSelector((state) => state.recipes.fontSize);
 
   useEffect(() => {
     if (recipe) {
@@ -44,6 +44,14 @@ function Recipes() {
     dispatch(setIsPrintMode(!isPrintMode));
   };
 
+  const handleIncreaseFontSize = () => {
+    dispatch(setFontSize(fontSize + 1));
+  };
+
+  const handleDecreaseFontSize = () => {
+    dispatch(setFontSize(fontSize - 1));
+  };
+
   const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
     const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
     return {
@@ -55,9 +63,10 @@ function Recipes() {
   const minServings = recipe ? Math.max(1, Math.floor(recipe.defaultServings / 5)) : 1;
   const maxServings = recipe ? recipe.defaultServings * 5 : 20;
   const defaultSliderValue = recipe ? Math.floor((maxServings + minServings) / 2) : 1;
+  const fontSizeStyle = isPrintMode ? { fontSize: `${fontSize}px` } : {};
 
   return (
-    <div className={`recipes-page ${isPrintMode ? 'print-mode' : ''}`}>
+    <div className={`recipes-page ${isPrintMode ? 'print-mode' : ''}`} style={fontSizeStyle}>
       <main className="container mx-auto">
         {recipe ? (
           <Flex vertical justify="center" gap="small" className="recipe-flexbox">
@@ -76,7 +85,6 @@ function Recipes() {
                   style={{ flex: 2 }}
                 />
                 <span style={{ flex: 1 }}>
-
                   Makes
                   <InputNumber
                     min={minServings}
@@ -95,7 +103,14 @@ function Recipes() {
             <p className="text-left print-show" style={{ display: 'none' }}>
               <i>Makes {servings} {recipe.servingUnits}</i>
             </p>
-            {!isPrintMode ? <Button onClick={handlePrint} className="print-button" icon={<PrinterOutlined />}>Print Recipe</Button> : <Button onClick={handlePrint} icon={<CloseCircleOutlined />}>Back</Button>}
+            {!isPrintMode ? <Button onClick={handlePrint} className="print-button" icon={<PrinterOutlined />}>Print Recipe</Button> :
+              (
+                <Flex justify="center" gap="small">
+                  <Button className="print-hide" onClick={handlePrint} icon={<CloseCircleOutlined />}>Back</Button>
+                  <Button className="print-hide" onClick={handleDecreaseFontSize} icon={<ZoomOutOutlined />}>Font -</Button>
+                  <Button className="print-hide" onClick={handleIncreaseFontSize} icon={<ZoomInOutlined />}>Font +</Button>
+                </Flex>
+              )}
             <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
             <h1 className='text-2xl text-left'><b>Steps:</b></h1>
             <ul className='text-left steps-list'>

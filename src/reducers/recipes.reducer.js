@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   isPrintMode: false,
-  // Add other recipe-related state here if needed
+  fontSize: 16, 
 };
 
 const recipesSlice = createSlice({
@@ -12,9 +12,12 @@ const recipesSlice = createSlice({
     setIsPrintMode: (state, action) => {
       state.isPrintMode = action.payload;
     },
+    setFontSize: (state, action) => {
+      state.fontSize = action.payload;
+    },
   },
 });
 
-export const { setIsPrintMode } = recipesSlice.actions;
+export const { setIsPrintMode, setFontSize } = recipesSlice.actions;
 
 export default recipesSlice.reducer;
