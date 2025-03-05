@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { garments } from '../data/garments';
 import newRecipes from '../data/recipes/index';
 import { Layout, Menu, Drawer, Button, ConfigProvider } from 'antd';
-import { CloseOutlined, MenuOutlined } from '@ant-design/icons';
+import { CloseOutlined, MenuOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { createStyles, useTheme } from 'antd-style';
-import '../App.css'; // Ensure you import the CSS file
+import '../App.css';
+import { useSelector, useDispatch } from 'react-redux';
+import { setIsPrintMode } from '../reducers/recipes.reducer';
 
 const { Header, Content, Footer } = Layout;
 
@@ -30,6 +32,8 @@ export default function AppFrame(props) {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_NAVIGATION_BREAKPOINT);
     const { styles } = useStyle();
     const token = useTheme();
+    const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
+    const dispatch = useDispatch();
 
     const showDrawer = () => {
         setDrawerVisible(true);
@@ -110,48 +114,56 @@ export default function AppFrame(props) {
             styles: drawerStyles,
         }}>
             <Layout>
-                <Header className="app-header print-hide">
-                    {isMobile ? (
-                        <Drawer
-                            placement="left"
-                            onClose={closeDrawer}
-                            open={drawerVisible}
-                            bodyStyle={{ padding: 0 }}
-                            headerStyle={{ color: token.colorTextLightSolid }} // Add this line
-                            closeIcon={<CloseOutlined style={{ color: token.colorTextLightSolid }} />} // Add this line
-                        >
+                {!isPrintMode ? (
+                    <Header className="app-header print-hide">
+                        {isMobile ? (
+                            <Drawer
+                                placement="left"
+                                onClose={closeDrawer}
+                                open={drawerVisible}
+                                bodyStyle={{ padding: 0 }}
+                                headerStyle={{ color: token.colorTextLightSolid }} // Add this line
+                                closeIcon={<CloseOutlined style={{ color: token.colorTextLightSolid }} />} // Add this line
+                            >
+                                <Menu
+                                    theme="dark"
+                                    mode="inline"
+                                    selectedKeys={[location.pathname]}
+                                    items={items}
+                                />
+                            </Drawer>
+                        ) : (
                             <Menu
                                 theme="dark"
-                                mode="inline"
+                                mode="horizontal"
                                 selectedKeys={[location.pathname]}
                                 items={items}
+                                className="desktop-menu"
                             />
-                        </Drawer>
-                    ) : (
-                        <Menu
-                            theme="dark"
-                            mode="horizontal"
-                            selectedKeys={[location.pathname]}
-                            items={items}
-                            className="desktop-menu"
+                        )}
+                        <Button
+                            type="primary"
+                            icon={<MenuOutlined />}
+                            onClick={showDrawer}
+                            className="menu-button"
+                            style={{ display: isMobile ? '' : 'none' }}
                         />
-                    )}
-                    <Button
-                        type="primary"
-                        icon={<MenuOutlined />}
-                        onClick={showDrawer}
-                        className="menu-button"
-                        style={{ display: isMobile ? '' : 'none' }}
-                    />
-                </Header>
+                    </Header>
+                ) : (
+                    <Header className="app-header print-hide">
+                        <Button onClick={() => dispatch(setIsPrintMode(false))} icon={<CloseCircleOutlined />}>Exit</Button>
+                    </Header>
+                )}
                 <Content className="app-content">
                     <div className="content-container">
                         {props.children}
                     </div>
                 </Content>
-                <Footer className="app-footer dark-footer">
-                    Wade Ahlstrom © {new Date().getFullYear()}
-                </Footer>
+                {!isPrintMode && (
+                    <Footer className="app-footer dark-footer">
+                        Wade Ahlstrom © {new Date().getFullYear()}
+                    </Footer>
+                )}
             </Layout>
         </ConfigProvider>
     );

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Slider, InputNumber, Flex } from 'antd';
-import { PrinterOutlined } from '@ant-design/icons';
+import { PrinterOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import Table from './table';
 import { NavLink, useParams } from 'react-router';
 import '../App.css';
 import recipes from '../data/recipes/index';
+import { useSelector, useDispatch } from 'react-redux';
+import { setIsPrintMode } from '../reducers/recipes.reducer';
 
 const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
   return (
@@ -25,6 +27,9 @@ function Recipes() {
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
 
+  const dispatch = useDispatch();
+  const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
+
   useEffect(() => {
     if (recipe) {
       setServings(recipe.defaultServings);
@@ -36,7 +41,7 @@ function Recipes() {
   };
 
   const handlePrint = () => {
-    window.print();
+    dispatch(setIsPrintMode(!isPrintMode));
   };
 
   const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
@@ -52,7 +57,7 @@ function Recipes() {
   const defaultSliderValue = recipe ? Math.floor((maxServings + minServings) / 2) : 1;
 
   return (
-    <div className="recipes-page">
+    <div className={`recipes-page ${isPrintMode ? 'print-mode' : ''}`}>
       <main className="container mx-auto">
         {recipe ? (
           <Flex vertical justify="center" gap="small" className="recipe-flexbox">
@@ -90,7 +95,7 @@ function Recipes() {
             <p className="text-left print-show" style={{ display: 'none' }}>
               <i>Makes {servings} {recipe.servingUnits}</i>
             </p>
-            <Button onClick={handlePrint} className="print-button"><PrinterOutlined />Print Recipe</Button>
+            {!isPrintMode ? <Button onClick={handlePrint} className="print-button" icon={<PrinterOutlined />}>Print Recipe</Button> : <Button onClick={handlePrint} icon={<CloseCircleOutlined />}>Back</Button>}
             <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
             <h1 className='text-2xl text-left'><b>Steps:</b></h1>
             <ul className='text-left steps-list'>

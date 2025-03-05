@@ -12,6 +12,8 @@ import reportWebVitals from './reportWebVitals';
 import { ConfigProvider, theme, Layout } from 'antd';
 import LandingPage from './components/ProfessionalLanding';
 import Houseplants from './components/Houseplants';
+import { Provider } from 'react-redux';
+import store from './store';
 const { Content } = Layout;
 
 const accentColors = ['#631521', '#633D15', '#616315', '#15632C', '#152E63', '#5C1563'];
@@ -29,28 +31,30 @@ const App = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route
-        path="*"
-        element={
-          <AppFrame>
-            <Content>
-              <Routes>
-                <Route path="hobbies/" element={<Home />}>
-                  <Route path="recipes" element={<Recipes />} />
-                  <Route path="recipes/:id" element={<Recipes />} />
-                  <Route path="patterns" element={<Patterns />} />
-                  <Route path="patterns/:id" element={<Patterns />} />
-                  <Route path="tabs" element={<Tabs />} />
-                  <Route path="houseplants" element={<Houseplants />} />
-                </Route>
-              </Routes>
-            </Content>
-          </AppFrame>
-        }
-      />
-    </Routes>
+    <Provider store={store}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route
+          path="*"
+          element={
+            <AppFrame>
+              <Content>
+                <Routes>
+                  <Route path="hobbies/" element={<Home />}>
+                    <Route path="recipes" element={<Recipes />} />
+                    <Route path="recipes/:id" element={<Recipes />} />
+                    <Route path="patterns" element={<Patterns />} />
+                    <Route path="patterns/:id" element={<Patterns />} />
+                    <Route path="tabs" element={<Tabs />} />
+                    <Route path="houseplants" element={<Houseplants />} />
+                  </Route>
+                </Routes>
+              </Content>
+            </AppFrame>
+          }
+        />
+      </Routes>
+    </Provider>
   );
 };
 

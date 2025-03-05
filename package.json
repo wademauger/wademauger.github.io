@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://wadeahlstrom.com",
   "dependencies": {
+    "@reduxjs/toolkit": "^2.6.0",
     "@tombatossals/react-chords": "^0.2.10",
     "antd": "^5.24.1",
     "antd-style": "^3.7.1",
@@ -16,6 +17,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-json-formatter": "^0.4.0",
+    "react-redux": "^9.2.0",
     "react-router": "^7.1.5",
     "react-router-dom": "^7.1.5",
     "react-scripts": "5.0.1",
