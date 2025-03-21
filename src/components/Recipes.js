@@ -28,7 +28,7 @@ function Recipes() {
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
   const dispatch = useDispatch();
   const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
-  const fontSize = useSelector((state) => state.recipes.fontSize);
+  const fontSize = useSelector((state) => state.recipes.printModeFontSize);
 
   useEffect(() => {
     if (recipe) {
@@ -45,11 +45,11 @@ function Recipes() {
   };
 
   const handleIncreaseFontSize = () => {
-    dispatch(setFontSize(fontSize + 1));
+    dispatch(setFontSize(fontSize + 7));
   };
 
   const handleDecreaseFontSize = () => {
-    dispatch(setFontSize(fontSize - 1));
+    dispatch(setFontSize(fontSize - 7));
   };
 
   const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
