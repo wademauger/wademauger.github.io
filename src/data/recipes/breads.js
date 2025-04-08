@@ -54,4 +54,276 @@ export default [
             "For a lighter loaf, substitute 1/3 of the whole wheat flour with bread flour.",
         ],
     },
+    {
+        "title": "Chocolate Chip Granola Muffins",
+        "description": "Delicious muffins made with banana instead of egg, perfect for a quick breakfast or snack.",
+        "permalink": "maple-granola-muffins",
+        "defaultServings": 10,
+        "servingUnits": "muffins",
+        "scalable": true,
+        "ingredients": [
+            {
+                "name": "Soft White Wheat Berries",
+                "quantity": 210,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Powder",
+                "quantity": 10,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Soda",
+                "quantity": 2,
+                "unit": "g"
+            },
+            {
+                "name": "Salt",
+                "quantity": 3,
+                "unit": "g"
+            },
+            {
+                "name": "Cinnamon",
+                "quantity": 2,
+                "unit": "g"
+            },
+            {
+                "name": "Maple Syrup",
+                "quantity": 120,
+                "unit": "g"
+            },
+            {
+                "name": "Milk (non-dairy for vegan)",
+                "quantity": 120,
+                "unit": "g"
+            },
+            {
+                "name": "Neutral Oil",
+                "quantity": 60,
+                "unit": "g"
+            },
+            {
+                "name": "Mashed Banana",
+                "quantity": 60,
+                "unit": "g"
+            },
+            {
+                "name": "Vanilla Extract",
+                "quantity": 2,
+                "unit": "tsp"
+            },
+            {
+                "name": "Granola",
+                "quantity": 75,
+                "unit": "g",
+            },
+            {
+                "name": "Chopped Nuts, Dried Fruit, or Mini Chocolate Chips (optional)",
+                "quantity": 50,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Preheat oven to 350°F (175°C). Line or grease a muffin tin.",
+            "Mill the soft white wheat berries into flour.",
+            "In a bowl, measure out and combine the granola and any optional mix-ins, and set aside.",
+            "In a large bowl, whisk together flour, baking powder, baking soda, salt, and cinnamon.",
+            "In another bowl, combine maple syrup, milk, oil, banana, and vanilla.",
+            "Pour about 2/3 of the dry ingredients into the wet ingredients and stir until fully combined.",
+            "Add the granola and any optional mix-ins to the remaining dry ingredients, then add to the wet batter and stir just until there isn't any dry flour showing. Do not overmix.",
+            "Spoon batter into muffin cups about ¾ full. Sprinkle tops with extra granola.",
+            "Bake for 18–22 minutes, or until a toothpick comes out clean.",
+            "Let cool in the pan for 5 minutes, then transfer to a rack to cool completely."
+        ],
+        "notes": [
+            "Adjust the amount of granola and inclusion to your preference.",
+            "These muffins can be stored in an airtight container at room temperature for up to 3 days, in the fridge for a week, or frozen for up to 2 months. Let them cool completely before refrigerating or freezing in an airtight container (ziploc/tupperware).",
+        ]
+    },
+    {
+        "title": "Lemon Blueberry Muffins",
+        "description": "Fluffy and bright lemon blueberry muffins made with buttermilk.",
+        "permalink": "lemon-blueberry-muffins",
+        "defaultServings": 12,
+        "servingUnits": "muffins",
+        "scalable": true,
+        "ingredients": [
+            {
+                "name": "Soft White Wheat Berries",
+                "quantity": 210,
+                "unit": "g"
+            },
+            {
+                "name": "Cake flour",
+                "quantity": 40,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Powder",
+                "quantity": 17,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Soda",
+                "quantity": 2,
+                "unit": "g"
+            },
+            {
+                "name": "Fine Salt",
+                "quantity": 1,
+                "unit": "g"
+            },
+            {
+                "name": "Granulated Sugar",
+                "quantity": 100,
+                "unit": "g"
+            },
+            {
+                "name": "Buttermilk",
+                "quantity": 360,
+                "unit": "ml"
+            },
+            {
+                "name": "Oil (melted butter, coconut oil, or light olive oil)",
+                "quantity": 80,
+                "unit": "ml"
+            },
+            {
+                "name": "Vanilla Extract",
+                "quantity": 5,
+                "unit": "ml"
+            },
+            {
+                "name": "Lemon Zest",
+                "quantity": 1,
+                "unit": "lemon"
+            },
+            {
+                "name": "Lemon Juice",
+                "quantity": 1,
+                "unit": "lemon",
+            },
+            {
+                "name": "Dried Blueberries",
+                "quantity": 75,
+                "unit": "g"
+            },
+            {
+                "name": "Cornstarch or Arrowroot Powder",
+                "quantity": 1,
+                "unit": "Tbsp"
+            }
+        ],
+        "steps": [
+            "Preheat oven to 400°F (200°C). Line or grease a muffin tin.",
+            "Mill the soft white wheat berries into flour.",
+            "In a large bowl, whisk together flour, baking powder, baking soda, salt, sugar, and lemon zest.",
+            "In another bowl, whisk together buttermilk, oil, vanilla extract, and lemon juice.",
+            "Pour the wet ingredients into the dry ingredients and stir gently until almost combined.",
+            "Fold in dried blueberries. Do not overmix.",
+            "Spoon batter into muffin cups about ¾ full.",
+            "Bake for 18-22 minutes, or until a toothpick comes out clean.",
+            "Let cool in the pan for 5 minutes, then transfer to a rack to cool completely."
+        ],
+        "notes": [
+            "Adjust sugar and lemon juice to taste.",
+            "If using frozen blueberries, toss them with cornstarch or arrowroot powder before folding them into the batter to prevent them from sinking.",
+            "For a tangier flavor, add more lemon zest.",
+            "If your batter is too thin like a cupcake or pancake batter, add more flour until it thickens more like a loose peanut butter texture.",
+            "These muffins are best enjoyed fresh but can be stored in an airtight container at room temperature for up to 2 days."
+        ]
+    },
+    {
+        "title": "Bacon Maple Walnut Muffins",
+        "description": "Savory-sweet muffins with crispy bacon, real maple syrup, and toasted walnuts, made with freshly milled soft white wheat and enriched with buttermilk.",
+        "permalink": "bacon-maple-walnut-muffins",
+        "defaultServings": 12,
+        "servingUnits": "muffins",
+        "scalable": true,
+        "ingredients": [
+          {
+            "name": "Soft White Wheat Berries",
+            "quantity": 250,
+            "unit": "g"
+          },
+          {
+            "name": "Baking Powder",
+            "quantity": 15,
+            "unit": "g"
+          },
+          {
+            "name": "Baking Soda",
+            "quantity": 2,
+            "unit": "g"
+          },
+          {
+            "name": "Fine Salt",
+            "quantity": 1,
+            "unit": "g"
+          },
+          {
+            "name": "Brown Sugar (light or dark)",
+            "quantity": 80,
+            "unit": "g"
+          },
+          {
+            "name": "Maple Syrup (preferably Grade B or dark amber)",
+            "quantity": 80,
+            "unit": "ml"
+          },
+          {
+            "name": "Buttermilk",
+            "quantity": 300,
+            "unit": "ml"
+          },
+          {
+            "name": "Rendered Bacon Fat",
+            "quantity": 40,
+            "unit": "ml"
+          },
+          {
+            "name": "Butter (melted)",
+            "quantity": 40,
+            "unit": "ml"
+          },
+          {
+            "name": "Egg (or egg substitute)",
+            "quantity": 1,
+            "unit": "large"
+          },
+          {
+            "name": "Vanilla Extract",
+            "quantity": 5,
+            "unit": "ml"
+          },
+          {
+            "name": "Cooked Bacon, chopped",
+            "quantity": 100,
+            "unit": "g"
+          },
+          {
+            "name": "Toasted Walnuts, chopped",
+            "quantity": 75,
+            "unit": "g"
+          }
+        ],
+        "steps": [
+          "Preheat oven to 400°F (200°C). Line or grease a muffin tin.",
+          "Mill soft white wheat berries into flour. Toast walnuts while the oven heats, if needed.",
+          "In a large bowl, whisk together flour, baking powder, baking soda, salt, and brown sugar.",
+          "In another bowl, whisk together buttermilk, maple syrup, bacon fat, melted butter, egg, and vanilla extract.",
+          "Pour wet mixture into dry ingredients. Stir until just combined.",
+          "Fold in chopped cooked bacon and toasted walnuts. Don’t overmix.",
+          "Spoon batter into muffin cups about ¾ full. Optional: sprinkle tops with extra chopped walnuts or a pinch of flaky salt.",
+          "Bake 18–22 minutes, until golden and a toothpick comes out clean.",
+          "Cool in the pan 5 minutes, then move to a rack. Best served warm!"
+        ],
+        "notes": [
+          "Chop the bacon finely so it distributes evenly.",
+          "You can reserve 1–2 tablespoons of chopped bacon for topping each muffin before baking.",
+          "Grade B maple syrup has deeper flavor—perfect for baking.",
+          "To make this dairy-free, use plant buttermilk (like oat milk + vinegar) and oil instead of butter.",
+          "Store muffins airtight at room temp for up to 2 days or freeze for longer."
+        ]
+      }      
 ];
