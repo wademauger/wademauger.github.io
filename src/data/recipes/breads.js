@@ -55,6 +55,78 @@ export default [
         ],
     },
     {
+        "title": "Amish Cinnamon Swirl Bread",
+        "description": "A pillow-y, soft, and sweet bread with a cinnamon swirl, perfect for breakfast or dessert.",
+        "permalink": "cinnamon-swirl-bread",
+        "defaultServings": 2,
+        "servingUnits": "loaves",
+        "scalable": true,
+        "ingredients": [
+            {
+                "name": "Active Dry Yeast",
+                "quantity": 1.5,
+                "unit": "Tbsp"
+            },
+            {
+                "name": "Warm Water",
+                "quantity": 480,
+                "unit": "ml"
+            },
+            {
+                "name": "Granulated Sugar",
+                "quantity": 67,
+                "unit": "g"
+            },
+            {
+                "name": "Butter or Oil",
+                "quantity": 80,
+                "unit": "ml"
+            },
+            {
+                "name": "Mashed Potatoes (or potato flakes + water)",
+                "quantity": 120,
+                "unit": "g"
+            },
+            {
+                "name": "Salt",
+                "quantity": 2.5,
+                "unit": "tsp"
+            },
+            {
+                "name": "King Arthur Bread Flour",
+                "quantity": 625,
+                "unit": "g",
+            },
+            {
+                "name": "Powdered Confectioners Sugar",
+                "quantity": 80,
+                "unit": "g"
+            },
+            {
+                "name": "Ground Cinnamon",
+                "quantity": 2,
+                "unit": "Tbsp"
+            }
+        ],
+        "steps": [
+            "Mix 1 Tbsp flour, 1 Tbsp sugar, and yeast in a mixing bowl. Add warm water, stir, and let rest for 5 minutes until foamy.",
+            "In another bowl, whisk to combine sugar, oil, mashed potatoes, and salt to the yeast mixture.",
+            "Add 4 ½ cups (about 560g) of flour and mix. Continue kneading, adding more flour as needed, until dough pulls away from the bowl sides.",
+            "Drizzle oil into the bowl to grease the sides. Cover with a dish towel and let rise for about 1 hour.",
+            "Grease 2 (9x5\") loaf pans. Punch down the dough, knead briefly, and divide in half.",
+            "Roll each half into an 8\" by 14\" rectangle. Spread powdered sugar and cinnamon over each. Roll tightly from the short end and place seam-side down in loaf pans.",
+            "Let rise for another 30 minutes until slightly above the pan edge. Preheat oven to 350°F (175°C).",
+            "Bake for 30–35 minutes, depending on pan thickness.",
+            "Brush tops with butter, cool for 10 minutes, and remove from pans. Cool completely before storing."
+        ],
+        "notes": [
+            "To make Cinnamon Raisin Bread, add 1½–2 cups raisins to the dough with the flour.",
+            "Optional glaze: Mix 1 cup powdered sugar, ½ tsp vanilla, and ~1½ Tbsp milk. Drizzle over cooled loaves.",
+            "Mashed potatoes help keep the bread soft and fresh.",
+            "Freeze one loaf unless consumed within 3–4 days."
+        ]
+    },
+    {
         "title": "Chocolate Chip Granola Muffins",
         "description": "Delicious muffins made with banana instead of egg, perfect for a quick breakfast or snack.",
         "permalink": "maple-granola-muffins",
@@ -241,89 +313,89 @@ export default [
         "servingUnits": "muffins",
         "scalable": true,
         "ingredients": [
-          {
-            "name": "Soft White Wheat Berries",
-            "quantity": 250,
-            "unit": "g"
-          },
-          {
-            "name": "Baking Powder",
-            "quantity": 15,
-            "unit": "g"
-          },
-          {
-            "name": "Baking Soda",
-            "quantity": 2,
-            "unit": "g"
-          },
-          {
-            "name": "Fine Salt",
-            "quantity": 1,
-            "unit": "g"
-          },
-          {
-            "name": "Brown Sugar (light or dark)",
-            "quantity": 80,
-            "unit": "g"
-          },
-          {
-            "name": "Maple Syrup (preferably Grade B or dark amber)",
-            "quantity": 80,
-            "unit": "ml"
-          },
-          {
-            "name": "Buttermilk",
-            "quantity": 300,
-            "unit": "ml"
-          },
-          {
-            "name": "Rendered Bacon Fat",
-            "quantity": 40,
-            "unit": "ml"
-          },
-          {
-            "name": "Butter (melted)",
-            "quantity": 40,
-            "unit": "ml"
-          },
-          {
-            "name": "Egg (or egg substitute)",
-            "quantity": 1,
-            "unit": "large"
-          },
-          {
-            "name": "Vanilla Extract",
-            "quantity": 5,
-            "unit": "ml"
-          },
-          {
-            "name": "Cooked Bacon, chopped",
-            "quantity": 100,
-            "unit": "g"
-          },
-          {
-            "name": "Toasted Walnuts, chopped",
-            "quantity": 75,
-            "unit": "g"
-          }
+            {
+                "name": "Soft White Wheat Berries",
+                "quantity": 250,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Powder",
+                "quantity": 15,
+                "unit": "g"
+            },
+            {
+                "name": "Baking Soda",
+                "quantity": 2,
+                "unit": "g"
+            },
+            {
+                "name": "Fine Salt",
+                "quantity": 1,
+                "unit": "g"
+            },
+            {
+                "name": "Brown Sugar (light or dark)",
+                "quantity": 80,
+                "unit": "g"
+            },
+            {
+                "name": "Maple Syrup (preferably Grade B or dark amber)",
+                "quantity": 80,
+                "unit": "ml"
+            },
+            {
+                "name": "Buttermilk",
+                "quantity": 300,
+                "unit": "ml"
+            },
+            {
+                "name": "Rendered Bacon Fat",
+                "quantity": 40,
+                "unit": "ml"
+            },
+            {
+                "name": "Butter (melted)",
+                "quantity": 40,
+                "unit": "ml"
+            },
+            {
+                "name": "Egg (or egg substitute)",
+                "quantity": 1,
+                "unit": "large"
+            },
+            {
+                "name": "Vanilla Extract",
+                "quantity": 5,
+                "unit": "ml"
+            },
+            {
+                "name": "Cooked Bacon, chopped",
+                "quantity": 100,
+                "unit": "g"
+            },
+            {
+                "name": "Toasted Walnuts, chopped",
+                "quantity": 75,
+                "unit": "g"
+            }
         ],
         "steps": [
-          "Preheat oven to 400°F (200°C). Line or grease a muffin tin.",
-          "Mill soft white wheat berries into flour. Toast walnuts while the oven heats, if needed.",
-          "In a large bowl, whisk together flour, baking powder, baking soda, salt, and brown sugar.",
-          "In another bowl, whisk together buttermilk, maple syrup, bacon fat, melted butter, egg, and vanilla extract.",
-          "Pour wet mixture into dry ingredients. Stir until just combined.",
-          "Fold in chopped cooked bacon and toasted walnuts. Don’t overmix.",
-          "Spoon batter into muffin cups about ¾ full. Optional: sprinkle tops with extra chopped walnuts or a pinch of flaky salt.",
-          "Bake 18–22 minutes, until golden and a toothpick comes out clean.",
-          "Cool in the pan 5 minutes, then move to a rack. Best served warm!"
+            "Preheat oven to 400°F (200°C). Line or grease a muffin tin.",
+            "Mill soft white wheat berries into flour. Toast walnuts while the oven heats, if needed.",
+            "In a large bowl, whisk together flour, baking powder, baking soda, salt, and brown sugar.",
+            "In another bowl, whisk together buttermilk, maple syrup, bacon fat, melted butter, egg, and vanilla extract.",
+            "Pour wet mixture into dry ingredients. Stir until just combined.",
+            "Fold in chopped cooked bacon and toasted walnuts. Don’t overmix.",
+            "Spoon batter into muffin cups about ¾ full. Optional: sprinkle tops with extra chopped walnuts or a pinch of flaky salt.",
+            "Bake 18–22 minutes, until golden and a toothpick comes out clean.",
+            "Cool in the pan 5 minutes, then move to a rack. Best served warm!"
         ],
         "notes": [
-          "Chop the bacon finely so it distributes evenly.",
-          "You can reserve 1–2 tablespoons of chopped bacon for topping each muffin before baking.",
-          "Grade B maple syrup has deeper flavor—perfect for baking.",
-          "To make this dairy-free, use plant buttermilk (like oat milk + vinegar) and oil instead of butter.",
-          "Store muffins airtight at room temp for up to 2 days or freeze for longer."
+            "Chop the bacon finely so it distributes evenly.",
+            "You can reserve 1–2 tablespoons of chopped bacon for topping each muffin before baking.",
+            "Grade B maple syrup has deeper flavor—perfect for baking.",
+            "To make this dairy-free, use plant buttermilk (like oat milk + vinegar) and oil instead of butter.",
+            "Store muffins airtight at room temp for up to 2 days or freeze for longer."
         ]
-      }      
+    }
 ];
