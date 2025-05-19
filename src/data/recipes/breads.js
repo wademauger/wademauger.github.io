@@ -9,32 +9,32 @@ export default [
         "ingredients": [
             {
                 'name': 'Hard Red Wheat Berries',
-                'quantity': 500,
+                'quantity': 750,
                 'unit': 'g'
             },
             {
                 'name': 'Filtered Water',
-                'quantity': 385,
+                'quantity': 675,
                 'unit': 'g'
             },
             {
-                'name': 'Honey',
-                'quantity': 85,
+                'name': 'Honey, Sugar, or Maple Syrup',
+                'quantity': 127.5,
                 'unit': 'g'
             },
             {
                 'name': 'Butter or Oil',
-                'quantity': 28,
+                'quantity': 45,
                 'unit': 'g'
             },
             {
                 'name': 'Salt',
-                'quantity': 1.5,
+                'quantity': 2.25,
                 'unit': 'tsp'
             },
             {
                 'name': 'Instant Yeast',
-                'quantity': 2,
+                'quantity': 3,
                 'unit': 'tsp'
             },
         ],
