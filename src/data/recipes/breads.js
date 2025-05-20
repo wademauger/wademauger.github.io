@@ -55,6 +55,77 @@ export default [
         ],
     },
     {
+        "title": "English Muffins",
+        "description": "These buttery, sweet English muffins are so delicious, I could mistake them for a biscuit! Serve them toasted with butter and jam, or use them for breakfast sandwiches.",
+        "permalink": "english-muffins",
+        "defaultServings": 14,
+        "servingUnits": "3-inch english muffins",
+        "scalable": true,
+        "ingredients": [
+            {
+                'name': 'Hard White Wheat Berries',
+                'quantity': 500,
+                'unit': 'g'
+            },
+            {
+                'name': 'Whole Milk (very warm)',
+                'quantity': 425,
+                'unit': 'g'
+            },
+            {
+                'name': 'Butter or Oil',
+                'quantity': 43,
+                'unit': 'g'
+            },
+            {
+                'name': 'Salt',
+                'quantity': 1.25,
+                'unit': 'tsp'
+            },
+            {
+                'name': 'Sugar or Honey',
+                'quantity': 25,
+                'unit': 'g'
+            },
+            {
+                'name': 'Egg',
+                'quantity': 1,
+                'unit': 'whole egg'
+            },
+            {
+                'name': 'Instant Yeast',
+                'quantity': 2,
+                'unit': 'tsp'
+            },
+        ],
+        "steps": [
+            "Mill the flour",
+            "Sift out 50 grams or so of the largest bran pieces. Set the bran aside, we will dust the muffins with it just before cooking.",
+            "Heat the milk until steamy, but NOT boiling, about 180°F (82°C).",
+            "Place oil, salt, sugar, and warmed milk into a stand mixer and mix until combined. Once the mixture is cooled enough, add the egg and mix again.",
+            "Add the flour to the wet mixture. Mix to incorporate.", 
+            "Cover, and let the dough sit for 15 minutes. This is called the autolyse stage, and it allows the flour to absorb the liquid and start to develop gluten, but especially to allow the bran to absorb some of the excess liquid in the mixture.",
+            "Add the yeast and begin to knead.",
+            "Kneading the dough on low speed or by hand. The dough should eventually come together and appear smooth but still sticky. This can take up to 25 minutes, be patient with it.",
+            "Cover and let rise for 1 hour or so, until doubled in size.",
+            "Sprinkle a clean work bench with a little extra milled flour, or sifted bran. Carefully turn out the dough.",
+            "Gently roll the dough out to about 3/4 inch thick. Try not to deflate the dough too much, but this is a forgiving dough that can be rerolled and shaped a few times and come out just fine.",
+            "With a 3-inch biscuit cutter oiled or dusted with flour, cut muffins from the dough.",
+            "Place cut dough onto a lined baking sheet dusted with parchment. Repeat until all dough is used, re-rolling scraps as needed.",
+            "Cover the muffins with a towel and let them rest for 30 minutes.",
+            "Preheat a cast iron skillet to 350°F (medium heat) for 10 minutes while the English muffins finish resting.",
+            "Take 6 muffins at a time, toss them gently in the bran, and arrange them around the outside of the cast iron skillet, with 1-2 inches of space between them. (your skillet may only fit 4 at a time, depends on the size of your skillet).",
+            "Cook for 7 minutes on each side.",
+            "Place cooked muffins on a wire rack to cool. Clean the skillet between batches to prevent burning.",
+        ],
+        "notes": [
+            "Store in an airtight container at room temperature for 1-2 days. For longer storage, freeze in a sealed container for up to 3-4 months.",
+            "I like to split the muffins with a fork instead of cutting with a knife to give muffins a rough texture, great for toasting and spreads. For sandwiches, cutting with a knife is often preferable.",
+            "These muffins are great to store in the freezer and pull out on the counter to thaw overnight. Fresh tasting muffins in the morning, every morning!",
+            "To enjoy frozen muffins, thaw at room temperature for a couple of hours before toasting. In a pinch, you can microwave them for 30 seconds to thaw, then toast them.",
+        ]
+    },
+    {
         "title": "Amish Cinnamon Swirl Bread",
         "description": "A pillow-y, soft, and sweet bread with a cinnamon swirl, perfect for breakfast or dessert.",
         "permalink": "cinnamon-swirl-bread",
