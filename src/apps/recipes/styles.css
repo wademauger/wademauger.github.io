@@ -1,0 +1,57 @@
+/* Add these styles to your existing CSS file */
+
+.recipe-container {
+  display: flex;
+  gap: 20px;
+}
+
+.reader-layout {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+}
+
+.reader-layout.has-pinned-recipes {
+  grid-template-columns: 1fr 1fr 3fr;
+}
+
+.pinned-sidebar {
+  border-right: 1px solid #eee;
+  padding-right: 15px;
+}
+
+.pinned-sidebar ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.pinned-sidebar li {
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 4px;
+}
+
+.pinned-sidebar li.active {
+  background-color: #f0f0f0;
+}
+
+.pinned-sidebar li:hover {
+  background-color: #f8f8f8;
+}
+
+.pin-icon {
+  margin-right: 5px;
+  display: inline-block;
+}
+
+.recipe-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.pinned-recipes {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+}
