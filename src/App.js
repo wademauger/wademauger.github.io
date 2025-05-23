@@ -21,10 +21,10 @@ function App() {
           <Route path="/recipes/reader-view/:recipeId" element={<RecipesApp view="reader" />} />
           
           {/* Song Tabs App Routes */}
-          <Route path="/songs" element={<SongTabsApp />} />
-          <Route path="/songs/artist/:artistId" element={<SongTabsApp />} />
-          <Route path="/songs/album/:albumId" element={<SongTabsApp />} />
-          <Route path="/songs/song/:songId" element={<SongTabsApp />} />
+          <Route path="/tabs" element={<SongTabsApp />} />
+          <Route path="/tabs/artist/:artistId" element={<SongTabsApp />} />
+          <Route path="/tabs/album/:albumId" element={<SongTabsApp />} />
+          <Route path="/tabs/song/:songId" element={<SongTabsApp />} />
           
           {/* Knitting Pattern App Routes */}
           <Route path="/knitting" element={<KnittingApp />} />

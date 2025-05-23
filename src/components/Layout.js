@@ -32,8 +32,8 @@ const Layout = ({ children }) => {
               <li className={isActive('/recipes')}>
                 <Link to="/recipes">Recipes</Link>
               </li>
-              <li className={isActive('/songs')}>
-                <Link to="/songs">Song Tabs</Link>
+              <li className={isActive('/tabs')}>
+                <Link to="/tabs">Song Tabs</Link>
               </li>
               <li className={isActive('/knitting')}>
                 <Link to="/knitting">Knitting Patterns</Link>
@@ -59,8 +59,8 @@ const Layout = ({ children }) => {
             <li className={isActive('/recipes')}>
               <Link to="/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
             </li>
-            <li className={isActive('/songs')}>
-              <Link to="/songs" onClick={() => setMenuOpen(false)}>Song Tabs</Link>
+            <li className={isActive('/tabs')}>
+              <Link to="/tabs" onClick={() => setMenuOpen(false)}>Song Tabs</Link>
             </li>
             <li className={isActive('/knitting')}>
               <Link to="/knitting" onClick={() => setMenuOpen(false)}>Knitting Patterns</Link>
