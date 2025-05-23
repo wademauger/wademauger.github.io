@@ -1,0 +1,53 @@
+/* Core app styles */
+.app-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.view-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  color: #6c757d;
+  text-align: center;
+  padding: 2rem;
+}
+
+.empty-state p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+/* General component styling shared across apps */
+.app-link {
+  display: inline-block;
+  background-color: #1abc9c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  text-align: center;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.app-link:hover {
+  background-color: #16a085;
+}

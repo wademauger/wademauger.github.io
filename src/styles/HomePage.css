@@ -1,0 +1,104 @@
+.home-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.home-page h1 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.intro-text {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  color: #555;
+}
+
+.app-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.app-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.app-card h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #1abc9c;
+}
+
+.app-features {
+  margin: 1.5rem 0;
+  flex-grow: 1;
+}
+
+.app-features ul {
+  padding-left: 1.5rem;
+}
+
+.app-features li {
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.app-link {
+  display: inline-block;
+  background-color: #1abc9c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  text-align: center;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-top: auto;
+  width: 100%;
+}
+
+.app-link:hover {
+  background-color: #16a085;
+}
+
+/* Add these styles to center and color the SVGs */
+.app-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.app-svg {
+  fill: var(--heading-color, #333); /* Uses CSS variable if defined, otherwise #333 */
+}
+
+/* If you don't have a CSS variable for heading color, 
+   you can match the h2 color directly like this: */
+.app-card h2, .app-svg {
+  color: #333; /* Set both to the same color */
+}
+
+.app-svg {
+  fill: currentColor; /* This will make the SVG use the inherited text color */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-cards {
+    grid-template-columns: 1fr;
+  }
+}
