@@ -37,7 +37,7 @@ const SongTabsApp = () => {
   const newAlbumInputRef = useRef(null);
   const newSongInputRef = useRef(null);
 
-  const { artistName, albumName, songTitle } = useParams();
+  const { artistName, albumName, songId } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,13 +68,74 @@ const SongTabsApp = () => {
         }
 
         await GoogleDriveService.initialize(CLIENT_ID, API_KEY);
+        // Try to restore session from localStorage first
+        const restored = GoogleDriveService.restoreSession();
         setIsGoogleDriveConnected(GoogleDriveService.isSignedIn);
-
-        if (GoogleDriveService.isSignedIn) {
+        if (restored) {
           setUserEmail(GoogleDriveService.getUserEmail());
           await loadLibraryFromDrive();
+          // After loading library, try to select song from URL (songId only)
+          if (songId) {
+            setTimeout(() => {
+              setLibrary((lib) => {
+                let foundSong = null, foundArtist = null, foundAlbum = null;
+                for (const artist of lib.artists) {
+                  for (const album of artist.albums) {
+                    const song = album.songs.find(s => s.title === decodeURIComponent(songId));
+                    if (song) {
+                      foundSong = song;
+                      foundArtist = artist;
+                      foundAlbum = album;
+                      break;
+                    }
+                  }
+                  if (foundSong) break;
+                }
+                if (foundSong) {
+                  setSelectedArtist(foundArtist);
+                  setSelectedAlbum(foundAlbum);
+                  setSelectedSong(foundSong);
+                }
+                return lib;
+              });
+            }, 0);
+          }
+          return;
+        }
+        // If not restored, try silent sign-in
+        const silentSignedIn = await GoogleDriveService.trySilentSignIn();
+        setIsGoogleDriveConnected(GoogleDriveService.isSignedIn);
+        if (silentSignedIn) {
+          setUserEmail(GoogleDriveService.getUserEmail());
+          await loadLibraryFromDrive();
+          // After loading library, try to select song from URL (songId only)
+          if (songId) {
+            setTimeout(() => {
+              setLibrary((lib) => {
+                let foundSong = null, foundArtist = null, foundAlbum = null;
+                for (const artist of lib.artists) {
+                  for (const album of artist.albums) {
+                    const song = album.songs.find(s => s.title === decodeURIComponent(songId));
+                    if (song) {
+                      foundSong = song;
+                      foundArtist = artist;
+                      foundAlbum = album;
+                      break;
+                    }
+                  }
+                  if (foundSong) break;
+                }
+                if (foundSong) {
+                  setSelectedArtist(foundArtist);
+                  setSelectedAlbum(foundAlbum);
+                  setSelectedSong(foundSong);
+                }
+                return lib;
+              });
+            }, 0);
+          }
         } else {
-          // Load mock data if not connected
+          // Not signed in, wait for user action
           loadMockLibrary();
         }
       } catch (error) {
@@ -90,18 +151,17 @@ const SongTabsApp = () => {
     const mockLibrary = {
       artists: [
         {
-          name: 'test',
+          name: 'Artist Test',
           albums: [
             {
-              title: 'test',
+              title: 'Album Test',
               songs: [
                 {
-                  title: 'test',
-                  chords: ['A', 'B', 'C', 'D7'],
+                  title: 'Song Test',
                   lyrics: [
                     "1234567890 [Cmaj7]0987654321",
-                    "[Cmaj7]1234567890 [Cmaj7]0987654321",
-                    "[Cmaj7]12345 [Cmaj7]67890 [Cmaj7]12345 [Cmaj7]67890",
+                    "[Cm7]1234567890 [C7]0987654321",
+                    "[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890",
                   ],
                 }
               ]
@@ -164,8 +224,8 @@ const SongTabsApp = () => {
           if (album) {
             setSelectedAlbum(album);
 
-            if (songTitle) {
-              const song = album.songs.find(s => s.title === decodeURIComponent(songTitle));
+            if (songId) {
+              const song = album.songs.find(s => s.title === decodeURIComponent(songId));
               if (song) {
                 setSelectedSong(song);
               }
@@ -174,7 +234,7 @@ const SongTabsApp = () => {
         }
       }
     }
-  }, [artistName, albumName, songTitle, library]);
+  }, [artistName, albumName, songId, library]);
 
   const handleArtistSelect = (artist) => {
     setSelectedArtist(artist);

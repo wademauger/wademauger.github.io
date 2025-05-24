@@ -282,6 +282,10 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       {/* Lyrics section */}
       <div className="lyrics-section">
         <div className="lyrics-container">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
+            <h3 style={{ margin: 0 }}>{song.title}</h3>
+            <i style={{ margin: 0 }}>{artist.name}</i>
+          </div>
           {song.lyrics && song.lyrics.map((line, index) => (
             <div 
               key={`line-${index}`} 

@@ -39,6 +39,9 @@ class GoogleDriveService {
             },
           });
 
+          // Attempt to restore session from localStorage
+          this.restoreSession();
+
           resolve();
         } catch (error) {
           reject(error);
@@ -65,6 +68,7 @@ class GoogleDriveService {
         this.isSignedIn = true;
         window.gapi.client.setToken({access_token: this.accessToken});
         this.loadUserProfile();
+        this.persistSession();
         resolve();
       };
 
@@ -80,6 +84,7 @@ class GoogleDriveService {
     this.accessToken = null;
     this.userEmail = null;
     window.gapi.client.setToken(null);
+    this.clearSession();
   }
 
   async loadUserProfile() {
@@ -323,6 +328,64 @@ class GoogleDriveService {
     await this.saveLibrary(library);
     
     return library;
+  }
+
+  // Attempt silent sign-in (no prompt)
+  async trySilentSignIn() {
+    return new Promise((resolve, reject) => {
+      if (!this.tokenClient) {
+        reject(new Error('Google Drive not initialized'));
+        return;
+      }
+      // Set up callback for silent sign-in
+      this.tokenClient.callback = (response) => {
+        if (response.error || !response.access_token) {
+          // Not signed in silently
+          this.isSignedIn = false;
+          resolve(false);
+          return;
+        }
+        this.accessToken = response.access_token;
+        this.isSignedIn = true;
+        window.gapi.client.setToken({ access_token: this.accessToken });
+        this.loadUserProfile();
+        this.persistSession();
+        resolve(true);
+      };
+      // Attempt silent sign-in
+      this.tokenClient.requestAccessToken({ prompt: 'none' });
+    });
+  }
+
+  // Call this after successful login or silent sign-in
+  persistSession() {
+    if (this.accessToken) {
+      localStorage.setItem('gdrive_access_token', this.accessToken);
+    }
+    if (this.userEmail) {
+      localStorage.setItem('gdrive_user_email', this.userEmail);
+    }
+  }
+
+  // Call this to clear session
+  clearSession() {
+    localStorage.removeItem('gdrive_access_token');
+    localStorage.removeItem('gdrive_user_email');
+  }
+
+  // Call this on app load to restore session if possible
+  restoreSession() {
+    const token = localStorage.getItem('gdrive_access_token');
+    const email = localStorage.getItem('gdrive_user_email');
+    if (token) {
+      this.accessToken = token;
+      this.isSignedIn = true;
+      window.gapi?.client?.setToken({ access_token: token });
+    }
+    if (email) {
+      this.userEmail = email;
+    }
+    return this.isSignedIn;
   }
 }
 
