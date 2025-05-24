@@ -2,6 +2,9 @@ import React from 'react';
 import { guitarChords } from '../data/guitarChords';
 import { ukuleleChords } from '../data/ukuleleChords';
 import { pianoChords } from '../data/pianoChords';
+import { bassGuitarChords } from '../data/bassGuitarChords';
+import { bassUkuleleChords } from '../data/bassUkuleleChords';
+import { baritoneUkuleleChords } from '../data/baritoneUkuleleChords';
 
 // Chord database with actual fingering positions
 const CHORD_DATA = {
@@ -12,17 +15,30 @@ const CHORD_DATA = {
   ukulele: ukuleleChords,
   
   // Piano chords - notes to highlight
-  piano: pianoChords
+  piano: pianoChords,
+
+  // Bass guitar chords (4 strings): 0 = open, >0 = fret number
+  bassGuitar: bassGuitarChords,
+
+  // Bass ukulele chords (4 strings): 0 = open, >0 = fret number
+  bassUkulele: bassUkuleleChords,
+
+  // Baritone ukulele chords (4 strings): 0 = open, >0 = fret number
+  baritoneUkulele: baritoneUkuleleChords
 };
 
 const ChordChart = ({ chord, instrument, small = false }) => {
-  const size = small ? { width: 120, height: 150 } : { width: 200, height: 250 };
+  // Calculate new sizes with exact same aspect ratio as original
+  // Original sizes were: small: width 120, height 150 (ratio 0.8)
+  //                      regular: width 200, height 250 (ratio 0.8)
+  // Now we'll reduce by 60% while maintaining ratio
+  const size = small ? { width: 48, height: 60 } : { width: 80, height: 130 };
   
   const renderFretboardChord = (instrument) => {
     const chordData = CHORD_DATA[instrument]?.[chord];
     if (!chordData) return <div>Chord not found</div>;
-    
-    const strings = instrument === 'ukulele' ? 4 : 6;
+    let strings = 6;
+    if (instrument === 'ukulele' || instrument === 'bassUkulele' || instrument === 'baritoneUkulele' || instrument === 'bassGuitar') strings = 4;
     const frets = 5;
     const stringSpacing = size.width / (strings + 1);
     const fretSpacing = (size.height - 60) / frets;
@@ -55,51 +71,51 @@ const ChordChart = ({ chord, instrument, small = false }) => {
           />
         ))}
 
-        {/* Finger positions */}
+        {/* Adjust circle sizes for smaller overall dimensions */}
         {chordData.frets.map((fret, stringIndex) => {
           if (fret === -1) {
-            // X mark for muted string
+            // X mark for muted string - make smaller
             return (
               <g key={`mute-${stringIndex}`}>
                 <line
-                  x1={stringSpacing * (stringIndex + 1) - 6}
-                  y1={25 - 6}
-                  x2={stringSpacing * (stringIndex + 1) + 6}
-                  y2={25 + 6}
+                  x1={stringSpacing * (stringIndex + 1) - 4}
+                  y1={25 - 4}
+                  x2={stringSpacing * (stringIndex + 1) + 4}
+                  y2={25 + 4}
                   stroke="#ff0000"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                 />
                 <line
-                  x1={stringSpacing * (stringIndex + 1) - 6}
-                  y1={25 + 6}
-                  x2={stringSpacing * (stringIndex + 1) + 6}
-                  y2={25 - 6}
+                  x1={stringSpacing * (stringIndex + 1) - 4}
+                  y1={25 + 4}
+                  x2={stringSpacing * (stringIndex + 1) + 4}
+                  y2={25 - 4}
                   stroke="#ff0000"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                 />
               </g>
             );
           } else if (fret === 0) {
-            // Open string circle
+            // Open string circle - make smaller
             return (
               <circle
                 key={`open-${stringIndex}`}
                 cx={stringSpacing * (stringIndex + 1)}
                 cy={25}
-                r={small ? 4 : 6}
+                r={small ? 2 : 3}
                 fill="none"
                 stroke="#333"
-                strokeWidth={2}
+                strokeWidth={1.5}
               />
             );
           } else if (fret > 0) {
-            // Finger position
+            // Finger position - make smaller
             return (
               <circle
                 key={`finger-${stringIndex}`}
                 cx={stringSpacing * (stringIndex + 1)}
                 cy={40 + (fret - 0.5) * fretSpacing}
-                r={small ? 6 : 8}
+                r={small ? 3 : 4}
                 fill="#333"
               />
             );
@@ -107,7 +123,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
           return null;
         })}
 
-        {/* Finger numbers */}
+        {/* Smaller font for finger numbers */}
         {chordData.fingers?.map((finger, stringIndex) => {
           const fret = chordData.frets[stringIndex];
           if (finger > 0 && fret > 0) {
@@ -115,10 +131,10 @@ const ChordChart = ({ chord, instrument, small = false }) => {
               <text
                 key={`finger-num-${stringIndex}`}
                 x={stringSpacing * (stringIndex + 1)}
-                y={40 + (fret - 0.5) * fretSpacing + 4}
+                y={40 + (fret - 0.5) * fretSpacing + 2}
                 textAnchor="middle"
                 fill="white"
-                fontSize={small ? "10" : "12"}
+                fontSize={small ? "6" : "8"}
                 fontWeight="bold"
               >
                 {finger}
@@ -192,33 +208,14 @@ const ChordChart = ({ chord, instrument, small = false }) => {
           <text
             key={`label-${key}`}
             x={index * whiteKeyWidth + whiteKeyWidth / 2}
-            y={pianoHeight - 10}
+            y={pianoHeight - 5}
             textAnchor="middle"
             fill="#333"
-            fontSize={small ? "10" : "12"}
+            fontSize={small ? "6" : "8"}
           >
             {key}
           </text>
         ))}
-
-        {/* Black key labels */}
-        {blackKeys.map((key, index) => {
-          const whiteKeyPositions = [0, 1, 3, 4, 5];
-          const whiteKeyIndex = whiteKeyPositions[index];
-          
-          return (
-            <text
-              key={`black-label-${key}`}
-              x={(whiteKeyIndex + 1) * whiteKeyWidth}
-              y={actualBlackKeyHeight - 10}
-              textAnchor="middle"
-              fill="white"
-              fontSize={small ? "7" : "9"}
-            >
-              {key}
-            </text>
-          );
-        })}
       </svg>
     );
   };
@@ -227,6 +224,9 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     switch (instrument) {
       case 'ukulele':
       case 'guitar':
+      case 'bassGuitar':
+      case 'bassUkulele':
+      case 'baritoneUkulele':
         return renderFretboardChord(instrument);
       case 'piano':
         return renderPianoChord();
@@ -237,8 +237,8 @@ const ChordChart = ({ chord, instrument, small = false }) => {
 
   return (
     <div className={`chord-chart ${small ? 'small' : ''}`}>
-      <div className="chord-name">{chord}</div>
       {renderChordDiagram()}
+      <div className="chord-name">{chord}</div>
     </div>
   );
 };

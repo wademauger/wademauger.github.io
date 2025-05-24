@@ -6,8 +6,8 @@ const AlbumList = ({ albums, selectedAlbum, onSelectAlbum }) => {
       <ul>
         {albums.map(album => (
           <li 
-            key={album.id} 
-            className={selectedAlbum?.id === album.id ? 'active' : ''}
+            key={album.title} 
+            className={selectedAlbum?.title === album.title ? 'active' : ''}
             onClick={() => onSelectAlbum(album)}
           >
             {album.title}

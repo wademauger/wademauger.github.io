@@ -26,9 +26,9 @@ const HomePage = () => {
         </div>
         
         <div className="app-card">
-          <h2>Song Tabs</h2>
+          <h2>Music Tabs</h2>
           <p>
-            Explore your collection of song tabs organized by artist and album.
+            Explore your collection of music tabs organized by artist and album.
             View chord charts for various instruments.
           </p>
           <div className="app-icon">
@@ -36,7 +36,7 @@ const HomePage = () => {
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
           </div>
-          <Link to="/tabs" className="app-link">Open Song Tabs App</Link>
+          <Link to="/tabs" className="app-link">Open Music Tabs App</Link>
         </div>
         
         <div className="app-card">

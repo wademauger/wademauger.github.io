@@ -1,3 +1,162 @@
+/* Add these styles for the chord labels above lyrics */
+
+.lyric-line {
+  padding: 8px 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.lyric-line:hover {
+  background-color: #f5f5f5;
+}
+
+.lyric-content {
+  flex-grow: 1;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.lyric-line-with-chords {
+  position: relative;
+  padding-top: 20px; /* Make room for chord labels */
+  font-family: monospace; /* Use monospace for better chord alignment */
+  line-height: 1.5;
+}
+
+.chord-labels {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 100%;
+  height: 20px;
+}
+
+.chord-label {
+  position: absolute;
+  color: #4285f4;
+  font-weight: bold;
+  font-size: 16px; /*size must match lyric font size for chords to align properly*/
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chord-label:hover {
+  text-decoration: underline;
+}
+
+.lyric-text-only {
+  font-family: monospace;
+  white-space: pre;
+  min-height: 1em;
+}
+
+/* Existing lyric controls styles */
+.lyric-controls {
+  display: flex;
+  gap: 5px;
+}
+
+.control-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  background-color: #e0e0e0;
+}
+
+.control-button.edit {
+  color: #4285f4;
+}
+
+.control-button.delete {
+  color: #ea4335;
+}
+
+.control-button.move-up,
+.control-button.move-down {
+  color: #34a853;
+}
+
+.control-button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.add-lyric-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-top: 10px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-lyric-button:hover {
+  background-color: #3367d6;
+}
+
+/* Editor styles */
+.lyric-line-editor {
+  width: 100%;
+  margin: 5px 0;
+}
+
+.lyric-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  font-family: monospace;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.editor-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.editor-controls button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.save-button {
+  background-color: #4285f4;
+  color: white;
+  border-color: #3367d6;
+}
+
+.save-button:hover {
+  background-color: #3367d6;
+}
+
+.cancel-button {
+  background-color: white;
+}
+
+.cancel-button:hover {
+  background-color: #f1f1f1;
+}
 .song-tabs-app {
   display: flex;
   flex-direction: column;
@@ -41,6 +200,38 @@
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #eee;
   font-size: 1.2rem;
+}
+
+.navigation-column h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-button {
+  margin-left: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4285f4;
+  color: white;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.add-button:hover {
+  background: #3367d6;
+}
+
+.add-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 .navigation-column ul {
@@ -201,24 +392,153 @@
   padding: 1.5rem;
 }
 
+.lyrics-section {
+  margin-top: 20px;
+}
+
 .lyrics-container {
+  margin-top: 10px;
   white-space: pre-wrap;
   line-height: 2;
 }
 
 .lyric-line {
   margin-bottom: 0.5rem;
+  padding: 8px 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.lyric-line:hover {
+  background-color: #f5f5f5;
+}
+
+.lyric-text {
+  flex-grow: 1;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.lyric-controls {
+  display: flex;
+  gap: 5px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.control-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  background-color: #e0e0e0;
+}
+
+.control-button.edit {
+  color: #4285f4;
+}
+
+.control-button.delete {
+  color: #ea4335;
+}
+
+.control-button.move-up,
+.control-button.move-down {
+  color: #34a853;
+}
+
+.control-button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.add-lyric-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-top: 10px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-lyric-button:hover {
+  background-color: #3367d6;
+}
+
+.lyric-line-editor {
+  width: 100%;
+  margin: 5px 0;
+}
+
+.lyric-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.editor-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.editor-controls button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.save-button {
+  background-color: #4285f4;
+  color: white;
+  border-color: #3367d6;
+}
+
+.save-button:hover {
+  background-color: #3367d6;
+}
+
+.cancel-button {
+  background-color: white;
+}
+
+.cancel-button:hover {
+  background-color: #f1f1f1;
 }
 
 .chord {
   display: inline-block;
-  color: #3498db;
+  padding: 2px 4px;
+  margin: 0 2px;
+  background-color: #e8f0fe;
+  border-radius: 3px;
+  color: #4285f4;
   font-weight: 500;
   cursor: pointer;
 }
 
 .chord:hover {
-  text-decoration: underline;
+  background-color: #d2e3fc;
 }
 
 .pinned-chords {
@@ -317,6 +637,49 @@
   padding: 20px;
   font-style: italic;
   color: #666;
+}
+
+.add-item-container {
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.add-item-input {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.add-item-controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.add-item-controls button {
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+}
+
+.add-item-controls button:first-child {
+  background-color: #4285f4;
+  color: white;
+  border-color: #3367d6;
+}
+
+.add-item-controls button:first-child:hover {
+  background-color: #3367d6;
+}
+
+.add-item-controls button:last-child:hover {
+  background-color: #f1f1f1;
 }
 
 /* Media Queries */

@@ -70,7 +70,7 @@ Acceptance Criteria:
 - [ ] Option to toggle between split view and regular view
 - [ ] Space for handwritten notes in the bottom section
 
-## Song Tabs Application
+## Music Tabs Application
 
 ## User Story: US-06
 As a musician,

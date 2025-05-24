@@ -1,0 +1,159 @@
+{
+  "artists": [
+    {
+      "name": "Rebecca Sugar",
+      "albums": [
+        {
+          "title": "Steven Universe Soundtrack",
+          "songs": [
+            {
+              "title": "Giant Woman",
+              "lyrics": [
+                "All I wanna [F]do is see you turn in[G7]to a giant [Cmaj7]woman, a giant [E7]woman",
+                "All I wanna [F]be is someone who gets to [G7]see a giant [Cmaj7]woman",
+                "All I wanna [F]do is help you turn [G7]into a giant [Cmaj7]woman, a giant [E7]woman",
+                "All I wanna [F]be is someone who gets to [G7]see a giant [Cmaj7]woman",
+                "Oh, I know it'll be [B7]great and I just can't wait",
+                "to see the [Em7]person you [G7]are [Cmaj7]together",
+                "If you give it a [B7]chance you could do a huge dance,",
+                "because you [Em7]are a giant woman.",
+                "You might even [F]like being to[G7]gether and if you [Cmaj7]don't it won't be [E7]forever",
+                "But if it were [F]me I'd really wanna [G7]be a giant [Cmaj7]woman",
+                "A giant [E7]woman",
+                "All I wanna [F]do is see you turn [G7]into a giant [Cmaj7]woman"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1",
+      "name": "The Beatles",
+      "albums": [
+        {
+          "id": "101",
+          "title": "Abbey Road",
+          "songs": [
+            {
+              "id": "1001",
+              "title": "Come Together",
+              "lyrics": [
+                "Here come old flat top, he come grooving up slowly..."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lady Gaga",
+      "albums": [
+        {
+          "title": "The Fame",
+          "songs": [
+            {
+              "title": "Retro Dance Freak",
+              "id": "1748037546938",
+              "lyrics": [
+                "[C]Retro dance freak",
+                "[D]Singin [Em]retro [D7]dance [C]beat"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Joywave",
+      "albums": [
+        {
+          "title": "How Do You Feel Now?",
+          "songs": [
+            {
+              "title": "Destruction",
+              "lyrics": [
+                "[Em]    [F]   [Em]    [F] (2x)",
+                "[Em]Oh my god, there's nobody who can [F]set me right   [Em]    [F]",
+                "[Em]I've been sent to torch the [F]palace down in broad day[Em]light  [F]",
+                "[Em]I wanna [D]know who you told 'til they're [C]all laying on the floor",
+                "Frozen to the [Am]core",
+                "[Em]I wanna [D]know who you told 'til it's [C]nobody anymore [Em] [D] [C]",
+                "Nobody [Am]anymore",
+                "[Em]    [F]   [Em]    [F] (2x)",
+                "[Em]Oh my [F]God, I'm a [Em]giant with an [F]appetite",
+                "[Em]Pushing people to the [F]ground, running '[Em]round the halls at [F]night",
+                "[Em]I wanna [D]know who you told 'til they're [C]all laying on the floor",
+                "Frozen to the [Am]core",
+                "[Em]I wanna [D]know who you told 'til it's [C]nobody anymore [Em] [D] [C]",
+                "Nobody [Am]anymore",
+                "[Em]    [F]   [Em]    [F] (2x)",
+                "[Em]I've been [D]creeping 'round I saw a [C]little thing I didn't [Am]like",
+                "[Em]You tried to [D]hide",
+                "[Em]I've been [D]creeping 'round and saw a [C]little thing I didn't [F]like",
+                "[Em]You tried to [D]hide from [C]me [F]",
+                "[Em]I wanna [D]know who you [C]took, there's nobody [F]any...",
+                "[Em]Nobody [D]anymore [C] [Am]",
+                "[Em]Nobody [D]anymore [C] [F]"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ariana Grande",
+      "albums": [
+        {
+          "title": "Eternal Sunshine: Brighter Days Ahead",
+          "songs": [
+            {
+              "title": "Hampstead",
+              "lyrics": [
+                "[C]    [E7]    [Am]    [G]    [F]    [G]    [C]",
+                "[C]I left my [E7]heart at a [Am]pub in [G]Hampstead",
+                "And I [Dm]misplaced my [C]mind in a [G]good way",
+                "[C]Threw away my repu[E7]tation, but [Am]saved us more [G]heartache",
+                "Yes, I [F]know it seems fucked [G]up and you're [C]right",
+                "[C]But quite frankly, you're [E7]still wrong about [Am]everything [G]",
+                "[Dm]So far off, your [C]seat's nowhere near the [G]table",
+                "[C]But I find something [E7]sweet in your [Am]peculiar beha[G]vior",
+                "[F]'Cause I think to be so [G]dumb must be [C]nice",
+                "[E7]I do, I do, I do, I do [Am]",
+                "",
+                "[D7]What makes you think you’re even in[G]vited?",
+                "[E7]The doors are closed with lights off [Am]inside and all the [G]while [F]",
+                "[Am]There's no one home, you're [G]still out[Fm]side",
+                "I wonder why",
+                "",
+                "[C]What's wrong with a little bit of [D]poison? Tell me",
+                "[F]I would rather feel everything than [G]nothing every time",
+                "[C]Ooh, fear me, stranger, a little bit of [D]sugar, danger",
+                "[F]I'd rather be seen and a[Em]live than [Dm]dying by your point of [G]view",
+                "[G]I do, I do, I do, I do",
+                "",
+                "[C]I don't remember too [E7]much of the [Am]last year",
+                "[G]But I knew who I was when I got here [Dm] [C] [G]",
+                "[C]'Cause I'm still the same but [E7]only entirely [Am]different [G]",
+                "[F]And my lover's just some [G]lines in some [C]songs, mm [E7] [Am]",
+                "",
+                "[D7]You think you’ve read the book I’m still [G]writing",
+                "[E7]I can't imagine wanting so [Am]badly to be [G]right [F]",
+                "[Am]Guess I’m forever on your [G]mind [Fm]",
+                "I wonder why",
+                "",
+                "[C]What's wrong with a little bit of [D]poison? Tell me (Tell me)",
+                "[F]I would rather feel everything than [G]nothing every time (Every, every time)",
+                "[C]Ooh, fear me, stranger, a little bit of [D]sugar (Sugar), danger (Danger)",
+                "[F]I'd rather be seen and a[Em]live than [Dm]dying by your point of [G]view",
+                "",
+                "[F]Rather be swimming with [Em]you than [Dm]drowning in a crowded room",
+                "[G]I do, I do, I do, I do [C]"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -46,3 +46,7 @@ input:focus, select:focus {
   outline: none;
   border-color: #3498db;
 }
+
+.ant-switch-inner {
+  padding: 4px;
+}

@@ -227,6 +227,7 @@ const Tabs = () => {
         width: '100%',
         backgroundColor: 'rgba(240, 240, 240, 0.7)', // Use rgba for background color with opacity
         textAlign: 'center',
+        height: '150px',
       }}>
         <Flex justify="center" gap="small" wrap="wrap">
           {pinnedChords.map((chord, index) => (

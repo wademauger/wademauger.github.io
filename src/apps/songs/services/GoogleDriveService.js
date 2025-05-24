@@ -184,6 +184,146 @@ class GoogleDriveService {
       return await response.json();
     }
   }
+
+  // Add a new artist to the library
+  async addArtist(artistName) {
+    if (!this.isSignedIn) {
+      throw new Error('User not signed in to Google Drive');
+    }
+    
+    const library = await this.loadLibrary();
+    
+    // Check if artist already exists
+    if (library.artists.some(artist => artist.name === artistName)) {
+      throw new Error(`Artist "${artistName}" already exists`);
+    }
+    
+    // Create new artist object
+    const newArtist = {
+      name: artistName,
+      albums: []
+    };
+    
+    // Add to library
+    library.artists.push(newArtist);
+    
+    // Save to Drive
+    await this.saveLibrary(library);
+    
+    return library;
+  }
+
+  // Add a new album to an artist
+  async addAlbum(artistName, albumName) {
+    if (!this.isSignedIn) {
+      throw new Error('User not signed in to Google Drive');
+    }
+    
+    const library = await this.loadLibrary();
+    
+    // Find artist
+    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+    if (artistIndex === -1) {
+      throw new Error(`Artist "${artistName}" not found`);
+    }
+    
+    // Check if album already exists
+    if (library.artists[artistIndex].albums.some(album => album.title === albumName)) {
+      throw new Error(`Album "${albumName}" already exists for artist "${artistName}"`);
+    }
+    
+    // Create new album object
+    const newAlbum = {
+      title: albumName,
+      songs: []
+    };
+    
+    // Add to library
+    library.artists[artistIndex].albums.push(newAlbum);
+    
+    // Save to Drive
+    await this.saveLibrary(library);
+    
+    return library;
+  }
+
+  // Add a new song to an album
+  async addSong(artistName, albumName, songName) {
+    if (!this.isSignedIn) {
+      throw new Error('User not signed in to Google Drive');
+    }
+    
+    const library = await this.loadLibrary();
+    
+    // Find artist
+    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+    if (artistIndex === -1) {
+      throw new Error(`Artist "${artistName}" not found`);
+    }
+    
+    // Find album
+    const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumName);
+    if (albumIndex === -1) {
+      throw new Error(`Album "${albumName}" not found for artist "${artistName}"`);
+    }
+    
+    // Check if song already exists
+    if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songName)) {
+      throw new Error(`Song "${songName}" already exists in album "${albumName}"`);
+    }
+    
+    // Create new song object with required fields
+    const newSong = {
+      title: songName,
+      id: Date.now().toString(), // Simple ID generation
+      chords: [],
+      lyrics: []
+    };
+    
+    // Add to library
+    library.artists[artistIndex].albums[albumIndex].songs.push(newSong);
+    
+    // Save to Drive
+    await this.saveLibrary(library);
+    
+    return library;
+  }
+
+  // Add a method to update a song
+
+  async updateSong(artistName, albumTitle, updatedSong) {
+    if (!this.isSignedIn) {
+      throw new Error('User not signed in to Google Drive');
+    }
+    
+    const library = await this.loadLibrary();
+    
+    // Find artist
+    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+    if (artistIndex === -1) {
+      throw new Error(`Artist "${artistName}" not found`);
+    }
+    
+    // Find album
+    const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
+    if (albumIndex === -1) {
+      throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
+    }
+    
+    // Find song
+    const songIndex = library.artists[artistIndex].albums[albumIndex].songs.findIndex(song => song.id === updatedSong.id);
+    if (songIndex === -1) {
+      throw new Error(`Song with ID ${updatedSong.id} not found`);
+    }
+    
+    // Update the song
+    library.artists[artistIndex].albums[albumIndex].songs[songIndex] = updatedSong;
+    
+    // Save to Drive
+    await this.saveLibrary(library);
+    
+    return library;
+  }
 }
 
 export default new GoogleDriveService();

@@ -1,22 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { pinChord, setTranspose } from '../../store/chordsSlice';
 import ArtistList from './components/ArtistList';
 import AlbumList from './components/AlbumList';
 import SongDetail from './components/SongDetail';
-import ChordChart from './components/ChordChart';
 import GoogleDriveService from './services/GoogleDriveService';
 import './styles/SongTabsApp.css';
+import { Switch } from 'antd';
+import { FaUnlock, FaLock } from 'react-icons/fa';
 
 const SongTabsApp = () => {
   const [library, setLibrary] = useState({ artists: [] });
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
-  const [instrument, setInstrument] = useState('ukulele');
-  const [pinnedChords, setPinnedChords] = useState([]);
   const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingEnabled, setEditingEnabled] = useState(false);
+
+  // Redux state
+  const dispatch = useDispatch();
+  const instrument = useSelector((state) => state.chords.currentInstrument);
+
+  // New state variables for adding entries
+  const [isAddingArtist, setIsAddingArtist] = useState(false);
+  const [isAddingAlbum, setIsAddingAlbum] = useState(false);
+  const [isAddingSong, setIsAddingSong] = useState(false);
+  const [newArtistName, setNewArtistName] = useState('');
+  const [newAlbumName, setNewAlbumName] = useState('');
+  const [newSongName, setNewSongName] = useState('');
+
+  // Refs for input focus
+  const newArtistInputRef = useRef(null);
+  const newAlbumInputRef = useRef(null);
+  const newSongInputRef = useRef(null);
 
   const { artistName, albumName, songTitle } = useParams();
   const navigate = useNavigate();
@@ -89,7 +108,7 @@ const SongTabsApp = () => {
             }
           ]
         }
-        
+
       ]
     };
     setLibrary(mockLibrary);
@@ -175,24 +194,182 @@ const SongTabsApp = () => {
     navigate(`/tabs/song/${encodeURIComponent(song.title)}`);
   };
 
-  const handleInstrumentChange = (newInstrument) => {
-    setInstrument(newInstrument);
+  const handlePinChord = (chord) => {
+    dispatch(pinChord(chord));
   };
 
-  const handlePinChord = (chord) => {
-    if (!pinnedChords.includes(chord)) {
-      setPinnedChords([...pinnedChords, chord]);
+  // Add a handler for updating songs
+  const handleUpdateSong = async (updatedSong) => {
+    if (!selectedArtist || !selectedAlbum || !selectedSong) return;
+
+    setIsLoading(true);
+    try {
+      if (isGoogleDriveConnected) {
+        const updatedLibrary = await GoogleDriveService.updateSong(
+          selectedArtist.name,
+          selectedAlbum.title,
+          updatedSong
+        );
+        setLibrary(updatedLibrary);
+
+        // Update the selected song reference
+        const updatedSelectedSong = updatedLibrary.artists
+          .find(a => a.name === selectedArtist.name)?.albums
+          .find(a => a.title === selectedAlbum.title)?.songs
+          .find(s => s.title === selectedSong.title);
+
+        if (updatedSelectedSong) {
+          setSelectedSong(updatedSelectedSong);
+        }
+      } else {
+        // Handle local updates for mock library
+        const updatedLibrary = { ...library };
+        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+        const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
+        const songIndex = updatedLibrary.artists[artistIndex].albums[albumIndex].songs.findIndex(s => s.title === selectedSong.title);
+
+        updatedLibrary.artists[artistIndex].albums[albumIndex].songs[songIndex] = updatedSong;
+        setLibrary(updatedLibrary);
+        setSelectedSong(updatedSong);
+      }
+    } catch (error) {
+      console.error('Failed to update song:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleUnpinChord = (chord) => {
-    setPinnedChords(pinnedChords.filter(c => c !== chord));
+  // New handlers for adding entries
+  const startAddingArtist = () => {
+    setIsAddingArtist(true);
+    setNewArtistName('');
+    // Focus will be set with useEffect
   };
+
+  const startAddingAlbum = () => {
+    setIsAddingAlbum(true);
+    setNewAlbumName('');
+    // Focus will be set with useEffect
+  };
+
+  const startAddingSong = () => {
+    setIsAddingSong(true);
+    setNewSongName('');
+    // Focus will be set with useEffect
+  };
+
+  // Handle adding new artist
+  const handleAddArtist = async () => {
+    if (newArtistName.trim()) {
+      setIsLoading(true);
+      try {
+        const updatedLibrary = await GoogleDriveService.addArtist(newArtistName);
+        setLibrary(updatedLibrary);
+      } catch (error) {
+        console.error('Failed to add artist:', error);
+      } finally {
+        setIsLoading(false);
+        setIsAddingArtist(false);
+        setNewArtistName('');
+      }
+    } else {
+      setIsAddingArtist(false);
+    }
+  };
+
+  // Handle adding new album
+  const handleAddAlbum = async () => {
+    if (newAlbumName.trim() && selectedArtist) {
+      setIsLoading(true);
+      try {
+        const updatedLibrary = await GoogleDriveService.addAlbum(selectedArtist.name, newAlbumName);
+        setLibrary(updatedLibrary);
+      } catch (error) {
+        console.error('Failed to add album:', error);
+      } finally {
+        setIsLoading(false);
+        setIsAddingAlbum(false);
+        setNewAlbumName('');
+      }
+    } else {
+      setIsAddingAlbum(false);
+    }
+  };
+
+  // Handle adding new song
+  const handleAddSong = async () => {
+    if (newSongName.trim() && selectedArtist && selectedAlbum) {
+      setIsLoading(true);
+      try {
+        const updatedLibrary = await GoogleDriveService.addSong(
+          selectedArtist.name,
+          selectedAlbum.title,
+          newSongName
+        );
+        setLibrary(updatedLibrary);
+      } catch (error) {
+        console.error('Failed to add song:', error);
+      } finally {
+        setIsLoading(false);
+        setIsAddingSong(false);
+        setNewSongName('');
+      }
+    } else {
+      setIsAddingSong(false);
+    }
+  };
+
+  // Handle key press events for input fields
+  const handleKeyPress = (e, saveHandler, cancelHandler) => {
+    if (e.key === 'Enter') {
+      saveHandler();
+    } else if (e.key === 'Escape') {
+      cancelHandler();
+    }
+  };
+
+  // Set focus on input elements when adding mode is enabled
+  useEffect(() => {
+    if (isAddingArtist && newArtistInputRef.current) {
+      newArtistInputRef.current.focus();
+    }
+  }, [isAddingArtist]);
+
+  useEffect(() => {
+    if (isAddingAlbum && newAlbumInputRef.current) {
+      newAlbumInputRef.current.focus();
+    }
+  }, [isAddingAlbum]);
+
+  useEffect(() => {
+    if (isAddingSong && newSongInputRef.current) {
+      newSongInputRef.current.focus();
+    }
+  }, [isAddingSong]);
+
+  // When a song is selected, if it has a transpose property, sync it to redux
+  useEffect(() => {
+    if (selectedSong && typeof selectedSong.transpose === 'number') {
+      dispatch(setTranspose({ songId: selectedSong.title, value: selectedSong.transpose }));
+    }
+    // eslint-disable-next-line
+  }, [selectedSong]);
 
   return (
     <div className="song-tabs-app">
       <div className="app-header">
-        <h1>Song Tabs</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <h1>Music Tabs</h1>
+          <span>
+            <span style={{marginRight: '4px'}}>Edit lock:</span>
+            <Switch
+              checked={!!editingEnabled}
+              onChange={setEditingEnabled}
+              checkedChildren={<FaUnlock />}
+              unCheckedChildren={<FaLock />}
+            />
+          </span>
+        </div>
         <div className="header-controls">
           <div className="google-drive-section">
             {isGoogleDriveConnected ? (
@@ -216,40 +393,73 @@ const SongTabsApp = () => {
               </button>
             )}
           </div>
-          <div className="instrument-selector">
-            <label htmlFor="instrument-select">Instrument:</label>
-            <select
-              id="instrument-select"
-              value={instrument}
-              onChange={(e) => handleInstrumentChange(e.target.value)}
-            >
-              <option value="ukulele">Ukulele</option>
-              <option value="guitar">Guitar</option>
-              <option value="piano">Piano</option>
-            </select>
-          </div>
         </div>
       </div>
-
       {isLoading && (
         <div className="loading-indicator">
           Loading library...
         </div>
       )}
-
       <div className="library-navigation">
         <div className="navigation-column">
-          <h2>Artists</h2>
+          <h2>
+            Artists
+            {isGoogleDriveConnected && editingEnabled && (
+              <button className="add-button" onClick={startAddingArtist} disabled={isAddingArtist}>
+                +
+              </button>
+            )}
+          </h2>
+          {isAddingArtist && (
+            <div className="add-item-container">
+              <input
+                ref={newArtistInputRef}
+                type="text"
+                value={newArtistName}
+                onChange={(e) => setNewArtistName(e.target.value)}
+                onKeyDown={(e) => handleKeyPress(e, handleAddArtist, () => setIsAddingArtist(false))}
+                placeholder="Artist name..."
+                className="add-item-input"
+              />
+              <div className="add-item-controls">
+                <button onClick={handleAddArtist}>Save</button>
+                <button onClick={() => setIsAddingArtist(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
           <ArtistList
             artists={library.artists}
             selectedArtist={selectedArtist}
             onSelectArtist={handleArtistSelect}
           />
         </div>
-
         {selectedArtist && (
           <div className="navigation-column">
-            <h2>Albums</h2>
+            <h2>
+              Albums
+              {isGoogleDriveConnected && editingEnabled && (
+                <button className="add-button" onClick={startAddingAlbum} disabled={isAddingAlbum}>
+                  +
+                </button>
+              )}
+            </h2>
+            {isAddingAlbum && (
+              <div className="add-item-container">
+                <input
+                  ref={newAlbumInputRef}
+                  type="text"
+                  value={newAlbumName}
+                  onChange={(e) => setNewAlbumName(e.target.value)}
+                  onKeyDown={(e) => handleKeyPress(e, handleAddAlbum, () => setIsAddingAlbum(false))}
+                  placeholder="Album name..."
+                  className="add-item-input"
+                />
+                <div className="add-item-controls">
+                  <button onClick={handleAddAlbum}>Save</button>
+                  <button onClick={() => setIsAddingAlbum(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
             <AlbumList
               albums={selectedArtist.albums}
               selectedAlbum={selectedAlbum}
@@ -257,15 +467,38 @@ const SongTabsApp = () => {
             />
           </div>
         )}
-
         {selectedAlbum && (
           <div className="navigation-column">
-            <h2>Songs</h2>
+            <h2>
+              Songs
+              {isGoogleDriveConnected && editingEnabled && (
+                <button className="add-button" onClick={startAddingSong} disabled={isAddingSong}>
+                  +
+                </button>
+              )}
+            </h2>
+            {isAddingSong && (
+              <div className="add-item-container">
+                <input
+                  ref={newSongInputRef}
+                  type="text"
+                  value={newSongName}
+                  onChange={(e) => setNewSongName(e.target.value)}
+                  onKeyDown={(e) => handleKeyPress(e, handleAddSong, () => setIsAddingSong(false))}
+                  placeholder="Song name..."
+                  className="add-item-input"
+                />
+                <div className="add-item-controls">
+                  <button onClick={handleAddSong}>Save</button>
+                  <button onClick={() => setIsAddingSong(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
             <ul className="song-list">
               {selectedAlbum.songs.map(song => (
                 <li
-                  key={song.id}
-                  className={selectedSong?.id === song.id ? 'active' : ''}
+                  key={song.title}
+                  className={selectedSong?.title === song.title ? 'active' : ''}
                   onClick={() => handleSongSelect(song)}
                 >
                   {song.title}
@@ -275,37 +508,15 @@ const SongTabsApp = () => {
           </div>
         )}
       </div>
-
       {selectedSong && (
         <div className="song-content">
           <SongDetail
             song={selectedSong}
-            instrument={instrument}
+            artist={selectedArtist}
             onPinChord={handlePinChord}
+            onUpdateSong={handleUpdateSong}
+            editingEnabled={!!editingEnabled}
           />
-        </div>
-      )}
-
-      {pinnedChords.length > 0 && (
-        <div className="pinned-chords">
-          <h3>Pinned Chords</h3>
-          <div className="chord-container">
-            {pinnedChords.map(chord => (
-              <div key={chord} className="pinned-chord">
-                <ChordChart
-                  chord={chord}
-                  instrument={instrument}
-                  small={true}
-                />
-                <button
-                  className="unpin-button"
-                  onClick={() => handleUnpinChord(chord)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>

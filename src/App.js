@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store/store';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import RecipesApp from './apps/recipes/RecipesApp';
@@ -10,32 +12,34 @@ import './styles/App.css';
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          
-          {/* Recipe App Routes */}
-          <Route path="/recipes" element={<RecipesApp />} />
-          <Route path="/recipes/:recipeId" element={<RecipesApp />} />
-          <Route path="/recipes/reader-view/:recipeId" element={<RecipesApp view="reader" />} />
-          
-          {/* Song Tabs App Routes */}
-          <Route path="/tabs" element={<SongTabsApp />} />
-          <Route path="/tabs/artist/:artistId" element={<SongTabsApp />} />
-          <Route path="/tabs/album/:albumId" element={<SongTabsApp />} />
-          <Route path="/tabs/song/:songId" element={<SongTabsApp />} />
-          
-          {/* Knitting Pattern App Routes */}
-          <Route path="/knitting" element={<KnittingApp />} />
-          <Route path="/knitting/pattern/:patternId" element={<KnittingApp />} />
-          <Route path="/knitting/editor" element={<KnittingApp view="editor" />} />
-          
-          {/* 404 Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <Provider store={store}>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            
+            {/* Recipe App Routes */}
+            <Route path="/recipes" element={<RecipesApp />} />
+            <Route path="/recipes/:recipeId" element={<RecipesApp />} />
+            <Route path="/recipes/reader-view/:recipeId" element={<RecipesApp view="reader" />} />
+            
+            {/* Music Tabs App Routes */}
+            <Route path="/tabs" element={<SongTabsApp />} />
+            <Route path="/tabs/artist/:artistId" element={<SongTabsApp />} />
+            <Route path="/tabs/album/:albumId" element={<SongTabsApp />} />
+            <Route path="/tabs/song/:songId" element={<SongTabsApp />} />
+            
+            {/* Knitting Pattern App Routes */}
+            <Route path="/knitting" element={<KnittingApp />} />
+            <Route path="/knitting/pattern/:patternId" element={<KnittingApp />} />
+            <Route path="/knitting/editor" element={<KnittingApp view="editor" />} />
+            
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </Provider>
   );
 }
 

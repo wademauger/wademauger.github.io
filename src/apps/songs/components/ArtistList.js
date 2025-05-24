@@ -6,8 +6,8 @@ const ArtistList = ({ artists, selectedArtist, onSelectArtist }) => {
       <ul>
         {artists.map(artist => (
           <li 
-            key={artist.id} 
-            className={selectedArtist?.id === artist.id ? 'active' : ''}
+            key={artist.name} 
+            className={selectedArtist?.name === artist.name ? 'active' : ''}
             onClick={() => onSelectArtist(artist)}
           >
             {artist.name}

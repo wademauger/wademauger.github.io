@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { unpinChord } from '../store/chordsSlice';
+import ChordChart from '../apps/songs/components/ChordChart';
 import '../styles/Layout.css';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, footer }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const dispatch = useDispatch();
+  
+  // Get pinned chords from Redux store
+  const pinnedChords = useSelector((state) => state.chords?.pinnedChords || []);
+  const currentInstrument = useSelector((state) => state.chords?.currentInstrument || 'ukulele');
   
   const isActive = (path) => {
     return location.pathname.startsWith(path) ? 'active' : '';
@@ -13,6 +21,36 @@ const Layout = ({ children }) => {
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
+
+  const handleUnpinChord = (chord) => {
+    dispatch(unpinChord(chord));
+  };
+
+  // Create pinned chords footer content
+  const pinnedChordsFooter = pinnedChords.length > 0 ? (
+    <div style={{
+      position: 'fixed',
+      bottom: '45px',
+      left: '0px',
+      width: '100%',
+      backgroundColor: 'rgba(240, 240, 240, 0.7)',
+      textAlign: 'center',
+      height: '150px',
+    }}>
+      <div className="ant-flex css-ra95ns ant-flex-wrap-wrap ant-flex-justify-center ant-flex-gap-small">
+        {pinnedChords.map(chord => (
+          <div key={chord} style={{ cursor: 'pointer', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'top left', position: 'relative' }} onClick={() => handleUnpinChord(chord)}>
+            <div className="chord-chart">
+              <ChordChart
+                chord={chord}
+                instrument={currentInstrument}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="app-container">
@@ -33,7 +71,7 @@ const Layout = ({ children }) => {
                 <Link to="/recipes">Recipes</Link>
               </li>
               <li className={isActive('/tabs')}>
-                <Link to="/tabs">Song Tabs</Link>
+                <Link to="/tabs">Music Tabs</Link>
               </li>
               <li className={isActive('/knitting')}>
                 <Link to="/knitting">Knitting Patterns</Link>
@@ -60,7 +98,7 @@ const Layout = ({ children }) => {
               <Link to="/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
             </li>
             <li className={isActive('/tabs')}>
-              <Link to="/tabs" onClick={() => setMenuOpen(false)}>Song Tabs</Link>
+              <Link to="/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
             </li>
             <li className={isActive('/knitting')}>
               <Link to="/knitting" onClick={() => setMenuOpen(false)}>Knitting Patterns</Link>
@@ -73,11 +111,15 @@ const Layout = ({ children }) => {
         {children}
       </main>
 
-      <footer className="main-footer">
-        <div className="footer-content">
-          <p>© {new Date().getFullYear()} Wade Ahlstrom</p>
-        </div>
-      </footer>
+      {/* Always show the pinned chords footer if chords are selected */}
+      {pinnedChordsFooter}
+
+      {/* Always show the main footer */}
+      {footer || (
+        <footer className="ant-layout-footer app-footer dark-footer css-ra95ns">
+          Wade Ahlstrom © {new Date().getFullYear()}
+        </footer>
+      )}
     </div>
   );
 };
