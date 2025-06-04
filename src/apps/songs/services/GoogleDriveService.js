@@ -1,3 +1,4 @@
+// singleton Google Drive service
 class GoogleDriveService {
   constructor() {
     this.isSignedIn = false;
@@ -9,7 +10,104 @@ class GoogleDriveService {
     this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
   }
 
-  async initialize(clientId, apiKey) {
+  async handleAuthError(error) {
+    // Extract error details from various error types
+    const getErrorDetails = async (error) => {
+      if (error instanceof Response) {
+        const status = error.status;
+        let message = '';
+        try {
+          const data = await error.clone().json();
+          message = data.error?.message || '';
+        } catch (e) {
+          try {
+            message = await error.clone().text();
+          } catch (e2) {
+            message = error.statusText;
+          }
+        }
+        return { status, message };
+      }
+      return {
+        status: error?.response?.status || error?.result?.status || error?.status,
+        message: error?.message || 'Unknown error'
+      };
+    };
+
+    // Check if error is authentication related
+    const isAuthFailure = async (error) => {
+      const { status, message } = await getErrorDetails(error);
+      return status === 401;
+    };
+
+    const authFailed = await isAuthFailure(error);
+    if (authFailed) {
+      const { message } = await getErrorDetails(error);
+      
+      // If user was never signed in (no access token), this is expected
+      if (!this.accessToken) {
+        // Don't throw error for expected "not signed in" state
+        console.debug('API call failed: User not authenticated');
+        throw new Error('User not signed in to Google Drive');
+      }
+      
+      // Check if this is a "serious" auth error that requires re-authentication
+      const isSeriousAuthError = message.includes('invalid_token') ||
+                               message.includes('expired_token') ||
+                               message.includes('unauthorized_client') ||
+                               message.includes('Invalid Credentials') ||
+                               message.includes('access_denied') ||
+                               message.includes('token_expired');
+      
+      // Check if this is a benign auth error (expected when not authenticated)
+      const isBenignAuthError = message.includes('missing required authentication credential') ||
+                              message.includes('Expected OAuth 2 access token') ||
+                              message.includes('Request had insufficient authentication scopes') ||
+                              message.includes('Unauthorized') ||
+                              message.toLowerCase().includes('authorization required');
+      
+      if (isSeriousAuthError) {
+        // Count auth failures to prevent rapid re-auth attempts
+        this.authFailureCount = (this.authFailureCount || 0) + 1;
+        
+        if (this.authFailureCount >= 3 || message?.includes('invalid_token')) {
+          // Clean up the session
+          this.isSignedIn = false;
+          this.accessToken = null;
+          this.userEmail = null;
+          window.gapi?.client?.setToken(null);
+          localStorage.removeItem('gdrive_access_token');
+          localStorage.removeItem('gdrive_user_email');
+
+          // Reset failure count
+          this.authFailureCount = 0;
+
+          // Notify any listeners that auth has expired
+          window.dispatchEvent(new CustomEvent('gdriveAuthExpired'));
+          
+          throw new Error('Authentication expired. Please sign in again.');
+        } else {
+          // For early auth failures, just throw a simple auth error
+          throw new Error('Authentication failed. Please try again.');
+        }
+      } else if (isBenignAuthError) {
+        // For benign 401 errors (like missing auth credentials on initial load), don't show error
+        console.debug('Benign authentication error:', message);
+        throw new Error('User not signed in to Google Drive');
+      } else {
+        // For other 401 errors, treat as benign by default to avoid false positives
+        console.debug('Unknown 401 error, treating as benign:', message);
+        throw new Error('User not signed in to Google Drive');
+      }
+    }
+    
+    // For non-auth errors, create a proper error object
+    const { status, message } = await getErrorDetails(error);
+    const errorMessage = `API Error (${status}): ${message}`;
+    throw new Error(errorMessage);
+  }
+
+  initialize(clientId, apiKey) {
     return new Promise((resolve, reject) => {
       if (!window.gapi) {
         reject(new Error('Google API not loaded'));
@@ -50,7 +148,7 @@ class GoogleDriveService {
     });
   }
 
-  async signIn() {
+  signIn() {
     return new Promise((resolve, reject) => {
       if (!this.tokenClient) {
         reject(new Error('Google Drive not initialized'));
@@ -76,7 +174,7 @@ class GoogleDriveService {
     });
   }
 
-  async signOut() {
+  signOut() {
     if (this.accessToken) {
       window.google.accounts.oauth2.revoke(this.accessToken);
     }
@@ -88,6 +186,12 @@ class GoogleDriveService {
   }
 
   async loadUserProfile() {
+    // Don't attempt to load profile if we don't have a valid access token
+    if (!this.accessToken) {
+      console.debug('No access token available for loading user profile');
+      return;
+    }
+
     try {
       // Use the token to get user info from Google's userinfo endpoint
       const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -95,10 +199,15 @@ class GoogleDriveService {
           'Authorization': `Bearer ${this.accessToken}`
         }
       });
+      if (!response.ok) {
+        throw response;
+      }
       const userInfo = await response.json();
       this.userEmail = userInfo.email;
+      localStorage.setItem('gdrive_user_email', this.userEmail);
     } catch (error) {
       console.error('Failed to load user profile:', error);
+      this.handleAuthError(error);
     }
   }
 
@@ -107,230 +216,268 @@ class GoogleDriveService {
   }
 
   async findLibraryFile() {
-    const response = await window.gapi.client.drive.files.list({
-      q: `name='${this.LIBRARY_FILENAME}' and trashed=false`,
-      spaces: 'drive'
-    });
-    
-    return response.result.files.length > 0 ? response.result.files[0] : null;
+    if (!this.isSignedIn || !this.accessToken) {
+      throw new Error('User not signed in to Google Drive');
+    }
+
+    try {
+      const response = await window.gapi.client.drive.files.list({
+        q: `name='${this.LIBRARY_FILENAME}' and trashed=false`,
+        spaces: 'drive'
+      });
+      return response.result.files.length > 0 ? response.result.files[0] : null;
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
+    }
   }
 
   async createLibraryFile() {
-    const defaultLibrary = {
-      artists: [
-        {
-          id: '1',
-          name: 'The Beatles',
-          albums: [
-            {
-              id: '101',
-              title: 'Abbey Road',
-              songs: [
-                {
-                  id: '1001',
-                  title: 'Come Together',
-                  chords: ['A', 'D', 'E', 'G'],
-                  lyrics: "Here come old flat top, he come grooving up slowly..."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
+    if (!this.isSignedIn || !this.accessToken) {
+      throw new Error('User not signed in to Google Drive');
+    }
 
-    const fileMetadata = {
-      name: this.LIBRARY_FILENAME
-    };
+    try {
+      const defaultLibrary = {
+        artists: []
+      };
 
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
-    form.append('file', new Blob([JSON.stringify(defaultLibrary, null, 2)], {type: 'application/json'}));
+      const fileMetadata = {
+        name: this.LIBRARY_FILENAME
+      };
 
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: new Headers({
-        'Authorization': `Bearer ${this.accessToken}`
-      }),
-      body: form
-    });
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+      form.append('file', new Blob([JSON.stringify(defaultLibrary, null, 2)], {type: 'application/json'}));
 
-    return await response.json();
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({
+          'Authorization': `Bearer ${this.accessToken}`
+        }),
+        body: form
+      });
+
+      if (!response.ok) {
+        throw response;
+      }
+
+      return await response.json();
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
+    }
   }
 
   async loadLibrary() {
-    let file = await this.findLibraryFile();
-    
-    if (!file) {
-      file = await this.createLibraryFile();
+    if (!this.isSignedIn || !this.accessToken) {
+      throw new Error('User not signed in to Google Drive');
     }
 
-    const response = await window.gapi.client.drive.files.get({
-      fileId: file.id,
-      alt: 'media'
-    });
+    try {
+      let file = await this.findLibraryFile();
+      
+      if (!file) {
+        file = await this.createLibraryFile();
+      }
 
-    return JSON.parse(response.body);
+      const response = await window.gapi.client.drive.files.get({
+        fileId: file.id,
+        alt: 'media'
+      });
+
+      return JSON.parse(response.body);
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
+    }
   }
 
   async saveLibrary(library) {
-    const file = await this.findLibraryFile();
-    
-    if (file) {
-      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`, {
-        method: 'PATCH',
-        headers: new Headers({
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
-        }),
-        body: JSON.stringify(library, null, 2)
-      });
+    if (!this.isSignedIn || !this.accessToken) {
+      throw new Error('User not signed in to Google Drive');
+    }
+
+    try {
+      const file = await this.findLibraryFile();
       
-      return await response.json();
+      if (file) {
+        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`, {
+          method: 'PATCH',
+          headers: new Headers({
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify(library, null, 2)
+        });
+        
+        if (!response.ok) {
+          throw response;
+        }
+        
+        return await response.json();
+      }
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
     }
   }
 
-  // Add a new artist to the library
   async addArtist(artistName) {
-    if (!this.isSignedIn) {
+    if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
     
-    const library = await this.loadLibrary();
-    
-    // Check if artist already exists
-    if (library.artists.some(artist => artist.name === artistName)) {
-      throw new Error(`Artist "${artistName}" already exists`);
+    try {
+      const library = await this.loadLibrary();
+      
+      // Check if artist already exists
+      if (library.artists.some(artist => artist.name === artistName)) {
+        throw new Error(`Artist "${artistName}" already exists`);
+      }
+      
+      // Create new artist object
+      const newArtist = {
+        name: artistName,
+        albums: []
+      };
+      
+      // Add to library
+      library.artists.push(newArtist);
+      
+      // Save to Drive
+      await this.saveLibrary(library);
+      
+      return library;
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
     }
-    
-    // Create new artist object
-    const newArtist = {
-      name: artistName,
-      albums: []
-    };
-    
-    // Add to library
-    library.artists.push(newArtist);
-    
-    // Save to Drive
-    await this.saveLibrary(library);
-    
-    return library;
   }
 
-  // Add a new album to an artist
   async addAlbum(artistName, albumName) {
-    if (!this.isSignedIn) {
+    if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
     
-    const library = await this.loadLibrary();
-    
-    // Find artist
-    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
-    if (artistIndex === -1) {
-      throw new Error(`Artist "${artistName}" not found`);
+    try {
+      const library = await this.loadLibrary();
+      
+      // Find artist
+      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      if (artistIndex === -1) {
+        throw new Error(`Artist "${artistName}" not found`);
+      }
+      
+      // Check if album already exists
+      if (library.artists[artistIndex].albums.some(album => album.title === albumName)) {
+        throw new Error(`Album "${albumName}" already exists for artist "${artistName}"`);
+      }
+      
+      // Create new album object
+      const newAlbum = {
+        title: albumName,
+        songs: []
+      };
+      
+      // Add to library
+      library.artists[artistIndex].albums.push(newAlbum);
+      
+      // Save to Drive
+      await this.saveLibrary(library);
+      
+      return library;
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
     }
-    
-    // Check if album already exists
-    if (library.artists[artistIndex].albums.some(album => album.title === albumName)) {
-      throw new Error(`Album "${albumName}" already exists for artist "${artistName}"`);
-    }
-    
-    // Create new album object
-    const newAlbum = {
-      title: albumName,
-      songs: []
-    };
-    
-    // Add to library
-    library.artists[artistIndex].albums.push(newAlbum);
-    
-    // Save to Drive
-    await this.saveLibrary(library);
-    
-    return library;
   }
 
-  // Add a new song to an album
   async addSong(artistName, albumName, songName) {
-    if (!this.isSignedIn) {
+    if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
     
-    const library = await this.loadLibrary();
-    
-    // Find artist
-    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
-    if (artistIndex === -1) {
-      throw new Error(`Artist "${artistName}" not found`);
+    try {
+      const library = await this.loadLibrary();
+      
+      // Find artist
+      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      if (artistIndex === -1) {
+        throw new Error(`Artist "${artistName}" not found`);
+      }
+      
+      // Find album
+      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumName);
+      if (albumIndex === -1) {
+        throw new Error(`Album "${albumName}" not found for artist "${artistName}"`);
+      }
+      
+      // Check if song already exists
+      if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songName)) {
+        throw new Error(`Song "${songName}" already exists in album "${albumName}"`);
+      }
+      
+      // Create new song object with required fields
+      const newSong = {
+        title: songName,
+        id: Date.now().toString(), // Simple ID generation
+        chords: [],
+        lyrics: []
+      };
+      
+      // Add to library
+      library.artists[artistIndex].albums[albumIndex].songs.push(newSong);
+      
+      // Save to Drive
+      await this.saveLibrary(library);
+      
+      return library;
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
     }
-    
-    // Find album
-    const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumName);
-    if (albumIndex === -1) {
-      throw new Error(`Album "${albumName}" not found for artist "${artistName}"`);
-    }
-    
-    // Check if song already exists
-    if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songName)) {
-      throw new Error(`Song "${songName}" already exists in album "${albumName}"`);
-    }
-    
-    // Create new song object with required fields
-    const newSong = {
-      title: songName,
-      id: Date.now().toString(), // Simple ID generation
-      chords: [],
-      lyrics: []
-    };
-    
-    // Add to library
-    library.artists[artistIndex].albums[albumIndex].songs.push(newSong);
-    
-    // Save to Drive
-    await this.saveLibrary(library);
-    
-    return library;
   }
-
-  // Add a method to update a song
 
   async updateSong(artistName, albumTitle, updatedSong) {
-    if (!this.isSignedIn) {
+    if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
     
-    const library = await this.loadLibrary();
-    
-    // Find artist
-    const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
-    if (artistIndex === -1) {
-      throw new Error(`Artist "${artistName}" not found`);
+    try {
+      const library = await this.loadLibrary();
+      
+      // Find artist
+      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      if (artistIndex === -1) {
+        throw new Error(`Artist "${artistName}" not found`);
+      }
+      
+      // Find album
+      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
+      if (albumIndex === -1) {
+        throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
+      }
+      
+      // Find song
+      const songIndex = library.artists[artistIndex].albums[albumIndex].songs.findIndex(song => song.id === updatedSong.id);
+      if (songIndex === -1) {
+        throw new Error(`Song with ID ${updatedSong.id} not found`);
+      }
+      
+      // Update the song
+      library.artists[artistIndex].albums[albumIndex].songs[songIndex] = updatedSong;
+      
+      // Save to Drive
+      await this.saveLibrary(library);
+      
+      return library;
+    } catch (error) {
+      this.handleAuthError(error);
+      throw error;
     }
-    
-    // Find album
-    const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
-    if (albumIndex === -1) {
-      throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
-    }
-    
-    // Find song
-    const songIndex = library.artists[artistIndex].albums[albumIndex].songs.findIndex(song => song.id === updatedSong.id);
-    if (songIndex === -1) {
-      throw new Error(`Song with ID ${updatedSong.id} not found`);
-    }
-    
-    // Update the song
-    library.artists[artistIndex].albums[albumIndex].songs[songIndex] = updatedSong;
-    
-    // Save to Drive
-    await this.saveLibrary(library);
-    
-    return library;
   }
 
-  // Attempt silent sign-in (no prompt)
   async trySilentSignIn() {
     return new Promise((resolve, reject) => {
       if (!this.tokenClient) {
@@ -357,7 +504,6 @@ class GoogleDriveService {
     });
   }
 
-  // Call this after successful login or silent sign-in
   persistSession() {
     if (this.accessToken) {
       localStorage.setItem('gdrive_access_token', this.accessToken);
@@ -367,13 +513,11 @@ class GoogleDriveService {
     }
   }
 
-  // Call this to clear session
   clearSession() {
     localStorage.removeItem('gdrive_access_token');
     localStorage.removeItem('gdrive_user_email');
   }
 
-  // Call this on app load to restore session if possible
   restoreSession() {
     const token = localStorage.getItem('gdrive_access_token');
     const email = localStorage.getItem('gdrive_user_email');
@@ -387,6 +531,52 @@ class GoogleDriveService {
     }
     return this.isSignedIn;
   }
+
+  // Validate that the current token is still valid
+  async validateToken() {
+    if (!this.accessToken) {
+      return false;
+    }
+
+    try {
+      // Make a simple API call to validate the token
+      const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+      
+      if (response.ok) {
+        this.isSignedIn = true;
+        const userInfo = await response.json();
+        this.userEmail = userInfo.email;
+        localStorage.setItem('gdrive_user_email', this.userEmail);
+        // Important: Set the token in the Google API client for subsequent calls
+        window.gapi?.client?.setToken({ access_token: this.accessToken });
+        return true;
+      } else {
+        // Token is invalid, clear the session quietly
+        console.debug('Token validation failed, clearing session');
+        this.clearSession();
+        this.isSignedIn = false;
+        this.accessToken = null;
+        this.userEmail = null;
+        window.gapi?.client?.setToken(null);
+        return false;
+      }
+    } catch (error) {
+      // Token validation failed, clear the session quietly
+      console.debug('Token validation error, clearing session:', error);
+      this.clearSession();
+      this.isSignedIn = false;
+      this.accessToken = null;
+      this.userEmail = null;
+      window.gapi?.client?.setToken(null);
+      return false;
+    }
+  }
 }
 
-export default new GoogleDriveService();
+// Create and export singleton instance
+const googleDriveService = new GoogleDriveService();
+export default googleDriveService;

@@ -14,6 +14,28 @@
   background-color: #f5f5f5;
 }
 
+/* Spinner animation for pending operations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Drag handle styling */
+.drag-handle:hover {
+  background-color: #e8e8e8 !important;
+  border-color: #bbb !important;
+  color: #444 !important;
+}
+
+.drag-handle:active {
+  background-color: #ddd !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2) !important;
+}
+
 .lyric-content {
   flex-grow: 1;
   font-size: 16px;
@@ -151,11 +173,14 @@
 }
 
 .cancel-button {
-  background-color: white;
+  background-color: #f44336;
+  color: white;
+  border: 1px solid #f44336;
 }
 
 .cancel-button:hover {
-  background-color: #f1f1f1;
+  background-color: #d32f2f;
+  border-color: #d32f2f;
 }
 .song-tabs-app {
   display: flex;
@@ -253,6 +278,33 @@
 .navigation-column li.active {
   background-color: #e1f5fe;
   font-weight: 500;
+}
+
+/* Optimistic update styling */
+.navigation-column li.optimistic,
+.song-list li.optimistic {
+  opacity: 0.6;
+  font-style: italic;
+  position: relative;
+  background-color: #f0f0f0;
+}
+
+.navigation-column li.optimistic::after,
+.song-list li.optimistic::after {
+  content: "⏳";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  animation: spin 1s linear infinite;
+}
+
+/* Better hover effect for optimistic items */
+.navigation-column li.optimistic:hover,
+.song-list li.optimistic:hover {
+  cursor: wait !important;
+  background-color: #e8e8e8;
 }
 
 .song-content {
@@ -518,11 +570,14 @@
 }
 
 .cancel-button {
-  background-color: white;
+  background-color: #f44336;
+  color: white;
+  border: 1px solid #f44336;
 }
 
 .cancel-button:hover {
-  background-color: #f1f1f1;
+  background-color: #d32f2f;
+  border-color: #d32f2f;
 }
 
 .chord {
@@ -620,17 +675,6 @@
   cursor: not-allowed;
 }
 
-.google-drive-connected {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-email {
-  font-size: 14px;
-  color: #666;
-}
-
 .loading-indicator {
   text-align: center;
   padding: 20px;
@@ -677,8 +721,15 @@
   background-color: #3367d6;
 }
 
+.add-item-controls button:last-child {
+  background-color: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
 .add-item-controls button:last-child:hover {
-  background-color: #f1f1f1;
+  background-color: #d32f2f;
+  border-color: #d32f2f;
 }
 
 /* Media Queries */

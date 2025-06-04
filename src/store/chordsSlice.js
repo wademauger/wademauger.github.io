@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   pinnedChords: [],
   currentInstrument: 'ukulele',
-  transposeBy: {}, // song.id -> semitone offset
+  transposeBy: {}, // song.title -> semitone offset
 };
 
 const chordsSlice = createSlice({
@@ -27,18 +27,18 @@ const chordsSlice = createSlice({
       state.currentInstrument = action.payload;
     },
     transposeSongUp: (state, action) => {
-      const songId = action.payload;
-      if (!state.transposeBy[songId]) state.transposeBy[songId] = 0;
-      state.transposeBy[songId] += 1;
+      const songName = action.payload;
+      if (!state.transposeBy[songName]) state.transposeBy[songName] = 0;
+      state.transposeBy[songName] += 1;
     },
     transposeSongDown: (state, action) => {
-      const songId = action.payload;
-      if (!state.transposeBy[songId]) state.transposeBy[songId] = 0;
-      state.transposeBy[songId] -= 1;
+      const songName = action.payload;
+      if (!state.transposeBy[songName]) state.transposeBy[songName] = 0;
+      state.transposeBy[songName] -= 1;
     },
     setTranspose: (state, action) => {
-      const { songId, value } = action.payload;
-      state.transposeBy[songId] = value;
+      const { songName, value } = action.payload;
+      state.transposeBy[songName] = value;
     },
   },
 });

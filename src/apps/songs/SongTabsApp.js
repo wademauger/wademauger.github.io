@@ -5,7 +5,8 @@ import { pinChord, setTranspose } from '../../store/chordsSlice';
 import ArtistList from './components/ArtistList';
 import AlbumList from './components/AlbumList';
 import SongDetail from './components/SongDetail';
-import GoogleDriveService from './services/GoogleDriveService';
+import GoogleSignInButton from './components/GoogleSignInButton';
+import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
 import { Switch } from 'antd';
 import { FaUnlock, FaLock } from 'react-icons/fa';
@@ -16,7 +17,7 @@ const SongTabsApp = () => {
   const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
+  const [userInfo, setUserInfo] = useState(null); // Store full user info instead of just email
   const [isLoading, setIsLoading] = useState(false);
   const [editingEnabled, setEditingEnabled] = useState(false);
 
@@ -37,105 +38,36 @@ const SongTabsApp = () => {
   const newAlbumInputRef = useRef(null);
   const newSongInputRef = useRef(null);
 
-  const { artistName, albumName, songId } = useParams();
+  const { artistName, albumName, songName } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Initialize Google Drive API
+    // Initialize Google Drive API with modern service
     const initGoogleDrive = async () => {
       try {
-        // Get environment variables with better error handling
+        // Get environment variable for Client ID
         const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-        const API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 
-        // Log for debugging (remove in production)
-        console.log('Environment check:', {
-          hasClientId: !!CLIENT_ID,
-          hasApiKey: !!API_KEY,
-          clientIdLength: CLIENT_ID?.length || 0
-        });
-
-        if (!CLIENT_ID || !API_KEY) {
-          console.warn('Google Drive credentials not found in environment variables');
-          loadMockLibrary();
-          return;
+        if (!CLIENT_ID) {
+          throw new Error('Google Client ID not found in environment variables');
         }
 
-        if (CLIENT_ID === 'your-client-id' || API_KEY === 'your-api-key') {
-          console.warn('Using placeholder Google Drive credentials - please update .env file');
-          loadMockLibrary();
-          return;
-        }
-
-        await GoogleDriveService.initialize(CLIENT_ID, API_KEY);
-        // Try to restore session from localStorage first
-        const restored = GoogleDriveService.restoreSession();
-        setIsGoogleDriveConnected(GoogleDriveService.isSignedIn);
-        if (restored) {
-          setUserEmail(GoogleDriveService.getUserEmail());
+        // Initialize the modern service (simpler - no API key needed)
+        await GoogleDriveServiceModern.initialize(CLIENT_ID);
+        
+        // Check if user has existing valid session
+        const isValidSession = await GoogleDriveServiceModern.validateToken();
+        
+        if (isValidSession && GoogleDriveServiceModern.isSignedIn) {
+          setIsGoogleDriveConnected(true);
+          setUserInfo({
+            email: GoogleDriveServiceModern.userEmail,
+            name: GoogleDriveServiceModern.userName,
+            picture: GoogleDriveServiceModern.userPicture
+          });
           await loadLibraryFromDrive();
-          // After loading library, try to select song from URL (songId only)
-          if (songId) {
-            setTimeout(() => {
-              setLibrary((lib) => {
-                let foundSong = null, foundArtist = null, foundAlbum = null;
-                for (const artist of lib.artists) {
-                  for (const album of artist.albums) {
-                    const song = album.songs.find(s => s.title === decodeURIComponent(songId));
-                    if (song) {
-                      foundSong = song;
-                      foundArtist = artist;
-                      foundAlbum = album;
-                      break;
-                    }
-                  }
-                  if (foundSong) break;
-                }
-                if (foundSong) {
-                  setSelectedArtist(foundArtist);
-                  setSelectedAlbum(foundAlbum);
-                  setSelectedSong(foundSong);
-                }
-                return lib;
-              });
-            }, 0);
-          }
-          return;
-        }
-        // If not restored, try silent sign-in
-        const silentSignedIn = await GoogleDriveService.trySilentSignIn();
-        setIsGoogleDriveConnected(GoogleDriveService.isSignedIn);
-        if (silentSignedIn) {
-          setUserEmail(GoogleDriveService.getUserEmail());
-          await loadLibraryFromDrive();
-          // After loading library, try to select song from URL (songId only)
-          if (songId) {
-            setTimeout(() => {
-              setLibrary((lib) => {
-                let foundSong = null, foundArtist = null, foundAlbum = null;
-                for (const artist of lib.artists) {
-                  for (const album of artist.albums) {
-                    const song = album.songs.find(s => s.title === decodeURIComponent(songId));
-                    if (song) {
-                      foundSong = song;
-                      foundArtist = artist;
-                      foundAlbum = album;
-                      break;
-                    }
-                  }
-                  if (foundSong) break;
-                }
-                if (foundSong) {
-                  setSelectedArtist(foundArtist);
-                  setSelectedAlbum(foundAlbum);
-                  setSelectedSong(foundSong);
-                }
-                return lib;
-              });
-            }, 0);
-          }
         } else {
-          // Not signed in, wait for user action
+          console.debug('No valid session found, using mock library');
           loadMockLibrary();
         }
       } catch (error) {
@@ -158,29 +90,43 @@ const SongTabsApp = () => {
               songs: [
                 {
                   title: 'Song Test',
+                  chords: '',
                   lyrics: [
                     "1234567890 [Cmaj7]0987654321",
                     "[Cm7]1234567890 [C7]0987654321",
                     "[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890",
-                  ],
+                  ].join('\n'),
+                  notes: '',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
                 }
               ]
             }
           ]
         }
-
-      ]
+      ],
+      version: '1.0',
+      lastUpdated: new Date().toISOString()
     };
+
     setLibrary(mockLibrary);
   };
 
   const loadLibraryFromDrive = async () => {
     setIsLoading(true);
     try {
-      const driveLibrary = await GoogleDriveService.loadLibrary();
+      const driveLibrary = await GoogleDriveServiceModern.loadLibrary();
       setLibrary(driveLibrary);
     } catch (error) {
       console.error('Failed to load library from Google Drive:', error);
+      
+      // Handle authentication errors specifically
+      if (error.message === 'User not signed in to Google Drive') {
+        console.debug('User not authenticated, switching to mock library');
+        setIsGoogleDriveConnected(false);
+        setUserInfo(null);
+      }
+      
       loadMockLibrary();
     } finally {
       setIsLoading(false);
@@ -190,9 +136,13 @@ const SongTabsApp = () => {
   const handleGoogleDriveConnect = async () => {
     setIsLoading(true);
     try {
-      await GoogleDriveService.signIn();
+      await GoogleDriveServiceModern.signIn();
       setIsGoogleDriveConnected(true);
-      setUserEmail(GoogleDriveService.getUserEmail());
+      setUserInfo({
+        email: GoogleDriveServiceModern.userEmail,
+        name: GoogleDriveServiceModern.userName,
+        picture: GoogleDriveServiceModern.userPicture
+      });
       await loadLibraryFromDrive();
     } catch (error) {
       console.error('Failed to connect to Google Drive:', error);
@@ -203,12 +153,54 @@ const SongTabsApp = () => {
 
   const handleGoogleDriveDisconnect = async () => {
     try {
-      await GoogleDriveService.signOut();
+      await GoogleDriveServiceModern.signOut();
       setIsGoogleDriveConnected(false);
-      setUserEmail(null);
+      setUserInfo(null);
       loadMockLibrary();
     } catch (error) {
       console.error('Failed to disconnect from Google Drive:', error);
+    }
+  };
+
+  // Handler for Google Sign-In button success
+  const handleGoogleSignInSuccess = async (tokenResponse) => {
+    setIsLoading(true);
+    try {
+      // Use the modern service to handle the OAuth token
+      await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
+      
+      setIsGoogleDriveConnected(true);
+      setUserInfo({
+        email: GoogleDriveServiceModern.userEmail,
+        name: GoogleDriveServiceModern.userName,
+        picture: GoogleDriveServiceModern.userPicture
+      });
+      
+      // Load library after successful authentication
+      await loadLibraryFromDrive();
+    } catch (error) {
+      console.error('Google Sign-In failed:', error);
+      alert('Failed to connect to Google Drive. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handler for Google Sign-In button error
+  const handleGoogleSignInError = (error) => {
+    console.error('Google Sign-In error:', error);
+    alert('Failed to sign in with Google. Please try again.');
+  };
+
+  // Handler for Google Sign-Out
+  const handleGoogleSignOut = async () => {
+    try {
+      await GoogleDriveServiceModern.signOut();
+      setIsGoogleDriveConnected(false);
+      setUserInfo(null);
+      loadMockLibrary();
+    } catch (error) {
+      console.error('Failed to sign out:', error);
     }
   };
 
@@ -224,8 +216,8 @@ const SongTabsApp = () => {
           if (album) {
             setSelectedAlbum(album);
 
-            if (songId) {
-              const song = album.songs.find(s => s.title === decodeURIComponent(songId));
+            if (songName) {
+              const song = album.songs.find(s => s.title === decodeURIComponent(songName));
               if (song) {
                 setSelectedSong(song);
               }
@@ -234,7 +226,7 @@ const SongTabsApp = () => {
         }
       }
     }
-  }, [artistName, albumName, songId, library]);
+  }, [artistName, albumName, songName, library]);
 
   const handleArtistSelect = (artist) => {
     setSelectedArtist(artist);
@@ -246,12 +238,12 @@ const SongTabsApp = () => {
   const handleAlbumSelect = (album) => {
     setSelectedAlbum(album);
     setSelectedSong(null);
-    navigate(`/tabs/album/${encodeURIComponent(album.title)}`);
+    navigate(`/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(album.title)}`);
   };
 
   const handleSongSelect = (song) => {
     setSelectedSong(song);
-    navigate(`/tabs/song/${encodeURIComponent(song.title)}`);
+    navigate(`/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(selectedAlbum.title)}/song/${encodeURIComponent(song.title)}`);
   };
 
   const handlePinChord = (chord) => {
@@ -265,11 +257,22 @@ const SongTabsApp = () => {
     setIsLoading(true);
     try {
       if (isGoogleDriveConnected) {
-        const updatedLibrary = await GoogleDriveService.updateSong(
-          selectedArtist.name,
-          selectedAlbum.title,
-          updatedSong
-        );
+        // Load current library first
+        const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
+        
+        // Update song using the modern service - find by names instead of IDs
+        const artist = currentLibrary.artists.find(a => a.name === selectedArtist.name);
+        const album = artist?.albums.find(a => a.title === selectedAlbum.title);
+        const song = album?.songs.find(s => s.title === selectedSong.title);
+        
+        if (song) {
+          // Update the song data
+          Object.assign(song, updatedSong, { updatedAt: new Date().toISOString() });
+          await GoogleDriveServiceModern.saveLibrary(currentLibrary);
+        }
+        
+        // Reload the library to get the updated data
+        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
         setLibrary(updatedLibrary);
 
         // Update the selected song reference
@@ -288,9 +291,15 @@ const SongTabsApp = () => {
         const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
         const songIndex = updatedLibrary.artists[artistIndex].albums[albumIndex].songs.findIndex(s => s.title === selectedSong.title);
 
-        updatedLibrary.artists[artistIndex].albums[albumIndex].songs[songIndex] = updatedSong;
+        // Update the song with proper timestamp
+        const songWithTimestamp = {
+          ...updatedSong,
+          updatedAt: new Date().toISOString()
+        };
+        
+        updatedLibrary.artists[artistIndex].albums[albumIndex].songs[songIndex] = songWithTimestamp;
         setLibrary(updatedLibrary);
-        setSelectedSong(updatedSong);
+        setSelectedSong(songWithTimestamp);
       }
     } catch (error) {
       console.error('Failed to update song:', error);
@@ -321,16 +330,57 @@ const SongTabsApp = () => {
   // Handle adding new artist
   const handleAddArtist = async () => {
     if (newArtistName.trim()) {
-      setIsLoading(true);
+      const tempArtist = {
+        name: newArtistName.trim(),
+        albums: [],
+        isOptimistic: true
+      };
+
+      // Optimistic update
+      setLibrary(prevLibrary => ({
+        ...prevLibrary,
+        artists: [...prevLibrary.artists, tempArtist]
+      }));
+      setIsAddingArtist(false);
+      setNewArtistName('');
+
       try {
-        const updatedLibrary = await GoogleDriveService.addArtist(newArtistName);
-        setLibrary(updatedLibrary);
+        if (isGoogleDriveConnected) {
+          // Load current library first
+          const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
+          
+          // Add artist manually since GoogleDriveServiceModern uses IDs
+          const newArtist = {
+            name: newArtistName.trim(),
+            albums: []
+          };
+          currentLibrary.artists.push(newArtist);
+          await GoogleDriveServiceModern.saveLibrary(currentLibrary);
+          
+          // Reload the library to get the updated data
+          const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+          setLibrary(updatedLibrary);
+        } else {
+          // For mock library, just keep the optimistic update without ID
+          setLibrary(prevLibrary => ({
+            ...prevLibrary,
+            artists: prevLibrary.artists.map(artist => 
+              artist.isOptimistic && artist.name === tempArtist.name
+                ? { ...artist, isOptimistic: undefined }
+                : artist
+            )
+          }));
+        }
       } catch (error) {
         console.error('Failed to add artist:', error);
-      } finally {
-        setIsLoading(false);
-        setIsAddingArtist(false);
-        setNewArtistName('');
+        // Revert optimistic update
+        setLibrary(prevLibrary => ({
+          ...prevLibrary,
+          artists: prevLibrary.artists.filter(artist => artist.name !== tempArtist.name || !artist.isOptimistic)
+        }));
+        // Show the input again for retry
+        setIsAddingArtist(true);
+        setNewArtistName(tempArtist.name);
       }
     } else {
       setIsAddingArtist(false);
@@ -340,16 +390,82 @@ const SongTabsApp = () => {
   // Handle adding new album
   const handleAddAlbum = async () => {
     if (newAlbumName.trim() && selectedArtist) {
-      setIsLoading(true);
+      const tempAlbum = {
+        name: newAlbumName.trim(),
+        songs: [],
+        isOptimistic: true
+      };
+
+      // Optimistic update
+      setLibrary(prevLibrary => {
+        const updatedLibrary = { ...prevLibrary };
+        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+        if (artistIndex !== -1) {
+          updatedLibrary.artists[artistIndex] = {
+            ...updatedLibrary.artists[artistIndex],
+            albums: [...updatedLibrary.artists[artistIndex].albums, tempAlbum]
+          };
+        }
+        return updatedLibrary;
+      });
+      setIsAddingAlbum(false);
+      setNewAlbumName('');
+
       try {
-        const updatedLibrary = await GoogleDriveService.addAlbum(selectedArtist.name, newAlbumName);
-        setLibrary(updatedLibrary);
+        if (isGoogleDriveConnected) {
+          // Load current library first
+          const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
+          
+          // Add album manually since GoogleDriveServiceModern uses IDs
+          const artist = currentLibrary.artists.find(a => a.name === selectedArtist.name);
+          if (artist) {
+            const newAlbum = {
+              name: newAlbumName.trim(),
+              songs: []
+            };
+            artist.albums.push(newAlbum);
+            await GoogleDriveServiceModern.saveLibrary(currentLibrary);
+          }
+          
+          // Reload the library to get the updated data
+          const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+          setLibrary(updatedLibrary);
+        } else {
+          // For mock library, just keep the optimistic update without ID
+          setLibrary(prevLibrary => {
+            const updatedLibrary = { ...prevLibrary };
+            const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+            if (artistIndex !== -1) {
+              updatedLibrary.artists[artistIndex] = {
+                ...updatedLibrary.artists[artistIndex],
+                albums: updatedLibrary.artists[artistIndex].albums.map(album => 
+                  album.isOptimistic && album.title === tempAlbum.title
+                    ? { ...album, isOptimistic: undefined }
+                    : album
+                )
+              };
+            }
+            return updatedLibrary;
+          });
+        }
       } catch (error) {
         console.error('Failed to add album:', error);
-      } finally {
-        setIsLoading(false);
-        setIsAddingAlbum(false);
-        setNewAlbumName('');
+        // Revert optimistic update
+        setLibrary(prevLibrary => {
+          const updatedLibrary = { ...prevLibrary };
+          const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+          if (artistIndex !== -1) {
+            updatedLibrary.artists[artistIndex] = {
+              ...updatedLibrary.artists[artistIndex],
+              albums: updatedLibrary.artists[artistIndex].albums.filter(album => 
+                !(album.title === tempAlbum.title && album.isOptimistic))
+            };
+          }
+          return updatedLibrary;
+        });
+        // Show the input again for retry
+        setIsAddingAlbum(true);
+        setNewAlbumName(tempAlbum.title);
       }
     } else {
       setIsAddingAlbum(false);
@@ -359,20 +475,106 @@ const SongTabsApp = () => {
   // Handle adding new song
   const handleAddSong = async () => {
     if (newSongName.trim() && selectedArtist && selectedAlbum) {
-      setIsLoading(true);
+      const tempSong = {
+        title: newSongName.trim(),
+        chords: '',
+        lyrics: '',
+        notes: '',
+        isOptimistic: true
+      };
+
+      // Optimistic update
+      setLibrary(prevLibrary => {
+        const updatedLibrary = { ...prevLibrary };
+        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+        if (artistIndex !== -1) {
+          const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
+          if (albumIndex !== -1) {
+            updatedLibrary.artists[artistIndex].albums[albumIndex] = {
+              ...updatedLibrary.artists[artistIndex].albums[albumIndex],
+              songs: [...updatedLibrary.artists[artistIndex].albums[albumIndex].songs, tempSong]
+            };
+          }
+        }
+        return updatedLibrary;
+      });
+      setIsAddingSong(false);
+      setNewSongName('');
+
       try {
-        const updatedLibrary = await GoogleDriveService.addSong(
-          selectedArtist.name,
-          selectedAlbum.title,
-          newSongName
-        );
-        setLibrary(updatedLibrary);
+        if (isGoogleDriveConnected) {
+          // Load current library first
+          const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
+          
+          // Add song using the modern service - find by names instead of IDs
+          const artist = currentLibrary.artists.find(a => a.name === selectedArtist.name);
+          const album = artist?.albums.find(a => a.title === selectedAlbum.title);
+          
+          if (artist && album) {
+            const songData = {
+              name: newSongName.trim(),
+              chords: '',
+              lyrics: '',
+              notes: '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            // Add song directly to the album
+            album.songs.push(songData);
+            await GoogleDriveServiceModern.saveLibrary(currentLibrary);
+          }
+          
+          // Reload the library to get the updated data
+          const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+          setLibrary(updatedLibrary);
+        } else {
+          // For mock library, just keep the optimistic update without ID generation
+          setLibrary(prevLibrary => {
+            const updatedLibrary = { ...prevLibrary };
+            const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+            if (artistIndex !== -1) {
+              const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
+              if (albumIndex !== -1) {
+                updatedLibrary.artists[artistIndex].albums[albumIndex] = {
+                  ...updatedLibrary.artists[artistIndex].albums[albumIndex],
+                  songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.map(song => 
+                    song.isOptimistic && song.title === tempSong.title
+                      ? { 
+                          ...song, 
+                          isOptimistic: undefined,
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString()
+                        }
+                      : song
+                  )
+                };
+              }
+            }
+            return updatedLibrary;
+          });
+        }
       } catch (error) {
         console.error('Failed to add song:', error);
-      } finally {
-        setIsLoading(false);
-        setIsAddingSong(false);
-        setNewSongName('');
+        // Revert optimistic update
+        setLibrary(prevLibrary => {
+          const updatedLibrary = { ...prevLibrary };
+          const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+          if (artistIndex !== -1) {
+            const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.name === selectedAlbum.name);
+            if (albumIndex !== -1) {
+              updatedLibrary.artists[artistIndex].albums[albumIndex] = {
+                ...updatedLibrary.artists[artistIndex].albums[albumIndex],
+                songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.filter(song =>
+                  !(song.isOptimistic && song.title === tempSong.title))
+              };
+            }
+          }
+          return updatedLibrary;
+        });
+        // Show the input again for retry
+        setIsAddingSong(true);
+        setNewSongName(tempSong.title);
       }
     } else {
       setIsAddingSong(false);
@@ -410,10 +612,25 @@ const SongTabsApp = () => {
   // When a song is selected, if it has a transpose property, sync it to redux
   useEffect(() => {
     if (selectedSong && typeof selectedSong.transpose === 'number') {
-      dispatch(setTranspose({ songId: selectedSong.title, value: selectedSong.transpose }));
+      dispatch(setTranspose({ songName: selectedSong.title, value: selectedSong.transpose }));
     }
     // eslint-disable-next-line
   }, [selectedSong]);
+
+  // Handle Google Drive authentication expiration
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      setIsGoogleDriveConnected(false);
+      setUserInfo(null);
+      loadMockLibrary();
+      window.alert('Your Google Drive session has expired. Please sign in again.');
+    };
+
+    window.addEventListener('gdriveAuthExpired', handleAuthExpired);
+    return () => {
+      window.removeEventListener('gdriveAuthExpired', handleAuthExpired);
+    };
+  }, []);
 
   return (
     <div className="song-tabs-app">
@@ -433,24 +650,19 @@ const SongTabsApp = () => {
         <div className="header-controls">
           <div className="google-drive-section">
             {isGoogleDriveConnected ? (
-              <div className="google-drive-connected">
-                <span className="user-email">{userEmail}</span>
-                <button
-                  className="google-drive-button disconnect"
-                  onClick={handleGoogleDriveDisconnect}
-                  disabled={isLoading}
-                >
-                  Disconnect Drive
-                </button>
-              </div>
-            ) : (
-              <button
-                className="google-drive-button connect"
-                onClick={handleGoogleDriveConnect}
+              <GoogleSignInButton
+                isSignedIn={true}
+                onSignOut={handleGoogleSignOut}
                 disabled={isLoading}
-              >
-                {isLoading ? 'Connecting...' : 'Connect Google Drive'}
-              </button>
+                userInfo={userInfo}
+              />
+            ) : (
+              <GoogleSignInButton
+                onSuccess={handleGoogleSignInSuccess}
+                onError={handleGoogleSignInError}
+                disabled={isLoading}
+                loading={isLoading}
+              />
             )}
           </div>
         </div>
@@ -555,15 +767,22 @@ const SongTabsApp = () => {
               </div>
             )}
             <ul className="song-list">
-              {selectedAlbum.songs.map(song => (
-                <li
-                  key={song.title}
-                  className={selectedSong?.title === song.title ? 'active' : ''}
-                  onClick={() => handleSongSelect(song)}
-                >
-                  {song.title}
-                </li>
-              ))}
+              {selectedAlbum.songs.map(song => {
+                const className = [
+                  selectedSong?.title === song.title ? 'active' : '',
+                  song.isOptimistic ? 'optimistic' : ''
+                ].filter(Boolean).join(' ');
+
+                return (
+                  <li
+                    key={song.title}
+                    className={className}
+                    onClick={() => !song.isOptimistic && handleSongSelect(song)}
+                  >
+                    {song.title}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

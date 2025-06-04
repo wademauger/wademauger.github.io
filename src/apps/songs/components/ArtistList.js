@@ -4,15 +4,22 @@ const ArtistList = ({ artists, selectedArtist, onSelectArtist }) => {
   return (
     <div className="artist-list">
       <ul>
-        {artists.map(artist => (
-          <li 
-            key={artist.name} 
-            className={selectedArtist?.name === artist.name ? 'active' : ''}
-            onClick={() => onSelectArtist(artist)}
-          >
-            {artist.name}
-          </li>
-        ))}
+        {artists.map(artist => {
+          const className = [
+            selectedArtist?.name === artist.name ? 'active' : '',
+            artist.isOptimistic ? 'optimistic' : ''
+          ].filter(Boolean).join(' ');
+
+          return (
+            <li 
+              key={artist.name} 
+              className={className}
+              onClick={() => !artist.isOptimistic && onSelectArtist(artist)}
+            >
+              {artist.name}
+            </li>
+          );
+        })}
         {artists.length === 0 && (
           <li className="empty-message">No artists found.</li>
         )}
