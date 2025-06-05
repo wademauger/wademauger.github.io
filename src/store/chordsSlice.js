@@ -27,18 +27,18 @@ const chordsSlice = createSlice({
       state.currentInstrument = action.payload;
     },
     transposeSongUp: (state, action) => {
-      const songName = action.payload;
-      if (!state.transposeBy[songName]) state.transposeBy[songName] = 0;
-      state.transposeBy[songName] += 1;
+      const songTitle = action.payload;
+      if (!state.transposeBy[songTitle]) state.transposeBy[songTitle] = 0;
+      state.transposeBy[songTitle] += 1;
     },
     transposeSongDown: (state, action) => {
-      const songName = action.payload;
-      if (!state.transposeBy[songName]) state.transposeBy[songName] = 0;
-      state.transposeBy[songName] -= 1;
+      const songTitle = action.payload;
+      if (!state.transposeBy[songTitle]) state.transposeBy[songTitle] = 0;
+      state.transposeBy[songTitle] -= 1;
     },
     setTranspose: (state, action) => {
-      const { songName, value } = action.payload;
-      state.transposeBy[songName] = value;
+      const { songTitle, value } = action.payload;
+      state.transposeBy[songTitle] = value;
     },
   },
 });

@@ -17,6 +17,22 @@ class GoogleDriveServiceModern {
     this.CLIENT_ID = null; // Set this from your environment
     this.gapiInited = false;
     this.gisInited = false;
+    // Track retry attempts to prevent infinite loops
+    this.authRetryAttempts = new Map();
+    this.maxRetryAttempts = 1;
+    
+    // Session persistence keys
+    this.SESSION_KEYS = {
+      ACCESS_TOKEN: 'googleDrive_accessToken',
+      USER_EMAIL: 'googleDrive_userEmail',
+      USER_NAME: 'googleDrive_userName',
+      USER_PICTURE: 'googleDrive_userPicture',
+      IS_SIGNED_IN: 'googleDrive_isSignedIn',
+      TOKEN_EXPIRY: 'googleDrive_tokenExpiry'
+    };
+    
+    // Try to restore session from localStorage
+    this.restoreSession();
   }
 
   async initialize(clientId) {
@@ -31,6 +47,20 @@ class GoogleDriveServiceModern {
         this.initializeGapi(),
         this.initializeGis()
       ]);
+
+      // If we have a restored session, set up the token for gapi
+      if (this.isSignedIn && this.accessToken) {
+        gapi.client.setToken({
+          access_token: this.accessToken
+        });
+        console.log('Restored session set up for gapi client');
+        
+        // Validate the restored session
+        const isValidSession = await this.validateSession();
+        if (!isValidSession) {
+          console.log('Restored session is invalid, user will need to sign in again');
+        }
+      }
 
       console.log('Google Drive service initialized successfully');
       return true;
@@ -113,8 +143,13 @@ class GoogleDriveServiceModern {
           access_token: this.accessToken
         });
 
-        // Load user profile
-        this.loadUserProfile();
+        // Load user profile and save session
+        this.loadUserProfile().then(() => {
+          this.saveSession();
+        }).catch((error) => {
+          console.warn('Failed to load user profile:', error);
+          this.saveSession(); // Still save session even if profile load fails
+        });
         
         console.log('Authentication successful');
       },
@@ -151,11 +186,13 @@ class GoogleDriveServiceModern {
             access_token: this.accessToken
           });
 
-          // Load user profile
+          // Load user profile and save session
           this.loadUserProfile().then(() => {
+            this.saveSession();
             resolve(response);
           }).catch((error) => {
             console.warn('Failed to load user profile:', error);
+            this.saveSession(); // Still save session even if profile load fails
             resolve(response); // Still resolve since auth was successful
           });
         };
@@ -202,16 +239,23 @@ class GoogleDriveServiceModern {
       gapi.client.setToken(null);
     }
 
+    // Remove session data from localStorage
+    this.clearSession();
+
     console.log('Signed out successfully');
   }
 
   async loadUserProfile() {
+    console.log('=== LOADING USER PROFILE ===');
+    
     if (!this.accessToken) {
-      console.warn('No access token available for loading user profile');
+      console.warn('✗ No access token available for loading user profile');
       return;
     }
 
     try {
+      console.log('Making request to userinfo endpoint...');
+      
       // Use the userinfo endpoint to get user details
       const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: {
@@ -224,45 +268,92 @@ class GoogleDriveServiceModern {
         this.userEmail = userInfo.email;
         this.userName = userInfo.name;
         this.userPicture = userInfo.picture;
-        console.log('User profile loaded:', { email: this.userEmail, name: this.userName });
+        
+        console.log('✓ User profile loaded successfully:', { 
+          email: this.userEmail, 
+          name: this.userName,
+          hasPicture: !!this.userPicture
+        });
       } else {
-        console.warn('Failed to load user profile:', response.status);
+        console.warn('✗ Failed to load user profile:', response.status, response.statusText);
       }
     } catch (error) {
-      console.warn('Error loading user profile:', error);
+      console.warn('✗ Error loading user profile:', error);
     }
+    
+    console.log('=== USER PROFILE LOAD COMPLETE ===');
   }
 
   async validateToken() {
     if (!this.accessToken) {
+      console.log('validateToken: No access token available');
       this.isSignedIn = false;
       return false;
     }
 
+    console.log('validateToken: Starting token validation with token:', this.accessToken.substring(0, 10) + '...');
+
     try {
+      // Ensure gapi is initialized and token is set
+      if (typeof gapi !== 'undefined' && gapi.client) {
+        gapi.client.setToken({
+          access_token: this.accessToken
+        });
+        console.log('validateToken: Token set in gapi client');
+      } else {
+        console.warn('validateToken: gapi not available or not initialized');
+        return false;
+      }
+
+      console.log('validateToken: Making API call to validate token...');
       // Test the token by making a simple API call
       const response = await gapi.client.drive.about.get({
         fields: 'user'
       });
 
+      console.log('validateToken: API response received:', response);
+
       if (response.status === 200) {
         this.isSignedIn = true;
         this.userEmail = response.result.user?.emailAddress;
+        console.log('validateToken: Token is valid, user:', this.userEmail);
         // Also load full user profile to get name and picture
         await this.loadUserProfile();
+        // Update session with fresh data
+        this.saveSession();
         return true;
+      } else {
+        console.warn('validateToken: Unexpected response status:', response.status);
       }
     } catch (error) {
-      console.warn('Token validation failed:', error);
-      this.isSignedIn = false;
-      this.accessToken = null;
-      this.userEmail = null;
-      this.userName = null;
-      this.userPicture = null;
+      console.error('validateToken: Token validation failed with error:', error);
+      console.error('validateToken: Error details:', {
+        message: error.message,
+        status: error.status,
+        result: error.result
+      });
       
-      // Clear GAPI token
-      if (typeof gapi !== 'undefined' && gapi.client) {
-        gapi.client.setToken(null);
+      // Don't immediately clear session for network errors or temporary issues
+      // Only clear if it's definitely an auth error
+      if (error.status === 401 || error.status === 403 || 
+          (error.result && error.result.error && error.result.error.code === 401)) {
+        console.log('validateToken: Authentication error detected, clearing session');
+        this.isSignedIn = false;
+        // Clear invalid session
+        this.clearSession();
+        this.accessToken = null;
+        this.userEmail = null;
+        this.userName = null;
+        this.userPicture = null;
+        
+        // Clear GAPI token
+        if (typeof gapi !== 'undefined' && gapi.client) {
+          gapi.client.setToken(null);
+        }
+      } else {
+        console.log('validateToken: Non-auth error, keeping session but marking as unvalidated');
+        // For network errors or other issues, don't clear the session immediately
+        // Let the user try to use it and handle auth errors in the withAutoAuth wrapper
       }
     }
 
@@ -272,6 +363,10 @@ class GoogleDriveServiceModern {
   // API Methods - These remain largely the same but with simplified error handling
 
   async findLibraryFile() {
+    return this.withAutoAuth(this._findLibraryFileInternal, 'findLibraryFile');
+  }
+
+  async _findLibraryFileInternal() {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -291,6 +386,10 @@ class GoogleDriveServiceModern {
   }
 
   async createLibraryFile() {
+    return this.withAutoAuth(this._createLibraryFileInternal, 'createLibraryFile');
+  }
+
+  async _createLibraryFileInternal() {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -322,16 +421,20 @@ class GoogleDriveServiceModern {
   }
 
   async loadLibrary() {
+    return this.withAutoAuth(this._loadLibraryInternal, 'loadLibrary');
+  }
+
+  async _loadLibraryInternal() {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
 
     try {
-      let libraryFile = await this.findLibraryFile();
+      let libraryFile = await this._findLibraryFileInternal();
       
       if (!libraryFile) {
         console.log('Library file not found, creating new one');
-        libraryFile = await this.createLibraryFile();
+        libraryFile = await this._createLibraryFileInternal();
       }
 
       // Download file content
@@ -350,12 +453,16 @@ class GoogleDriveServiceModern {
   }
 
   async saveLibrary(libraryData) {
+    return this.withAutoAuth(this._saveLibraryInternal, 'saveLibrary', libraryData);
+  }
+
+  async _saveLibraryInternal(libraryData) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
 
     try {
-      const libraryFile = await this.findLibraryFile();
+      const libraryFile = await this._findLibraryFileInternal();
       
       if (!libraryFile) {
         throw new Error('Library file not found');
@@ -390,6 +497,10 @@ class GoogleDriveServiceModern {
   // but with the simplified error handling approach
 
   async addArtist(libraryData, artistName) {
+    return this.withAutoAuth(this._addArtistInternal, 'addArtist', libraryData, artistName);
+  }
+
+  async _addArtistInternal(libraryData, artistName) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -411,7 +522,11 @@ class GoogleDriveServiceModern {
     return newArtist;
   }
 
-  async addAlbum(libraryData, artistName, albumName) {
+  async addAlbum(libraryData, artistName, albumTitle) {
+    return this.withAutoAuth(this._addAlbumInternal, 'addAlbum', libraryData, artistName, albumTitle);
+  }
+
+  async _addAlbumInternal(libraryData, artistName, albumTitle) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -421,24 +536,28 @@ class GoogleDriveServiceModern {
       throw new Error('Artist not found');
     }
 
-    const existingAlbum = artist.albums.find(a => a.name === albumName);
+    const existingAlbum = artist.albums.find(a => a.title === albumTitle);
     if (existingAlbum) {
       throw new Error('Album already exists for this artist');
     }
 
     const newAlbum = {
-      name: albumName,
+      name: albumTitle,
       songs: []
     };
 
     artist.albums.push(newAlbum);
     await this.saveLibrary(libraryData);
     
-    console.log('Album added successfully:', albumName);
+    console.log('Album added successfully:', albumTitle);
     return newAlbum;
   }
 
-  async addSong(libraryData, artistName, albumName, songData) {
+  async addSong(libraryData, artistName, albumTitle, songData) {
+    return this.withAutoAuth(this._addSongInternal, 'addSong', libraryData, artistName, albumTitle, songData);
+  }
+
+  async _addSongInternal(libraryData, artistName, albumTitle, songData) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -448,13 +567,13 @@ class GoogleDriveServiceModern {
       throw new Error('Artist not found');
     }
 
-    const album = artist.albums.find(a => a.name === albumName);
+    const album = artist.albums.find(a => a.title === albumTitle);
     if (!album) {
       throw new Error('Album not found');
     }
 
     const newSong = {
-      name: songData.name,
+      name: songData.title,
       chords: songData.chords || '',
       lyrics: songData.lyrics || '',
       notes: songData.notes || '',
@@ -465,11 +584,15 @@ class GoogleDriveServiceModern {
     album.songs.push(newSong);
     await this.saveLibrary(libraryData);
     
-    console.log('Song added successfully:', songData.name);
+    console.log('Song added successfully:', songData.title);
     return newSong;
   }
 
-  async updateSong(libraryData, artistName, albumName, songName, songData) {
+  async updateSong(libraryData, artistName, albumTitle, songTitle, songData) {
+    return this.withAutoAuth(this._updateSongInternal, 'updateSong', libraryData, artistName, albumTitle, songTitle, songData);
+  }
+
+  async _updateSongInternal(libraryData, artistName, albumTitle, songTitle, songData) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -479,18 +602,18 @@ class GoogleDriveServiceModern {
       throw new Error('Artist not found');
     }
 
-    const album = artist.albums.find(a => a.name === albumName);
+    const album = artist.albums.find(a => a.title === albumTitle);
     if (!album) {
       throw new Error('Album not found');
     }
 
-    const song = album.songs.find(s => s.name === songName);
+    const song = album.songs.find(s => s.title === songTitle);
     if (!song) {
       throw new Error('Song not found');
     }
 
     // Update song properties
-    song.title = songData.name || song.title;
+    song.title = song.title;
     song.chords = songData.chords !== undefined ? songData.chords : song.chords;
     song.lyrics = songData.lyrics !== undefined ? songData.lyrics : song.lyrics;
     song.notes = songData.notes !== undefined ? songData.notes : song.notes;
@@ -520,6 +643,9 @@ class GoogleDriveServiceModern {
         // Load user profile
         await this.loadUserProfile();
         
+        // Save session after successful authentication and profile loading
+        this.saveSession();
+        
         console.log('OAuth token handled successfully');
         return true;
       } else if (tokenResponse.code) {
@@ -534,8 +660,347 @@ class GoogleDriveServiceModern {
       throw error;
     }
   }
+
+  /**
+   * Wrapper function that automatically handles authentication errors and retries
+   * @param {Function} operation - The operation to execute
+   * @param {string} operationName - Name of the operation for logging
+   * @param {Array} args - Arguments to pass to the operation
+   * @returns {Promise} Result of the operation
+   */
+  async withAutoAuth(operation, operationName, ...args) {
+    const retryKey = operationName;
+    
+    try {
+      // Reset retry counter for this operation
+      this.authRetryAttempts.delete(retryKey);
+      
+      // Try to execute the operation
+      return await operation.apply(this, args);
+    } catch (error) {
+      // Check if this is the specific authentication error we want to handle
+      if (error.message === 'User not signed in to Google Drive') {
+        const retryCount = this.authRetryAttempts.get(retryKey) || 0;
+        
+        if (retryCount < this.maxRetryAttempts) {
+          console.log(`Authentication required for ${operationName}. Attempting automatic sign-in...`);
+          
+          // Increment retry counter
+          this.authRetryAttempts.set(retryKey, retryCount + 1);
+          
+          try {
+            // Trigger the authentication flow
+            await this.signIn();
+            
+            console.log(`Authentication successful. Retrying ${operationName}...`);
+            
+            // Retry the original operation
+            const result = await operation.apply(this, args);
+            
+            // Clear retry counter on success
+            this.authRetryAttempts.delete(retryKey);
+            
+            return result;
+          } catch (authError) {
+            console.error(`Authentication failed for ${operationName}:`, authError);
+            // Clear retry counter on auth failure
+            this.authRetryAttempts.delete(retryKey);
+            throw new Error(`Authentication failed: ${authError.message}`);
+          }
+        } else {
+          console.error(`Max retry attempts reached for ${operationName}`);
+          this.authRetryAttempts.delete(retryKey);
+          throw error;
+        }
+      } else {
+        // For non-auth errors, just throw the original error
+        throw error;
+      }
+    }
+  }
+
+  // Session management methods
+
+  saveSession() {
+    try {
+      console.log('=== SAVING SESSION ===');
+      console.log('Current state:', {
+        accessToken: this.accessToken ? 'EXISTS' : 'NULL',
+        userEmail: this.userEmail,
+        userName: this.userName,
+        userPicture: this.userPicture ? 'EXISTS' : 'NULL',
+        isSignedIn: this.isSignedIn
+      });
+      
+      if (this.accessToken) {
+        localStorage.setItem(this.SESSION_KEYS.ACCESS_TOKEN, this.accessToken);
+        localStorage.setItem(this.SESSION_KEYS.IS_SIGNED_IN, 'true');
+        
+        // Store token expiry time (Google tokens typically last 1 hour)
+        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
+        localStorage.setItem(this.SESSION_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+        
+        console.log('✓ Saved access token and expiry');
+      } else {
+        console.log('✗ No access token to save');
+      }
+      
+      if (this.userEmail) {
+        localStorage.setItem(this.SESSION_KEYS.USER_EMAIL, this.userEmail);
+        console.log('✓ Saved user email:', this.userEmail);
+      } else {
+        console.log('✗ No user email to save');
+      }
+      
+      if (this.userName) {
+        localStorage.setItem(this.SESSION_KEYS.USER_NAME, this.userName);
+        console.log('✓ Saved user name:', this.userName);
+      } else {
+        console.log('✗ No user name to save');
+      }
+      
+      if (this.userPicture) {
+        localStorage.setItem(this.SESSION_KEYS.USER_PICTURE, this.userPicture);
+        console.log('✓ Saved user picture');
+      } else {
+        console.log('✗ No user picture to save');
+      }
+      
+      console.log('=== SESSION SAVE COMPLETE ===');
+      
+      // Verify what was actually saved
+      this.debugLocalStorage();
+    } catch (error) {
+      console.warn('Failed to save session to localStorage:', error);
+    }
+  }
+
+  restoreSession() {
+    try {
+      console.log('=== RESTORING SESSION ===');
+      
+      const savedToken = localStorage.getItem(this.SESSION_KEYS.ACCESS_TOKEN);
+      const tokenExpiry = localStorage.getItem(this.SESSION_KEYS.TOKEN_EXPIRY);
+      const isSignedIn = localStorage.getItem(this.SESSION_KEYS.IS_SIGNED_IN) === 'true';
+      
+      console.log('localStorage check:', {
+        hasToken: !!savedToken,
+        hasExpiry: !!tokenExpiry,
+        wasSignedIn: isSignedIn,
+        currentTime: new Date().toISOString()
+      });
+      
+      if (!savedToken) {
+        console.log('✗ No saved token found');
+        return false;
+      }
+      
+      if (!tokenExpiry) {
+        console.log('✗ No token expiry found');
+        return false;
+      }
+      
+      if (!isSignedIn) {
+        console.log('✗ User was not signed in');
+        return false;
+      }
+      
+      // Check if token exists and hasn't expired
+      const expiryTime = parseInt(tokenExpiry);
+      const now = Date.now();
+      
+      console.log('Token expiry check:', {
+        expiryTime: new Date(expiryTime).toISOString(),
+        now: new Date(now).toISOString(),
+        isValid: now < expiryTime,
+        timeRemaining: Math.round((expiryTime - now) / 1000 / 60) + ' minutes'
+      });
+      
+      if (now >= expiryTime) {
+        console.log('✗ Token has expired, clearing session');
+        this.clearSession();
+        return false;
+      }
+      
+      // Token is still valid, restore session
+      this.accessToken = savedToken;
+      this.isSignedIn = true;
+      this.userEmail = localStorage.getItem(this.SESSION_KEYS.USER_EMAIL);
+      this.userName = localStorage.getItem(this.SESSION_KEYS.USER_NAME);
+      this.userPicture = localStorage.getItem(this.SESSION_KEYS.USER_PICTURE);
+      
+      console.log('✓ Session restored successfully:', {
+        userEmail: this.userEmail,
+        userName: this.userName,
+        hasToken: !!this.accessToken,
+        hasPicture: !!this.userPicture
+      });
+      
+      // Set token for gapi if it's already loaded
+      if (typeof gapi !== 'undefined' && gapi.client && gapi.client.setToken) {
+        gapi.client.setToken({
+          access_token: this.accessToken
+            });
+        console.log('✓ Token set for gapi client');
+      }
+      
+      console.log('=== SESSION RESTORE COMPLETE ===');
+      return true;
+    } catch (error) {
+      console.warn('Failed to restore session from localStorage:', error);
+      this.clearSession();
+      return false;
+    }
+  }
+
+  clearSession() {
+    try {
+      localStorage.removeItem(this.SESSION_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(this.SESSION_KEYS.USER_EMAIL);
+      localStorage.removeItem(this.SESSION_KEYS.USER_NAME);
+      localStorage.removeItem(this.SESSION_KEYS.USER_PICTURE);
+      localStorage.removeItem(this.SESSION_KEYS.IS_SIGNED_IN);
+      localStorage.removeItem(this.SESSION_KEYS.TOKEN_EXPIRY);
+      
+      console.log('Session cleared from localStorage');
+    } catch (error) {
+      console.warn('Failed to clear session from localStorage:', error);
+    }
+  }
+
+  // Check if we have a valid session and validate it
+  async validateSession() {
+    if (!this.isSignedIn || !this.accessToken) {
+      console.log('validateSession: No session to validate');
+      return false;
+    }
+
+    console.log('validateSession: Validating session for user:', this.userEmail);
+
+    try {
+      // Check if gapi is available and validate the token
+      if (typeof gapi !== 'undefined' && gapi.client && this.gapiInited) {
+        console.log('validateSession: gapi is ready, validating token...');
+        const isValid = await this.validateToken();
+        if (isValid) {
+          console.log('validateSession: Session validation successful for user:', this.userEmail);
+          return true;
+        } else {
+          console.log('validateSession: Token validation failed');
+          return false;
+        }
+      } else {
+        // gapi not ready yet, but we have a token - assume it's valid for now
+        // It will be validated when gapi becomes available
+        console.log('validateSession: gapi not ready yet, assuming session is valid for now');
+        console.log('validateSession: gapi available:', typeof gapi !== 'undefined');
+        console.log('validateSession: gapi.client available:', typeof gapi !== 'undefined' && !!gapi.client);
+        console.log('validateSession: gapiInited:', this.gapiInited);
+        return true;
+      }
+    } catch (error) {
+      console.error('validateSession: Session validation failed with error:', error);
+      // Don't clear session for temporary errors - let withAutoAuth handle auth errors
+      // this.clearSession();
+    }
+
+    return false;
+  }
+
+  // Public methods for UI components
+  getSignInStatus() {
+    return {
+      isSignedIn: this.isSignedIn,
+      userEmail: this.userEmail,
+      userName: this.userName,
+      userPicture: this.userPicture
+    };
+  }
+
+  isUserSignedIn() {
+    return this.isSignedIn && this.accessToken !== null;
+  }
+
+  // Debugging methods
+  debugLocalStorage() {
+    console.log('=== localStorage Debug ===');
+    Object.values(this.SESSION_KEYS).forEach(key => {
+      const value = localStorage.getItem(key);
+      console.log(`${key}:`, value);
+    });
+    console.log('========================');
+  }
+
+  // Test method to simulate session saving/restoration
+  testSessionPersistence() {
+    console.log('=== Testing Session Persistence ===');
+    
+    // Save test session
+    const testToken = 'test_token_12345';
+    const testEmail = 'test@example.com';
+    const testName = 'Test User';
+    
+    this.accessToken = testToken;
+    this.userEmail = testEmail;
+    this.userName = testName;
+    this.isSignedIn = true;
+    
+    console.log('Saving test session...');
+    this.saveSession();
+    
+    // Clear in-memory state
+    this.accessToken = null;
+    this.userEmail = null;
+    this.userName = null;
+    this.isSignedIn = false;
+    
+    console.log('Cleared in-memory state');
+    
+    // Try to restore
+    console.log('Attempting to restore session...');
+    const restored = this.restoreSession();
+    
+    console.log('Restoration result:', restored);
+    console.log('Current state:', {
+      isSignedIn: this.isSignedIn,
+      accessToken: this.accessToken,
+      userEmail: this.userEmail,
+      userName: this.userName
+    });
+    
+    // Clean up test data
+    this.clearSession();
+    this.accessToken = null;
+    this.userEmail = null;
+    this.userName = null;
+    this.isSignedIn = false;
+    
+    console.log('=== Test Complete ===');
+    return restored;
+  }
+
+  // Method to expose for browser console testing
+  debugCurrentState() {
+    console.log('=== CURRENT DRIVE SERVICE STATE ===');
+    console.log('Authentication state:', {
+      isSignedIn: this.isSignedIn,
+      hasAccessToken: !!this.accessToken,
+      userEmail: this.userEmail,
+      userName: this.userName,
+      hasPicture: !!this.userPicture
+    });
+    this.debugLocalStorage();
+    console.log('=== END STATE ===');
+  }
 }
 
 // Export singleton instance
 const googleDriveServiceModern = new GoogleDriveServiceModern();
+
+// Expose to global scope for debugging
+if (typeof window !== 'undefined') {
+  window.GoogleDriveServiceModern = googleDriveServiceModern;
+  window.debugGoogleDrive = () => googleDriveServiceModern.debugCurrentState();
+}
+
 export default googleDriveServiceModern;

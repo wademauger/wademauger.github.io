@@ -438,6 +438,25 @@ export const bassUkuleleChords = {
   'Bbmaj9': { frets: [1, 3, 2, 2], fingers: [1, 4, 2, 3] },
   'Bmaj9': { frets: [2, 4, 3, 3], fingers: [1, 4, 2, 3] },
 
+  // Minor 9th chords (m9) - minor 7th chord plus 9th interval
+  'Cm9': { frets: [3, 1, 3, 1], fingers: [3, 1, 4, 2] },
+  'C#m9': { frets: [4, 2, 4, 2], fingers: [3, 1, 4, 2] },
+  'Dbm9': { frets: [4, 2, 4, 2], fingers: [3, 1, 4, 2] },
+  'Dm9': { frets: [5, 3, 5, 3], fingers: [3, 1, 4, 2] },
+  'D#m9': { frets: [6, 4, 6, 4], fingers: [3, 1, 4, 2] },
+  'Ebm9': { frets: [6, 4, 6, 4], fingers: [3, 1, 4, 2] },
+  'Em9': { frets: [0, 2, 0, 2], fingers: [0, 1, 0, 2] },
+  'Fm9': { frets: [1, 3, 1, 3], fingers: [1, 3, 2, 4] },
+  'F#m9': { frets: [2, 4, 2, 4], fingers: [1, 3, 2, 4] },
+  'Gbm9': { frets: [2, 4, 2, 4], fingers: [1, 3, 2, 4] },
+  'Gm9': { frets: [3, 5, 3, 5], fingers: [1, 3, 2, 4] },
+  'G#m9': { frets: [4, 6, 4, 6], fingers: [1, 3, 2, 4] },
+  'Abm9': { frets: [4, 6, 4, 6], fingers: [1, 3, 2, 4] },
+  'Am9': { frets: [0, 2, 1, 1], fingers: [0, 3, 1, 2] },
+  'A#m9': { frets: [1, 3, 2, 2], fingers: [1, 4, 2, 3] },
+  'Bbm9': { frets: [1, 3, 2, 2], fingers: [1, 4, 2, 3] },
+  'Bm9': { frets: [2, 4, 3, 3], fingers: [1, 4, 2, 3] },
+
   // Altered dominants - 7b5 chords
   'C7b5': { frets: [3, 4, 2, 2], fingers: [2, 4, 1, 3] },
   'C#7b5': { frets: [4, 5, 3, 3], fingers: [2, 4, 1, 3] },

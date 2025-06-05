@@ -135,12 +135,22 @@ const GoogleSignInButton = ({
       >
         {isSignedIn && userInfo ? (
           <>
-            {userInfo.picture && (
+            {userInfo.picture ? (
               <img 
                 src={userInfo.picture} 
-                alt="User avatar"
+                alt={userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '👤'}
                 className="user-avatar"
+                onError={(e) => {
+                  console.warn('Failed to load user avatar:', userInfo.picture);
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'inline-flex';
+                }}
               />
+            ) : null}
+            {!userInfo.picture && (
+              <div className="user-avatar-fallback">
+                {userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '👤'}
+              </div>
             )}
             <div className="user-info">
               <span className="user-name">

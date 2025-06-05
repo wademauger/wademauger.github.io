@@ -58,6 +58,23 @@
   border-radius: 50%;
   margin-right: 8px;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  object-fit: cover;
+}
+
+/* Fallback avatar when image fails to load */
+.user-avatar-fallback {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #6c757d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
 }
 
 /* User info container */

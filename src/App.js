@@ -6,7 +6,7 @@ import { store } from './store/store';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import RecipesApp from './apps/recipes/RecipesApp';
-import SongTabsApp from './apps/songs/SongTabsApp';
+import SongTabsApp from './apps/songs/SongTabsAppModern';
 import KnittingApp from './apps/knitting/KnittingApp';
 import NotFound from './pages/NotFound';
 import './styles/App.css';
@@ -29,9 +29,7 @@ function App() {
               
               {/* Music Tabs App Routes */}
               <Route path="/tabs" element={<SongTabsApp />} />
-              <Route path="/tabs/artist/:artistName" element={<SongTabsApp />} />
-              <Route path="/tabs/artist/:artistName/album/:albumName" element={<SongTabsApp />} />
-              <Route path="/tabs/artist/:artistName/album/:albumName/song/:songName" element={<SongTabsApp />} />
+              <Route path="/songs" element={<SongTabsApp />} />
               
               {/* Knitting Pattern App Routes */}
               <Route path="/knitting" element={<KnittingApp />} />

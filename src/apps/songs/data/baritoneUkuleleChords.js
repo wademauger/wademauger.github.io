@@ -686,6 +686,25 @@ export const baritoneUkuleleChords = {
     ]
   },
 
+  // Power chords (5th chords) - root and fifth
+  'C5': { frets: [10, 5, -1, -1], fingers: [3, 1, 0, 0] },
+  'C#5': { frets: [11, 6, -1, -1], fingers: [3, 1, 0, 0] },
+  'Db5': { frets: [11, 6, -1, -1], fingers: [3, 1, 0, 0] },
+  'D5': { frets: [0, 7, -1, -1], fingers: [0, 1, 0, 0] },
+  'D#5': { frets: [1, 8, -1, -1], fingers: [1, 2, 0, 0] },
+  'Eb5': { frets: [1, 8, -1, -1], fingers: [1, 2, 0, 0] },
+  'E5': { frets: [2, 9, -1, -1], fingers: [1, 2, 0, 0] },
+  'F5': { frets: [3, 10, -1, -1], fingers: [1, 2, 0, 0] },
+  'F#5': { frets: [4, 11, -1, -1], fingers: [1, 2, 0, 0] },
+  'Gb5': { frets: [4, 11, -1, -1], fingers: [1, 2, 0, 0] },
+  'G5': { frets: [5, 0, -1, -1], fingers: [1, 0, 0, 0] },
+  'G#5': { frets: [6, 1, -1, -1], fingers: [2, 1, 0, 0] },
+  'Ab5': { frets: [6, 1, -1, -1], fingers: [2, 1, 0, 0] },
+  'A5': { frets: [7, 2, -1, -1], fingers: [2, 1, 0, 0] },
+  'A#5': { frets: [8, 3, -1, -1], fingers: [2, 1, 0, 0] },
+  'Bb5': { frets: [8, 3, -1, -1], fingers: [2, 1, 0, 0] },
+  'B5': { frets: [9, 4, -1, -1], fingers: [2, 1, 0, 0] },
+
   // Add9 chords (major triad + 9th interval)
   'Cadd9': { 
     frets: [-1, 2, 0, 3], 
@@ -1925,6 +1944,144 @@ export const baritoneUkuleleChords = {
     inversions: [
       { frets: [16, 15, 16, 16], fingers: [2, 1, 3, 4], description: "Barre form" },
       { frets: [11, 11, 12, 12], fingers: [1, 2, 3, 4], description: "Higher position" }
+    ]
+  },
+
+  // Minor 9th chords (m9) - minor 7th chord plus 9th interval
+  'Cm9': {
+    frets: [0, 3, 1, 3], 
+    fingers: [0, 3, 1, 4],
+    inversions: [
+      { frets: [3, 6, 4, 6], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [8, 11, 9, 11], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'C#m9': {
+    frets: [1, 4, 2, 4], 
+    fingers: [1, 3, 2, 4],
+    inversions: [
+      { frets: [4, 7, 5, 7], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [9, 12, 10, 12], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Dbm9': {
+    frets: [1, 4, 2, 4], 
+    fingers: [1, 3, 2, 4],
+    inversions: [
+      { frets: [4, 7, 5, 7], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [9, 12, 10, 12], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Dm9': {
+    frets: [2, 2, 1, 3], 
+    fingers: [2, 3, 1, 4],
+    inversions: [
+      { frets: [5, 8, 6, 8], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [10, 13, 11, 13], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'D#m9': {
+    frets: [3, 3, 2, 4], 
+    fingers: [2, 3, 1, 4],
+    inversions: [
+      { frets: [6, 9, 7, 9], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [11, 14, 12, 14], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Ebm9': {
+    frets: [3, 3, 2, 4], 
+    fingers: [2, 3, 1, 4],
+    inversions: [
+      { frets: [6, 9, 7, 9], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [11, 14, 12, 14], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Em9': {
+    frets: [0, 4, 0, 2], 
+    fingers: [0, 4, 0, 2],
+    inversions: [
+      { frets: [7, 10, 8, 10], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [12, 15, 13, 15], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Fm9': {
+    frets: [1, 0, 1, 3], 
+    fingers: [1, 0, 2, 4],
+    inversions: [
+      { frets: [8, 11, 9, 11], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [13, 16, 14, 16], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'F#m9': {
+    frets: [2, 1, 2, 4], 
+    fingers: [2, 1, 3, 4],
+    inversions: [
+      { frets: [9, 12, 10, 12], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [14, 17, 15, 17], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Gbm9': {
+    frets: [2, 1, 2, 4], 
+    fingers: [2, 1, 3, 4],
+    inversions: [
+      { frets: [9, 12, 10, 12], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [14, 17, 15, 17], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Gm9': {
+    frets: [0, 2, 3, 1], 
+    fingers: [0, 2, 4, 1],
+    inversions: [
+      { frets: [10, 13, 11, 13], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [15, 18, 16, 18], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'G#m9': {
+    frets: [1, 3, 4, 2], 
+    fingers: [1, 3, 4, 2],
+    inversions: [
+      { frets: [11, 14, 12, 14], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [16, 19, 17, 19], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Abm9': {
+    frets: [1, 3, 4, 2], 
+    fingers: [1, 3, 4, 2],
+    inversions: [
+      { frets: [11, 14, 12, 14], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [16, 19, 17, 19], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Am9': {
+    frets: [0, 0, 0, 0], 
+    fingers: [0, 0, 0, 0],
+    inversions: [
+      { frets: [12, 15, 13, 15], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [17, 20, 18, 20], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'A#m9': {
+    frets: [3, 1, 1, 1], 
+    fingers: [4, 1, 2, 3],
+    inversions: [
+      { frets: [13, 16, 14, 16], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [18, 21, 19, 21], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Bbm9': {
+    frets: [3, 1, 1, 1], 
+    fingers: [4, 1, 2, 3],
+    inversions: [
+      { frets: [13, 16, 14, 16], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [18, 21, 19, 21], fingers: [1, 3, 2, 4], description: "Higher position" }
+    ]
+  },
+  'Bm9': {
+    frets: [4, 2, 2, 2], 
+    fingers: [4, 1, 2, 3],
+    inversions: [
+      { frets: [14, 17, 15, 17], fingers: [1, 3, 2, 4], description: "Barre form" },
+      { frets: [19, 22, 20, 22], fingers: [1, 3, 2, 4], description: "Higher position" }
     ]
   },
 

@@ -176,7 +176,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             y={0}
             width={whiteKeyWidth - 1}
             height={pianoHeight}
-            fill={chordNotes.includes(key) ? "#4a90e2" : "white"}
+            fill={chordNotes.includes(key) ? "#c41e3a" : "white"}
             stroke="#333"
             strokeWidth={1}
           />
@@ -196,7 +196,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
               y={0}
               width={blackKeyWidth}
               height={actualBlackKeyHeight}
-              fill={chordNotes.includes(key) ? "#2c5aa0" : "#333"}
+              fill={chordNotes.includes(key) ? "#c41e3a" : "#333"}
               stroke="#000"
               strokeWidth={1}
             />

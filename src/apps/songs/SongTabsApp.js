@@ -8,7 +8,7 @@ import SongDetail from './components/SongDetail';
 import GoogleSignInButton from './components/GoogleSignInButton';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Switch } from 'antd';
+import { Switch, Spin } from 'antd';
 import { FaUnlock, FaLock } from 'react-icons/fa';
 
 const SongTabsApp = () => {
@@ -30,15 +30,15 @@ const SongTabsApp = () => {
   const [isAddingAlbum, setIsAddingAlbum] = useState(false);
   const [isAddingSong, setIsAddingSong] = useState(false);
   const [newArtistName, setNewArtistName] = useState('');
-  const [newAlbumName, setNewAlbumName] = useState('');
-  const [newSongName, setNewSongName] = useState('');
+  const [newAlbumTitle, setNewAlbumTitle] = useState('');
+  const [newSongTitle, setNewSongTitle] = useState('');
 
   // Refs for input focus
   const newArtistInputRef = useRef(null);
   const newAlbumInputRef = useRef(null);
   const newSongInputRef = useRef(null);
 
-  const { artistName, albumName, songName } = useParams();
+  const { artistName, albumTitle, songTitle } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,10 +86,10 @@ const SongTabsApp = () => {
           name: 'Artist Test',
           albums: [
             {
-              title: 'Album Test',
+              name: 'Album Test',
               songs: [
                 {
-                  title: 'Song Test',
+                  name: 'Song Test',
                   chords: '',
                   lyrics: [
                     "1234567890 [Cmaj7]0987654321",
@@ -211,13 +211,13 @@ const SongTabsApp = () => {
       if (artist) {
         setSelectedArtist(artist);
 
-        if (albumName) {
-          const album = artist.albums.find(a => a.title === decodeURIComponent(albumName));
+        if (albumTitle) {
+          const album = artist.albums.find(a => a.title === decodeURIComponent(albumTitle));
           if (album) {
             setSelectedAlbum(album);
 
-            if (songName) {
-              const song = album.songs.find(s => s.title === decodeURIComponent(songName));
+            if (songTitle) {
+              const song = album.songs.find(s => s.title === decodeURIComponent(songTitle));
               if (song) {
                 setSelectedSong(song);
               }
@@ -226,7 +226,7 @@ const SongTabsApp = () => {
         }
       }
     }
-  }, [artistName, albumName, songName, library]);
+  }, [artistName, albumTitle, songTitle, library]);
 
   const handleArtistSelect = (artist) => {
     setSelectedArtist(artist);
@@ -317,13 +317,13 @@ const SongTabsApp = () => {
 
   const startAddingAlbum = () => {
     setIsAddingAlbum(true);
-    setNewAlbumName('');
+    setNewAlbumTitle('');
     // Focus will be set with useEffect
   };
 
   const startAddingSong = () => {
     setIsAddingSong(true);
-    setNewSongName('');
+    setNewSongTitle('');
     // Focus will be set with useEffect
   };
 
@@ -389,9 +389,9 @@ const SongTabsApp = () => {
 
   // Handle adding new album
   const handleAddAlbum = async () => {
-    if (newAlbumName.trim() && selectedArtist) {
+    if (newAlbumTitle.trim() && selectedArtist) {
       const tempAlbum = {
-        name: newAlbumName.trim(),
+        name: newAlbumTitle.trim(),
         songs: [],
         isOptimistic: true
       };
@@ -409,7 +409,7 @@ const SongTabsApp = () => {
         return updatedLibrary;
       });
       setIsAddingAlbum(false);
-      setNewAlbumName('');
+      setNewAlbumTitle('');
 
       try {
         if (isGoogleDriveConnected) {
@@ -420,7 +420,7 @@ const SongTabsApp = () => {
           const artist = currentLibrary.artists.find(a => a.name === selectedArtist.name);
           if (artist) {
             const newAlbum = {
-              name: newAlbumName.trim(),
+              name: newAlbumTitle.trim(),
               songs: []
             };
             artist.albums.push(newAlbum);
@@ -465,7 +465,7 @@ const SongTabsApp = () => {
         });
         // Show the input again for retry
         setIsAddingAlbum(true);
-        setNewAlbumName(tempAlbum.title);
+        setNewAlbumTitle(tempAlbum.title);
       }
     } else {
       setIsAddingAlbum(false);
@@ -474,9 +474,9 @@ const SongTabsApp = () => {
 
   // Handle adding new song
   const handleAddSong = async () => {
-    if (newSongName.trim() && selectedArtist && selectedAlbum) {
+    if (newSongTitle.trim() && selectedArtist && selectedAlbum) {
       const tempSong = {
-        title: newSongName.trim(),
+        title: newSongTitle.trim(),
         chords: '',
         lyrics: '',
         notes: '',
@@ -499,7 +499,7 @@ const SongTabsApp = () => {
         return updatedLibrary;
       });
       setIsAddingSong(false);
-      setNewSongName('');
+      setNewSongTitle('');
 
       try {
         if (isGoogleDriveConnected) {
@@ -512,7 +512,7 @@ const SongTabsApp = () => {
           
           if (artist && album) {
             const songData = {
-              name: newSongName.trim(),
+              name: newSongTitle.trim(),
               chords: '',
               lyrics: '',
               notes: '',
@@ -542,7 +542,7 @@ const SongTabsApp = () => {
                     song.isOptimistic && song.title === tempSong.title
                       ? { 
                           ...song, 
-                          isOptimistic: undefined,
+                          isOptimistic: true,
                           createdAt: new Date().toISOString(),
                           updatedAt: new Date().toISOString()
                         }
@@ -561,7 +561,7 @@ const SongTabsApp = () => {
           const updatedLibrary = { ...prevLibrary };
           const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
           if (artistIndex !== -1) {
-            const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.name === selectedAlbum.name);
+            const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
             if (albumIndex !== -1) {
               updatedLibrary.artists[artistIndex].albums[albumIndex] = {
                 ...updatedLibrary.artists[artistIndex].albums[albumIndex],
@@ -574,7 +574,7 @@ const SongTabsApp = () => {
         });
         // Show the input again for retry
         setIsAddingSong(true);
-        setNewSongName(tempSong.title);
+        setNewSongTitle(tempSong.title);
       }
     } else {
       setIsAddingSong(false);
@@ -612,7 +612,7 @@ const SongTabsApp = () => {
   // When a song is selected, if it has a transpose property, sync it to redux
   useEffect(() => {
     if (selectedSong && typeof selectedSong.transpose === 'number') {
-      dispatch(setTranspose({ songName: selectedSong.title, value: selectedSong.transpose }));
+      dispatch(setTranspose({ songTitle: selectedSong.title, value: selectedSong.transpose }));
     }
     // eslint-disable-next-line
   }, [selectedSong]);
@@ -668,8 +668,8 @@ const SongTabsApp = () => {
         </div>
       </div>
       {isLoading && (
-        <div className="loading-indicator">
-          Loading library...
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+          <Spin size="large" tip="Loading library..." />
         </div>
       )}
       <div className="library-navigation">
@@ -720,8 +720,8 @@ const SongTabsApp = () => {
                 <input
                   ref={newAlbumInputRef}
                   type="text"
-                  value={newAlbumName}
-                  onChange={(e) => setNewAlbumName(e.target.value)}
+                  value={newAlbumTitle}
+                  onChange={(e) => setNewAlbumTitle(e.target.value)}
                   onKeyDown={(e) => handleKeyPress(e, handleAddAlbum, () => setIsAddingAlbum(false))}
                   placeholder="Album name..."
                   className="add-item-input"
@@ -754,8 +754,8 @@ const SongTabsApp = () => {
                 <input
                   ref={newSongInputRef}
                   type="text"
-                  value={newSongName}
-                  onChange={(e) => setNewSongName(e.target.value)}
+                  value={newSongTitle}
+                  onChange={(e) => setNewSongTitle(e.target.value)}
                   onKeyDown={(e) => handleKeyPress(e, handleAddSong, () => setIsAddingSong(false))}
                   placeholder="Song name..."
                   className="add-item-input"

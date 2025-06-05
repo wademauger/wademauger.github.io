@@ -14,15 +14,7 @@
   background-color: #f5f5f5;
 }
 
-/* Spinner animation for pending operations */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner animation for pending operations - REMOVED: Using Antd Spin components instead */
 
 /* Drag handle styling */
 .drag-handle:hover {
@@ -297,7 +289,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
-  animation: spin 1s linear infinite;
+  /* Removed animation: using Antd Spin components instead */
 }
 
 /* Better hover effect for optimistic items */
@@ -633,8 +625,10 @@
 
 .header-controls {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 20px;
+  width: 100%;
 }
 
 .google-drive-section {
@@ -750,4 +744,88 @@
   .chord-gallery {
     gap: 0.5rem;
   }
+}
+
+/* Library Status Section */
+.library-status {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.library-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.loading-line, .info-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd 50%, transparent);
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.library-count {
+  color: #888;
+  font-size: 13px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Header Library Status Section */
+.library-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.loading-indicator-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.loading-text-header {
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.library-count-header {
+  color: #888;
+  font-size: 14px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-align: center;
 }

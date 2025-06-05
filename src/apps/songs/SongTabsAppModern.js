@@ -1,476 +1,485 @@
-// Example updated SongTabsApp.js using the modern Google Drive service
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { pinChord, setTranspose } from '../../store/chordsSlice';
-import ArtistList from './components/ArtistList';
-import AlbumList from './components/AlbumList';
+// Simplified SongTabsApp.js using TreeSelect and modal for adding songs with Redux state management
+import React, { useState, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { pinChord } from '../../store/chordsSlice';
+import { 
+  loadLibraryFromDrive, 
+  updateSong, 
+  addSong, 
+  setSelectedSong, 
+  setGoogleDriveConnection,
+  setUserInfo,
+  setEditingEnabled,
+  clearError,
+  loadMockLibrary
+} from '../../store/songsSlice';
 import SongDetail from './components/SongDetail';
+import GoogleSignInButton from './components/GoogleSignInButton';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Switch } from 'antd';
-import { FaUnlock, FaLock } from 'react-icons/fa';
+import { Switch, TreeSelect, Modal, Form, Input, AutoComplete, Button, Spin, App } from 'antd';
+import { FaUnlock, FaLock, FaPlus } from 'react-icons/fa';
 
 const SongTabsApp = () => {
-  const [library, setLibrary] = useState({ artists: [] });
-  const [selectedArtist, setSelectedArtist] = useState(null);
-  const [selectedAlbum, setSelectedAlbum] = useState(null);
-  const [selectedSong, setSelectedSong] = useState(null);
-  const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [editingEnabled, setEditingEnabled] = useState(false);
-
+  const { message } = App.useApp();
+  
   // Redux state
   const dispatch = useDispatch();
-  const instrument = useSelector((state) => state.chords.currentInstrument);
+  const {
+    library,
+    selectedSong,
+    isGoogleDriveConnected,
+    userInfo,
+    isLoading,
+    editingEnabled,
+    error
+  } = useSelector(state => state.songs);
+  
+  // Local component state for UI interactions only
+  const [expandedKeys, setExpandedKeys] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+  const [selectedArtist, setSelectedArtist] = useState('');
 
-  // New state variables for adding entries
-  const [isAddingArtist, setIsAddingArtist] = useState(false);
-  const [isAddingAlbum, setIsAddingAlbum] = useState(false);
-  const [isAddingSong, setIsAddingSong] = useState(false);
-  const [newArtistName, setNewArtistName] = useState('');
-  const [newAlbumName, setNewAlbumName] = useState('');
-  const [newSongName, setNewSongName] = useState('');
+  // Helper function to count total songs in library
+  const getTotalSongsCount = useCallback(() => {
+    if (!library || !library.artists) return 0;
+    return library.artists.reduce((total, artist) => {
+      return total + artist.albums.reduce((albumTotal, album) => {
+        return albumTotal + (album.songs ? album.songs.length : 0);
+      }, 0);
+    }, 0);
+  }, [library]);
 
-  // Refs for input focus
-  const newArtistInputRef = useRef(null);
-  const newAlbumInputRef = useRef(null);
-  const newSongInputRef = useRef(null);
+  // Redux-based handlers
+  const handleLoadMockLibrary = useCallback(() => {
+    dispatch(loadMockLibrary());
+  }, [dispatch]);
 
-  const { artistName, albumName, songName } = useParams();
-  const navigate = useNavigate();
+  const handleLoadLibraryFromDrive = useCallback(async () => {
+    try {
+      await dispatch(loadLibraryFromDrive()).unwrap();
+      console.log('Library loaded from Google Drive');
+    } catch (error) {
+      console.error('Failed to load library from Google Drive:', error);
+      if (error === 'User not signed in to Google Drive') {
+        message.error('Please sign in to Google Drive first');
+        dispatch(setGoogleDriveConnection(false));
+        dispatch(setUserInfo(null));
+      } else {
+        message.error('Failed to load library from Google Drive');
+      }
+      // Fall back to mock library
+      dispatch(loadMockLibrary());
+    }
+  }, [dispatch, message]);
 
+  // Simplified song update handler using Redux
+  const handleSongUpdate = async (updatedSongData) => {
+    if (!selectedSong) return;
+    
+    try {
+      const artistName = selectedSong.artist.name;
+      const albumTitle = selectedSong.album.title; // Use consistent property name
+      const songTitle = selectedSong.title;
+      
+      await dispatch(updateSong({
+        artistName,
+        albumTitle,
+        songTitle,
+        updatedSongData,
+        isGoogleDriveConnected
+      })).unwrap();
+      
+      message.success('Song updated successfully');
+    } catch (error) {
+      console.error('Failed to update song:', error);
+      message.error('Failed to save song changes. Please try again.');
+    }
+  };
+
+  // Initialize Google Drive API
   useEffect(() => {
-    // Initialize Google Drive API with modern service
     const initGoogleDrive = async () => {
       try {
-        // Get environment variable for Client ID
         const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-
         if (!CLIENT_ID) {
           throw new Error('Google Client ID not found in environment variables');
         }
 
-        // Initialize the modern service (simpler - no API key needed)
         await GoogleDriveServiceModern.initialize(CLIENT_ID);
+        const signInStatus = GoogleDriveServiceModern.getSignInStatus();
         
-        // Check if user has existing valid session
-        const isValidSession = await GoogleDriveServiceModern.validateToken();
-        
-        if (isValidSession && GoogleDriveServiceModern.isSignedIn) {
-          setIsGoogleDriveConnected(true);
-          setUserEmail(GoogleDriveServiceModern.userEmail);
-          await loadLibraryFromDrive();
+        if (signInStatus.isSignedIn) {
+          dispatch(setGoogleDriveConnection(true));
+          dispatch(setUserInfo({
+            email: signInStatus.userEmail,
+            name: signInStatus.userName,
+            picture: signInStatus.userPicture
+          }));
+          console.log('Restored user session for:', signInStatus.userEmail);
+          await handleLoadLibraryFromDrive();
         } else {
           console.debug('No valid session found, using mock library');
-          loadMockLibrary();
+          handleLoadMockLibrary();
         }
       } catch (error) {
         console.error('Failed to initialize Google Drive:', error);
-        loadMockLibrary();
+        handleLoadMockLibrary();
       }
     };
 
     initGoogleDrive();
-  }, []);
+  }, [dispatch, handleLoadLibraryFromDrive, handleLoadMockLibrary]);
 
-  const loadMockLibrary = () => {
-    const mockLibrary = {
-      artists: [
-        {
-          name: 'Artist Test',
-          albums: [
-            {
-              name: 'Album Test',
-              songs: [
-                {
-                  name: 'Song Test',
-                  chords: '',
-                  lyrics: [
-                    "1234567890 [Cmaj7]0987654321",
-                    "[Cm7]1234567890 [C7]0987654321",
-                    "[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890",
-                  ].join('\\n'),
-                  notes: '',
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString()
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      version: '1.0',
-      lastUpdated: new Date().toISOString()
-    };
-
-    setLibrary(mockLibrary);
-  };
-
-  const loadLibraryFromDrive = async () => {
-    setIsLoading(true);
+  // Google Drive handlers
+  const handleGoogleSignInSuccess = async (tokenResponse) => {
     try {
-      const driveLibrary = await GoogleDriveServiceModern.loadLibrary();
-      setLibrary(driveLibrary);
-      console.log('Library loaded from Google Drive');
+      await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
+      const signInStatus = GoogleDriveServiceModern.getSignInStatus();
+      
+      dispatch(setGoogleDriveConnection(true));
+      dispatch(setUserInfo({
+        email: signInStatus.userEmail,
+        name: signInStatus.userName,
+        picture: signInStatus.userPicture
+      }));
+      
+      await handleLoadLibraryFromDrive();
     } catch (error) {
-      console.error('Failed to load library from Google Drive:', error);
-      
-      // Simplified error handling - check for auth errors
-      if (error.message === 'User not signed in to Google Drive') {
-        setIsGoogleDriveConnected(false);
-        setUserEmail(null);
-      }
-      
-      // Fall back to mock data
-      loadMockLibrary();
-    } finally {
-      setIsLoading(false);
+      console.error('Google Sign-In failed:', error);
+      message.error('Failed to connect to Google Drive. Please try again.');
     }
   };
 
-  const saveLibraryToDrive = async (updatedLibrary) => {
-    if (!isGoogleDriveConnected) {
-      console.warn('Not connected to Google Drive, cannot save');
-      return;
-    }
-
-    try {
-      await GoogleDriveServiceModern.saveLibrary(updatedLibrary);
-      console.log('Library saved to Google Drive');
-    } catch (error) {
-      console.error('Failed to save library to Google Drive:', error);
-      
-      // Handle auth errors
-      if (error.message === 'User not signed in to Google Drive') {
-        setIsGoogleDriveConnected(false);
-        setUserEmail(null);
-        alert('Your Google Drive session has expired. Please sign in again to save changes.');
-      } else {
-        alert('Failed to save to Google Drive. Please try again.');
-      }
-    }
+  const handleGoogleSignInError = (error) => {
+    console.error('Google Sign-In error:', error);
+    message.error('Failed to sign in with Google. Please try again.');
   };
 
-  const handleGoogleDriveConnect = async () => {
-    setIsLoading(true);
+  const handleGoogleSignOut = async () => {
     try {
-      // Modern service has simplified sign in
-      await GoogleDriveServiceModern.signIn();
-      
-      setIsGoogleDriveConnected(true);
-      setUserEmail(GoogleDriveServiceModern.userEmail);
-      
-      // Load library after successful authentication
-      await loadLibraryFromDrive();
-    } catch (error) {
-      console.error('Google Drive connection failed:', error);
-      alert('Failed to connect to Google Drive. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleDriveDisconnect = async () => {
-    try {
-      // Modern service has simplified sign out
       await GoogleDriveServiceModern.signOut();
-      
-      setIsGoogleDriveConnected(false);
-      setUserEmail(null);
-      
-      // Load mock data after disconnecting
-      loadMockLibrary();
+      dispatch(setGoogleDriveConnection(false));
+      dispatch(setUserInfo(null));
+      handleLoadMockLibrary();
     } catch (error) {
-      console.error('Failed to disconnect from Google Drive:', error);
+      console.error('Failed to sign out:', error);
     }
   };
 
-  // Adding new artist
-  const handleAddArtist = async () => {
-    if (!newArtistName.trim()) return;
-
-    try {
-      if (isGoogleDriveConnected) {
-        // Use modern service API
-        const newArtist = await GoogleDriveServiceModern.addArtist(library, newArtistName.trim());
-        
-        // Reload library to get updated data
-        await loadLibraryFromDrive();
-      } else {
-        // Local mock data update
-        const newArtist = {
-          name: newArtistName.trim(),
-          albums: []
-        };
-        
-        const updatedLibrary = {
-          ...library,
-          artists: [...library.artists, newArtist]
-        };
-        setLibrary(updatedLibrary);
-      }
-
-      setNewArtistName('');
-      setIsAddingArtist(false);
-    } catch (error) {
-      console.error('Failed to add artist:', error);
-      alert('Failed to add artist. Please try again.');
-    }
+  // Generate tree data for TreeSelect
+  const generateTreeData = () => {
+    return library.artists.map(artist => ({
+      title: artist.name,
+      value: `artist_${artist.name}`,
+      key: `artist_${artist.name}`,
+      selectable: true,
+      children: artist.albums.map(album => ({
+        title: album.title,
+        value: `album_${artist.name}_${album.title}`,
+        key: `album_${artist.name}_${album.title}`,
+        selectable: true,
+        children: (album.songs || []).map(song => ({
+          title: song.title,
+          value: `song_${artist.name}_${album.title}_${song.title}`,
+          key: `song_${artist.name}_${album.title}_${song.title}`,
+          selectable: true,
+          isLeaf: true
+        }))
+      }))
+    }));
   };
 
-  // Adding new album
-  const handleAddAlbum = async () => {
-    if (!newAlbumName.trim() || !selectedArtist) return;
-
-    try {
-      if (isGoogleDriveConnected) {
-        // Use modern service API
-        await GoogleDriveServiceModern.addAlbum(library, selectedArtist.name, newAlbumName.trim());
+  // Handle song selection from TreeSelect
+  const handleSongSelect = (value) => {
+    if (value && value.startsWith('song_')) {
+      const parts = value.replace('song_', '').split('_');
+      if (parts.length >= 3) {
+        const artistName = parts[0];
+        const albumTitle = parts[1];
+        const songTitle = parts.slice(2).join('_');
         
-        // Reload library to get updated data
-        await loadLibraryFromDrive();
-      } else {
-        // Local mock data update
-        const newAlbum = {
-          name: newAlbumName.trim(),
-          songs: []
-        };
+        const artist = library.artists.find(a => a.name === artistName);
+        const album = artist?.albums.find(a => a.title === albumTitle);
+        const song = album?.songs.find(s => s.title === songTitle);
         
-        const updatedLibrary = { ...library };
-        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
-        if (artistIndex !== -1) {
-          updatedLibrary.artists[artistIndex].albums.push(newAlbum);
-          setLibrary(updatedLibrary);
+        if (song) {
+          // Create normalized song object for Redux
+          const normalizedSong = {
+            ...song,
+            title: song.title,
+            artist: { name: artistName },
+            album: { title: albumTitle }
+          };
+          dispatch(setSelectedSong(normalizedSong));
         }
       }
-
-      setNewAlbumName('');
-      setIsAddingAlbum(false);
-    } catch (error) {
-      console.error('Failed to add album:', error);
-      alert('Failed to add album. Please try again.');
+    } else if (value && (value.startsWith('artist_') || value.startsWith('album_'))) {
+      const isExpanded = expandedKeys.includes(value);
+      if (isExpanded) {
+        setExpandedKeys(prev => prev.filter(key => key !== value));
+      } else {
+        setExpandedKeys(prev => [...prev, value]);
+      }
+      
+      setTimeout(() => {
+        setDropdownOpen(true);
+      }, 0);
     }
   };
 
-  // Adding new song
-  const handleAddSong = async () => {
-    if (!newSongName.trim() || !selectedArtist || !selectedAlbum) return;
+  // Handle dropdown visibility changes
+  const handleDropdownVisibleChange = (open) => {
+    setDropdownOpen(open);
+  };
 
+  // Handle tree expansion changes
+  const handleTreeExpand = (expandedKeys) => {
+    setExpandedKeys(expandedKeys);
+  };
+
+  // Get unique artist names for autocomplete
+  const getArtistOptions = () => {
+    return library.artists.map(artist => ({ value: artist.name }));
+  };
+
+  // Get album options based on selected artist
+  const getAlbumOptions = (artistName) => {
+    const artist = library.artists.find(a => a.name === artistName);
+    return artist ? artist.albums.map(album => ({ 
+      value: album.title 
+    })) : [];
+  };
+
+  // Handle adding new song via modal
+  const handleAddSong = useCallback(async () => {
     try {
+      const values = await form.validateFields();
+
       const songData = {
-        name: newSongName.trim(),
-        chords: '',
-        lyrics: '',
+        title: values.songTitle,
+        lyrics: [],
         notes: ''
       };
 
-      if (isGoogleDriveConnected) {
-        // Use modern service API
-        await GoogleDriveServiceModern.addSong(library, selectedArtist.name, selectedAlbum.title, songData);
-        
-        // Reload library to get updated data
-        await loadLibraryFromDrive();
-      } else {
-        // Local mock data update
-        const newSong = {
-          ...songData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        
-        const updatedLibrary = { ...library };
-        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
-        if (artistIndex !== -1) {
-          const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
-          if (albumIndex !== -1) {
-            updatedLibrary.artists[artistIndex].albums[albumIndex].songs.push(newSong);
-            setLibrary(updatedLibrary);
-          }
-        }
-      }
+      await dispatch(addSong({
+        artistName: values.artistName,
+        albumTitle: values.albumTitle,
+        songData,
+        isGoogleDriveConnected
+      })).unwrap();
 
-      setNewSongName('');
-      setIsAddingSong(false);
+      // Close modal and reset form
+      setIsModalVisible(false);
+      form.resetFields();
+      
+      // Auto-select the newly created song
+      const newValue = `song_${values.artistName}_${values.albumTitle}_${values.songTitle}`;
+      handleSongSelect(newValue);
+      
+      message.success('Song added successfully!');
+
     } catch (error) {
       console.error('Failed to add song:', error);
-      alert('Failed to add song. Please try again.');
+      message.error(error.message || 'Failed to add song. Please try again.');
     }
+  }, [form, isGoogleDriveConnected, dispatch, handleSongSelect, message]);
+
+  // Handle chord pinning
+  const handlePinChord = (chord) => {
+    dispatch(pinChord(chord));
   };
 
-  // Updating existing song
-  const handleSongUpdate = async (artistName, albumName, songName, updatedSongData) => {
-    try {
-      if (isGoogleDriveConnected) {
-        // Use modern service API
-        await GoogleDriveServiceModern.updateSong(library, artistName, albumName, songName, updatedSongData);
-        
-        // Reload library to get updated data
-        await loadLibraryFromDrive();
-      } else {
-        // Local mock data update
-        const updatedLibrary = { ...library };
-        const artist = updatedLibrary.artists.find(a => a.name === artistName);
-        if (artist) {
-          const album = artist.albums.find(a => a.name === albumName);
-          if (album) {
-            const song = album.songs.find(s => s.name === songName);
-            if (song) {
-              Object.assign(song, updatedSongData, { 
-                updatedAt: new Date().toISOString() 
-              });
-              setLibrary(updatedLibrary);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to update song:', error);
-      alert('Failed to save song changes. Please try again.');
-    }
+  // Handle editing toggle
+  const handleEditingToggle = (enabled) => {
+    dispatch(setEditingEnabled(enabled));
   };
 
-  // Navigation handlers remain the same
-  const handleArtistSelect = (artist) => {
-    setSelectedArtist(artist);
-    setSelectedAlbum(null);
-    setSelectedSong(null);
-    navigate(`/songs/${encodeURIComponent(artist.name)}`);
-  };
-
-  const handleAlbumSelect = (album) => {
-    setSelectedAlbum(album);
-    setSelectedSong(null);
-    navigate(`/songs/${encodeURIComponent(selectedArtist.name)}/${encodeURIComponent(album.title)}`);
-  };
-
-  const handleSongSelect = (song) => {
-    setSelectedSong(song);
-    navigate(`/songs/${encodeURIComponent(selectedArtist.name)}/${encodeURIComponent(selectedAlbum.title)}/${encodeURIComponent(song.title)}`);
-  };
-
-  const handleBackToArtists = () => {
-    setSelectedArtist(null);
-    setSelectedAlbum(null);
-    setSelectedSong(null);
-    navigate('/songs');
-  };
-
-  const handleBackToAlbums = () => {
-    setSelectedAlbum(null);
-    setSelectedSong(null);
-    navigate(`/songs/${encodeURIComponent(selectedArtist.name)}`);
-  };
-
-  const handleBackToSongs = () => {
-    setSelectedSong(null);
-    navigate(`/songs/${encodeURIComponent(selectedArtist.name)}/${encodeURIComponent(selectedAlbum.title)}`);
-  };
-
-  // Rest of the component remains the same...
-  // (JSX render logic, useEffect for URL params, etc.)
+  // Derive TreeSelect value from Redux state
+  const treeSelectValue = selectedSong 
+    ? `song_${selectedSong.artist.name}_${selectedSong.album.title}_${selectedSong.title}` 
+    : null;
 
   return (
     <div className="song-tabs-app">
-      {/* Google Drive Connection Status */}
-      <div className="google-drive-status">
-        {isGoogleDriveConnected ? (
-          <div className="connected">
-            <span className="status-text">Connected to Google Drive ({userEmail})</span>
-            <button onClick={handleGoogleDriveDisconnect} className="disconnect-btn">
-              Disconnect
-            </button>
-          </div>
-        ) : (
-          <div className="disconnected">
-            <span className="status-text">Not connected to Google Drive</span>
-            <button onClick={handleGoogleDriveConnect} className="connect-btn" disabled={isLoading}>
-              {isLoading ? 'Connecting...' : 'Connect to Google Drive'}
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Header with Edit Toggle, Library Count, and Sign-in Button */}
+      <div className="header-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        {/* Edit Mode Toggle - Left side */}
+        <div className="edit-controls">
+          <label className="edit-toggle">
+            <Switch
+              checked={editingEnabled}
+              onChange={handleEditingToggle}
+              checkedChildren={<FaUnlock />}
+              unCheckedChildren={<FaLock />}
+            />
+            <span className="edit-label">
+              {editingEnabled ? 'Editing Enabled' : 'Read Only'}
+            </span>
+          </label>
+        </div>
 
-      {/* Edit Mode Toggle */}
-      <div className="edit-controls">
-        <label className="edit-toggle">
-          <Switch
-            checked={editingEnabled}
-            onChange={setEditingEnabled}
-            checkedChildren={<FaUnlock />}
-            unCheckedChildren={<FaLock />}
-          />
-          <span className="edit-label">
-            {editingEnabled ? 'Editing Enabled' : 'Read Only'}
-          </span>
-        </label>
+        {/* Library Count - Center */}
+        <div className="library-status-header">
+          {isLoading ? (
+            <div className="loading-indicator-header">
+              <Spin size="small" />
+              <span className="loading-text-header">Loading songs...</span>
+            </div>
+          ) : (
+            <span className="library-count-header">
+              {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
+            </span>
+          )}
+        </div>
+
+        {/* Google Drive Sign-in - Right side */}
+        <div className="google-drive-section">
+          {isGoogleDriveConnected ? (
+            <GoogleSignInButton
+              isSignedIn={true}
+              onSignOut={handleGoogleSignOut}
+              disabled={isLoading}
+              userInfo={userInfo}
+            />
+          ) : (
+            <GoogleSignInButton
+              onSuccess={handleGoogleSignInSuccess}
+              onError={handleGoogleSignInError}
+              disabled={isLoading}
+            />
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="song-tabs-content">
-        {isLoading && <div className="loading">Loading...</div>}
-        
-        {!selectedArtist && (
-          <ArtistList
-            artists={library.artists}
-            onArtistSelect={handleArtistSelect}
-            editingEnabled={editingEnabled}
-            isAddingArtist={isAddingArtist}
-            setIsAddingArtist={setIsAddingArtist}
-            newArtistName={newArtistName}
-            setNewArtistName={setNewArtistName}
-            onAddArtist={handleAddArtist}
-            newArtistInputRef={newArtistInputRef}
-          />
-        )}
-
-        {selectedArtist && !selectedAlbum && (
-          <AlbumList
-            artist={selectedArtist}
-            albums={selectedArtist.albums}
-            onAlbumSelect={handleAlbumSelect}
-            onBack={handleBackToArtists}
-            editingEnabled={editingEnabled}
-            isAddingAlbum={isAddingAlbum}
-            setIsAddingAlbum={setIsAddingAlbum}
-            newAlbumName={newAlbumName}
-            setNewAlbumName={setNewAlbumName}
-            onAddAlbum={handleAddAlbum}
-            newAlbumInputRef={newAlbumInputRef}
-          />
-        )}
-
-        {selectedArtist && selectedAlbum && !selectedSong && (
-          <SongList
-            artist={selectedArtist}
-            album={selectedAlbum}
-            songs={selectedAlbum.songs}
-            onSongSelect={handleSongSelect}
-            onBack={handleBackToAlbums}
-            editingEnabled={editingEnabled}
-            isAddingSong={isAddingSong}
-            setIsAddingSong={setIsAddingSong}
-            newSongName={newSongName}
-            setNewSongName={setNewSongName}
-            onAddSong={handleAddSong}
-            newSongInputRef={newSongInputRef}
-          />
-        )}
+      <div className="song-tabs-content">        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <TreeSelect
+              style={{ width: '100%' }}
+              value={treeSelectValue}
+              open={dropdownOpen}
+              onDropdownVisibleChange={handleDropdownVisibleChange}
+              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+              treeData={generateTreeData()}
+              placeholder="Select a song..."
+              treeDefaultExpandAll={false}
+              treeExpandedKeys={expandedKeys}
+              onTreeExpand={handleTreeExpand}
+              onChange={handleSongSelect}
+              showSearch
+              treeNodeFilterProp="title"
+            />
+          </div>
+          {editingEnabled && (
+            <Button 
+              type="primary" 
+              icon={<FaPlus />}
+              onClick={() => setIsModalVisible(true)}
+            >
+              Add Song
+            </Button>
+          )}
+        </div>
 
         {selectedSong && (
           <SongDetail
             song={selectedSong}
-            artist={selectedArtist}
-            album={selectedAlbum}
-            onBack={handleBackToSongs}
+            artist={selectedSong.artist}
+            album={selectedSong.album}
             editingEnabled={editingEnabled}
-            onSongUpdate={handleSongUpdate}
+            onUpdateSong={handleSongUpdate}
+            onPinChord={handlePinChord}
           />
         )}
       </div>
+
+      {/* Add Song Modal */}
+      <Modal
+        title="Add New Song"
+        open={isModalVisible}
+        onOk={handleAddSong}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+          setSelectedArtist('');
+        }}
+        confirmLoading={isLoading}
+        okText={isLoading ? <><Spin size="small" style={{ marginRight: 8 }} />Adding...</> : "Add Song"}
+        cancelText="Cancel"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          name="addSongForm"
+        >
+          <Form.Item
+            name="songTitle"
+            label="Song Title"
+            rules={[{ required: true, message: 'Please enter a song title!' }]}
+          >
+            <Input placeholder="Enter song title" />
+          </Form.Item>
+          
+          <Form.Item
+            name="artistName"
+            label="Artist"
+            rules={[{ required: true, message: 'Please enter an artist name!' }]}
+          >
+            <AutoComplete
+              placeholder="Enter or select artist"
+              options={getArtistOptions()}
+              filterOption={(input, option) =>
+                option.value.toLowerCase().includes(input.toLowerCase())
+              }
+              onChange={(value) => {
+                setSelectedArtist(value || '');
+                form.setFieldsValue({ albumTitle: undefined });
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item
+            name="albumTitle"
+            label="Album"
+            rules={[{ required: true, message: 'Please enter an album title!' }]}
+          >
+            <AutoComplete
+              placeholder="Enter or select album"
+              options={getAlbumOptions(selectedArtist)}
+              filterOption={(input, option) =>
+                option.value.toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Display Redux errors */}
+      {error && (
+        <div style={{ color: 'red', marginTop: '1rem' }}>
+          Error: {error}
+          <Button 
+            size="small" 
+            onClick={() => dispatch(clearError())}
+            style={{ marginLeft: '0.5rem' }}
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
-export default SongTabsApp;
+// Wrap component with App provider for message API
+const SongTabsAppWithProvider = () => (
+  <App>
+    <SongTabsApp />
+  </App>
+);
+
+export default SongTabsAppWithProvider;

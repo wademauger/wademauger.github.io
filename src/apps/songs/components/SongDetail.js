@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { FaPencilAlt, FaPlus, FaTrash, FaEdit, FaGripVertical } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaPencilAlt, FaPlus, FaTrash, FaEdit, FaGripVertical, FaClipboard } from 'react-icons/fa';
+import { convertLyrics } from '../../../convert-lyrics';
 import { useDispatch, useSelector } from 'react-redux';
 import { setInstrument, transposeSongUp, transposeSongDown } from '../../../store/chordsSlice';
 import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
+import { Spin, App } from 'antd';
 import {
   DndContext,
   closestCenter,
@@ -33,12 +35,16 @@ const SortableLyricLine = ({
   hoveredLineIndex,
   setHoveredLineIndex,
   handleEditLine,
+  handleInsertAfter,
   handleDeleteLine,
   handleSaveLine,
   handleCancelEdit,
   renderLyricLine,
   isThisLinePending = false,
-  isDragDisabled = false
+  isDragDisabled = false,
+  isPendingDelete = false,
+  isAddingLine = false,
+  isPendingSave = false
 }) => {
   const {
     attributes,
@@ -55,8 +61,11 @@ const SortableLyricLine = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
     position: 'relative',
+    backgroundColor: isPendingDelete ? '#f5f5f5' : 'transparent',
+    color: isPendingDelete ? '#999' : 'inherit',
+    pointerEvents: isPendingDelete ? 'none' : 'auto'
   };
 
   return (
@@ -67,7 +76,7 @@ const SortableLyricLine = ({
       onMouseEnter={() => setHoveredLineIndex(index)}
       onMouseLeave={() => setHoveredLineIndex(null)}
     >
-      {editingLineIndex === index && editingEnabled ? (
+      {editingLineIndex === index && !isAddingLine && editingEnabled ? (
         <LyricLineEditor
           line={line}
           onSave={(newLine) => handleSaveLine(newLine, index)}
@@ -78,7 +87,37 @@ const SortableLyricLine = ({
           <div className="lyric-content" style={{ flex: 1 }}>
             {renderLyricLine(line)}
           </div>
-          {hoveredLineIndex === index && editingEnabled && (
+          {isPendingSave && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              backgroundColor: '#e6f7ff',
+              border: '1px solid #91d5ff',
+              borderRadius: '4px',
+              color: '#1890ff'
+            }}>
+              <Spin size="small" />
+              <span style={{ fontSize: '12px' }}>Saving...</span>
+            </div>
+          )}
+          {isPendingDelete && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              backgroundColor: '#fff2f0',
+              border: '1px solid #ffccc7',
+              borderRadius: '4px',
+              color: '#cf1322'
+            }}>
+              <Spin size="small" />
+              <span style={{ fontSize: '12px' }}>Deleting...</span>
+            </div>
+          )}
+          {hoveredLineIndex === index && editingEnabled && !isPendingDelete && (
             <div className="lyric-controls" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button 
                 className="control-button edit" 
@@ -94,8 +133,28 @@ const SortableLyricLine = ({
                   cursor: 'pointer',
                   fontSize: '12px'
                 }}
+                title="Edit this line"
               >
                 <FaPencilAlt />
+              </button>
+              <button 
+                className="control-button insert" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleInsertAfter(index);
+                }}
+                style={{
+                  padding: '4px 6px',
+                  border: '1px solid #ccc',
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: '#5cb85c'
+                }}
+                title="Insert new line after this line"
+              >
+                <FaPlus />
               </button>
               <button 
                 className="control-button delete" 
@@ -112,6 +171,7 @@ const SortableLyricLine = ({
                   fontSize: '12px',
                   color: '#d9534f'
                 }}
+                title="Delete this line"
               >
                 <FaTrash />
               </button>
@@ -138,7 +198,7 @@ const SortableLyricLine = ({
                 title={isDragDisabled ? "Drag disabled during update" : "Drag to reorder"}
               >
                 {isThisLinePending ? (
-                  <span style={{ animation: 'spin 1s linear infinite' }}>⟳</span>
+                  <Spin size="small" />
                 ) : (
                   <FaGripVertical />
                 )}
@@ -152,16 +212,24 @@ const SortableLyricLine = ({
 };
 
 const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = true }) => {
+  const { message, modal } = App.useApp();
   const [editingLineIndex, setEditingLineIndex] = useState(null);
   const [isAddingLine, setIsAddingLine] = useState(false);
+  const [insertAfterIndex, setInsertAfterIndex] = useState(null); // Track where we're inserting
   const [hoveredLineIndex, setHoveredLineIndex] = useState(null);
   const [localTranspose, setLocalTranspose] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [isEditingWholeSong, setIsEditingWholeSong] = useState(false);
   const [wholeSongText, setWholeSongText] = useState('');
+  const [pendingSaves, setPendingSaves] = useState(new Set());
   const [pendingDragOperation, setPendingDragOperation] = useState(null);
   const [optimisticLyrics, setOptimisticLyrics] = useState(null);
   const [pendingLineIndex, setPendingLineIndex] = useState(null);
+  const [pendingDeleteLines, setPendingDeleteLines] = useState(new Set());
+  const [isPendingAdd, setIsPendingAdd] = useState(false);
+  const [isPendingAnyOperation, setIsPendingAnyOperation] = useState(false);
+  const [isSavingTranspose, setIsSavingTranspose] = useState(false);
+  const [isSavingWholeSong, setIsSavingWholeSong] = useState(false);
   const dispatch = useDispatch();
   const instrument = useSelector((state) => state.chords.currentInstrument);
   const transpose = useSelector((state) => state.chords.transposeBy?.[song.title] || 0);
@@ -209,6 +277,14 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     return base + suffix;
   }
   function transposeChord(chord, semitones) {
+    // Handle slashed chords (e.g. A/C# -> A#/D)
+    if (chord.includes('/')) {
+      const [rootPart, bassPart] = chord.split('/');
+      const transposedRoot = transposeChord(rootPart, semitones);
+      const transposedBass = transposeChord(bassPart, semitones);
+      return `${transposedRoot}/${transposedBass}`;
+    }
+    
     // Extract root and suffix (e.g. C#m7 -> C#, m7)
     const match = chord.match(/^([A-G][b#]?)(.*)$/);
     if (!match) return chord;
@@ -221,7 +297,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     return CHROMATIC[newIdx] + suffix;
   }
 
-  const chords = (song.chords || extractChords(song.lyrics || [])).map(chord =>
+  // Ensure lyrics is always an array
+  const lyricsArray = Array.isArray(song.lyrics) ? song.lyrics : 
+    (typeof song.lyrics === 'string' ? (song.lyrics ? song.lyrics.split('\n') : []) : []);
+
+  const chords = (song.chords || extractChords(lyricsArray)).map(chord =>
     localTranspose !== 0 ? transposeChord(chord, localTranspose) : chord
   );
 
@@ -231,75 +311,137 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   const handleAddLine = () => {
+    // Block if there are pending operations
+    if (isPendingAnyOperation || pendingDeleteLines.size > 0) {
+      message.warning('Please wait for current operation to complete before adding a new line.');
+      return;
+    }
+    
     setIsAddingLine(true);
     setEditingLineIndex(null);
   };
 
+  const handleInsertAfter = (afterIndex) => {
+    // Block if there are pending operations
+    if (isPendingAnyOperation || pendingDeleteLines.size > 0) {
+      message.warning('Please wait for current operation to complete before inserting a new line.');
+      return;
+    }
+    
+    setIsAddingLine(true);
+    setInsertAfterIndex(afterIndex); // Track the original position
+    // Set to the position where we want to insert (after the specified index)
+    if (afterIndex === -1) {
+      // Empty song case - insert at position 0
+      setEditingLineIndex(0);
+    } else {
+      // Insert after the specified line
+      setEditingLineIndex(afterIndex + 1);
+    }
+  };
+
   const handleSaveLine = async (newLine, index) => {
-    const updatedLyrics = [...song.lyrics];
+    const updatedLyrics = [...lyricsArray];
     
     if (isAddingLine) {
-      // Add new line at the end - optimistic update
-      updatedLyrics.push(newLine);
+      // Set pending add state
+      setIsPendingAdd(true);
+      setIsPendingAnyOperation(true);
+      
+      // Check if we're inserting at a specific position or adding at the end
+      const targetIndex = editingLineIndex !== null && editingLineIndex <= lyricsArray.length
+        ? editingLineIndex // Insert at specific position
+        : updatedLyrics.length; // Add at the end
+      
+      // Insert at target position
+      updatedLyrics.splice(targetIndex, 0, newLine);
+      
       setOptimisticLyrics(updatedLyrics);
-      setPendingDragOperation({ type: 'add', line: newLine });
+      setPendingSaves(prev => new Set([...prev, targetIndex]));
       
       // Exit edit mode immediately for better UX
       setEditingLineIndex(null);
       setIsAddingLine(false);
       
-      try {
-        // Send update to server
-        await onUpdateSong({
-          ...song,
-          lyrics: updatedLyrics,
-          chords: extractChords(updatedLyrics)
+      // Save the add operation
+      onUpdateSong({
+        ...song,
+        lyrics: updatedLyrics
+      }).then(() => {
+        message.success('Line added successfully!');
+        setOptimisticLyrics(null);
+        setIsPendingAdd(false);
+        setIsPendingAnyOperation(false);
+        setPendingSaves(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(targetIndex);
+          return newSet;
         });
-        
-        // Server confirmed - clear optimistic state
-        setOptimisticLyrics(null);
-        setPendingDragOperation(null);
-      } catch (error) {
-        // Server failed - revert to original lyrics and re-enter edit mode
+        // Ensure we completely reset editing state
+        setEditingLineIndex(null);
+        setIsAddingLine(false);
+        setInsertAfterIndex(null);
+      }).catch((error) => {
         console.error('Failed to add line:', error);
+        message.error('Failed to add new line. Please try again.');
+        // Revert optimistic update
         setOptimisticLyrics(null);
-        setPendingDragOperation(null);
+        setIsPendingAdd(false);
+        setIsPendingAnyOperation(false);
+        setPendingSaves(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(targetIndex);
+          return newSet;
+        });
         setIsAddingLine(true);
         setEditingLineIndex(null);
-      }
+        setInsertAfterIndex(null);
+      });
     } else {
+      // Set pending edit state
+      setIsPendingAnyOperation(true);
+      setPendingSaves(prev => new Set([...prev, index]));
+      
       // Update existing line - optimistic update
       updatedLyrics[index] = newLine;
       setOptimisticLyrics(updatedLyrics);
-      setPendingDragOperation({ type: 'edit', index, line: newLine });
       
       // Exit edit mode immediately for better UX
       setEditingLineIndex(null);
       
-      try {
-        // Send update to server
-        await onUpdateSong({
-          ...song,
-          lyrics: updatedLyrics,
-          chords: extractChords(updatedLyrics)
+      // Save the edit operation
+      onUpdateSong({
+        ...song,
+        lyrics: updatedLyrics
+      }).then(() => {
+        message.success('Line updated successfully!');
+        setOptimisticLyrics(null);
+        setIsPendingAnyOperation(false);
+        setPendingSaves(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(index);
+          return newSet;
         });
-        
-        // Server confirmed - clear optimistic state
-        setOptimisticLyrics(null);
-        setPendingDragOperation(null);
-      } catch (error) {
-        // Server failed - revert to original lyrics and re-enter edit mode
+      }).catch((error) => {
         console.error('Failed to update line:', error);
+        message.error('Failed to update line. Please try again.');
+        // Revert optimistic update
         setOptimisticLyrics(null);
-        setPendingDragOperation(null);
+        setIsPendingAnyOperation(false);
+        setPendingSaves(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(index);
+          return newSet;
+        });
         setEditingLineIndex(index);
-      }
+      });
     }
   };
 
   const handleCancelEdit = () => {
     setEditingLineIndex(null);
     setIsAddingLine(false);
+    setInsertAfterIndex(null);
   };
 
   // Handle drag end for reordering lines with optimistic updates
@@ -307,33 +449,34 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     const { active, over } = event;
 
     if (active.id !== over.id) {
-      const oldIndex = song.lyrics.findIndex((_, index) => index.toString() === active.id);
-      const newIndex = song.lyrics.findIndex((_, index) => index.toString() === over.id);
+      // Set pending reorder state
+      setIsPendingAnyOperation(true);
+      
+      const oldIndex = lyricsArray.findIndex((_, index) => index.toString() === active.id);
+      const newIndex = lyricsArray.findIndex((_, index) => index.toString() === over.id);
       
       // Optimistic update - immediately show the new order
-      const newLyrics = arrayMove(song.lyrics, oldIndex, newIndex);
+      const newLyrics = arrayMove(lyricsArray, oldIndex, newIndex);
       setOptimisticLyrics(newLyrics);
-      setPendingDragOperation({ oldIndex, newIndex });
       setPendingLineIndex(newIndex); // Track which line is pending
       
-      try {
-        // Send update to server
-        await onUpdateSong({
-          ...song,
-          lyrics: newLyrics
-        });
-        
-        // Server confirmed - clear optimistic state
+      // Save the reorder operation
+      onUpdateSong({
+        ...song,
+        lyrics: newLyrics
+      }).then(() => {
+        message.success('Lines reordered successfully!');
         setOptimisticLyrics(null);
-        setPendingDragOperation(null);
+        setIsPendingAnyOperation(false);
         setPendingLineIndex(null);
-      } catch (error) {
-        // Server failed - revert to original order
-        console.error('Failed to update song:', error);
+      }).catch((error) => {
+        console.error('Failed to reorder lines:', error);
+        message.error('Failed to reorder lines. Please try again.');
+        // Revert optimistic update
         setOptimisticLyrics(null);
-        setPendingDragOperation(null);
+        setIsPendingAnyOperation(false);
         setPendingLineIndex(null);
-      }
+      });
     }
   };
 
@@ -341,18 +484,27 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
 
   // Handle whole song editing
   const handleEditWholeSong = () => {
-    setWholeSongText(song.lyrics.join('\n'));
+    setWholeSongText(lyricsArray.join('\n'));
     setIsEditingWholeSong(true);
   };
 
-  const handleSaveWholeSong = () => {
-    const newLyrics = wholeSongText.split('\n').filter(line => line.trim() !== '');
-    onUpdateSong({
-      ...song,
-      lyrics: newLyrics,
-      chords: extractChords(newLyrics)
-    });
-    setIsEditingWholeSong(false);
+  const handleSaveWholeSong = async () => {
+    setIsSavingWholeSong(true);
+    try {
+      const newLyrics = wholeSongText.split('\n').filter(line => line.trim() !== '');
+      await onUpdateSong({
+        ...song,
+        lyrics: newLyrics,
+        chords: extractChords(newLyrics)
+      });
+      setIsEditingWholeSong(false);
+      message.success('Song lyrics saved successfully!');
+    } catch (error) {
+      console.error('Failed to save whole song:', error);
+      message.error('Failed to save song. Please try again.');
+    } finally {
+      setIsSavingWholeSong(false);
+    }
   };
 
   const handleCancelWholeSong = () => {
@@ -361,33 +513,70 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   const handleDeleteLine = async (index) => {
-    const lineText = song.lyrics[index];
-    const confirmMessage = `Are you sure you want to delete this line?\n\n"${lineText}"`;
-    
-    if (window.confirm(confirmMessage)) {
-      // Optimistic update - immediately remove the line
-      const updatedLyrics = song.lyrics.filter((_, i) => i !== index);
-      setOptimisticLyrics(updatedLyrics);
-      setPendingDragOperation({ type: 'delete', index });
-      
-      try {
-        // Send update to server
-        await onUpdateSong({
-          ...song,
-          lyrics: updatedLyrics,
-          chords: extractChords(updatedLyrics)
-        });
-        
-        // Server confirmed - clear optimistic state
-        setOptimisticLyrics(null);
-        setPendingDragOperation(null);
-      } catch (error) {
-        // Server failed - revert to original lyrics
-        console.error('Failed to delete line:', error);
-        setOptimisticLyrics(null);
-        setPendingDragOperation(null);
-      }
+    // Block if there are pending operations
+    if (isPendingAnyOperation) {
+      message.warning('Please wait for current operation to complete before deleting a line.');
+      return;
     }
+    
+    const lineText = lyricsArray[index];
+    
+    modal.confirm({
+      title: 'Delete Line',
+      content: (
+        <div>
+          <p>Are you sure you want to delete this line?</p>
+          <div style={{ 
+            marginTop: '10px', 
+            padding: '8px', 
+            backgroundColor: '#f5f5f5', 
+            borderRadius: '4px',
+            fontFamily: 'monospace',
+            fontSize: '14px'
+          }}>
+            "{lineText}"
+          </div>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: () => {
+        // Mark line as pending delete for visual feedback
+        setPendingDeleteLines(prev => new Set([...prev, index]));
+        setIsPendingAnyOperation(true);
+        
+        // Don't optimistically remove the line - keep it visible with spinner
+        // The pending delete state will grey it out and show spinner
+        const updatedLyrics = lyricsArray.filter((_, i) => i !== index);
+        
+        // Save the delete operation
+        onUpdateSong({
+          ...song,
+          lyrics: updatedLyrics
+        }).then(() => {
+          message.success('Line deleted successfully!');
+          // Only update optimistic lyrics after successful deletion
+          setOptimisticLyrics(updatedLyrics);
+          setIsPendingAnyOperation(false);
+          setPendingDeleteLines(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
+        }).catch((error) => {
+          console.error('Failed to delete line:', error);
+          message.error('Failed to delete line. Please try again.');
+          // Clear pending state without changing lyrics
+          setIsPendingAnyOperation(false);
+          setPendingDeleteLines(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
+        });
+      }
+    });
   };
 
   // Function to render a lyric line with chord formatting above text
@@ -461,27 +650,38 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setDirty(true);
     dispatch(transposeSongDown(song.title));
   };
-  const handleSaveTranspose = () => {
-    // Apply transposition to all lyrics inline
-    const transposedLyrics = song.lyrics.map(line => {
-      const chordRegex = /\[([^\]]+)\]/g;
-      return line.replace(chordRegex, (match, chord) => {
-        const transposedChord = transposeChord(chord, localTranspose);
-        return `[${transposedChord}]`;
+  const handleSaveTranspose = async () => {
+    setIsSavingTranspose(true);
+    try {
+      // Apply transposition to all lyrics inline
+      const transposedLyrics = lyricsArray.map(line => {
+        const chordRegex = /\[([^\]]+)\]/g;
+        return line.replace(chordRegex, (match, chord) => {
+          const transposedChord = transposeChord(chord, localTranspose);
+          return `[${transposedChord}]`;
+        });
       });
-    });
 
-    const updatedSong = { 
-      ...song, 
-      lyrics: transposedLyrics,
-      chords: extractChords(transposedLyrics)
-    };
-    
-    onUpdateSong(updatedSong);
-    
-    // Reset local transpose since it's now baked into the lyrics
-    setLocalTranspose(0);
-    setDirty(false);
+      const updatedSong = { 
+        ...song, 
+        lyrics: transposedLyrics,
+        chords: extractChords(transposedLyrics)
+      };
+      
+      await onUpdateSong(updatedSong);
+      
+      // Reset local transpose since it's now baked into the lyrics
+      setLocalTranspose(0);
+      setDirty(false);
+      
+      // Show success message
+      message.success('Transposed lyrics saved successfully!');
+    } catch (error) {
+      console.error('Failed to save transposed lyrics:', error);
+      message.error('Failed to save transposed lyrics. Please try again.');
+    } finally {
+      setIsSavingTranspose(false);
+    }
   };
 
   return (
@@ -514,9 +714,17 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
             <button
               className="save-transpose-btn"
               onClick={handleSaveTranspose}
-              disabled={!dirty || !editingEnabled}
-              style={{ marginLeft: '1em', padding: '0.2em 0.8em', opacity: dirty && editingEnabled ? 1 : 0.5 }}
+              disabled={!dirty || !editingEnabled || isSavingTranspose}
+              style={{ 
+                marginLeft: '1em', 
+                padding: '0.2em 0.8em', 
+                opacity: dirty && editingEnabled && !isSavingTranspose ? 1 : 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5em'
+              }}
             >
+              {isSavingTranspose && <Spin size="small" />}
               Save Transposed Lyrics
             </button>
           </div>
@@ -580,6 +788,38 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                 <FaEdit /> Edit Whole Song
               </button>
             )}
+            {isEditingWholeSong && (
+              <button 
+                onClick={() => {
+                  try {
+                    const converted = convertLyrics(wholeSongText);
+                    setWholeSongText(converted);
+                    message.success('Lyrics converted successfully!');
+                  } catch (error) {
+                    console.error('Error converting lyrics:', error);
+                    message.error('Failed to convert lyrics format. Please check your input.');
+                  }
+                }}
+                style={{ 
+                  padding: '0.5em 1em', 
+                  fontSize: '0.9em',
+                  backgroundColor: '#5C6BC0',
+                  color: 'white',
+                  border: '1px solid #3F51B5',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5em',
+                  marginLeft: '10px',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#3F51B5'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#5C6BC0'}
+              >
+                <FaClipboard /> Convert from Clipboard Format
+              </button>
+            )}
           </div>
           
           {isEditingWholeSong ? (
@@ -601,16 +841,21 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
               <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
                 <button 
                   onClick={handleSaveWholeSong}
+                  disabled={isSavingWholeSong}
                   style={{ 
                     padding: '0.5em 1em',
-                    backgroundColor: '#4CAF50',
+                    backgroundColor: isSavingWholeSong ? '#ccc' : '#4CAF50',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: isSavingWholeSong ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5em'
                   }}
                 >
-                  Save
+                  {isSavingWholeSong && <Spin size="small" />}
+                  {isSavingWholeSong ? 'Saving...' : 'Save'}
                 </button>
                 <button 
                   onClick={handleCancelWholeSong}
@@ -634,40 +879,84 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
               onDragEnd={handleDragEnd}
             >
               <SortableContext 
-                items={(optimisticLyrics || song.lyrics).map((_, index) => index.toString())}
+                items={(optimisticLyrics || lyricsArray).map((_, index) => index.toString())}
                 strategy={verticalListSortingStrategy}
               >
-                {(optimisticLyrics || song.lyrics) && (optimisticLyrics || song.lyrics).map((line, index) => (
-                  <SortableLyricLine
-                    key={index}
-                    id={index.toString()}
-                    line={line}
-                    index={index}
-                    editingLineIndex={editingLineIndex}
-                    editingEnabled={editingEnabled}
-                    hoveredLineIndex={hoveredLineIndex}
-                    setHoveredLineIndex={setHoveredLineIndex}
-                    handleEditLine={handleEditLine}
-                    handleDeleteLine={handleDeleteLine}
-                    handleSaveLine={handleSaveLine}
-                    handleCancelEdit={handleCancelEdit}
-                    renderLyricLine={renderLyricLine}
-                    isThisLinePending={pendingLineIndex === index}
-                    isDragDisabled={pendingDragOperation !== null}
-                  />
+                {(optimisticLyrics || lyricsArray) && (optimisticLyrics || lyricsArray).map((line, index) => (
+                  <div key={index}>
+                    <SortableLyricLine
+                      id={index.toString()}
+                      line={line}
+                      index={index}
+                      editingLineIndex={editingLineIndex}
+                      editingEnabled={editingEnabled}
+                      hoveredLineIndex={hoveredLineIndex}
+                      setHoveredLineIndex={setHoveredLineIndex}
+                      handleEditLine={handleEditLine}
+                      handleInsertAfter={handleInsertAfter}
+                      handleDeleteLine={handleDeleteLine}
+                      handleSaveLine={handleSaveLine}
+                      handleCancelEdit={handleCancelEdit}
+                      renderLyricLine={renderLyricLine}
+                      isThisLinePending={pendingLineIndex === index}
+                      isDragDisabled={pendingDragOperation !== null || pendingDeleteLines.has(index) || pendingSaves.has(index)}
+                      isPendingDelete={pendingDeleteLines.has(index)}
+                      isPendingSave={pendingSaves.has(index)}
+                      isAddingLine={isAddingLine}
+                    />
+                    {/* Show line editor when inserting after this line */}
+                    {isAddingLine && insertAfterIndex === index && editingEnabled && (
+                      <LyricLineEditor
+                        line=""
+                        onSave={(newLine) => handleSaveLine(newLine, index + 1)}
+                        onCancel={handleCancelEdit}
+                      />
+                    )}
+                  </div>
                 ))}
               </SortableContext>
               
-              {isAddingLine && editingEnabled ? (
+              {/* Add line editor at the very end when adding after the last line */}
+              {isAddingLine && insertAfterIndex === lyricsArray.length - 1 && editingEnabled && (
                 <LyricLineEditor
                   line=""
-                  onSave={(newLine) => handleSaveLine(newLine)}
+                  onSave={(newLine) => handleSaveLine(newLine, lyricsArray.length)}
                   onCancel={handleCancelEdit}
                 />
-              ) : (
-                editingEnabled && <button className="add-lyric-button" onClick={handleAddLine}>
-                  <FaPlus /> Add Line
+              )}
+              
+              {/* Add a button to add line at the end when the song is empty */}
+              {editingEnabled && lyricsArray.length === 0 && !isAddingLine && (
+                <button 
+                  className="add-lyric-button" 
+                  onClick={() => handleInsertAfter(-1)}
+                  style={{
+                    padding: '10px 20px',
+                    border: '2px dashed #ccc',
+                    backgroundColor: 'transparent',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    color: '#666',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    margin: '20px 0',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <FaPlus /> Add First Line
                 </button>
+              )}
+              
+              {/* Add line editor for empty song case */}
+              {isAddingLine && insertAfterIndex === -1 && editingEnabled && (
+                <LyricLineEditor
+                  line=""
+                  onSave={(newLine) => handleSaveLine(newLine, 0)}
+                  onCancel={handleCancelEdit}
+                />
               )}
             </DndContext>
           )}
@@ -677,4 +966,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   );
 };
 
-export default SongDetail;
+// Wrap component with App provider for message API
+const SongDetailWithProvider = (props) => (
+  <App>
+    <SongDetail {...props} />
+  </App>
+);
+
+export default SongDetailWithProvider;

@@ -355,7 +355,7 @@ class GoogleDriveService {
     }
   }
 
-  async addAlbum(artistName, albumName) {
+  async addAlbum(artistName, albumTitle) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -370,13 +370,13 @@ class GoogleDriveService {
       }
       
       // Check if album already exists
-      if (library.artists[artistIndex].albums.some(album => album.title === albumName)) {
-        throw new Error(`Album "${albumName}" already exists for artist "${artistName}"`);
+      if (library.artists[artistIndex].albums.some(album => album.title === albumTitle)) {
+        throw new Error(`Album "${albumTitle}" already exists for artist "${artistName}"`);
       }
       
       // Create new album object
       const newAlbum = {
-        title: albumName,
+        title: albumTitle,
         songs: []
       };
       
@@ -393,7 +393,7 @@ class GoogleDriveService {
     }
   }
 
-  async addSong(artistName, albumName, songName) {
+  async addSong(artistName, albumTitle, songTitle) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -408,19 +408,19 @@ class GoogleDriveService {
       }
       
       // Find album
-      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumName);
+      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
       if (albumIndex === -1) {
-        throw new Error(`Album "${albumName}" not found for artist "${artistName}"`);
+        throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
       }
       
       // Check if song already exists
-      if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songName)) {
-        throw new Error(`Song "${songName}" already exists in album "${albumName}"`);
+      if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songTitle)) {
+        throw new Error(`Song "${songTitle}" already exists in album "${albumTitle}"`);
       }
       
       // Create new song object with required fields
       const newSong = {
-        title: songName,
+        title: songTitle,
         id: Date.now().toString(), // Simple ID generation
         chords: [],
         lyrics: []

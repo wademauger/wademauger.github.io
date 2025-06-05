@@ -449,20 +449,20 @@ export const ukuleleChords = {
   'C5': { frets: [0, 0, 3, 3], fingers: [0, 0, 1, 2] },
   'C#5': { frets: [1, 1, 4, 4], fingers: [1, 1, 3, 4] },
   'Db5': { frets: [1, 1, 4, 4], fingers: [1, 1, 3, 4] },
-  'D5': { frets: [2, 2, 0, 0], fingers: [1, 2, 0, 0] },
-  'D#5': { frets: [0, 3, 1, 1], fingers: [0, 4, 1, 2] },
-  'Eb5': { frets: [0, 3, 1, 1], fingers: [0, 4, 1, 2] },
-  'E5': { frets: [4, 4, 2, 2], fingers: [3, 4, 1, 2] },
+  'D5': { frets: [2, 2, -1, 0], fingers: [2, 3, 0, 1] },
+  'D#5': { frets: [3, 3, 6, 6], fingers: [1, 1, 3, 4] },
+  'Eb5': { frets: [3, 3, 6, 6], fingers: [1, 1, 3, 4] },
+  'E5': { frets: [4, 4, 0, 2], fingers: [3, 4, 0, 1] },
   'F5': { frets: [2, 0, 0, 0], fingers: [1, 0, 0, 0] },
-  'F#5': { frets: [3, 1, 1, 1], fingers: [4, 1, 2, 3] },
-  'Gb5': { frets: [3, 1, 1, 1], fingers: [4, 1, 2, 3] },
+  'F#5': { frets: [-1, 1, 2, 4], fingers: [0, 1, 2, 4] },
+  'Gb5': { frets: [-1, 1, 2, 4], fingers: [0, 1, 2, 4] },
   'G5': { frets: [0, 2, 2, 2], fingers: [0, 1, 2, 3] },
   'G#5': { frets: [5, 3, 3, 3], fingers: [4, 1, 2, 3] },
   'Ab5': { frets: [5, 3, 3, 3], fingers: [4, 1, 2, 3] },
   'A5': { frets: [2, 1, 0, 0], fingers: [2, 1, 0, 0] },
   'A#5': { frets: [3, 2, 1, 1], fingers: [3, 2, 1, 1] },
   'Bb5': { frets: [3, 2, 1, 1], fingers: [3, 2, 1, 1] },
-  'B5': { frets: [4, 3, 2, 2], fingers: [4, 3, 1, 2] },
+  'B5': { frets: [-1, -1, 2, 2], fingers: [0, 0, 1, 2] },
 
   // Sixth chords (6th chords)
   'C6': { frets: [0, 0, 0, 0], fingers: [0, 0, 0, 0] },
@@ -673,6 +673,25 @@ export const ukuleleChords = {
   'Bbmaj9': { frets: [3, 2, 3, 1], fingers: [3, 1, 4, 2] },
   'Bmaj9': { frets: [4, 3, 4, 2], fingers: [3, 1, 4, 2] },
 
+  // Minor 9th chords (m9) - minor 7th chord plus 9th interval
+  'Cm9': { frets: [0, 3, 3, 3], fingers: [0, 1, 2, 3] },
+  'C#m9': { frets: [1, 4, 4, 4], fingers: [1, 2, 3, 4] },
+  'Dbm9': { frets: [1, 4, 4, 4], fingers: [1, 2, 3, 4] },
+  'Dm9': { frets: [2, 2, 1, 3], fingers: [3, 2, 1, 4] },
+  'D#m9': { frets: [3, 3, 2, 4], fingers: [3, 2, 1, 4] },
+  'Ebm9': { frets: [3, 3, 2, 4], fingers: [3, 2, 1, 4] },
+  'Em9': { frets: [0, 4, 0, 2], fingers: [0, 4, 0, 2] },
+  'Fm9': { frets: [1, 0, 1, 3], fingers: [1, 0, 2, 4] },
+  'F#m9': { frets: [2, 1, 2, 4], fingers: [2, 1, 3, 4] },
+  'Gbm9': { frets: [2, 1, 2, 4], fingers: [2, 1, 3, 4] },
+  'Gm9': { frets: [0, 2, 3, 1], fingers: [0, 2, 4, 1] },
+  'G#m9': { frets: [1, 3, 4, 2], fingers: [1, 3, 4, 2] },
+  'Abm9': { frets: [1, 3, 4, 2], fingers: [1, 3, 4, 2] },
+  'Am9': { frets: [0, 0, 0, 0], fingers: [0, 0, 0, 0] },
+  'A#m9': { frets: [3, 1, 1, 1], fingers: [4, 1, 2, 3] },
+  'Bbm9': { frets: [3, 1, 1, 1], fingers: [4, 1, 2, 3] },
+  'Bm9': { frets: [4, 2, 2, 2], fingers: [4, 1, 2, 3] },
+
   // Altered dominants - 7b5 chords
   'C7b5': { frets: [0, 1, 0, 1], fingers: [0, 1, 0, 2] },
   'C#7b5': { frets: [1, 2, 1, 2], fingers: [1, 3, 2, 4] },
@@ -690,24 +709,214 @@ export const ukuleleChords = {
   'A7b5': { frets: [2, 1, 0, 1], fingers: [3, 1, 0, 2] },
   'A#7b5': { frets: [3, 2, 1, 2], fingers: [4, 2, 1, 3] },
   'Bb7b5': { frets: [3, 2, 1, 2], fingers: [4, 2, 1, 3] },
-  'B7b5': { frets: [4, 3, 2, 3], fingers: [4, 2, 1, 3] },
+  'B7b5': { frets: [0, 3, 3, 2], fingers: [0, 3, 4, 1] },
 
-  // Altered dominants - 7#5 chords  
-  'C7#5': { frets: [1, 0, 0, 1], fingers: [1, 0, 0, 2] },
-  'C#7#5': { frets: [2, 1, 1, 2], fingers: [3, 1, 2, 4] },
-  'Db7#5': { frets: [2, 1, 1, 2], fingers: [3, 1, 2, 4] },
-  'D7#5': { frets: [3, 2, 2, 3], fingers: [3, 1, 2, 4] },
-  'D#7#5': { frets: [0, 3, 3, 4], fingers: [0, 1, 2, 3] },
-  'Eb7#5': { frets: [0, 3, 3, 4], fingers: [0, 1, 2, 3] },
-  'E7#5': { frets: [1, 0, 0, 2], fingers: [1, 0, 0, 3] },
-  'F7#5': { frets: [2, 1, 1, 3], fingers: [2, 1, 1, 4] },
-  'F#7#5': { frets: [3, 2, 2, 4], fingers: [2, 1, 1, 4] },
-  'Gb7#5': { frets: [3, 2, 2, 4], fingers: [2, 1, 1, 4] },
-  'G7#5': { frets: [0, 3, 3, 2], fingers: [0, 3, 4, 1] },
-  'G#7#5': { frets: [1, 0, 0, 3], fingers: [1, 0, 0, 4] },
-  'Ab7#5': { frets: [1, 0, 0, 3], fingers: [1, 0, 0, 4] },
-  'A7#5': { frets: [2, 1, 1, 0], fingers: [3, 1, 2, 0] },
-  'A#7#5': { frets: [3, 2, 2, 1], fingers: [4, 2, 3, 1] },
-  'Bb7#5': { frets: [3, 2, 2, 1], fingers: [4, 2, 3, 1] },
-  'B7#5': { frets: [0, 3, 3, 2], fingers: [0, 3, 4, 1] }
+  // Slash chords (common inversions and bass-over-chord combinations)
+  // Major chord inversions (chord tone in bass)
+  'C/E': { 
+    frets: [1, 0, 0, 3], 
+    fingers: [1, 0, 0, 3],
+    description: "C major with E in bass (1st inversion)"
+  },
+  'C/G': { 
+    frets: [0, 2, 3, 3], 
+    fingers: [0, 1, 2, 3],
+    description: "C major with G in bass (2nd inversion)"
+  },
+  'D/F#': { 
+    frets: [2, 4, 2, 2], 
+    fingers: [1, 4, 2, 3],
+    description: "D major with F# in bass (1st inversion)"
+  },
+  'D/A': { 
+    frets: [2, 2, 2, 0], 
+    fingers: [1, 2, 3, 0],
+    description: "D major with A in bass (2nd inversion)"
+  },
+  'E/G#': { 
+    frets: [0, 3, 3, 2], 
+    fingers: [0, 2, 3, 1],
+    description: "E major with G# in bass (1st inversion)"
+  },
+  'E/B': { 
+    frets: [2, 4, 0, 2], 
+    fingers: [1, 4, 0, 2],
+    description: "E major with B in bass (2nd inversion)"
+  },
+  'F/A': { 
+    frets: [2, 0, 1, 0], 
+    fingers: [2, 0, 1, 0],
+    description: "F major with A in bass (1st inversion)"
+  },
+  'F/C': { 
+    frets: [0, 0, 1, 3], 
+    fingers: [0, 0, 1, 3],
+    description: "F major with C in bass (2nd inversion)"
+  },
+  'G/B': { 
+    frets: [0, 2, 3, 2], 
+    fingers: [0, 1, 4, 2],
+    description: "G major with B in bass (1st inversion)"
+  },
+  'G/D': { 
+    frets: [0, 2, 3, 0], 
+    fingers: [0, 1, 3, 0],
+    description: "G major with D in bass (2nd inversion)"
+  },
+  'A/C#': { 
+    frets: [1, 1, 0, 0], 
+    fingers: [1, 2, 0, 0],
+    description: "A major with C# in bass (1st inversion)"
+  },
+  'A/E': { 
+    frets: [4, 1, 0, 0], 
+    fingers: [4, 1, 0, 0],
+    description: "A major with E in bass (2nd inversion)"
+  },
+  'B/D#': { 
+    frets: [1, 3, 2, 1], 
+    fingers: [1, 4, 2, 3],
+    description: "B major with D# in bass (1st inversion)"
+  },
+  'B/F#': { 
+    frets: [2, 3, 2, 2], 
+    fingers: [1, 4, 2, 3],
+    description: "B major with F# in bass (2nd inversion)"
+  },
+
+  // Minor chord inversions
+  'Am/C': { 
+    frets: [0, 0, 0, 3], 
+    fingers: [0, 0, 0, 3],
+    description: "A minor with C in bass (1st inversion)"
+  },
+  'Am/E': { 
+    frets: [4, 0, 0, 0], 
+    fingers: [4, 0, 0, 0],
+    description: "A minor with E in bass (2nd inversion)"
+  },
+  'Em/G': { 
+    frets: [0, 4, 3, 2], 
+    fingers: [0, 4, 3, 1],
+    description: "E minor with G in bass (1st inversion)"
+  },
+  'Em/B': { 
+    frets: [2, 0, 0, 2], 
+    fingers: [1, 0, 0, 3],
+    description: "E minor with B in bass (2nd inversion)"
+  },
+  'Dm/F': { 
+    frets: [1, 0, 1, 3], 
+    fingers: [1, 0, 2, 4],
+    description: "D minor with F in bass (1st inversion)"
+  },
+  'Dm/A': { 
+    frets: [2, 2, 1, 3], 
+    fingers: [2, 3, 1, 4],
+    description: "D minor with A in bass (2nd inversion)"
+  },
+  'Fm/Ab': { 
+    frets: [1, 3, 1, 1], 
+    fingers: [1, 4, 2, 3],
+    description: "F minor with Ab in bass (1st inversion)"
+  },
+  'Gm/Bb': { 
+    frets: [3, 1, 1, 1], 
+    fingers: [4, 1, 2, 3],
+    description: "G minor with Bb in bass (1st inversion)"
+  },
+
+  // Non-chord tone bass notes (common slash chords)
+  'C/D': { 
+    frets: [2, 2, 2, 3], 
+    fingers: [1, 2, 3, 4],
+    description: "C major with D in bass"
+  },
+  'C/F': { 
+    frets: [0, 0, 1, 3], 
+    fingers: [0, 0, 1, 3],
+    description: "C major with F in bass"
+  },
+  'D/C': { 
+    frets: [0, 2, 3, 2], 
+    fingers: [0, 1, 4, 2],
+    description: "D major with C in bass"
+  },
+  'F/G': { 
+    frets: [0, 2, 1, 3], 
+    fingers: [0, 2, 1, 4],
+    description: "F major with G in bass"
+  },
+  'G/A': { 
+    frets: [2, 2, 3, 2], 
+    fingers: [1, 2, 4, 3],
+    description: "G major with A in bass"
+  },
+  'G/F': { 
+    frets: [1, 0, 1, 3], 
+    fingers: [1, 0, 2, 4],
+    description: "G major with F in bass"
+  },
+  'Am/F': { 
+    frets: [1, 0, 0, 3], 
+    fingers: [1, 0, 0, 3],
+    description: "A minor with F in bass"
+  },
+  'Em/C': { 
+    frets: [0, 4, 0, 2], 
+    fingers: [0, 4, 0, 1],
+    description: "E minor with C in bass"
+  },
+  'Em/D': { 
+    frets: [2, 0, 2, 2], 
+    fingers: [1, 0, 2, 3],
+    description: "E minor with D in bass"
+  },
+
+  // 7th chord inversions
+  'C7/E': { 
+    frets: [1, 0, 0, 1], 
+    fingers: [1, 0, 0, 2],
+    description: "C7 with E in bass (1st inversion)"
+  },
+  'G7/B': { 
+    frets: [0, 2, 1, 2], 
+    fingers: [0, 2, 1, 3],
+    description: "G7 with B in bass (1st inversion)"
+  },
+  'G7/D': { 
+    frets: [2, 2, 2, 3], 
+    fingers: [1, 2, 3, 4],
+    description: "G7 with D in bass (2nd inversion)"
+  },
+  'G7/F': { 
+    frets: [1, 2, 1, 2], 
+    fingers: [1, 3, 2, 4],
+    description: "G7 with F in bass (3rd inversion)"
+  },
+  'D7/F#': { 
+    frets: [2, 4, 2, 3], 
+    fingers: [1, 4, 2, 3],
+    description: "D7 with F# in bass (1st inversion)"
+  },
+  'D7/A': { 
+    frets: [2, 2, 2, 3], 
+    fingers: [1, 2, 3, 4],
+    description: "D7 with A in bass (2nd inversion)"
+  },
+  'D7/C': { 
+    frets: [0, 2, 1, 2], 
+    fingers: [0, 3, 1, 4],
+    description: "D7 with C in bass (3rd inversion)"
+  },
+  'F7/A': { 
+    frets: [2, 3, 1, 3], 
+    fingers: [2, 4, 1, 3],
+    description: "F7 with A in bass (1st inversion)"
+  },
+  'F7/C': { 
+    frets: [0, 3, 1, 3], 
+    fingers: [0, 3, 1, 4],
+    description: "F7 with C in bass (2nd inversion)"
+  }
 };

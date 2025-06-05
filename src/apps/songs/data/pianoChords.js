@@ -323,6 +323,25 @@ export const pianoChords = {
   'Bbmaj9': ['A#', 'D', 'F', 'A', 'C'],
   'Bmaj9': ['B', 'D#', 'F#', 'A#', 'C#'],
 
+  // Minor 9th chords (m9) - minor 7th chord plus 9th interval
+  'Cm9': ['C', 'D#', 'G', 'A#', 'D'],
+  'C#m9': ['C#', 'E', 'G#', 'B', 'D#'],
+  'Dbm9': ['C#', 'E', 'G#', 'B', 'D#'],
+  'Dm9': ['D', 'F', 'A', 'C', 'E'],
+  'D#m9': ['D#', 'F#', 'A#', 'C#', 'F'],
+  'Ebm9': ['D#', 'F#', 'A#', 'C#', 'F'],
+  'Em9': ['E', 'G', 'B', 'D', 'F#'],
+  'Fm9': ['F', 'G#', 'C', 'D#', 'G'],
+  'F#m9': ['F#', 'A', 'C#', 'E', 'G#'],
+  'Gbm9': ['F#', 'A', 'C#', 'E', 'G#'],
+  'Gm9': ['G', 'A#', 'D', 'F', 'A'],
+  'G#m9': ['G#', 'B', 'D#', 'F#', 'A#'],
+  'Abm9': ['G#', 'B', 'D#', 'F#', 'A#'],
+  'Am9': ['A', 'C', 'E', 'G', 'B'],
+  'A#m9': ['A#', 'C#', 'F', 'G#', 'C'],
+  'Bbm9': ['A#', 'C#', 'F', 'G#', 'C'],
+  'Bm9': ['B', 'D', 'F#', 'A', 'C#'],
+
   // Altered dominant 7th chords with flattened 5th (7b5)
   'C7b5': ['C', 'E', 'F#', 'A#'],
   'C#7b5': ['C#', 'F', 'G', 'B'],
@@ -359,5 +378,88 @@ export const pianoChords = {
   'A7#5': ['A', 'C#', 'F', 'G'],
   'A#7#5': ['A#', 'D', 'F#', 'G#'],
   'Bb7#5': ['A#', 'D', 'F#', 'G#'],
-  'B7#5': ['B', 'D#', 'G', 'A']
+  'B7#5': ['B', 'D#', 'G', 'A'],
+
+  // Slashed chords (slash chords) - chord with specific bass note
+  // Major chords with bass notes
+  'C/E': ['E', 'C', 'E', 'G'], // C major with E in bass (1st inversion)
+  'C/G': ['G', 'C', 'E', 'G'], // C major with G in bass (2nd inversion)
+  'D/F#': ['F#', 'D', 'F#', 'A'], // D major with F# in bass (1st inversion)
+  'D/A': ['A', 'D', 'F#', 'A'], // D major with A in bass (2nd inversion)
+  'E/G#': ['G#', 'E', 'G#', 'B'], // E major with G# in bass (1st inversion)
+  'E/B': ['B', 'E', 'G#', 'B'], // E major with B in bass (2nd inversion)
+  'F/A': ['A', 'F', 'A', 'C'], // F major with A in bass (1st inversion)
+  'F/C': ['C', 'F', 'A', 'C'], // F major with C in bass (2nd inversion)
+  'G/B': ['B', 'G', 'B', 'D'], // G major with B in bass (1st inversion)
+  'G/D': ['D', 'G', 'B', 'D'], // G major with D in bass (2nd inversion)
+  'A/C#': ['C#', 'A', 'C#', 'E'], // A major with C# in bass (1st inversion)
+  'A/E': ['E', 'A', 'C#', 'E'], // A major with E in bass (2nd inversion)
+  'B/D#': ['D#', 'B', 'D#', 'F#'], // B major with D# in bass (1st inversion)
+  'B/F#': ['F#', 'B', 'D#', 'F#'], // B major with F# in bass (2nd inversion)
+
+  // Minor chords with bass notes
+  'Am/C': ['C', 'A', 'C', 'E'], // A minor with C in bass (1st inversion)
+  'Am/E': ['E', 'A', 'C', 'E'], // A minor with E in bass (2nd inversion)
+  'Dm/F': ['F', 'D', 'F', 'A'], // D minor with F in bass (1st inversion)
+  'Dm/A': ['A', 'D', 'F', 'A'], // D minor with A in bass (2nd inversion)
+  'Em/G': ['G', 'E', 'G', 'B'], // E minor with G in bass (1st inversion)
+  'Em/B': ['B', 'E', 'G', 'B'], // E minor with B in bass (2nd inversion)
+  'Fm/G#': ['G#', 'F', 'G#', 'C'], // F minor with Ab in bass (1st inversion)
+  'Fm/Ab': ['G#', 'F', 'G#', 'C'], // F minor with Ab in bass (1st inversion)
+  'Fm/C': ['C', 'F', 'G#', 'C'], // F minor with C in bass (2nd inversion)
+  'Gm/A#': ['A#', 'G', 'A#', 'D'], // G minor with Bb in bass (1st inversion)
+  'Gm/Bb': ['A#', 'G', 'A#', 'D'], // G minor with Bb in bass (1st inversion)
+  'Gm/D': ['D', 'G', 'A#', 'D'], // G minor with D in bass (2nd inversion)
+  'Bm/D': ['D', 'B', 'D', 'F#'], // B minor with D in bass (1st inversion)
+  'Bm/F#': ['F#', 'B', 'D', 'F#'], // B minor with F# in bass (2nd inversion)
+  'Cm/D#': ['D#', 'C', 'D#', 'G'], // C minor with Eb in bass (1st inversion)
+  'Cm/Eb': ['D#', 'C', 'D#', 'G'], // C minor with Eb in bass (1st inversion)
+  'Cm/G': ['G', 'C', 'D#', 'G'], // C minor with G in bass (2nd inversion)
+
+  // Popular bass note variations (non-chord tones)
+  'C/D': ['D', 'C', 'E', 'G'], // C major with D in bass
+  'C/F': ['F', 'C', 'E', 'G'], // C major with F in bass
+  'F/G': ['G', 'F', 'A', 'C'], // F major with G in bass
+  'G/A': ['A', 'G', 'B', 'D'], // G major with A in bass
+  'G/F': ['F', 'G', 'B', 'D'], // G major with F in bass
+  'Am/F': ['F', 'A', 'C', 'E'], // A minor with F in bass
+  'Am/G': ['G', 'A', 'C', 'E'], // A minor with G in bass
+  'Dm/G': ['G', 'D', 'F', 'A'], // D minor with G in bass
+  'Em/C': ['C', 'E', 'G', 'B'], // E minor with C in bass
+  'Em/D': ['D', 'E', 'G', 'B'], // E minor with D in bass
+
+  // 7th chords with bass notes
+  'C7/E': ['E', 'C', 'E', 'G', 'A#'], // C7 with E in bass
+  'C7/G': ['G', 'C', 'E', 'G', 'A#'], // C7 with G in bass
+  'C7/A#': ['A#', 'C', 'E', 'G', 'A#'], // C7 with Bb in bass
+  'C7/Bb': ['A#', 'C', 'E', 'G', 'A#'], // C7 with Bb in bass
+  'G7/B': ['B', 'G', 'B', 'D', 'F'], // G7 with B in bass
+  'G7/D': ['D', 'G', 'B', 'D', 'F'], // G7 with D in bass
+  'G7/F': ['F', 'G', 'B', 'D', 'F'], // G7 with F in bass
+  'F7/A': ['A', 'F', 'A', 'C', 'D#'], // F7 with A in bass
+  'F7/C': ['C', 'F', 'A', 'C', 'D#'], // F7 with C in bass
+  'F7/D#': ['D#', 'F', 'A', 'C', 'D#'], // F7 with Eb in bass
+  'F7/Eb': ['D#', 'F', 'A', 'C', 'D#'], // F7 with Eb in bass
+
+  // Major 7th chords with bass notes
+  'Cmaj7/E': ['E', 'C', 'E', 'G', 'B'], // Cmaj7 with E in bass
+  'Cmaj7/G': ['G', 'C', 'E', 'G', 'B'], // Cmaj7 with G in bass
+  'Cmaj7/B': ['B', 'C', 'E', 'G', 'B'], // Cmaj7 with B in bass
+  'Fmaj7/A': ['A', 'F', 'A', 'C', 'E'], // Fmaj7 with A in bass
+  'Fmaj7/C': ['C', 'F', 'A', 'C', 'E'], // Fmaj7 with C in bass
+  'Fmaj7/E': ['E', 'F', 'A', 'C', 'E'], // Fmaj7 with E in bass
+  'Gmaj7/B': ['B', 'G', 'B', 'D', 'F#'], // Gmaj7 with B in bass
+  'Gmaj7/D': ['D', 'G', 'B', 'D', 'F#'], // Gmaj7 with D in bass
+  'Gmaj7/F#': ['F#', 'G', 'B', 'D', 'F#'], // Gmaj7 with F# in bass
+
+  // Minor 7th chords with bass notes
+  'Am7/C': ['C', 'A', 'C', 'E', 'G'], // Am7 with C in bass
+  'Am7/E': ['E', 'A', 'C', 'E', 'G'], // Am7 with E in bass
+  'Am7/G': ['G', 'A', 'C', 'E', 'G'], // Am7 with G in bass
+  'Dm7/F': ['F', 'D', 'F', 'A', 'C'], // Dm7 with F in bass
+  'Dm7/A': ['A', 'D', 'F', 'A', 'C'], // Dm7 with A in bass
+  'Dm7/C': ['C', 'D', 'F', 'A', 'C'], // Dm7 with C in bass
+  'Em7/G': ['G', 'E', 'G', 'B', 'D'], // Em7 with G in bass
+  'Em7/B': ['B', 'E', 'G', 'B', 'D'], // Em7 with B in bass
+  'Em7/D': ['D', 'E', 'G', 'B', 'D'] // Em7 with D in bass
 };

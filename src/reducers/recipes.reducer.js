@@ -6,7 +6,6 @@ const initialState = {
 };
 
 const recipesSlice = createSlice({
-  name: 'recipes',
   initialState,
   reducers: {
     setIsPrintMode: (state, action) => {
