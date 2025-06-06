@@ -47,7 +47,15 @@ const KnittingDesignApp = ({ view = 'designer' }) => {
     // Generate new session ID
     const newSessionId = `knitting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     dispatch(updatePatternData({ section: null, data: { sessionId: newSessionId } }));
-    dispatch(updatePatternData({ section: null, data: { sessionId: newSessionId } }));
+    
+    // Set custom pattern as default
+    const customPattern = { 
+      id: 'custom', 
+      name: 'Create Custom Pattern', 
+      description: 'Design your own pattern from scratch',
+      shapes: null
+    };
+    dispatch(updatePatternData({ section: null, data: { basePattern: customPattern } }));
   }, [dispatch]);
 
   // Simplified handlers for debugging
@@ -138,6 +146,7 @@ const KnittingDesignApp = ({ view = 'designer' }) => {
       return (
         <SizingStep
           data={sizingData}
+          patternData={patternData}
           onChange={(data) => {
             // Transform back to Redux state format
             const reduxData = {

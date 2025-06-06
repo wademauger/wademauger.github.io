@@ -240,7 +240,7 @@ const PreviewStep = ({ data, onUpdate, onNext, onPrev }) => {
                         <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', fontSize: '12px', color: '#666' }}>
                           {data.sizing?.method === 'percentage' ? `${40 * (data.sizing.scale / 100)}"` : `${data.sizing?.customDimensions?.chest}"`}
                         </div>
-                        <div style={{ position: 'absolute', left: '-30px', top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontSize: '12px', color: '#666' }}>
+                        <div style={{ position: 'absolute', left: '-30px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#666' }}>
                           {data.sizing?.method === 'percentage' ? `${24 * (data.sizing.scale / 100)}"` : `${data.sizing?.customDimensions?.length}"`}
                         </div>
                       </>
@@ -291,20 +291,13 @@ const PreviewStep = ({ data, onUpdate, onNext, onPrev }) => {
                   }}>
                     {/* Technical schematic with measurements */}
                     <svg width="100%" height="100%" viewBox="0 0 350 280">
-                      <rect x="50" y="40" width="200" height="160" fill="none" stroke="#000" strokeWidth="2" />
-                      <rect x="50" y="40" width="60" height="40" fill="none" stroke="#000" strokeWidth="1" strokeDasharray="5,5" />
-                      <rect x="190" y="40" width="60" height="40" fill="none" stroke="#000" strokeWidth="1" strokeDasharray="5,5" />
-                      
-                      <text x="150" y="30" textAnchor="middle" fontSize="12">Front</text>
-                      <text x="25" y="125" textAnchor="middle" fontSize="10" transform="rotate(-90, 25, 125)">Length</text>
-                      <text x="150" y="220" textAnchor="middle" fontSize="10">Chest</text>
-                      
+
                       {previewSettings.showMeasurements && (
                         <>
                           <text x="150" y="250" textAnchor="middle" fontSize="12" fill="#1890ff">
                             {data.sizing?.method === 'percentage' ? `${40 * (data.sizing.scale / 100)}"` : `${data.sizing?.customDimensions?.chest}"`}
                           </text>
-                          <text x="10" y="125" textAnchor="middle" fontSize="12" fill="#1890ff" transform="rotate(-90, 10, 125)">
+                          <text x="10" y="125" textAnchor="middle" fontSize="12" fill="#1890ff" transform="rotate(125, 10)">
                             {data.sizing?.method === 'percentage' ? `${24 * (data.sizing.scale / 100)}"` : `${data.sizing?.customDimensions?.length}"`}
                           </text>
                         </>

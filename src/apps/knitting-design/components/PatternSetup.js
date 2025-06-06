@@ -1,16 +1,11 @@
-import React, { useState } from 'react';
-import { Card, Form, Input, Select, Radio, Button, Row, Col, Typography, Space } from 'antd';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Card, Radio, Button, Row, Col, Typography, Space } from 'antd';
 import { garments } from '../../../data/garments';
 import { PanelDiagram } from '../../../components/PanelDiagram';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 const PatternSetup = ({ data, onChange, onNext }) => {
-  const [form] = Form.useForm();
-  const [customPattern, setCustomPattern] = useState(null);
-
   // Get garments from data and add custom option
   const availableGarments = garments.map(garment => ({
     id: garment.permalink,
@@ -21,35 +16,32 @@ const PatternSetup = ({ data, onChange, onNext }) => {
     finishingSteps: garment.finishingSteps
   }));
 
-  // Add custom option
+  // Add custom option as first item
   const basePatterns = [
-    ...availableGarments,
     { 
       id: 'custom', 
       name: 'Create Custom Pattern', 
       description: 'Design your own pattern from scratch',
       shapes: null
-    }
+    },
+    ...availableGarments
   ];
 
-  const handleFormChange = (changedFields, allFields) => {
-    const formData = {};
-    allFields.forEach(field => {
-      formData[field.name[0]] = field.value;
-    });
-    onChange(formData);
-  };
+  // Auto-select custom pattern if none is selected
+  useEffect(() => {
+    if (!data.basePattern) {
+      const customPattern = basePatterns.find(p => p.id === 'custom');
+      onChange({ basePattern: customPattern });
+    }
+  }, [data.basePattern, onChange, basePatterns]);
 
   const handlePatternSelect = (patternId) => {
     const pattern = basePatterns.find(p => p.id === patternId);
     onChange({ basePattern: pattern });
-    form.setFieldsValue({ basePattern: patternId });
   };
 
   const handleNext = () => {
-    form.validateFields().then(() => {
-      onNext();
-    });
+    onNext();
   };
 
   return (
@@ -57,68 +49,18 @@ const PatternSetup = ({ data, onChange, onNext }) => {
       <Row gutter={[24, 24]}>
         <Col span={24}>
           <Card>
-            <Title level={2}>Pattern Setup</Title>
+            <Title level={2}>Choose a Pattern</Title>
             <Text type="secondary">
-              Start by giving your pattern a name and selecting a base pattern to modify, 
-              or create a custom pattern from scratch.
+              Select a base pattern to modify, or create a custom pattern from scratch.
             </Text>
           </Card>
         </Col>
 
-        <Col lg={12} md={24}>
-          <Card title="Pattern Information">
-            <Form
-              form={form}
-              layout="vertical"
-              onFieldsChange={handleFormChange}
-              initialValues={{
-                name: data.name || '',
-                description: data.description || '',
-                type: data.type || 'sweater'
-              }}
-            >
-              <Form.Item
-                name="name"
-                label="Pattern Name (Optional)"
-                extra="Leave blank to auto-generate from garment name and gauge"
-              >
-                <Input placeholder="Auto-generated based on selection" />
-              </Form.Item>
-
-              <Form.Item
-                name="description"
-                label="Description"
-              >
-                <Input.TextArea 
-                  placeholder="Describe your pattern design..."
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="type"
-                label="Pattern Type"
-              >
-                <Select>
-                  <Option value="sweater">Sweater/Pullover</Option>
-                  <Option value="cardigan">Cardigan</Option>
-                  <Option value="vest">Vest</Option>
-                  <Option value="hat">Hat</Option>
-                  <Option value="scarf">Scarf</Option>
-                  <Option value="accessory">Accessory</Option>
-                </Select>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
-
-        <Col lg={12} md={24}>
-          <Card title="Base Pattern Selection">
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <Text>Choose a starting point for your pattern:</Text>
-              
+        <Col span={24}>
+          <Card title="Available Patterns">
+            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
               <Radio.Group 
-                value={data.basePattern?.id} 
+                value={data.basePattern?.id || 'custom'} 
                 onChange={(e) => handlePatternSelect(e.target.value)}
                 style={{ width: '100%' }}
               >
@@ -130,27 +72,28 @@ const PatternSetup = ({ data, onChange, onNext }) => {
                       style={{ 
                         display: 'flex',
                         alignItems: 'flex-start',
-                        padding: '12px',
+                        padding: '16px',
                         border: '1px solid #f0f0f0',
-                        borderRadius: '6px',
-                        marginBottom: '8px',
-                        width: '100%'
+                        borderRadius: '8px',
+                        marginBottom: '12px',
+                        width: '100%',
+                        backgroundColor: data.basePattern?.id === pattern.id ? '#f6ffed' : '#fff'
                       }}
                     >
                       <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
                         {/* Pattern diagram on the left */}
                         {pattern.shapes && (
-                          <div style={{ marginRight: '16px', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ marginRight: '20px', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', gap: '10px' }}>
                               {Object.entries(pattern.shapes).slice(0, 3).map(([shapeName, shape]) => (
                                 <div key={shapeName} style={{ textAlign: 'center' }}>
                                   <PanelDiagram 
                                     shape={shape} 
                                     label=""
-                                    size={60}
-                                    padding={5}
+                                    size={80}
+                                    padding={8}
                                   />
-                                  <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                                  <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
                                     {shapeName}
                                   </div>
                                 </div>
@@ -161,10 +104,10 @@ const PatternSetup = ({ data, onChange, onNext }) => {
                         
                         {/* Pattern info on the right */}
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '16px' }}>
                             {pattern.name}
                           </div>
-                          <div style={{ color: '#666', fontSize: '14px', marginBottom: '8px' }}>
+                          <div style={{ color: '#666', fontSize: '14px', marginBottom: '10px' }}>
                             {pattern.description}
                           </div>
                           {pattern.sizes && (
@@ -173,7 +116,7 @@ const PatternSetup = ({ data, onChange, onNext }) => {
                             </div>
                           )}
                           {pattern.id === 'custom' && (
-                            <div style={{ color: '#1890ff', fontSize: '12px', fontStyle: 'italic' }}>
+                            <div style={{ color: '#1890ff', fontSize: '13px', fontStyle: 'italic', fontWeight: 'bold' }}>
                               Design your own shapes and construction
                             </div>
                           )}
@@ -183,21 +126,7 @@ const PatternSetup = ({ data, onChange, onNext }) => {
                   ))}
                 </Space>
               </Radio.Group>
-
-              {data.basePattern?.id === 'custom' && (
-                <Card size="small" style={{ backgroundColor: '#fafafa' }}>
-                  <Space direction="vertical">
-                    <Text strong>Custom Pattern Options:</Text>
-                    <Button icon={<PlusOutlined />} type="dashed" block>
-                      Create New Shape
-                    </Button>
-                    <Button icon={<EditOutlined />} type="dashed" block>
-                      Import Existing Pattern
-                    </Button>
-                  </Space>
-                </Card>
-              )}
-            </Space>
+            </div>
           </Card>
         </Col>
 
@@ -209,7 +138,7 @@ const PatternSetup = ({ data, onChange, onNext }) => {
               onClick={handleNext}
               disabled={!data.basePattern}
             >
-              Next: Sizing
+              {data.basePattern?.id === 'custom' ? 'Next: Custom Design' : 'Next: Sizing'}
             </Button>
           </div>
         </Col>

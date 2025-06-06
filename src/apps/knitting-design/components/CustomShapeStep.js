@@ -14,7 +14,7 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
   const [editingShape, setEditingShape] = useState(null);
   const [previewShape, setPreviewShape] = useState(null);
 
-  // Initialize with a basic shape template
+  // Initialize with a basic panel template
   const createNewShape = () => {
     return {
       height: 10,
@@ -27,7 +27,7 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
   };
 
   const handleAddShape = () => {
-    const shapeName = `Shape ${Object.keys(shapes).length + 1}`;
+    const shapeName = `Panel ${Object.keys(shapes).length + 1}`;
     setEditingShape({ name: shapeName, shape: createNewShape() });
   };
 
@@ -59,8 +59,12 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
   };
 
   const handleNext = () => {
+    if (!data.name || data.name.trim() === '') {
+      message.warning('Please enter a pattern name');
+      return;
+    }
     if (Object.keys(shapes).length === 0) {
-      message.warning('Please create at least one shape to continue');
+      message.warning('Please create at least one panel to continue');
       return;
     }
     onNext();
@@ -73,32 +77,63 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
           <Card>
             <Title level={2}>Custom Pattern Design</Title>
             <Text type="secondary">
-              Create custom shapes for your pattern. Each shape represents a knitted piece like front, back, or sleeves.
+              Give your pattern a name and description, then create custom panels for your pattern. Each panel represents a knitted piece like front, back, or sleeves.
             </Text>
           </Card>
         </Col>
 
-        <Col lg={16} md={24}>
+        <Col span={24}>
+          <Card title="Pattern Information" style={{ marginBottom: '16px' }}>
+            <Row gutter={[24, 16]}>
+              <Col lg={12} md={24}>
+                <Form layout="vertical">
+                  <Form.Item label="Pattern Name" required>
+                    <Input 
+                      value={data.name || ''} 
+                      onChange={(e) => onChange({ ...data, name: e.target.value })}
+                      placeholder="Enter your pattern name (e.g., My First Sweater)"
+                      size="large"
+                    />
+                  </Form.Item>
+                </Form>
+              </Col>
+              <Col lg={12} md={24}>
+                <Form layout="vertical">
+                  <Form.Item label="Description">
+                    <TextArea 
+                      value={data.description || ''} 
+                      onChange={(e) => onChange({ ...data, description: e.target.value })}
+                      placeholder="Describe your custom pattern..."
+                      rows={4}
+                    />
+                  </Form.Item>
+                </Form>
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+
+        <Col span={24}>
           <Card 
-            title="Pattern Shapes" 
+            title="Pattern Panels" 
             extra={
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />} 
                 onClick={handleAddShape}
               >
-                Add Shape
+                New Panel
               </Button>
             }
           >
             {Object.keys(shapes).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                <Text>No shapes created yet. Click "Add Shape" to start designing your pattern.</Text>
+                <Text>No panels created yet. Click "New Panel" to start designing your pattern.</Text>
               </div>
             ) : (
               <Row gutter={[16, 16]}>
                 {Object.entries(shapes).map(([shapeName, shape]) => (
-                  <Col lg={8} md={12} sm={24} key={shapeName}>
+                  <Col lg={6} md={8} sm={12} xs={24} key={shapeName}>
                     <Card 
                       size="small"
                       title={shapeName}
@@ -142,39 +177,6 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
           </Card>
         </Col>
 
-        <Col lg={8} md={24}>
-          <Card title="Pattern Information">
-            <Form layout="vertical">
-              <Form.Item label="Pattern Name">
-                <Input 
-                  value={data.name || 'Custom Pattern'} 
-                  onChange={(e) => onChange({ ...data, name: e.target.value })}
-                  placeholder="Enter pattern name"
-                />
-              </Form.Item>
-              
-              <Form.Item label="Description">
-                <TextArea 
-                  value={data.description || ''} 
-                  onChange={(e) => onChange({ ...data, description: e.target.value })}
-                  placeholder="Describe your custom pattern..."
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Divider />
-
-              <Text strong>Design Tips:</Text>
-              <ul style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                <li>Start with basic shapes (front, back, sleeves)</li>
-                <li>Use successors to create complex constructions</li>
-                <li>Height and width are in arbitrary units</li>
-                <li>baseA is bottom width, baseB is top width</li>
-              </ul>
-            </Form>
-          </Card>
-        </Col>
-
         <Col span={24}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
             <Button size="large" onClick={onBack}>
@@ -196,6 +198,7 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
       <ShapeEditorModal
         visible={!!editingShape}
         shapeData={editingShape}
+        existingShapes={shapes}
         onSave={handleSaveShape}
         onCancel={() => setEditingShape(null)}
       />
@@ -224,13 +227,15 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
 };
 
 // Shape Editor Modal Component
-const ShapeEditorModal = ({ visible, shapeData, onSave, onCancel }) => {
+const ShapeEditorModal = ({ visible, shapeData, onSave, onCancel, existingShapes = {} }) => {
   const [form] = Form.useForm();
   const [shape, setShape] = useState(null);
+  const [successors, setSuccessors] = useState([]);
 
   React.useEffect(() => {
     if (visible && shapeData) {
       setShape({ ...shapeData.shape });
+      setSuccessors(shapeData.shape.successors || []);
       form.setFieldsValue({
         name: shapeData.name,
         height: shapeData.shape.height,
@@ -248,7 +253,9 @@ const ShapeEditorModal = ({ visible, shapeData, onSave, onCancel }) => {
         height: values.height,
         baseA: values.baseA,
         baseB: values.baseB,
-        baseBHorizontalOffset: values.baseBHorizontalOffset
+        baseBHorizontalOffset: values.baseBHorizontalOffset,
+        successors: successors,
+        finishingSteps: shape.finishingSteps || []
       };
       onSave({ name: values.name, shape: updatedShape });
     });
@@ -259,23 +266,228 @@ const ShapeEditorModal = ({ visible, shapeData, onSave, onCancel }) => {
     setShape(updatedShape);
   };
 
+  const handleAddSuccessor = (parentPath = []) => {
+    let newSuccessor;
+    
+    if (parentPath.length === 0) {
+      // Adding to root level - use base shape dimensions as parent
+      const parentHeight = shape.height || 10;
+      const parentBaseA = shape.baseA || 10;
+      const parentBaseB = shape.baseB || 10;
+      
+      newSuccessor = {
+        height: Math.max(1, Math.round(parentHeight / 2)),
+        baseA: Math.max(1, Math.round(parentBaseA / 2)),
+        baseB: Math.max(1, Math.round(parentBaseB / 2)),
+        baseBHorizontalOffset: 0,
+        successors: [],
+        finishingSteps: []
+      };
+      
+      setSuccessors([...successors, newSuccessor]);
+    } else {
+      // Adding to nested successor - need to deep clone the structure
+      const newSuccessors = JSON.parse(JSON.stringify(successors));
+      let current = newSuccessors;
+      
+      // Navigate to the parent, ensuring arrays are properly cloned
+      for (let i = 0; i < parentPath.length - 1; i++) {
+        const index = parentPath[i];
+        if (!current[index]) return; // Safety check
+        current = current[index].successors;
+      }
+      
+      // Get parent dimensions
+      const parentIndex = parentPath[parentPath.length - 1];
+      if (!current[parentIndex]) return; // Safety check
+      const parent = current[parentIndex];
+      
+      newSuccessor = {
+        height: Math.max(1, Math.round(parent.height / 2)),
+        baseA: Math.max(1, Math.round(parent.baseA / 2)),
+        baseB: Math.max(1, Math.round(parent.baseB / 2)),
+        baseBHorizontalOffset: 0,
+        successors: [],
+        finishingSteps: []
+      };
+      
+      // Add to the parent's successors
+      if (!current[parentIndex].successors) {
+        current[parentIndex].successors = [];
+      }
+      current[parentIndex].successors.push(newSuccessor);
+      
+      setSuccessors(newSuccessors);
+    }
+  };
+
+  const handleRemoveSuccessor = (path) => {
+    if (path.length === 1) {
+      // Removing from root level
+      const newSuccessors = successors.filter((_, i) => i !== path[0]);
+      setSuccessors(newSuccessors);
+    } else {
+      // Removing from nested level - deep clone the structure
+      const newSuccessors = JSON.parse(JSON.stringify(successors));
+      let current = newSuccessors;
+      
+      // Navigate to the parent
+      for (let i = 0; i < path.length - 1; i++) {
+        const index = path[i];
+        if (!current[index]) return; // Safety check
+        current = current[index].successors;
+      }
+      
+      // Remove from parent's successors
+      const indexToRemove = path[path.length - 1];
+      if (current && Array.isArray(current)) {
+        current.splice(indexToRemove, 1);
+        setSuccessors(newSuccessors);
+      }
+    }
+  };
+
+  const handleSuccessorChange = (path, field, value) => {
+    // Deep clone the structure
+    const newSuccessors = JSON.parse(JSON.stringify(successors));
+    let current = newSuccessors;
+    
+    // Navigate to the target successor
+    for (let i = 0; i < path.length - 1; i++) {
+      const index = path[i];
+      if (!current[index]) return; // Safety check
+      current = current[index].successors;
+    }
+    
+    // Update the field
+    const targetIndex = path[path.length - 1];
+    if (current && current[targetIndex]) {
+      current[targetIndex] = { ...current[targetIndex], [field]: value };
+      setSuccessors(newSuccessors);
+    }
+  };
+
+  // Recursive component to render successor hierarchy
+  const SuccessorItem = ({ successor, path, level = 0 }) => {
+    const pathString = path.join('-');
+    const indent = level * 20;
+    
+    return (
+      <div style={{ marginLeft: `${indent}px` }}>
+        <Card key={pathString} size="small" style={{ backgroundColor: level === 0 ? '#f9f9f9' : '#f0f0f0', marginBottom: '8px' }}>
+          <Row gutter={[12, 12]} align="middle">
+            <Col span={3}>
+              <Text strong style={{ fontSize: '12px' }}>
+                {level === 0 ? `Level ${path[0] + 1}` : `Child ${path[path.length - 1] + 1}`}
+              </Text>
+            </Col>
+            <Col span={4}>
+              <div>
+                <Text style={{ fontSize: '11px' }}>Height</Text>
+                <InputNumber
+                  size="small"
+                  min={1}
+                  value={successor.height}
+                  onChange={(value) => handleSuccessorChange(path, 'height', value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+            <Col span={4}>
+              <div>
+                <Text style={{ fontSize: '11px' }}>Bottom W</Text>
+                <InputNumber
+                  size="small"
+                  min={0}
+                  value={successor.baseA}
+                  onChange={(value) => handleSuccessorChange(path, 'baseA', value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+            <Col span={4}>
+              <div>
+                <Text style={{ fontSize: '11px' }}>Top W</Text>
+                <InputNumber
+                  size="small"
+                  min={0}
+                  value={successor.baseB}
+                  onChange={(value) => handleSuccessorChange(path, 'baseB', value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+            <Col span={4}>
+              <div>
+                <Text style={{ fontSize: '11px' }}>Offset</Text>
+                <InputNumber
+                  size="small"
+                  value={successor.baseBHorizontalOffset || 0}
+                  onChange={(value) => handleSuccessorChange(path, 'baseBHorizontalOffset', value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+            <Col span={5}>
+              <Space size="small">
+                <Button
+                  type="dashed"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={() => handleAddSuccessor(path)}
+                  title="Add child successor"
+                  style={{ fontSize: '10px' }}
+                >
+                  Child
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleRemoveSuccessor(path)}
+                  title="Remove this successor"
+                  style={{ fontSize: '10px' }}
+                />
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+        
+        {/* Render child successors recursively */}
+        {successor.successors && successor.successors.length > 0 && (
+          <div style={{ marginTop: '4px' }}>
+            {successor.successors.map((childSuccessor, childIndex) => (
+              <SuccessorItem
+                key={`${pathString}-${childIndex}`}
+                successor={childSuccessor}
+                path={[...path, childIndex]}
+                level={level + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (!shape) return null;
 
   return (
     <Modal
-      title="Edit Shape"
+      title="Edit Panel"
       open={visible}
       onOk={handleSave}
       onCancel={onCancel}
-      width={800}
+      width={1000}
+      style={{ top: 20 }}
     >
       <Row gutter={24}>
         <Col span={12}>
           <Form form={form} layout="vertical">
             <Form.Item
               name="name"
-              label="Shape Name"
-              rules={[{ required: true, message: 'Please enter a shape name' }]}
+              label="Panel Name"
+              rules={[{ required: true, message: 'Please enter a panel name' }]}
             >
               <Input placeholder="Front, Back, Sleeve, etc." />
             </Form.Item>
@@ -332,17 +544,58 @@ const ShapeEditorModal = ({ visible, shapeData, onSave, onCancel }) => {
             </Form.Item>
           </Form>
         </Col>
+        
         <Col span={12}>
           <div style={{ textAlign: 'center' }}>
             <Text strong>Preview</Text>
             <div style={{ marginTop: '16px' }}>
               <PanelDiagram 
-                shape={shape} 
+                shape={{ ...shape, successors }} 
                 label=""
-                size={200}
+                size={180}
                 padding={20}
               />
             </div>
+          </div>
+        </Col>
+
+        <Col span={24}>
+          <Divider />
+          
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <Text strong>Successor Shapes</Text>
+              <Button 
+                type="dashed" 
+                icon={<PlusOutlined />} 
+                onClick={() => handleAddSuccessor()}
+              >
+                Add Successor
+              </Button>
+            </div>
+            
+            <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
+              Successors are panels that continue from the top of this panel. Use "Child" buttons to create nested hierarchies.
+            </Text>
+
+            {successors.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+                <Text type="secondary">No successor panels. Click "Add Successor" to create connected panels.</Text>
+              </div>
+            ) : (
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <Space direction="vertical" style={{ width: '100%' }} size="small">
+                  {successors.map((successor, index) => (
+                    <SuccessorItem
+                      key={index}
+                      successor={successor}
+                      path={[index]}
+                      level={0}
+                    />
+                  ))}
+                </Space>
+              </div>
+            )}
           </div>
         </Col>
       </Row>

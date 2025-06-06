@@ -12,11 +12,14 @@ const initialState = {
     customShapes: {},
     sizing: {
       method: 'percentage',
-      percentage: 100,
-      width: 40,
-      height: 60,
-      standardSize: 'medium',
-      previewDimensions: { width: 40, height: 60 }
+      scale: 100,
+      gender: 'womens',
+      customDimensions: {
+        chest: 40,
+        length: 26,
+        armLength: 25
+      },
+      standardSize: 'M'
     },
     gauge: {
       stitchesPerInch: 4,

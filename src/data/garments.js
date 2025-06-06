@@ -1,15 +1,40 @@
 import VisualMotif from '../models/VisualMotif';
 
+// Helper function to generate systematic garment sizes
+// Based on 10% scaling per size, with Men's Medium = Women's Large as base (1.0)
+const generateGarmentSizes = () => {
+  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const getSizeIndex = (size) => sizeOrder.indexOf(size) - 3; // M = index 0
+  const calculateSizeMultiplier = (sizeIndex) => Math.pow(1.1, sizeIndex);
+
+  const sizes = {};
+  
+  // Generate all combinations based on Men's M = Women's L equivalency
+  sizeOrder.forEach(mensSize => {
+    sizeOrder.forEach(womensSize => {
+      const mensSizeIndex = getSizeIndex(mensSize);
+      const womensSizeIndex = getSizeIndex(womensSize) - 1; // Offset by 1 for equivalency
+      
+      // Only include sizes where the calculations match
+      if (mensSizeIndex === womensSizeIndex) {
+        const multiplier = calculateSizeMultiplier(mensSizeIndex);
+        const sizeName = `men's ${mensSize.toLowerCase()} / women's ${womensSize.toLowerCase()}`;
+        sizes[sizeName] = Math.round(multiplier * 1000) / 1000; // Round to 3 decimal places
+      }
+    });
+  });
+  
+  return sizes;
+};
+
+const standardGarmentSizes = generateGarmentSizes();
+
 const garments = [
     {
         "permalink": "cozy-raglan-sweater",
         "title": "Cozy Raglan V-Neck Sweater",
         "description": "A simple sweater with Raglan sleeves",
-        "sizes": {
-            "men's small / women's medium": 0.9,
-            "men's medium / women's large": 1,
-            "men's large / women's XL": 1.085,
-        },
+        "sizes": standardGarmentSizes,
         "shapes": {
             "Front":
             {
@@ -97,11 +122,7 @@ const garments = [
         "permalink": "drop-shoulder-crew-neck-sweater",
         "title": "Drop-Shoulder Crew Neck Sweater",
         "description": "A cozy drop-shoulder sweater with a classic crew neck",
-        "sizes": {
-            "men's small / women's medium": 0.9,
-            "men's medium / women's large": 1,
-            "men's large / women's XL": 1.085,
-        },
+        "sizes": standardGarmentSizes,
         "shapes": { // TODO: Shape the neckline/shoulders for this sweater
             "Front": {
                 "height": 5,

@@ -1,70 +1,198 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card, Form, Button, Row, Col, Typography, Space, Slider, InputNumber, Select, Divider } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
+import PatternDimensionVisualization from '../../../components/PatternDimensionVisualization';
+import { updatePatternData } from '../../../store/knittingDesignSlice';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
-// Pattern Scaling Interface - Hybrid Approach (Option C)
-const SizingStep = ({ data, onChange, onNext, onPrevious }) => {
-  const [form] = Form.useForm();
+// Pattern Scaling Interface using Redux state
+const SizingStep = ({ onNext, onPrevious }) => {
+  const dispatch = useDispatch();
+  const patternData = useSelector(state => state.knittingDesign.patternData);
+  const data = patternData.sizing;
   const [calculatedDimensions, setCalculatedDimensions] = useState({});
 
   const sizingMethods = [
-    { value: 'percentage', label: 'Scale by Percentage', description: 'Proportionally scale the entire pattern' },
-    { value: 'custom', label: 'Custom Dimensions', description: 'Input specific measurements' }
+    { value: 'standard', label: 'Standard Sizes', description: 'Choose from predefined men\'s or women\'s sizing' },
+    { value: 'percentage', label: 'Scale by Percentage', description: 'Scale a standard size by percentage' },
+    { value: 'custom', label: 'Custom Dimensions', description: 'Adjust individual panel dimensions independently' }
   ];
 
-  const standardSizes = {
-    'XS': { chest: 32, length: 22, armLength: 23 },
-    'S': { chest: 36, length: 24, armLength: 24 },
-    'M': { chest: 40, length: 26, armLength: 25 },
-    'L': { chest: 44, length: 28, armLength: 26 },
-    'XL': { chest: 48, length: 30, armLength: 27 },
-    'XXL': { chest: 52, length: 32, armLength: 28 }
+  // Base sizing where Men's Medium = Women's Large
+  // Each size scales by 10% per size away from the base
+  const baseDimensions = { chest: 40, length: 27, armLength: 25 }; // Men's Medium / Women's Large
+  
+  const calculateSizeMultiplier = (sizeIndex) => {
+    // Size index: XXS=-3, XS=-2, S=-1, M=0, L=1, XL=2, XXL=3
+    return Math.pow(1.1, sizeIndex); // 10% per size away from medium
+  };
+  
+  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const getSizeIndex = (size) => sizeOrder.indexOf(size) - 3; // M = index 0
+  
+  // Function to generate standard sizes dynamically
+  const generateStandardSizes = (gender) => {
+    const sizes = {};
+    sizeOrder.forEach(size => {
+      const sizeIndex = getSizeIndex(size);
+      let multiplier;
+      
+      if (gender === 'mens') {
+        // Men's sizes with M as base (index 0)
+        multiplier = calculateSizeMultiplier(sizeIndex);
+      } else {
+        // Women's sizes with L as base (Men's M = Women's L equivalency)
+        const womensSizeIndex = sizeIndex - 1; // Shift by one size (M->L equivalency)
+        multiplier = calculateSizeMultiplier(womensSizeIndex);
+      }
+      
+      sizes[size] = {
+        chest: Math.round(baseDimensions.chest * multiplier),
+        length: Math.round(baseDimensions.length * multiplier),
+        armLength: Math.round(baseDimensions.armLength * multiplier)
+      };
+    });
+    return sizes;
   };
 
   useEffect(() => {
     // Calculate dimensions based on current settings
-    if (data.method === 'percentage') {
-      const baseDimensions = standardSizes['M'];
+    if (data.method === 'standard') {
+      const selectedGender = data.gender || 'womens';
+      const selectedSize = data.standardSize || 'M';
+      const standardSizes = generateStandardSizes(selectedGender);
+      const baseDimensions = standardSizes[selectedSize];
+      setCalculatedDimensions(baseDimensions);
+    } else if (data.method === 'percentage') {
+      const selectedGender = data.gender || 'womens';
+      const selectedSize = data.standardSize || 'M';
+      const standardSizes = generateStandardSizes(selectedGender);
+      const baseDimensions = standardSizes[selectedSize];
       const scaled = {};
       Object.keys(baseDimensions).forEach(key => {
         scaled[key] = Math.round(baseDimensions[key] * (data.scale / 100) * 10) / 10;
       });
       setCalculatedDimensions(scaled);
-    } else {
+    } else if (data.method === 'custom') {
       setCalculatedDimensions(data.customDimensions);
     }
   }, [data]);
 
+  // Helper function to update sizing data in Redux
+  const updateSizingData = (newData) => {
+    dispatch(updatePatternData({ 
+      section: 'sizing', 
+      data: { ...data, ...newData } 
+    }));
+  };
+
   const handleMethodChange = (method) => {
-    onChange({ method });
+    updateSizingData({ method });
     
     // Set defaults based on method
-    if (method === 'percentage') {
-      onChange({ scale: 100 });
-    } else {
-      onChange({ customDimensions: standardSizes['M'] });
+    if (method === 'standard') {
+      updateSizingData({ 
+        gender: 'womens',
+        standardSize: 'M'
+      });
+    } else if (method === 'percentage') {
+      updateSizingData({ 
+        gender: 'womens',
+        standardSize: 'M',
+        scale: 100 
+      });
+    } else if (method === 'custom') {
+      updateSizingData({ 
+        customDimensions: {
+          front: { width: 38, height: 23 },
+          back: { width: 38, height: 23 },
+          leftSleeve: { width: 15, height: 24 },
+          rightSleeve: { width: 15, height: 24 }
+        }
+      });
     }
   };
 
+  const handleGenderChange = (gender) => {
+    updateSizingData({ gender });
+  };
+
+  const handleStandardSizeChange = (size) => {
+    updateSizingData({ standardSize: size });
+  };
+
   const handleScaleChange = (scale) => {
-    onChange({ scale });
+    updateSizingData({ scale });
   };
 
   const handleDimensionChange = (dimension, value) => {
     const newDimensions = { ...data.customDimensions, [dimension]: value };
-    onChange({ customDimensions: newDimensions });
+    updateSizingData({ customDimensions: newDimensions });
   };
 
-  const handleStandardSizeSelect = (size) => {
-    onChange({ customDimensions: standardSizes[size] });
+  const handleCustomPanelChange = (panel, dimension, value) => {
+    const newDimensions = { 
+      ...data.customDimensions, 
+      [panel]: {
+        ...data.customDimensions[panel],
+        [dimension]: value
+      }
+    };
+    updateSizingData({ customDimensions: newDimensions });
   };
 
   const handleNext = () => {
     onNext();
   };
+
+  // Get all shapes from basePattern.shapes for visualization
+  const getAllPatternShapes = () => {
+    if (!patternData?.basePattern?.shapes) {
+      return [];
+    }
+    
+    const shapes = patternData.basePattern.shapes;
+    return Object.entries(shapes).map(([name, shape]) => ({ name, shape }));
+  };
+
+  const allPatternShapes = getAllPatternShapes();
+  
+  // Calculate scaling factor based on sizing method and base size selection
+  let scaleFactor = 1;
+  if (data) {
+    if (data.method === 'standard' || data.method === 'percentage') {
+      // For both standard and percentage methods, calculate based on selected base size
+      const selectedGender = data.gender || 'womens';
+      const selectedSize = data.standardSize || 'M';
+      const standardSizes = generateStandardSizes(selectedGender);
+      const selectedBaseDimensions = standardSizes[selectedSize];
+      
+      if (selectedBaseDimensions && allPatternShapes.length > 0) {
+        const firstShape = allPatternShapes[0]?.shape;
+        if (firstShape?.baseA) {
+          // Base scale factor from size selection
+          const baseSizeFactor = selectedBaseDimensions.chest / baseDimensions.chest;
+          
+          if (data.method === 'percentage') {
+            // Apply percentage scaling on top of base size
+            scaleFactor = baseSizeFactor * (data.scale / 100);
+          } else {
+            // Standard method uses just the base size factor
+            scaleFactor = baseSizeFactor;
+          }
+        }
+      }
+    } else if (data.method === 'custom' && data.customDimensions?.chest && allPatternShapes.length > 0) {
+      // Use the first shape's baseA for scaling calculation
+      const firstShape = allPatternShapes[0]?.shape;
+      if (firstShape?.baseA) {
+        scaleFactor = data.customDimensions.chest / firstShape.baseA;
+      }
+    }
+  }
 
   return (
     <div className="sizing-step">
@@ -76,6 +204,39 @@ const SizingStep = ({ data, onChange, onNext, onPrevious }) => {
               Choose how you want to size your pattern. You can scale proportionally or input custom measurements.
             </Paragraph>
           </Card>
+        </Col>
+
+        <Col lg={12} md={24}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {allPatternShapes.length > 0 ? (
+              allPatternShapes.map(({ name, shape }, index) => (
+                <PatternDimensionVisualization 
+                  key={`${name}-${index}`}
+                  panel={shape}
+                  title={name}
+                  subtitle={`${patternData?.basePattern?.name || 'Pattern'} - ${name} panel`}
+                  scaleFactor={scaleFactor}
+                  diagramSizeMin={200}
+                  diagramSizeMax={333}
+                  scalingMultiplier={4}
+                  containerPadding={12}
+                  showInfoText={false}
+                />
+              ))
+            ) : (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 20px', 
+                background: '#fafafa', 
+                borderRadius: '8px',
+                border: '1px dashed #d9d9d9'
+              }}>
+                <Text type="secondary">
+                  No pattern shapes available. Please select a pattern in the previous step.
+                </Text>
+              </div>
+            )}
+          </div>
         </Col>
 
         <Col lg={12} md={24}>
@@ -99,9 +260,61 @@ const SizingStep = ({ data, onChange, onNext, onPrevious }) => {
 
               <Divider />
 
-              {data.method === 'percentage' ? (
+              {data.method === 'standard' ? (
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                  <Text strong>Overall Scale</Text>
+                  <Text strong>Gender</Text>
+                  <Select
+                    value={data.gender || 'womens'}
+                    onChange={handleGenderChange}
+                    style={{ width: '100%' }}
+                  >
+                    <Option value="womens">Women's</Option>
+                    <Option value="mens">Men's</Option>
+                  </Select>
+                  
+                  <Text strong>Size</Text>
+                  <Row gutter={8}>
+                    {Object.keys(generateStandardSizes(data.gender || 'womens')).map(size => (
+                      <Col key={size}>
+                        <Button 
+                          size="small"
+                          onClick={() => handleStandardSizeChange(size)}
+                          type={(data.standardSize || 'M') === size ? 'primary' : 'default'}
+                        >
+                          {size}
+                        </Button>
+                      </Col>
+                    ))}
+                  </Row>
+                </Space>
+              ) : data.method === 'percentage' ? (
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Text strong>Base Size</Text>
+                  <Row gutter={16} align="middle">
+                    <Col span={12}>
+                      <Select
+                        value={data.gender || 'womens'}
+                        onChange={handleGenderChange}
+                        style={{ width: '100%' }}
+                      >
+                        <Option value="womens">Women's</Option>
+                        <Option value="mens">Men's</Option>
+                      </Select>
+                    </Col>
+                    <Col span={12}>
+                      <Select
+                        value={data.standardSize || 'M'}
+                        onChange={handleStandardSizeChange}
+                        style={{ width: '100%' }}
+                      >
+                        {Object.keys(generateStandardSizes(data.gender || 'womens')).map(size => (
+                          <Option key={size} value={size}>{size}</Option>
+                        ))}
+                      </Select>
+                    </Col>
+                  </Row>
+                  
+                  <Text strong>Scale Percentage</Text>
                   <Row gutter={16} align="middle">
                     <Col flex={1}>
                       <Slider
@@ -135,123 +348,109 @@ const SizingStep = ({ data, onChange, onNext, onPrevious }) => {
                     <Space align="center">
                       <InfoCircleOutlined style={{ color: '#52c41a' }} />
                       <Text>
-                        Scaling at {data.scale}% of standard Medium size
+                        Scaling at {data.scale}% of {data.gender === 'mens' ? "Men's" : "Women's"} {data.standardSize || 'M'} size
                       </Text>
                     </Space>
                   </Card>
                 </Space>
               ) : (
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                  <Text strong>Quick Size Selection</Text>
-                  <Row gutter={8}>
-                    {Object.keys(standardSizes).map(size => (
-                      <Col key={size}>
-                        <Button 
-                          size="small"
-                          onClick={() => handleStandardSizeSelect(size)}
-                          type={JSON.stringify(data.customDimensions) === JSON.stringify(standardSizes[size]) ? 'primary' : 'default'}
-                        >
-                          {size}
-                        </Button>
-                      </Col>
-                    ))}
-                  </Row>
-
-                  <Divider>Or Enter Custom Measurements</Divider>
-
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Row gutter={16} align="middle">
-                      <Col span={8}>
-                        <Text>Chest (inches):</Text>
-                      </Col>
-                      <Col span={16}>
-                        <InputNumber
-                          min={20}
-                          max={80}
-                          step={0.5}
-                          value={data.customDimensions?.chest}
-                          onChange={(value) => handleDimensionChange('chest', value)}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16} align="middle">
-                      <Col span={8}>
-                        <Text>Length (inches):</Text>
-                      </Col>
-                      <Col span={16}>
-                        <InputNumber
-                          min={15}
-                          max={40}
-                          step={0.5}
-                          value={data.customDimensions?.length}
-                          onChange={(value) => handleDimensionChange('length', value)}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16} align="middle">
-                      <Col span={8}>
-                        <Text>Arm Length (inches):</Text>
-                      </Col>
-                      <Col span={16}>
-                        <InputNumber
-                          min={15}
-                          max={35}
-                          step={0.5}
-                          value={data.customDimensions?.armLength}
-                          onChange={(value) => handleDimensionChange('armLength', value)}
-                          style={{ width: '100%' }}
-                        />
-                      </Col>
-                    </Row>
-                  </Space>
+                  <Text strong>Individual Panel Dimensions</Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Adjust width and height for each panel independently
+                  </Text>
+                  
+                  {data.customDimensions && Object.entries(data.customDimensions).map(([panelName, dimensions]) => (
+                    <Card key={panelName} size="small" title={panelName.charAt(0).toUpperCase() + panelName.slice(1)}>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Text>Width (inches):</Text>
+                          <InputNumber
+                            min={10}
+                            max={60}
+                            step={0.5}
+                            value={dimensions.width}
+                            onChange={(value) => handleCustomPanelChange(panelName, 'width', value)}
+                            style={{ width: '100%', marginTop: '4px' }}
+                          />
+                        </Col>
+                        <Col span={12}>
+                          <Text>Height (inches):</Text>
+                          <InputNumber
+                            min={10}
+                            max={40}
+                            step={0.5}
+                            value={dimensions.height}
+                            onChange={(value) => handleCustomPanelChange(panelName, 'height', value)}
+                            style={{ width: '100%', marginTop: '4px' }}
+                          />
+                        </Col>
+                      </Row>
+                    </Card>
+                  ))}
                 </Space>
               )}
             </Space>
           </Card>
         </Col>
 
-        <Col lg={12} md={24}>
+        <Col span={24}>
           <Card title="Preview Dimensions">
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <Text strong>Calculated Garment Dimensions:</Text>
               
               <div className="dimension-preview">
-                <Row gutter={[16, 16]}>
-                  <Col span={12}>
-                    <Card size="small" className="dimension-card">
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
-                          {calculatedDimensions.chest || '--'}"
+                {data.method === 'custom' && data.customDimensions ? (
+                  // Show individual panel dimensions for custom method
+                  <Row gutter={[16, 16]}>
+                    {Object.entries(data.customDimensions).map(([panelName, dimensions]) => (
+                      <Col span={12} key={panelName}>
+                        <Card size="small" className="dimension-card">
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
+                              {dimensions.width || '--'}" × {dimensions.height || '--'}"
+                            </div>
+                            <div style={{ color: '#666' }}>{panelName.charAt(0).toUpperCase() + panelName.slice(1)}</div>
+                          </div>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                ) : (
+                  // Show standard dimensions for standard and percentage methods
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <Card size="small" className="dimension-card">
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
+                            {calculatedDimensions.chest || '--'}"
+                          </div>
+                          <div style={{ color: '#666' }}>Chest</div>
                         </div>
-                        <div style={{ color: '#666' }}>Chest</div>
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card size="small" className="dimension-card">
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
-                          {calculatedDimensions.length || '--'}"
+                      </Card>
+                    </Col>
+                    <Col span={12}>
+                      <Card size="small" className="dimension-card">
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
+                            {calculatedDimensions.length || '--'}"
+                          </div>
+                          <div style={{ color: '#666' }}>Length</div>
                         </div>
-                        <div style={{ color: '#666' }}>Length</div>
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card size="small" className="dimension-card">
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fa8c16' }}>
-                          {calculatedDimensions.armLength || '--'}"
+                      </Card>
+                    </Col>
+                    <Col span={12}>
+                      <Card size="small" className="dimension-card">
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fa8c16' }}>
+                            {calculatedDimensions.armLength || '--'}"
+                          </div>
+                          <div style={{ color: '#666' }}>Arm Length</div>
                         </div>
-                        <div style={{ color: '#666' }}>Arm Length</div>
-                      </div>
-                    </Card>
-                  </Col>
-                </Row>
+                      </Card>
+                    </Col>
+                  </Row>
+                )}
               </div>
 
               <Card size="small" style={{ backgroundColor: '#fafafa' }}>
