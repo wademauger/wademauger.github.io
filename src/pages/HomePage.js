@@ -52,6 +52,20 @@ const HomePage = () => {
           </div>
           <Link to="/knitting" className="app-link">Open Knitting App</Link>
         </div>
+        
+        <div className="app-card">
+          <h2>Knitting Design Studio</h2>
+          <p>
+            Alpha version of an interactive knitting design app with step-by-step 
+            pattern creation, sizing tools, colorwork design, and row-by-row knitting guidance.
+          </p>
+          <div className="app-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" className="app-svg">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+          <Link to="/knitting-design" className="app-link">Open Design Studio (Alpha)</Link>
+        </div>
       </div>
     </div>
   );

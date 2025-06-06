@@ -916,15 +916,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                 ))}
               </SortableContext>
               
-              {/* Add line editor at the very end when adding after the last line */}
-              {isAddingLine && insertAfterIndex === lyricsArray.length - 1 && editingEnabled && (
-                <LyricLineEditor
-                  line=""
-                  onSave={(newLine) => handleSaveLine(newLine, lyricsArray.length)}
-                  onCancel={handleCancelEdit}
-                />
-              )}
-              
               {/* Add a button to add line at the end when the song is empty */}
               {editingEnabled && lyricsArray.length === 0 && !isAddingLine && (
                 <button 

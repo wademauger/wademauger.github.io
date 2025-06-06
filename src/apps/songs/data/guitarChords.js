@@ -21,16 +21,7 @@ export const guitarChords = {
     frets: [-1, -1, 3, 1, 2, 1], 
     fingers: [0, 0, 4, 1, 3, 2],
     inversions: [
-      { frets: [-1, 4, 6, 6, 6, 4], fingers: [0  'G/A': { 
-    frets: [3, 0, 0, 0, 3, 3], 
-    fingers: [0, 0, 0, 0, 1, 2],
-    description: "G major with A in bass"
-  },
-  'C/B': { 
-    frets: [-1, 2, 2, 0, 1, 0], 
-    fingers: [0, 2, 3, 0, 1, 0],
-    description: "C major with B in bass"
-  },2, 3, 4, 1] }, // Barre form
+      { frets: [-1, 4, 6, 6, 6, 4], fingers: [0, 1, 2, 3, 4, 1] }, // Barre form
       { frets: [9, 11, 11, 10, 9, 9], fingers: [1, 3, 4, 2, 1, 1] } // High position barre
     ]
   },
@@ -849,26 +840,6 @@ export const guitarChords = {
     frets: [-1, -1, 0, 0, 0, 0], 
     fingers: [0, 0, 0, 0, 0, 0],
     description: "E minor with D in bass"
-  },
-  'F/G': { 
-    frets: [3, 3, 3, 2, 1, 1], 
-    fingers: [3, 4, 4, 2, 1, 1],
-    description: "F major with G in bass"
-  },
-  'D/B': { 
-    frets: [-1, 2, 0, 2, 3, 2], 
-    fingers: [0, 1, 0, 2, 4, 3],
-    description: "D major with B in bass"
-  },
-  'Am/C': { 
-    frets: [-1, 3, 2, 2, 1, 0], 
-    fingers: [0, 3, 2, 2, 1, 0],
-    description: "A minor with C in bass (1st inversion)"
-  },
-  'Dm/A': { 
-    frets: [-1, 0, 0, 2, 3, 1], 
-    fingers: [0, 0, 0, 2, 1, 3],
-    description: "D minor with A in bass (2nd inversion)"
   },
 
   // 7th chord inversions

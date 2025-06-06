@@ -15,6 +15,7 @@ import {
 } from '../../store/songsSlice';
 import SongDetail from './components/SongDetail';
 import GoogleSignInButton from './components/GoogleSignInButton';
+import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
 import { Switch, TreeSelect, Modal, Form, Input, AutoComplete, Button, Spin, App } from 'antd';
@@ -22,6 +23,11 @@ import { FaUnlock, FaLock, FaPlus } from 'react-icons/fa';
 
 const SongTabsApp = () => {
   const { message } = App.useApp();
+  
+  // Developer flag to enable session testing tools
+  // Set this to true when you need to test session expiry scenarios
+  // The testing tools will only appear in development mode when this flag is true
+  const ENABLE_SESSION_TESTING = false; // Change to true to enable testing tools
   
   // Redux state
   const dispatch = useDispatch();
@@ -396,6 +402,17 @@ const SongTabsApp = () => {
           />
         )}
       </div>
+
+      {/* Session Testing Tools - Development Only 
+          To enable: Set ENABLE_SESSION_TESTING to true at the top of this component */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ marginTop: '2rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
+          <SessionTestingTools 
+            googleDriveService={GoogleDriveServiceModern}
+            enabled={ENABLE_SESSION_TESTING}
+          />
+        </div>
+      )}
 
       {/* Add Song Modal */}
       <Modal
