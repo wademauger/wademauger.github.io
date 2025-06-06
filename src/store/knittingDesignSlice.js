@@ -71,52 +71,27 @@ const knittingDesignSlice = createSlice({
     },
     
     nextStep: (state) => {
-      // Determine if we need to insert custom step
-      const isCustomPattern = state.patternData.basePattern?.id === 'custom';
-      const hasCustomStep = isCustomPattern && Object.keys(state.patternData.customShapes).length === 0;
-      
-      // Calculate max steps (6 base steps, +1 if custom design step is needed)
-      const maxSteps = hasCustomStep ? 6 : 5;
+      // Always have 7 steps with pattern editor as step 2
+      const maxSteps = 6; // 0-6, so 7 total steps
       
       if (state.currentStep < maxSteps) {
-        // Handle step transitions
-        if (state.currentStep === 0 && isCustomPattern && !Object.keys(state.patternData.customShapes).length) {
-          // After pattern setup, if custom is selected and no shapes exist, go to custom step
-          state.currentStep = 1; // Custom design step
-        } else if (state.currentStep === 1 && isCustomPattern && Object.keys(state.patternData.customShapes).length) {
-          // After custom design step, go to sizing
-          state.currentStep = 2;
-        } else {
-          // Normal progression
-          state.currentStep += 1;
-        }
+        // Simple progression - pattern editor is always step 1 (index 1)
+        state.currentStep += 1;
         state.isDirty = true;
       }
     },
     
     previousStep: (state) => {
       if (state.currentStep > 0) {
-        const isCustomPattern = state.patternData.basePattern?.id === 'custom';
-        
-        // Handle reverse step transitions
-        if (state.currentStep === 2 && isCustomPattern && Object.keys(state.patternData.customShapes).length) {
-          // From sizing back to custom design
-          state.currentStep = 1;
-        } else if (state.currentStep === 1 && isCustomPattern) {
-          // From custom design back to pattern setup
-          state.currentStep = 0;
-        } else {
-          // Normal reverse progression
-          state.currentStep -= 1;
-        }
+        // Simple reverse progression
+        state.currentStep -= 1;
         state.isDirty = true;
       }
     },
     
     jumpToStep: (state, action) => {
       const targetStep = action.payload;
-      const isCustomPattern = state.patternData.basePattern?.id === 'custom';
-      const maxSteps = isCustomPattern ? 6 : 5;
+      const maxSteps = 6; // 0-6, so 7 total steps
       
       if (targetStep >= 0 && targetStep <= maxSteps) {
         state.currentStep = targetStep;
@@ -185,7 +160,7 @@ export const selectCurrentStepInfo = (state) => {
   
   const steps = [
     { title: 'Pattern Setup', key: 'setup' },
-    ...(isCustomPattern ? [{ title: 'Custom Design', key: 'custom' }] : []),
+    { title: 'Pattern Editor', key: 'custom' }, // Always include pattern editor as step 2
     { title: 'Sizing', key: 'sizing' },
     { title: 'Gauge', key: 'gauge' },
     { title: 'Colorwork', key: 'colorwork' },

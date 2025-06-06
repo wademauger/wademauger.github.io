@@ -38,7 +38,7 @@ const PatternDimensionVisualization = ({
         );
     }
 
-    // Calculate actual pattern dimensions using the same logic as PanelDiagram
+    // Calculate actual pattern dimensions using the exact same logic as PanelDiagram
     const calculatePatternDimensions = (shape, scale = 1) => {
         let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         
@@ -77,20 +77,94 @@ const PatternDimensionVisualization = ({
         
         return {
             width: dimensions.maxX - dimensions.minX,
-            height: dimensions.maxY - dimensions.minY
+            height: dimensions.maxY - dimensions.minY,
+            minX: dimensions.minX,
+            maxX: dimensions.maxX,
+            minY: dimensions.minY,
+            maxY: dimensions.maxY
         };
     };
 
-    // Calculate unscaled pattern dimensions for visual sizing (always use scale factor of 1)
-    const { width: visualPatternWidth, height: visualPatternHeight } = calculatePatternDimensions(panel, 1);
+    // Calculate pattern bounds and visual positioning to match PanelDiagram exactly
+    const calculatePanelDiagramBounds = (shape, size, padding = 10) => {
+        // First pass: Compute bounding box including negative coordinates (same as PanelDiagram)
+        let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+        const renderHierarchyForDimensions = (trap, scaleParam, xOffset = 0, yOffset = 0) => {
+            const trapWidth = Math.max(trap.baseA, trap.baseB) * scaleParam;
+            const xTopLeft = xOffset + (trapWidth - trap.baseB * scaleParam) / 2 + (trap.baseBHorizontalOffset || 0) * scaleParam;
+            const xTopRight = xOffset + (trapWidth + trap.baseB * scaleParam) / 2 + (trap.baseBHorizontalOffset || 0) * scaleParam;
+            const xBottomLeft = xOffset + (trapWidth - trap.baseA * scaleParam) / 2;
+            const xBottomRight = xOffset + (trapWidth + trap.baseA * scaleParam) / 2;
+            const yTop = yOffset;
+            const yBottom = yOffset + trap.height * scaleParam;
+
+            dimensions.minX = Math.min(dimensions.minX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
+            dimensions.maxX = Math.max(dimensions.maxX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
+            dimensions.minY = Math.min(dimensions.minY, yTop, yBottom);
+            dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
+
+            if (trap.successors && trap.successors.length > 0) {
+                const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scaleParam);
+                const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+                let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
+
+                for (let i = trap.successors.length - 1; i >= 0; i--) {
+                    const successor = trap.successors[i];
+                    renderHierarchyForDimensions(successor, scaleParam, childXOffset, yTop - successor.height * scaleParam);
+                    childXOffset += successorWidths[i];
+                }
+            }
+        };
+
+        renderHierarchyForDimensions(shape, 1, 0, 0);
+
+        const width = dimensions.maxX - dimensions.minX;
+        const height = dimensions.maxY - dimensions.minY;
+
+        // Calculate scale factor (same as PanelDiagram)
+        const availableWidth = size - 2 * padding;
+        const availableHeight = size - 2 * padding;
+        const scaleFactor = Math.min(availableWidth / width, availableHeight / height);
+
+        // Calculate scaled dimensions and translation (same as PanelDiagram)
+        const scaledWidth = width * scaleFactor;
+        const scaledHeight = height * scaleFactor;
+
+        const translateX = (size - scaledWidth) / 2 - dimensions.minX * scaleFactor + padding;
+        const translateY = (size - scaledHeight) / 2 - dimensions.minY * scaleFactor + padding;
+
+        return {
+            scaledWidth,
+            scaledHeight,
+            translateX,
+            translateY,
+            scaleFactor,
+            originalWidth: width,
+            originalHeight: height
+        };
+    };
+
+    // Calculate unscaled pattern dimensions for visual sizing
+    const visualPatternDimensions = calculatePatternDimensions(panel, 1);
     
-    // Calculate scaled pattern dimensions for dimension labels only
-    const { width: patternWidth, height: patternHeight } = calculatePatternDimensions(panel, scaleFactor);
+    // Calculate scaled pattern dimensions for dimension labels
+    const scaledPatternDimensions = calculatePatternDimensions(panel, scaleFactor);
 
     // Calculate responsive diagram size based on unscaled pattern dimensions for consistent visual size
-    const basePatternSize = Math.max(visualPatternWidth * scalingMultiplier, visualPatternHeight * scalingMultiplier, diagramSizeMin);
-    const diagramSize = Math.min(basePatternSize + 80, diagramSizeMax); // Add space for dimensions
+    const basePatternSize = Math.max(
+        visualPatternDimensions.width * scalingMultiplier, 
+        visualPatternDimensions.height * scalingMultiplier, 
+        diagramSizeMin
+    );
+    const diagramSize = Math.min(basePatternSize + 80, diagramSizeMax);
     const patternDisplaySize = Math.min(diagramSize - 40, basePatternSize);
+
+    // Calculate the exact positioning used by PanelDiagram
+    const panelBounds = calculatePanelDiagramBounds(panel, patternDisplaySize, 10);
+
+    // Pre-calculate dimension values for use in labels
+    const patternWidth = scaledPatternDimensions.width;
+    const patternHeight = scaledPatternDimensions.height;
 
     return (
         <Card 
@@ -171,9 +245,9 @@ const PatternDimensionVisualization = ({
                         </defs>
                         
                         {(() => {
-                            // Simplified approach: use the actual pattern visual bounds based on the pattern size
-                            // The PanelDiagram centers the pattern within its container, so we calculate based on visible pattern area
-                            
+                            // Calculate exact pattern bounds using PanelDiagram's positioning logic
+                            // The SVG is positioned at (0,0) relative to the entire container
+                            // The pattern container has margins: 60px left, 40px top
                             const containerLeft = 60; // marginLeft of pattern container
                             const containerTop = 40;  // marginTop of pattern container
                             const containerWidth = diagramSize;
@@ -187,25 +261,28 @@ const PatternDimensionVisualization = ({
                             const flexCenterX = (containerWidth - panelActualWidth) / 2;
                             const flexCenterY = (containerHeight - panelActualHeight) / 2;
                             
-                            // PanelDiagram position within the page
+                            // PanelDiagram position within the SVG coordinate system
                             const panelLeft = containerLeft + flexCenterX;
                             const panelTop = containerTop + flexCenterY;
                             
-                            // Calculate pattern bounds based on actual scaled pattern dimensions
-                            // The pattern takes up most of the panel area with some padding
-                            const patternPadding = 10; // Reduced padding to better match actual pattern bounds
+                            // The actual pattern position - use the visual center of the PanelDiagram
+                            // instead of relying on translateY which may include extra spacing
+                            const panelCenterX = panelLeft + panelActualWidth / 2;
+                            const panelCenterY = panelTop + panelActualHeight / 2;
                             
-                            // Center the pattern within the panel
-                            const patternScreenLeft = panelLeft + patternPadding;
-                            const patternScreenRight = panelLeft + panelActualWidth - patternPadding;
-                            const patternScreenTop = panelTop + patternPadding;
-                            const patternScreenBottom = panelTop + panelActualHeight - patternPadding;
+                            // Position pattern around the visual center
+                            const patternLeft = panelCenterX - panelBounds.scaledWidth / 2;
+                            const patternTop = panelCenterY - panelBounds.scaledHeight / 2;
+                            const patternRight = patternLeft + panelBounds.scaledWidth;
+                            const patternBottom = patternTop + panelBounds.scaledHeight;
                             
-                            // Use the calculated actual pattern screen bounds for dimension lines
-                            const patternLeft = patternScreenLeft;
-                            const patternRight = patternScreenRight;
-                            const patternTop = patternScreenTop;
-                            const patternBottom = patternScreenBottom;
+                            // Debug: Add console logging to see where we think the pattern should be
+                            console.log('SVG Pattern Position (Fixed):', {
+                                patternLeft, patternTop, patternRight, patternBottom,
+                                panelCenterX, panelCenterY,
+                                panelLeft, panelTop,
+                                panelBounds
+                            });
                             
                             return (
                                 <>

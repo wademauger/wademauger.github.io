@@ -9,10 +9,25 @@ const { TextArea } = Input;
 
 const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
   const [form] = Form.useForm();
-  const [shapes, setShapes] = useState(data.customShapes || {});
+  const [shapes, setShapes] = useState({});
   const [currentShape, setCurrentShape] = useState(null);
   const [editingShape, setEditingShape] = useState(null);
   const [previewShape, setPreviewShape] = useState(null);
+
+  // Initialize shapes from either custom shapes or base pattern shapes
+  React.useEffect(() => {
+    let initialShapes = {};
+    
+    if (data.customShapes && Object.keys(data.customShapes).length > 0) {
+      // Use existing custom shapes
+      initialShapes = data.customShapes;
+    } else if (data.basePattern && data.basePattern.shapes && data.basePattern.id !== 'custom') {
+      // Load shapes from the selected base pattern as starting points
+      initialShapes = { ...data.basePattern.shapes };
+    }
+    
+    setShapes(initialShapes);
+  }, [data.basePattern, data.customShapes]);
 
   // Initialize with a basic panel template
   const createNewShape = () => {
@@ -64,20 +79,26 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
       return;
     }
     if (Object.keys(shapes).length === 0) {
-      message.warning('Please create at least one panel to continue');
+      message.warning('Please create or modify at least one panel to continue');
       return;
     }
     onNext();
   };
+
+  const isCustomPattern = data.basePattern?.id === 'custom';
+  const patternTitle = isCustomPattern ? 'Custom Pattern Design' : 'Pattern Editor';
+  const patternDescription = isCustomPattern 
+    ? 'Give your pattern a name and description, then create custom panels for your pattern. Each panel represents a knitted piece like front, back, or sleeves.'
+    : 'Modify the selected pattern or add new panels. You can edit existing shapes or create entirely new ones.';
 
   return (
     <div className="custom-shape-step">
       <Row gutter={[24, 24]}>
         <Col span={24}>
           <Card>
-            <Title level={2}>Custom Pattern Design</Title>
+            <Title level={2}>{patternTitle}</Title>
             <Text type="secondary">
-              Give your pattern a name and description, then create custom panels for your pattern. Each panel represents a knitted piece like front, back, or sleeves.
+              {patternDescription}
             </Text>
           </Card>
         </Col>
@@ -89,9 +110,9 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
                 <Form layout="vertical">
                   <Form.Item label="Pattern Name" required>
                     <Input 
-                      value={data.name || ''} 
+                      value={data.name || data.basePattern?.name || ''} 
                       onChange={(e) => onChange({ ...data, name: e.target.value })}
-                      placeholder="Enter your pattern name (e.g., My First Sweater)"
+                      placeholder={isCustomPattern ? "Enter your pattern name (e.g., My First Sweater)" : "Modify pattern name or keep original"}
                       size="large"
                     />
                   </Form.Item>
@@ -101,9 +122,9 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
                 <Form layout="vertical">
                   <Form.Item label="Description">
                     <TextArea 
-                      value={data.description || ''} 
+                      value={data.description || data.basePattern?.description || ''} 
                       onChange={(e) => onChange({ ...data, description: e.target.value })}
-                      placeholder="Describe your custom pattern..."
+                      placeholder={isCustomPattern ? "Describe your custom pattern..." : "Modify pattern description or add your own notes..."}
                       rows={4}
                     />
                   </Form.Item>
@@ -115,20 +136,24 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
 
         <Col span={24}>
           <Card 
-            title="Pattern Panels" 
+            title={isCustomPattern ? "Pattern Panels" : "Edit Pattern Panels"} 
             extra={
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />} 
                 onClick={handleAddShape}
               >
-                New Panel
+                {isCustomPattern ? "New Panel" : "Add Panel"}
               </Button>
             }
           >
             {Object.keys(shapes).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                <Text>No panels created yet. Click "New Panel" to start designing your pattern.</Text>
+                <Text>
+                  {isCustomPattern 
+                    ? 'No panels created yet. Click "Add Panel" to start designing your pattern.'
+                    : 'No panels available from the selected pattern. Click "Add Panel" to create new panels.'}
+                </Text>
               </div>
             ) : (
               <Row gutter={[16, 16]}>

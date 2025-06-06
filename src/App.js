@@ -8,7 +8,7 @@ import HomePage from './pages/HomePage';
 import RecipesApp from './apps/recipes/RecipesApp';
 import SongTabsApp from './apps/songs/SongTabsAppModern';
 import KnittingApp from './apps/knitting/KnittingApp';
-import KnittingDesignApp from './apps/knitting-design/KnittingDesignApp.debug';
+import KnittingDesignApp from './apps/knitting-design/KnittingDesignApp';
 import NotFound from './pages/NotFound';
 import './App.css';
 

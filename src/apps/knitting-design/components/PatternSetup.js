@@ -51,7 +51,7 @@ const PatternSetup = ({ data, onChange, onNext }) => {
           <Card>
             <Title level={2}>Choose a Pattern</Title>
             <Text type="secondary">
-              Select a base pattern to modify, or create a custom pattern from scratch.
+              Select a base pattern to start from. You'll be able to modify or customize any pattern in the next step.
             </Text>
           </Card>
         </Col>
@@ -138,7 +138,7 @@ const PatternSetup = ({ data, onChange, onNext }) => {
               onClick={handleNext}
               disabled={!data.basePattern}
             >
-              {data.basePattern?.id === 'custom' ? 'Next: Custom Design' : 'Next: Sizing'}
+              Next: Pattern Editor
             </Button>
           </div>
         </Col>

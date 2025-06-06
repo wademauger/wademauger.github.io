@@ -12,7 +12,7 @@ const { Option } = Select;
 const SizingStep = ({ onNext, onPrevious }) => {
   const dispatch = useDispatch();
   const patternData = useSelector(state => state.knittingDesign.patternData);
-  const data = patternData.sizing;
+  const data = patternData?.sizing || {};
   const [calculatedDimensions, setCalculatedDimensions] = useState({});
 
   const sizingMethods = [
@@ -60,24 +60,24 @@ const SizingStep = ({ onNext, onPrevious }) => {
 
   useEffect(() => {
     // Calculate dimensions based on current settings
-    if (data.method === 'standard') {
+    if (data?.method === 'standard') {
       const selectedGender = data.gender || 'womens';
       const selectedSize = data.standardSize || 'M';
       const standardSizes = generateStandardSizes(selectedGender);
       const baseDimensions = standardSizes[selectedSize];
       setCalculatedDimensions(baseDimensions);
-    } else if (data.method === 'percentage') {
+    } else if (data?.method === 'percentage') {
       const selectedGender = data.gender || 'womens';
       const selectedSize = data.standardSize || 'M';
       const standardSizes = generateStandardSizes(selectedGender);
       const baseDimensions = standardSizes[selectedSize];
       const scaled = {};
       Object.keys(baseDimensions).forEach(key => {
-        scaled[key] = Math.round(baseDimensions[key] * (data.scale / 100) * 10) / 10;
+        scaled[key] = Math.round(baseDimensions[key] * ((data.scale || 100) / 100) * 10) / 10;
       });
       setCalculatedDimensions(scaled);
-    } else if (data.method === 'custom') {
-      setCalculatedDimensions(data.customDimensions);
+    } else if (data?.method === 'custom') {
+      setCalculatedDimensions(data.customDimensions || {});
     }
   }, [data]);
 
@@ -90,30 +90,27 @@ const SizingStep = ({ onNext, onPrevious }) => {
   };
 
   const handleMethodChange = (method) => {
-    updateSizingData({ method });
+    // Create a single atomic update with all required data
+    const baseUpdate = { method };
     
-    // Set defaults based on method
     if (method === 'standard') {
-      updateSizingData({ 
-        gender: 'womens',
-        standardSize: 'M'
-      });
+      baseUpdate.gender = data?.gender || 'womens';
+      baseUpdate.standardSize = data?.standardSize || 'M';
     } else if (method === 'percentage') {
-      updateSizingData({ 
-        gender: 'womens',
-        standardSize: 'M',
-        scale: 100 
-      });
+      baseUpdate.gender = data?.gender || 'womens';
+      baseUpdate.standardSize = data?.standardSize || 'M';
+      baseUpdate.scale = data?.scale || 100;
     } else if (method === 'custom') {
-      updateSizingData({ 
-        customDimensions: {
-          front: { width: 38, height: 23 },
-          back: { width: 38, height: 23 },
-          leftSleeve: { width: 15, height: 24 },
-          rightSleeve: { width: 15, height: 24 }
-        }
-      });
+      baseUpdate.customDimensions = data?.customDimensions || {
+        front: { width: 38, height: 23 },
+        back: { width: 38, height: 23 },
+        leftSleeve: { width: 15, height: 24 },
+        rightSleeve: { width: 15, height: 24 }
+      };
     }
+    
+    // Single atomic update to prevent race conditions
+    updateSizingData(baseUpdate);
   };
 
   const handleGenderChange = (gender) => {
@@ -129,15 +126,19 @@ const SizingStep = ({ onNext, onPrevious }) => {
   };
 
   const handleDimensionChange = (dimension, value) => {
+    if (!data?.customDimensions) return;
+    
     const newDimensions = { ...data.customDimensions, [dimension]: value };
     updateSizingData({ customDimensions: newDimensions });
   };
 
   const handleCustomPanelChange = (panel, dimension, value) => {
+    if (!data?.customDimensions) return;
+    
     const newDimensions = { 
       ...data.customDimensions, 
       [panel]: {
-        ...data.customDimensions[panel],
+        ...(data.customDimensions[panel] || {}),
         [dimension]: value
       }
     };
@@ -162,7 +163,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
   
   // Calculate scaling factor based on sizing method and base size selection
   let scaleFactor = 1;
-  if (data) {
+  if (data && Object.keys(data).length > 0) {
     if (data.method === 'standard' || data.method === 'percentage') {
       // For both standard and percentage methods, calculate based on selected base size
       const selectedGender = data.gender || 'womens';
@@ -178,7 +179,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
           
           if (data.method === 'percentage') {
             // Apply percentage scaling on top of base size
-            scaleFactor = baseSizeFactor * (data.scale / 100);
+            scaleFactor = baseSizeFactor * ((data.scale || 100) / 100);
           } else {
             // Standard method uses just the base size factor
             scaleFactor = baseSizeFactor;
@@ -243,16 +244,17 @@ const SizingStep = ({ onNext, onPrevious }) => {
           <Card title="Sizing Method">
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <Select
-                value={data.method}
+                value={data?.method || 'percentage'}
                 onChange={handleMethodChange}
                 style={{ width: '100%' }}
                 size="large"
+                placeholder="Select sizing method"
               >
                 {sizingMethods.map(method => (
                   <Option key={method.value} value={method.value}>
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{method.label}</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>{method.description}</div>
+                    <div style={{ padding: '4px 0' }}>
+                      <div style={{ fontWeight: 'bold', lineHeight: '1.2' }}>{method.label}</div>
+                      <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.2', marginTop: '2px' }}>{method.description}</div>
                     </div>
                   </Option>
                 ))}
@@ -260,7 +262,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
 
               <Divider />
 
-              {data.method === 'standard' ? (
+              {data?.method === 'standard' ? (
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   <Text strong>Gender</Text>
                   <Select
@@ -287,7 +289,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
                     ))}
                   </Row>
                 </Space>
-              ) : data.method === 'percentage' ? (
+              ) : data?.method === 'percentage' ? (
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   <Text strong>Base Size</Text>
                   <Row gutter={16} align="middle">
@@ -321,7 +323,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
                         min={50}
                         max={200}
                         step={5}
-                        value={data.scale}
+                        value={data?.scale || 100}
                         onChange={handleScaleChange}
                         marks={{
                           50: '50%',
@@ -335,7 +337,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
                       <InputNumber
                         min={50}
                         max={200}
-                        value={data.scale}
+                        value={data?.scale || 100}
                         onChange={handleScaleChange}
                         formatter={value => `${value}%`}
                         parser={value => value.replace('%', '')}
@@ -348,7 +350,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
                     <Space align="center">
                       <InfoCircleOutlined style={{ color: '#52c41a' }} />
                       <Text>
-                        Scaling at {data.scale}% of {data.gender === 'mens' ? "Men's" : "Women's"} {data.standardSize || 'M'} size
+                        Scaling at {data?.scale || 100}% of {data?.gender === 'mens' ? "Men's" : "Women's"} {data?.standardSize || 'M'} size
                       </Text>
                     </Space>
                   </Card>
@@ -360,7 +362,7 @@ const SizingStep = ({ onNext, onPrevious }) => {
                     Adjust width and height for each panel independently
                   </Text>
                   
-                  {data.customDimensions && Object.entries(data.customDimensions).map(([panelName, dimensions]) => (
+                  {data?.customDimensions && Object.entries(data.customDimensions).map(([panelName, dimensions]) => (
                     <Card key={panelName} size="small" title={panelName.charAt(0).toUpperCase() + panelName.slice(1)}>
                       <Row gutter={16}>
                         <Col span={12}>
@@ -400,15 +402,15 @@ const SizingStep = ({ onNext, onPrevious }) => {
               <Text strong>Calculated Garment Dimensions:</Text>
               
               <div className="dimension-preview">
-                {data.method === 'custom' && data.customDimensions ? (
+                {data?.method === 'custom' && data?.customDimensions ? (
                   // Show individual panel dimensions for custom method
                   <Row gutter={[16, 16]}>
-                    {Object.entries(data.customDimensions).map(([panelName, dimensions]) => (
+                    {Object.entries(data?.customDimensions || {}).map(([panelName, dimensions]) => (
                       <Col span={12} key={panelName}>
                         <Card size="small" className="dimension-card">
                           <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
-                              {dimensions.width || '--'}" × {dimensions.height || '--'}"
+                              {dimensions?.width || '--'}" × {dimensions?.height || '--'}"
                             </div>
                             <div style={{ color: '#666' }}>{panelName.charAt(0).toUpperCase() + panelName.slice(1)}</div>
                           </div>
