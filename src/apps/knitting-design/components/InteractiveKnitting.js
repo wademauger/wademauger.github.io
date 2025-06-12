@@ -14,6 +14,7 @@ import {
   AimOutlined
 } from '@ant-design/icons';
 
+
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
@@ -480,12 +481,30 @@ const InteractiveKnitting = ({ data, onUpdate, onPrev }) => {
 
       <div className="step-actions" style={{ marginTop: 24 }}>
         <Space>
-          <Button onClick={onPrev}>Back to Preview</Button>
-          <Button type="primary" disabled={currentRow < totalRows}>
-            Save Progress
+          <Button 
+            size="large" 
+            onClick={onPrev}
+          >
+            Back to Preview
           </Button>
           {currentRow >= totalRows && (
-            <Button type="primary" style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}>
+            <Button 
+              size="large"
+              style={{
+                background: 'linear-gradient(90deg, #52c41a, #73d13d)',
+                borderColor: 'transparent',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              }}
+            >
               Pattern Complete! 🎉
             </Button>
           )}

@@ -14,6 +14,9 @@ const Layout = ({ children, footer }) => {
   const pinnedChords = useSelector((state) => state.chords?.pinnedChords || []);
   const currentInstrument = useSelector((state) => state.chords?.currentInstrument || 'ukulele');
   
+  // Check if we're on a crafts page
+  const isCraftsPage = location.pathname.startsWith('/crafts');
+  
   const isActive = (path) => {
     return location.pathname.startsWith(path) ? 'active' : '';
   };
@@ -53,73 +56,78 @@ const Layout = ({ children, footer }) => {
   ) : null;
 
   return (
-    <div className="app-container">
-      <header className="main-header">
-        <div className="header-content">
-              <span className={isActive('/')}>
-                <Link to="/">
-                    <span className="site-title">
-                      <span className="home-icon">🏠 Craft Center</span>
-                    </span>
-                </Link>
-              </span>
-          
-          {/* Desktop navigation - will be visible only on desktop */}
-          <nav className="desktop-navigation">
+    <div className={`app-container ${isCraftsPage ? 'crafts-layout' : 'professional-layout'}`}>
+      {/* Only show header for crafts pages */}
+      {isCraftsPage && (
+        <header className="main-header">
+          <div className="header-content">
+                <span className={isActive('/crafts')}>
+                  <Link to="/crafts">
+                      <span className="site-title">
+                        <span className="home-icon">🏠</span>
+                      </span>
+                  </Link>
+                </span>
+            
+            {/* Desktop navigation - will be visible only on desktop */}
+            <nav className="desktop-navigation">
+              <ul className="nav-list">
+                <li className={isActive('/crafts/recipes')}>
+                  <Link to="/crafts/recipes">Recipes</Link>
+                </li>
+                <li className={isActive('/crafts/tabs')}>
+                  <Link to="/crafts/tabs">Music Tabs</Link>
+                </li>
+                <li className={isActive('/crafts/knitting')}>
+                  <Link to="/crafts/knitting">Knitting Patterns</Link>
+                </li>
+              </ul>
+            </nav>
+            
+            {/* Mobile menu toggle - will be visible only on mobile */}
+            <button 
+              className="menu-toggle" 
+              onClick={toggleMenu}
+              aria-label="Toggle navigation menu"
+            >
+              <span className="hamburger"></span>
+            </button>
+          </div>
+        </header>
+      )}
+
+      {/* Mobile navigation - will be visible only when toggled on mobile and on crafts pages */}
+      {isCraftsPage && (
+        <div className={`mobile-navigation-container ${menuOpen ? 'open' : ''}`}>
+          <nav className="main-navigation">
             <ul className="nav-list">
-              <li className={isActive('/recipes')}>
-                <Link to="/recipes">Recipes</Link>
+              <li className={isActive('/crafts/recipes')}>
+                <Link to="/crafts/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
               </li>
-              <li className={isActive('/tabs')}>
-                <Link to="/tabs">Music Tabs</Link>
+              <li className={isActive('/crafts/tabs')}>
+                <Link to="/crafts/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
               </li>
-              <li className={isActive('/knitting')}>
-                <Link to="/knitting">Knitting Patterns</Link>
+              <li className={isActive('/crafts/knitting')}>
+                <Link to="/crafts/knitting" onClick={() => setMenuOpen(false)}>Knitting Patterns</Link>
               </li>
             </ul>
           </nav>
-          
-          {/* Mobile menu toggle - will be visible only on mobile */}
-          <button 
-            className="menu-toggle" 
-            onClick={toggleMenu}
-            aria-label="Toggle navigation menu"
-          >
-            <span className="hamburger"></span>
-          </button>
         </div>
-      </header>
+      )}
 
-      {/* Mobile navigation - will be visible only when toggled on mobile */}
-      <div className={`mobile-navigation-container ${menuOpen ? 'open' : ''}`}>
-        <nav className="main-navigation">
-          <ul className="nav-list">
-            <li className={isActive('/recipes')}>
-              <Link to="/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
-            </li>
-            <li className={isActive('/tabs')}>
-              <Link to="/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
-            </li>
-            <li className={isActive('/knitting')}>
-              <Link to="/knitting" onClick={() => setMenuOpen(false)}>Knitting Patterns</Link>
-            </li>
-          </ul>
-        </nav>
-      </div>
-
-      <main className="content-container">
+      <main className={`content-container ${isCraftsPage ? 'crafts-content' : 'professional-content'}`}>
         {children}
       </main>
 
       {/* Always show the pinned chords footer if chords are selected */}
       {pinnedChordsFooter}
 
-      {/* Always show the main footer */}
-      {footer || (
+      {/* Only show the main footer for crafts pages */}
+      {isCraftsPage && (footer || (
         <footer className="ant-layout-footer app-footer dark-footer css-ra95ns">
           Wade Ahlstrom © {new Date().getFullYear()}
         </footer>
-      )}
+      ))}
     </div>
   );
 };

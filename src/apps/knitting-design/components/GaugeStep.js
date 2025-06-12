@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, InputNumber, Select, Typography, Space, Button, Divider, Tag, message } from 'antd';
 import { InfoCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
+
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
@@ -337,11 +338,17 @@ const GaugeStep = ({ data, onUpdate, onNext, onPrev }) => {
 
       <div className="step-actions">
         <Space>
-          <Button onClick={onPrev}>Previous</Button>
-          <Button type="primary" onClick={handleSave}>
-            Save Gauge
+          <Button 
+            size="large" 
+            onClick={onPrev}
+          >
+            Previous: Sizing
           </Button>
-          <Button type="primary" onClick={handleNext}>
+          <Button 
+            size="large" 
+            type="primary"
+            onClick={handleNext}
+          >
             Next: Colorwork
           </Button>
         </Space>

@@ -13,6 +13,7 @@ import {
   FileTextOutlined
 } from '@ant-design/icons';
 
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -503,11 +504,17 @@ const PreviewStep = ({ data, onUpdate, onNext, onPrev }) => {
 
       <div className="step-actions">
         <Space>
-          <Button onClick={onPrev}>Previous</Button>
-          <Button type="primary" onClick={handleSave}>
-            Save Preview
+          <Button 
+            size="large" 
+            onClick={onPrev}
+          >
+            Previous: Colorwork
           </Button>
-          <Button type="primary" onClick={handleNext}>
+          <Button 
+            size="large" 
+            type="primary"
+            onClick={handleNext}
+          >
             Start Knitting
           </Button>
         </Space>

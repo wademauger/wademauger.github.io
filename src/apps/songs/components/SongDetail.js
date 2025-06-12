@@ -3,9 +3,11 @@ import { FaPencilAlt, FaPlus, FaTrash, FaEdit, FaGripVertical, FaClipboard } fro
 import { convertLyrics } from '../../../convert-lyrics';
 import { useDispatch, useSelector } from 'react-redux';
 import { setInstrument, transposeSongUp, transposeSongDown } from '../../../store/chordsSlice';
+import { deleteSong, clearSelectedSong, setGoogleDriveConnection, setUserInfo } from '../../../store/songsSlice';
 import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
-import { Spin, App } from 'antd';
+import { Spin, App, Popconfirm } from 'antd';
+import { CircularProgress, Box } from '@mui/material';
 import {
   DndContext,
   closestCenter,
@@ -230,9 +232,12 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const [isPendingAnyOperation, setIsPendingAnyOperation] = useState(false);
   const [isSavingTranspose, setIsSavingTranspose] = useState(false);
   const [isSavingWholeSong, setIsSavingWholeSong] = useState(false);
+  const [isDeletingSong, setIsDeletingSong] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState(0);
   const dispatch = useDispatch();
   const instrument = useSelector((state) => state.chords.currentInstrument);
   const transpose = useSelector((state) => state.chords.transposeBy?.[song.title] || 0);
+  const isGoogleDriveConnected = useSelector((state) => state.songs.isGoogleDriveConnected);
 
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -444,6 +449,53 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setInsertAfterIndex(null);
   };
 
+  // Handle deleting a line with optimistic updates
+  const handleDeleteLine = async (index) => {
+    // Block if there are pending operations
+    if (isPendingAnyOperation || pendingDeleteLines.has(index)) {
+      message.warning('Please wait for current operation to complete before deleting this line.');
+      return;
+    }
+
+    // Set pending delete state
+    setIsPendingAnyOperation(true);
+    setPendingDeleteLines(prev => new Set([...prev, index]));
+
+    const updatedLyrics = [...lyricsArray];
+    updatedLyrics.splice(index, 1);
+    
+    // Optimistic update
+    setOptimisticLyrics(updatedLyrics);
+
+    try {
+      await onUpdateSong({
+        ...song,
+        lyrics: updatedLyrics
+      });
+      
+      message.success('Line deleted successfully!');
+      setOptimisticLyrics(null);
+      setIsPendingAnyOperation(false);
+      setPendingDeleteLines(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Failed to delete line:', error);
+      message.error('Failed to delete line. Please try again.');
+      
+      // Revert optimistic update
+      setOptimisticLyrics(null);
+      setIsPendingAnyOperation(false);
+      setPendingDeleteLines(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+  };
+
   // Handle drag end for reordering lines with optimistic updates
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -507,77 +559,109 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     }
   };
 
+  // Helper function to check if error is authentication-related
+  const isAuthError = (error) => {
+    if (!error) return false;
+    const message = error.message || error || '';
+    const authErrorPatterns = [
+      'User not signed in to Google Drive',
+      'Expected OAuth 2 access token',
+      'login cookie or other valid authentication credential', 
+      'Invalid Credentials',
+      'Authentication failed',
+      'unauthorized_client',
+      'invalid_token',
+      'expired_token',
+      'access_denied',
+      'token_expired',
+      'Request had invalid authentication credentials'
+    ];
+    return authErrorPatterns.some(pattern => 
+      message.toLowerCase().includes(pattern.toLowerCase())
+    );
+  };
+
+  // Handle opening the popconfirm - start countdown
+  const handleDeleteConfirm = () => {
+    // This is called when user clicks the actual Delete button in the popconfirm
+    handleDeleteSong();
+  };
+
+  // Start countdown when popconfirm opens
+  const handlePopconfirmOpen = (open) => {
+    if (open) {
+      setDeleteCountdown(3.0); // Start 3-second countdown with decimal
+      const timer = setInterval(() => {
+        setDeleteCountdown(prev => {
+          if (prev <= 0.1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return Math.max(0, prev - 0.1); // Decrease by 0.1 every 100ms
+        });
+      }, 100); // Update every 100ms (10 times per second)
+    } else {
+      // Reset countdown when popconfirm closes
+      setDeleteCountdown(0);
+    }
+  };
+
+  // Handle actual song deletion
+  const handleDeleteSong = async () => {
+    setIsDeletingSong(true);
+    try {
+      await dispatch(deleteSong({
+        artistName: artist.name,
+        albumTitle: song.album?.title,
+        songTitle: song.title,
+        isGoogleDriveConnected
+      })).unwrap();
+
+      message.success('Song deleted successfully!');
+      
+      // Clear selected song to navigate away
+      dispatch(clearSelectedSong());
+      
+    } catch (error) {
+      console.error('Failed to delete song:', error);
+      
+      // Check if this is an authentication error
+      if (isAuthError(error)) {
+        dispatch(setGoogleDriveConnection(false));
+        dispatch(setUserInfo(null));
+        message.error('Your Google Drive session has expired. Please sign in again to delete songs.');
+      } else {
+        message.error(error.message || 'Failed to delete song. Please try again.');
+      }
+    } finally {
+      setIsDeletingSong(false);
+      setDeleteCountdown(0);
+    }
+  };
+
   const handleCancelWholeSong = () => {
     setIsEditingWholeSong(false);
     setWholeSongText('');
   };
 
-  const handleDeleteLine = async (index) => {
-    // Block if there are pending operations
-    if (isPendingAnyOperation) {
-      message.warning('Please wait for current operation to complete before deleting a line.');
-      return;
-    }
-    
-    const lineText = lyricsArray[index];
-    
-    modal.confirm({
-      title: 'Delete Line',
-      content: (
-        <div>
-          <p>Are you sure you want to delete this line?</p>
-          <div style={{ 
-            marginTop: '10px', 
-            padding: '8px', 
-            backgroundColor: '#f5f5f5', 
-            borderRadius: '4px',
-            fontFamily: 'monospace',
-            fontSize: '14px'
-          }}>
-            "{lineText}"
-          </div>
-        </div>
-      ),
-      okText: 'Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
-      onOk: () => {
-        // Mark line as pending delete for visual feedback
-        setPendingDeleteLines(prev => new Set([...prev, index]));
-        setIsPendingAnyOperation(true);
-        
-        // Don't optimistically remove the line - keep it visible with spinner
-        // The pending delete state will grey it out and show spinner
-        const updatedLyrics = lyricsArray.filter((_, i) => i !== index);
-        
-        // Save the delete operation
-        onUpdateSong({
-          ...song,
-          lyrics: updatedLyrics
-        }).then(() => {
-          message.success('Line deleted successfully!');
-          // Only update optimistic lyrics after successful deletion
-          setOptimisticLyrics(updatedLyrics);
-          setIsPendingAnyOperation(false);
-          setPendingDeleteLines(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(index);
-            return newSet;
-          });
-        }).catch((error) => {
-          console.error('Failed to delete line:', error);
-          message.error('Failed to delete line. Please try again.');
-          // Clear pending state without changing lyrics
-          setIsPendingAnyOperation(false);
-          setPendingDeleteLines(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(index);
-            return newSet;
-          });
-        });
-      }
-    });
-  };
+  const renderDeletePopconfirmTitle = () => (
+    <div>
+      <div>Delete "{song.title}"?</div>
+      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+        This action cannot be undone.
+      </div>
+    </div>
+  );
+
+  const renderDeletePopconfirmContent = () => (
+    <div style={{ minWidth: '200px' }}>
+      <div>
+        <strong>Artist:</strong> {artist.name}<br />
+        <strong>Album:</strong> {song.album?.title}<br />
+        <strong>Song:</strong> {song.title}
+      </div>
+    </div>
+  );
 
   // Function to render a lyric line with chord formatting above text
   const renderLyricLine = (line) => {
@@ -766,27 +850,99 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
               <i style={{ margin: 0 }}>{artist.name}</i>
             </div>
             {editingEnabled && !isEditingWholeSong && (
-              <button 
-                className="edit-whole-song-btn"
-                onClick={handleEditWholeSong}
-                style={{ 
-                  padding: '0.5em 1em', 
-                  fontSize: '0.9em',
-                  backgroundColor: '#4285f4',
-                  color: 'white',
-                  border: '1px solid #3367d6',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5em',
-                  transition: 'background-color 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#3367d6'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#4285f4'}
-              >
-                <FaEdit /> Edit Whole Song
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  className="edit-whole-song-btn"
+                  onClick={handleEditWholeSong}
+                  style={{ 
+                    padding: '0.5em 1em', 
+                    fontSize: '0.9em',
+                    backgroundColor: '#4285f4',
+                    color: 'white',
+                    border: '1px solid #3367d6',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5em',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#3367d6'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#4285f4'}
+                >
+                  <FaEdit /> Edit Whole Song
+                </button>
+                <Popconfirm
+                  title={renderDeletePopconfirmTitle()}
+                  description={renderDeletePopconfirmContent()}
+                  onConfirm={handleDeleteConfirm}
+                  onOpenChange={handlePopconfirmOpen}
+                  okText={
+                    deleteCountdown > 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                        <Box style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                          <CircularProgress
+                            variant="determinate"
+                            value={((3.0 - deleteCountdown) / 3.0) * 100}
+                            size={20}
+                            thickness={8}
+                            style={{ color: '#dc3545' }}
+                          />
+                          <Box
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              color: '#dc3545',
+                              fontWeight: 'bold',
+                              fontSize: '10px'
+                            }}
+                          >
+                            {(deleteCountdown+1).toFixed()}
+                          </Box>
+                        </Box>
+                        Please wait...
+                      </div>
+                    ) : isDeletingSong ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Spin size="small" />
+                        Deleting...
+                      </div>
+                    ) : (
+                      "Delete"
+                    )
+                  }
+                  cancelText={isDeletingSong ? null : "Cancel"}
+                  okType="danger"
+                  showCancel={!isDeletingSong}
+                  okButtonProps={{
+                    disabled: deleteCountdown > 0 || isDeletingSong
+                  }}
+                  placement="bottomRight"
+                >
+                  <button 
+                    className="delete-song-btn"
+                    style={{ 
+                      padding: '0.5em 1em', 
+                      fontSize: '0.9em',
+                      backgroundColor: '#dc3545',
+                      color: 'white',
+                      border: '1px solid #c82333',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5em',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                  >
+                    <FaTrash /> Delete Song
+                  </button>
+                </Popconfirm>
+              </div>
             )}
             {isEditingWholeSong && (
               <button 

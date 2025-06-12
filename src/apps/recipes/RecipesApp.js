@@ -14,6 +14,7 @@ const RecipesApp = ({ view = 'standard' }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
+    console.log('useEffect triggered with urlPermalink:', urlPermalink);
     setRecipes(recipeLibrary);
     
     // Find recipe across all sections when URL permalink changes
@@ -30,9 +31,17 @@ const RecipesApp = ({ view = 'standard' }) => {
       };
       
       const recipe = findRecipeByPermalink(urlPermalink);
+      console.log('Found recipe:', recipe?.title || 'null');
       if (recipe) {
         setActiveRecipe(recipe);
+      } else {
+        // Recipe not found, clear active recipe
+        setActiveRecipe(null);
       }
+    } else if (!urlPermalink) {
+      // No recipe in URL, clear active recipe
+      console.log('No urlPermalink, clearing active recipe');
+      setActiveRecipe(null);
     }
   }, [urlPermalink]);
 
@@ -41,15 +50,16 @@ const RecipesApp = ({ view = 'standard' }) => {
   };
 
   const handleRecipeSelect = (recipe) => {
-    navigate(`/recipes/${recipe.permalink}`);
+    console.log('Recipe selected:', recipe.title, recipe.permalink);
+    navigate(`/crafts/recipes/${recipe.permalink}`);
   };
 
   const toggleReaderView = () => {
     if (activeRecipe) {
       if (view === 'reader') {
-        navigate(`/recipes/${activeRecipe.permalink}`);
+        navigate(`/crafts/recipes/${activeRecipe.permalink}`);
       } else {
-        navigate(`/recipes/reader-view/${activeRecipe.permalink}`);
+        navigate(`/crafts/recipes/reader-view/${activeRecipe.permalink}`);
       }
     }
   };

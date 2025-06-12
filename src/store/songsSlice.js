@@ -62,6 +62,30 @@ export const addSong = createAsyncThunk(
   }
 );
 
+// Async thunk for deleting a song
+export const deleteSong = createAsyncThunk(
+  'songs/deleteSong',
+  async ({ artistName, albumTitle, songTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      // Create a deep clone to pass a plain JS object to the service
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await GoogleDriveServiceModern.deleteSong(library, artistName, albumTitle, songTitle);
+        // Return the updated library from Google Drive
+        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+        return { library: updatedLibrary, artistName, albumTitle, songTitle };
+      } else {
+        // For local updates, we'll handle this in the reducer
+        return { artistName, albumTitle, songTitle, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   library: { artists: [] },
   selectedSong: null,
@@ -371,6 +395,52 @@ const songsSlice = createSlice({
         state.selectedSong = findSongWithArtistAlbum(state.library, artistName, albumTitle, songTitle);
       })
       .addCase(addSong.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Delete song
+      .addCase(deleteSong.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteSong.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, albumTitle, songTitle, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local delete
+          const artist = state.library.artists.find(a => a.name === artistName);
+          if (artist) {
+            const album = artist.albums.find(a => a.title === albumTitle);
+            if (album) {
+              // Remove song locally
+              album.songs = album.songs.filter(s => s.title !== songTitle);
+            }
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+        
+        // Deselect song if it was the deleted song
+        if (state.selectedSong && 
+            state.selectedSong.artist.name === artistName &&
+            state.selectedSong.album.title === albumTitle &&
+            state.selectedSong.title === songTitle) {
+          state.selectedSong = null;
+        }
+      })
+      .addCase(deleteSong.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

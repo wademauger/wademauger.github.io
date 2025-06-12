@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearchMinus, faSearchPlus } from '@fortawesome/free-solid-svg-icons';
+import RecipeControls from './RecipeControls';
 import { fixedFontStyle } from '../styles/fontStyles';
 
 const ReaderView = ({ recipe, fontSize, onFontSizeChange, onToggleView }) => {
@@ -49,43 +48,18 @@ const ReaderView = ({ recipe, fontSize, onFontSizeChange, onToggleView }) => {
         <div className="reader-title">
           <h3>{recipe.title}</h3>
         </div>
-        <div className="reader-controls">
-          <button onClick={onToggleView} className="view-toggle-button">
-            Standard View
-          </button>
-          <div className="font-controls">
-            <button 
-              onClick={() => onFontSizeChange(Math.max(70, fontSize - 10))}
-              className="zoom-btn zoom-out"
-              aria-label="Decrease font size"
-            >
-              <FontAwesomeIcon icon={faSearchMinus} />
-            </button>
-            <span style={fixedFontStyle}>Font: {fontSize} % </span>
-            <button 
-              onClick={() => onFontSizeChange(Math.min(150, fontSize + 10))}
-              className="zoom-btn zoom-in"
-              aria-label="Increase font size"
-            >
-              <FontAwesomeIcon icon={faSearchPlus} />
-            </button>
-          </div>
-          <div className="scale-control">
-            <label style={fixedFontStyle}>Batch scale: </label>
-            <select
-              value={scale}
-              onChange={(e) => setScale(parseFloat(e.target.value))}
-            >
-              <option value="0.5">½×</option>
-              <option value="1">1×</option>
-              <option value="1.5">1½×</option>
-              <option value="2">2×</option>
-              <option value="3">3×</option>
-              <option value="4">4×</option>
-            </select>
-          </div>
-        </div>
       </div>
+
+      {/* Unified Controls */}
+      <RecipeControls
+        currentView="reader"
+        onToggleView={onToggleView}
+        fontSize={fontSize}
+        onFontSizeChange={onFontSizeChange}
+        scale={scale}
+        onScaleChange={setScale}
+        showScaleControl={true}
+      />
 
       <div className="reader-split-view">
         <div className="reader-ingredients">

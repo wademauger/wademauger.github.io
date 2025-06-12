@@ -31,9 +31,23 @@ const initialState = {
       fabricHeight: 240
     },
     colorwork: {
-      enabled: false,
-      layers: [],
-      type: 'stranded'
+      type: 'solid', // Default to solid color
+      color: '#ffffff', // Default color for solid
+      initialized: false,
+      // Saved patterns library
+      savedPatterns: {},
+      // Current working patterns by type
+      workingPatterns: {
+        stripes: { pattern: [], colors: ['#ffffff'], size: { height: 4 } },
+        stranded: { pattern: [], colors: ['#ffffff', '#000000'], size: { width: 8, height: 8 } },
+        intarsia: { pattern: [], colors: ['#ffffff', '#ff0000'], size: { width: 16, height: 16 } }
+      },
+      // Complex pattern compositions
+      complexPatterns: {},
+      // Final sequenced patterns for garment
+      garmentSequence: [],
+      // Current editing state
+      activeWorkingPattern: null
     },
     preview: {
       view: 'flat',
@@ -120,6 +134,79 @@ const knittingDesignSlice = createSlice({
     
     markClean: (state) => {
       state.isDirty = false;
+    },
+
+    // Colorwork actions
+    updateColorwork: (state, action) => {
+      state.patternData.colorwork = { ...state.patternData.colorwork, ...action.payload };
+      state.isDirty = true;
+    },
+
+    savePattern: (state, action) => {
+      const pattern = action.payload;
+      state.patternData.colorwork.savedPatterns[pattern.id] = pattern;
+      state.isDirty = true;
+    },
+
+    deletePattern: (state, action) => {
+      const patternId = action.payload;
+      delete state.patternData.colorwork.savedPatterns[patternId];
+      state.isDirty = true;
+    },
+
+    setActiveWorkingPattern: (state, action) => {
+      const { type, pattern } = action.payload;
+      state.patternData.colorwork.activeWorkingPattern = { type, pattern };
+      state.isDirty = true;
+    },
+
+    createComplexPattern: (state, action) => {
+      const pattern = action.payload;
+      state.patternData.colorwork.complexPatterns[pattern.id] = pattern;
+      state.isDirty = true;
+    },
+
+    updateComplexPattern: (state, action) => {
+      const { id, updates } = action.payload;
+      if (state.patternData.colorwork.complexPatterns[id]) {
+        state.patternData.colorwork.complexPatterns[id] = {
+          ...state.patternData.colorwork.complexPatterns[id],
+          ...updates
+        };
+        state.isDirty = true;
+      }
+    },
+
+    deleteComplexPattern: (state, action) => {
+      const patternId = action.payload;
+      delete state.patternData.colorwork.complexPatterns[patternId];
+      state.isDirty = true;
+    },
+
+    addToGarmentSequence: (state, action) => {
+      const sequenceItem = action.payload;
+      state.patternData.colorwork.garmentSequence.push(sequenceItem);
+      state.isDirty = true;
+    },
+
+    updateGarmentSequence: (state, action) => {
+      const { id, updates } = action.payload;
+      const index = state.patternData.colorwork.garmentSequence.findIndex(item => item.id === id);
+      if (index !== -1) {
+        state.patternData.colorwork.garmentSequence[index] = {
+          ...state.patternData.colorwork.garmentSequence[index],
+          ...updates
+        };
+        state.isDirty = true;
+      }
+    },
+
+    removeFromGarmentSequence: (state, action) => {
+      const itemId = action.payload;
+      state.patternData.colorwork.garmentSequence = state.patternData.colorwork.garmentSequence.filter(
+        item => item.id !== itemId
+      );
+      state.isDirty = true;
     }
   }
 });
@@ -139,7 +226,17 @@ export const {
   loadSession,
   saveSession,
   resetSession,
-  markClean
+  markClean,
+  updateColorwork,
+  savePattern,
+  deletePattern,
+  setActiveWorkingPattern,
+  createComplexPattern,
+  updateComplexPattern,
+  deleteComplexPattern,
+  addToGarmentSequence,
+  updateGarmentSequence,
+  removeFromGarmentSequence
 } = knittingDesignSlice.actions;
 
 export default knittingDesignSlice.reducer;

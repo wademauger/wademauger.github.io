@@ -9,6 +9,7 @@ import GaugeStep from './components/GaugeStep';
 import ColorworkStep from './components/ColorworkStep';
 import PreviewStep from './components/PreviewStep';
 import InteractiveKnitting from './components/InteractiveKnitting';
+import { getStepColor } from './utils/stepColors';
 import {
   selectCurrentStepInfo,
   selectPatternData,
@@ -90,6 +91,10 @@ const KnittingDesignApp = ({ view = 'designer' }) => {
     dispatch(jumpToStep(step));
   };
 
+  const handleJumpToStep = (step) => {
+    dispatch(jumpToStep(step));
+  };
+
   const renderStepContent = () => {
     const currentStepKey = steps[currentStep]?.key;
     
@@ -109,6 +114,7 @@ const KnittingDesignApp = ({ view = 'designer' }) => {
           data={patternData}
           onChange={(data) => dispatch(updatePatternData({ section: null, data }))}
           onNext={handleNext}
+          onJumpToStep={handleJumpToStep}
         />
       );
     }
@@ -258,11 +264,51 @@ const KnittingDesignApp = ({ view = 'designer' }) => {
                 <Steps
                   current={currentStep}
                   onChange={handleStepClick}
-                  items={steps.map((step, index) => ({
-                    title: step.title,
-                    disabled: false
-                  }))}
-                  className="design-steps"
+                  items={steps.map((step, index) => {
+                    const stepColor = getStepColor(index);
+                    return {
+                      title: step.title,
+                      disabled: false,
+                      icon: currentStep === index ? (
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: stepColor.primary,
+                          border: '2px solid white',
+                          boxShadow: `0 0 0 2px ${stepColor.primary}`
+                        }} />
+                      ) : currentStep > index ? (
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: stepColor.primary,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>✓</div>
+                      ) : (
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: '#f0f0f0',
+                          border: `2px solid ${stepColor.primary}`,
+                          color: stepColor.primary,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>{index + 1}</div>
+                      )
+                    };
+                  })}
+                  className="design-steps rainbow-steps"
                 />
               </Col>
             </Row>

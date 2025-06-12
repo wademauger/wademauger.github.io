@@ -69,13 +69,16 @@ const SongTabsApp = () => {
       console.log('Library loaded from Google Drive');
     } catch (error) {
       console.error('Failed to load library from Google Drive:', error);
-      if (error === 'User not signed in to Google Drive') {
-        message.error('Please sign in to Google Drive first');
+      
+      // Check if this is an authentication error
+      if (isAuthError(error)) {
+        message.error('Your Google Drive session has expired. Please sign in again.');
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
       } else {
         message.error('Failed to load library from Google Drive');
       }
+      
       // Fall back to mock library
       dispatch(loadMockLibrary());
     }
@@ -101,7 +104,17 @@ const SongTabsApp = () => {
       message.success('Song updated successfully');
     } catch (error) {
       console.error('Failed to update song:', error);
-      message.error('Failed to save song changes. Please try again.');
+      
+      // Check if this is an authentication error
+      if (isAuthError(error)) {
+        // Update UI state to reflect that user is no longer authenticated
+        dispatch(setGoogleDriveConnection(false));
+        dispatch(setUserInfo(null));
+        
+        message.error('Your Google Drive session has expired. Please sign in again to save changes.');
+      } else {
+        message.error('Failed to save song changes. Please try again.');
+      }
     }
   };
 
@@ -259,6 +272,28 @@ const SongTabsApp = () => {
     })) : [];
   };
 
+  // Helper function to check if error is authentication-related
+  const isAuthError = (error) => {
+    if (!error) return false;
+    const message = error.message || error || '';
+    const authErrorPatterns = [
+      'User not signed in to Google Drive',
+      'Expected OAuth 2 access token',
+      'login cookie or other valid authentication credential',
+      'Invalid Credentials',
+      'Authentication failed',
+      'unauthorized_client',
+      'invalid_token',
+      'expired_token',
+      'access_denied',
+      'token_expired',
+      'Request had invalid authentication credentials'
+    ];
+    return authErrorPatterns.some(pattern => 
+      message.toLowerCase().includes(pattern.toLowerCase())
+    );
+  };
+
   // Handle adding new song via modal
   const handleAddSong = useCallback(async () => {
     try {
@@ -289,7 +324,17 @@ const SongTabsApp = () => {
 
     } catch (error) {
       console.error('Failed to add song:', error);
-      message.error(error.message || 'Failed to add song. Please try again.');
+      
+      // Check if this is an authentication error
+      if (isAuthError(error)) {
+        // Update UI state to reflect that user is no longer authenticated
+        dispatch(setGoogleDriveConnection(false));
+        dispatch(setUserInfo(null));
+        
+        message.error('Your Google Drive session has expired. Please sign in again to save songs.');
+      } else {
+        message.error(error.message || 'Failed to add song. Please try again.');
+      }
     }
   }, [form, isGoogleDriveConnected, dispatch, handleSongSelect, message]);
 
@@ -425,7 +470,7 @@ const SongTabsApp = () => {
           setSelectedArtist('');
         }}
         confirmLoading={isLoading}
-        okText={isLoading ? <><Spin size="small" style={{ marginRight: 8 }} />Adding...</> : "Add Song"}
+        okText="Add Song"
         cancelText="Cancel"
       >
         <Form

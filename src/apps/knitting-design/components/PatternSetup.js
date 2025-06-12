@@ -3,9 +3,10 @@ import { Card, Radio, Button, Row, Col, Typography, Space } from 'antd';
 import { garments } from '../../../data/garments';
 import { PanelDiagram } from '../../../components/PanelDiagram';
 
+
 const { Title, Text } = Typography;
 
-const PatternSetup = ({ data, onChange, onNext }) => {
+const PatternSetup = ({ data, onChange, onNext, onJumpToStep }) => {
   // Get garments from data and add custom option
   const availableGarments = garments.map(garment => ({
     id: garment.permalink,
@@ -132,14 +133,28 @@ const PatternSetup = ({ data, onChange, onNext }) => {
 
         <Col span={24}>
           <div style={{ textAlign: 'right', marginTop: '24px' }}>
-            <Button 
-              type="primary" 
-              size="large"
-              onClick={handleNext}
-              disabled={!data.basePattern}
-            >
-              Next: Pattern Editor
-            </Button>
+            <Space>
+              <Button 
+                size="large"
+                type="primary"
+                onClick={handleNext}
+                disabled={!data.basePattern}
+              >
+                Next: Pattern Editor
+              </Button>
+              <Button 
+                size="large"
+                onClick={() => {
+                  // Jump to step 2 (Sizing)
+                  if (data.basePattern && onJumpToStep) {
+                    onJumpToStep(2);
+                  }
+                }}
+                disabled={!data.basePattern}
+              >
+                Skip to Sizing
+              </Button>
+            </Space>
           </div>
         </Col>
       </Row>

@@ -1,5 +1,6 @@
 export default [
     {
+        "title": "Old Bay Popcorn",
         "description": "Bacon fat, butter, and Old Bay seasoning makes this my favorite popcorn",
         "permalink": "old-bay-pop",
         "defaultServings": 2,
@@ -41,6 +42,7 @@ export default [
         "notes": []
     },
     {
+        "title": "Red Beet Pickled Eggs",
         "description": "A tangy and earthy breakfast, side or snack",
         "permalink": "red-beet-pickled-eggs",
         "defaultServings": 18,

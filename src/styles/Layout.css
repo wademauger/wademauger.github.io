@@ -13,13 +13,38 @@ body {
 }
 
 .app-container {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
 }
 
-.content-container {
+/* Layout for crafts pages with navigation */
+.app-container.crafts-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Layout for professional landing page */
+.app-container.professional-layout {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content-container.crafts-content {
   flex: 1 0 auto;
+  padding: 1.5rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.content-container.professional-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 /* Header styles */
@@ -118,15 +143,6 @@ body {
 
 .mobile-navigation-container .nav-list li a:hover {
   background-color: #444; /* Slightly lighter on hover for feedback */
-}
-
-/* Main content area */
-.content-container {
-  flex: 1;
-  padding: 1.5rem;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
 }
 
 /* Chord footer styles */
@@ -306,7 +322,7 @@ body {
 
 /* Special styles for e-reader devices like Reader */
 @media (max-width: 600px) and (min-height: 800px) {
-  .content-container {
+  .content-container.crafts-content {
     padding: 1rem;
   }
   

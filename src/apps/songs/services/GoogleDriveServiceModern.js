@@ -824,14 +824,26 @@ class GoogleDriveServiceModern {
       }
     }
 
-    const artist = libraryData.artists.find(a => a.name === artistName);
+    // Find or create artist
+    let artist = libraryData.artists.find(a => a.name === artistName);
     if (!artist) {
-      throw new Error('Artist not found');
+      console.log(`Artist '${artistName}' not found, creating new artist`);
+      artist = {
+        name: artistName,
+        albums: []
+      };
+      libraryData.artists.push(artist);
     }
 
-    const album = artist.albums.find(a => a.title === albumTitle);
+    // Find or create album
+    let album = artist.albums.find(a => a.title === albumTitle);
     if (!album) {
-      throw new Error('Album not found');
+      console.log(`Album '${albumTitle}' not found for artist '${artistName}', creating new album`);
+      album = {
+        title: albumTitle,
+        songs: []
+      };
+      artist.albums.push(album);
     }
 
     const newSong = {
@@ -896,6 +908,62 @@ class GoogleDriveServiceModern {
     
     console.log('Song updated successfully:', song.title);
     return song;
+  }
+
+  async deleteSong(libraryData, artistName, albumTitle, songTitle) {
+    return this.withAutoAuth(this._deleteSongInternal, 'deleteSong', libraryData, artistName, albumTitle, songTitle);
+  }
+
+  async _deleteSongInternal(libraryData, artistName, albumTitle, songTitle) {
+    if (!this.isSignedIn || !this.accessToken) {
+      throw new Error('User not signed in to Google Drive');
+    }
+
+    // Check if token is expired according to stored expiry
+    const expiry = localStorage.getItem(this.SESSION_KEYS.TOKEN_EXPIRY);
+    if (expiry) {
+      const expiryTime = parseInt(expiry);
+      const now = Date.now();
+      
+      if (now > expiryTime) {
+        throw new Error('User not signed in to Google Drive');
+      }
+    }
+
+    const artist = libraryData.artists.find(a => a.name === artistName);
+    if (!artist) {
+      throw new Error('Artist not found');
+    }
+
+    const album = artist.albums.find(a => a.title === albumTitle);
+    if (!album) {
+      throw new Error('Album not found');
+    }
+
+    const songIndex = album.songs.findIndex(s => s.title === songTitle);
+    if (songIndex === -1) {
+      throw new Error('Song not found');
+    }
+
+    // Remove the song from the album
+    const deletedSong = album.songs.splice(songIndex, 1)[0];
+
+    // If the album has no more songs, remove the album
+    if (album.songs.length === 0) {
+      const albumIndex = artist.albums.findIndex(a => a.title === albumTitle);
+      artist.albums.splice(albumIndex, 1);
+    }
+
+    // If the artist has no more albums, remove the artist
+    if (artist.albums.length === 0) {
+      const artistIndex = libraryData.artists.findIndex(a => a.name === artistName);
+      libraryData.artists.splice(artistIndex, 1);
+    }
+
+    await this.saveLibrary(libraryData);
+    
+    console.log('Song deleted successfully:', deletedSong.title);
+    return deletedSong;
   }
 
   // Method to handle tokens from @react-oauth/google

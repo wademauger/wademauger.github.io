@@ -1,16 +1,10 @@
-* {
-    margin: 0;
-    padding: 0;
-}
-body {
-    font-family: "Work Sans", sans-serif;
-    color: rgb(85, 104, 115);
-    text-rendering: optimizelegibility;
-    -webkit-font-smoothing: antialiased;
-}
+/* Professional landing page specific styles - scoped to avoid affecting other pages */
+
+/* Apply monospace font only to ProfessionalLanding component */
 .css-1jmej02 {
     width: 100vw;
     height: 100vh;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 .css-18dmi9v {
     height: 100%;
@@ -41,9 +35,58 @@ body {
 .css-18btm6k {
     color: #83afe5;
     transition: color 225ms ease-in-out;
+    text-decoration: none;
 }
 .css-18btm6k:hover {
     color: #6f94c2;
+}
+.css-gmuwbf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+}
+
+.css-social-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.css-combined-link {
+    color: #0066cc;
+    transition: color 225ms ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.css-combined-link:hover {
+    color: #004499;
+}
+
+.css-195yi6t {
+    color: #556873;
+    transition: color 225ms ease-in-out;
+    display: block;
+}
+
+.css-195yi6t:hover {
+    color: #333333;
+}
+
+.css-link-label {
+    font-size: 0.9rem;
+    font-weight: 400;
+    text-decoration: none;
+    transition: opacity 225ms ease-in-out;
+}
+
+.css-link-label:hover {
+    opacity: 0.8;
 }
 @media (prefers-color-scheme: dark) {
     .css-18btm6k {
@@ -52,26 +95,17 @@ body {
     .css-18btm6k:hover {
         color: #6ba4ab;
     }
-}
-.css-gmuwbf {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.css-195yi6t {
-    color: #83afe5;
-    transition: color 225ms ease-in-out;
-    margin-right: 16px;
-}
-.css-195yi6t:hover {
-    color: #6f94c2;
-}
-@media (prefers-color-scheme: dark) {
+    .css-combined-link {
+        color: #66ccff;
+    }
+    .css-combined-link:hover {
+        color: #99ddff;
+    }
     .css-195yi6t {
-        color: #7fc1ca;
+        color: #888888;
     }
     .css-195yi6t:hover {
-        color: #6ba4ab;
+        color: #aaaaaa;
     }
 }
 .css-195yi6t:last-child {

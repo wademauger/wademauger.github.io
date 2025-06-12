@@ -3,6 +3,7 @@ import { Card, Form, Input, InputNumber, Button, Row, Col, Typography, Space, Di
 import { PlusOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { PanelDiagram } from '../../../components/PanelDiagram';
 
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
@@ -204,12 +205,15 @@ const CustomShapeStep = ({ data, onChange, onNext, onBack }) => {
 
         <Col span={24}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-            <Button size="large" onClick={onBack}>
-              Back
+            <Button 
+              size="large" 
+              onClick={onBack}
+            >
+              Back to Setup
             </Button>
             <Button 
-              type="primary" 
               size="large"
+              type="primary"
               onClick={handleNext}
               disabled={Object.keys(shapes).length === 0}
             >

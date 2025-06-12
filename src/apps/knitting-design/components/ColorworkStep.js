@@ -1,454 +1,1022 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Switch, Button, Space, Typography, Slider, Select, ColorPicker, List, Input, message, Popconfirm, Divider } from 'antd';
-import { PlusOutlined, DeleteOutlined, EyeOutlined, EyeInvisibleOutlined, AppstoreOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  Card, Row, Col, Button, Space, Typography, Tabs,
+  Select, Input, message, Popconfirm, Divider, Tooltip, Badge,
+  InputNumber, List, Avatar, Tag, Alert
+} from 'antd';
+import {
+  PlusOutlined, DeleteOutlined, EyeOutlined, EyeInvisibleOutlined,
+  CopyOutlined, AppstoreAddOutlined
+} from '@ant-design/icons';
+import {
+  updateColorwork, savePattern, deletePattern, setActiveWorkingPattern,
+  createComplexPattern, updateComplexPattern, deleteComplexPattern,
+  addToGarmentSequence, updateGarmentSequence, removeFromGarmentSequence
+} from '../../../store/knittingDesignSlice';
+import PatternEditor from '../../../components/PatternEditor';
+import SwatchViewer from '../../../components/SwatchViewer';
+import KnitSwatch from '../../../components/KnitSwatch';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
-// Predefined colorwork patterns
-const COLORWORK_PATTERNS = {
-  fairisle: {
-    name: 'Fair Isle',
-    description: 'Traditional Fair Isle patterns with 2-3 colors per row',
-    maxColors: 3,
-    complexity: 'Medium'
+const COLORWORK_TYPES = {
+  solid: {
+    name: 'Solid Color',
+    description: 'Single color throughout the panel',
+    icon: '■',
+    complexity: 'Beginner',
+    default: true
+  },
+  stripes: {
+    name: 'Stripes',
+    description: 'Horizontal stripes with customizable row heights',
+    icon: '━━━',
+    complexity: 'Beginner'
+  },
+  stranded: {
+    name: 'Stranded Colorwork',
+    description: 'Two-color patterns carried across each row',
+    icon: '▓▓▓',
+    complexity: 'Intermediate'
   },
   intarsia: {
     name: 'Intarsia',
     description: 'Block color patterns with separate yarn sources',
-    maxColors: 8,
+    icon: '■■■',
     complexity: 'Advanced'
-  },
-  stranded: {
-    name: 'Stranded',
-    description: 'Two-color stranded colorwork',
-    maxColors: 2,
-    complexity: 'Intermediate'
-  },
-  mosaic: {
-    name: 'Mosaic',
-    description: 'Slip-stitch colorwork with one color per row',
-    maxColors: 2,
-    complexity: 'Beginner'
-  },
-  custom: {
-    name: 'Custom',
-    description: 'Create your own colorwork pattern',
-    maxColors: 10,
-    complexity: 'Variable'
   }
 };
 
-const DEFAULT_COLORS = [
-  '#ffffff', '#000000', '#ff4d4f', '#1890ff', '#52c41a', 
-  '#faad14', '#722ed1', '#eb2f96', '#13c2c2', '#fa8c16'
+const POSITIONING_OPTIONS = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
+  { value: 'custom', label: 'Custom Offset' }
 ];
 
 const ColorworkStep = ({ data, onUpdate, onNext, onPrev }) => {
-  const [colorworkData, setColorworkData] = useState(data.colorwork || {
-    enabled: false,
-    type: 'fairisle',
-    layers: [],
-    colors: ['#ffffff', '#000000'],
-    globalOpacity: 100
+  const dispatch = useDispatch();
+  const colorworkState = useSelector(state => state.knittingDesign?.patternData?.colorwork) || {};
+  const gauge = useSelector(state => state.knittingDesign?.patternData?.gauge) || {};
+  const hasInitialized = useRef(false);
+  
+  const [activeTab, setActiveTab] = useState('basic');
+  const [selectedComplexPattern, setSelectedComplexPattern] = useState(null);
+  const [newComplexPatternName, setNewComplexPatternName] = useState('');
+  const [garmentPreviewMode, setGarmentPreviewMode] = useState('front');
+  const [swatchSettings, setSwatchSettings] = useState({
+    size: { width: 4, height: 4 },
+    stitchSize: 8,
+    testPattern: null
   });
 
-  const [selectedLayer, setSelectedLayer] = useState(null);
-  const [newLayerName, setNewLayerName] = useState('');
+  // Local state for test colors since they should be independent of Redux state
+  const [testColors, setTestColors] = useState(['#ffffff']);
 
+  // Update test colors when colorwork type changes
   useEffect(() => {
-    // Initialize with a default layer if colorwork is enabled but no layers exist
-    if (colorworkData.enabled && colorworkData.layers.length === 0) {
-      addLayer('Background');
+    if (colorworkState.type === 'solid') {
+      setTestColors([colorworkState.color || '#ffffff']);
+    } else if (colorworkState.type && testColors.length === 1 && testColors[0] === '#ffffff') {
+      // Set default colors for multi-color patterns
+      setTestColors(['#ffffff', '#000000']);
     }
-  }, [colorworkData.enabled]);
+  }, [colorworkState.type, colorworkState.color]);
 
-  const toggleColorwork = (enabled) => {
-    setColorworkData(prev => ({
-      ...prev,
-      enabled,
-      layers: enabled ? prev.layers : []
-    }));
+  // Initialize colorwork state only once when component mounts
+  useEffect(() => {
+    if (!hasInitialized.current && (!colorworkState.initialized || Object.keys(colorworkState).length === 0)) {
+      console.log('Initializing colorwork state...');
+      hasInitialized.current = true;
+      
+      const initialState = {
+        type: data?.colorwork?.type || 'solid', // Default to solid color
+        color: data?.colorwork?.color || '#ffffff', // Default color for solid
+        initialized: true,
+        savedPatterns: {},
+        workingPatterns: {
+          stripes: { pattern: [], colors: ['#ffffff'], size: { height: 4 } },
+          stranded: { pattern: [], colors: ['#ffffff', '#000000'], size: { width: 8, height: 8 } },
+          intarsia: { pattern: [], colors: ['#ffffff', '#ff0000'], size: { width: 16, height: 16 } }
+        },
+        complexPatterns: {},
+        garmentSequence: [],
+        activeWorkingPattern: null
+      };
+      
+      console.log('Dispatching initial colorwork state:', initialState);
+      dispatch(updateColorwork(initialState));
+    }
+  }, []); // Empty dependency array to run only once
+
+  const handleColorworkTypeChange = (type) => {
+    console.log('handleColorworkTypeChange called with type:', type);
+    console.log('Current colorworkState:', colorworkState);
+    
+    const newState = {
+      ...colorworkState,
+      type,
+      initialized: true,
+      // Set default color for solid type
+      color: type === 'solid' ? (colorworkState.color || '#ffffff') : colorworkState.color,
+      // Ensure base structure exists
+      savedPatterns: colorworkState?.savedPatterns || {},
+      workingPatterns: colorworkState?.workingPatterns || {
+        stripes: { pattern: [], colors: ['#ffffff'], size: { height: 4 } },
+        stranded: { pattern: [], colors: ['#ffffff', '#000000'], size: { width: 8, height: 8 } },
+        intarsia: { pattern: [], colors: ['#ffffff', '#ff0000'], size: { width: 16, height: 16 } }
+      },
+      complexPatterns: colorworkState?.complexPatterns || {},
+      garmentSequence: colorworkState?.garmentSequence || [],
+      activeWorkingPattern: colorworkState?.activeWorkingPattern || null
+    };
+    
+    console.log('Dispatching newState:', newState);
+    dispatch(updateColorwork(newState));
+    onUpdate({ colorwork: newState });
   };
 
-  const addLayer = (name = newLayerName || `Layer ${colorworkData.layers.length + 1}`) => {
-    const newLayer = {
-      id: Date.now(),
-      name,
-      visible: true,
-      opacity: 100,
-      colors: [colorworkData.colors[0], colorworkData.colors[1]],
-      pattern: 'solid',
-      blendMode: 'normal',
-      repeatX: 1,
-      repeatY: 1,
-      offsetX: 0,
-      offsetY: 0
+  const handleColorChange = (color) => {
+    const newState = {
+      ...colorworkState,
+      color,
+      initialized: true
+    };
+    
+    dispatch(updateColorwork(newState));
+    onUpdate({ colorwork: newState });
+  };
+
+  const handleSavePattern = (patternData) => {
+    dispatch(savePattern(patternData));
+    message.success(`Pattern "${patternData.name}" saved to library`);
+  };
+
+  const handleDeletePattern = (patternId) => {
+    dispatch(deletePattern(patternId));
+    message.success('Pattern deleted from library');
+  };
+
+  const handleCreateComplexPattern = () => {
+    if (!newComplexPatternName.trim()) {
+      message.error('Please enter a pattern name');
+      return;
+    }
+
+    const complexPattern = {
+      id: `complex_${Date.now()}`,
+      name: newComplexPatternName,
+      components: [],
+      created: new Date().toISOString()
     };
 
-    setColorworkData(prev => ({
-      ...prev,
-      layers: [...prev.layers, newLayer]
+    dispatch(createComplexPattern(complexPattern));
+    setSelectedComplexPattern(complexPattern.id);
+    setNewComplexPatternName('');
+    message.success(`Complex pattern "${complexPattern.name}" created`);
+  };
+
+  const handleAddToComplex = (patternId, complexPatternId) => {
+    const component = {
+      id: `component_${Date.now()}`,
+      patternId,
+      positioning: 'center',
+      customOffset: { x: 0, y: 0 },
+      zIndex: 0,
+      opacity: 100,
+      visible: true
+    };
+
+    dispatch(updateComplexPattern({
+      id: complexPatternId,
+      updates: {
+        components: [...(colorworkState.complexPatterns?.[complexPatternId]?.components || []), component]
+      }
     }));
-
-    setNewLayerName('');
-    setSelectedLayer(newLayer.id);
-    message.success(`Layer "${name}" added`);
+    message.success('Pattern added to complex pattern');
   };
 
-  const deleteLayer = (layerId) => {
-    setColorworkData(prev => ({
-      ...prev,
-      layers: prev.layers.filter(layer => layer.id !== layerId)
-    }));
-    
-    if (selectedLayer === layerId) {
-      setSelectedLayer(null);
-    }
-    message.success('Layer deleted');
-  };
+  const handleAddToGarment = (patternId, isComplex = false) => {
+    const sequenceItem = {
+      id: `sequence_${Date.now()}`,
+      patternId,
+      isComplex,
+      positioning: 'center',
+      customOffset: { x: 0, y: 0 },
+      zIndex: 0,
+      opacity: 100,
+      visible: true,
+      garmentSection: garmentPreviewMode
+    };
 
-  const updateLayer = (layerId, updates) => {
-    setColorworkData(prev => ({
-      ...prev,
-      layers: prev.layers.map(layer => 
-        layer.id === layerId ? { ...layer, ...updates } : layer
-      )
-    }));
-  };
-
-  const toggleLayerVisibility = (layerId) => {
-    const layer = colorworkData.layers.find(l => l.id === layerId);
-    updateLayer(layerId, { visible: !layer.visible });
-  };
-
-  const addColor = (color) => {
-    if (colorworkData.colors.length >= COLORWORK_PATTERNS[colorworkData.type].maxColors) {
-      message.warning(`Maximum ${COLORWORK_PATTERNS[colorworkData.type].maxColors} colors allowed for ${COLORWORK_PATTERNS[colorworkData.type].name}`);
-      return;
-    }
-
-    setColorworkData(prev => ({
-      ...prev,
-      colors: [...prev.colors, color]
-    }));
-  };
-
-  const removeColor = (index) => {
-    if (colorworkData.colors.length <= 2) {
-      message.warning('At least 2 colors required');
-      return;
-    }
-
-    setColorworkData(prev => ({
-      ...prev,
-      colors: prev.colors.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateColor = (index, color) => {
-    setColorworkData(prev => ({
-      ...prev,
-      colors: prev.colors.map((c, i) => i === index ? color : c)
-    }));
-  };
-
-  const handleSave = () => {
-    onUpdate({ colorwork: colorworkData });
-    message.success('Colorwork settings saved');
+    dispatch(addToGarmentSequence(sequenceItem));
+    message.success('Pattern added to garment sequence');
   };
 
   const handleNext = () => {
-    handleSave();
+    onUpdate({ colorwork: colorworkState });
     onNext();
   };
 
-  const currentLayer = colorworkData.layers.find(l => l.id === selectedLayer);
+  // Render the solid color picker interface
+  const renderSolidColorPicker = () => (
+    <Card title="Solid Color Selection" style={{ marginTop: 16 }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Text>Choose a single color for your entire panel:</Text>
+        <input
+          type="color"
+          value={colorworkState.color || '#ffffff'}
+          onChange={(e) => handleColorChange(e.target.value)}
+          style={{
+            width: '100px',
+            height: '50px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        />
+        <Text type="secondary">Selected color: {colorworkState.color || '#ffffff'}</Text>
+      </Space>
+    </Card>
+  );
+
+  // Render functions for complex patterns (unchanged)
+  const renderBasicPatterns = () => (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} lg={12}>
+        <Card title="Pattern Types" size="small">
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            {Object.entries(COLORWORK_TYPES).filter(([type]) => type !== 'solid').map(([type, info]) => (
+              <Card 
+                key={type}
+                size="small" 
+                hoverable
+                style={{ 
+                  border: colorworkState.activeWorkingPattern?.type === type ? '2px solid #1890ff' : '1px solid #d9d9d9'
+                }}
+                onClick={() => dispatch(setActiveWorkingPattern({ type, pattern: null }))}
+              >
+                <Row align="middle">
+                  <Col flex="none">
+                    <Avatar 
+                      style={{ 
+                        backgroundColor: '#f56a00',
+                        fontFamily: 'monospace'
+                      }}
+                    >
+                      {info.icon}
+                    </Avatar>
+                  </Col>
+                  <Col flex="auto" style={{ marginLeft: 12 }}>
+                    <Text strong>{info.name}</Text>
+                    <br />
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      {info.description}
+                    </Text>
+                    <br />
+                    <Tag color={info.complexity === 'Beginner' ? 'green' : 
+                              info.complexity === 'Intermediate' ? 'orange' : 'red'}>
+                      {info.complexity}
+                    </Tag>
+                  </Col>
+                </Row>
+              </Card>
+            ))}
+          </Space>
+        </Card>
+
+        <Card title="Pattern Library" size="small" style={{ marginTop: 16 }}>
+          <List
+            size="small"
+            dataSource={Object.values(colorworkState.savedPatterns || {})}
+            renderItem={(pattern) => (
+              <List.Item
+                actions={[
+                  <Tooltip title="Load for editing">
+                    <Button 
+                      type="link" 
+                      icon={<EyeOutlined />}
+                      onClick={() => dispatch(setActiveWorkingPattern({ 
+                        type: pattern.type, 
+                        pattern: pattern.id 
+                      }))}
+                    />
+                  </Tooltip>,
+                  <Tooltip title="Duplicate">
+                    <Button 
+                      type="link" 
+                      icon={<CopyOutlined />}
+                      onClick={() => {
+                        const duplicate = {
+                          ...pattern,
+                          id: `${pattern.id}_copy_${Date.now()}`,
+                          name: `${pattern.name} (Copy)`
+                        };
+                        dispatch(savePattern(duplicate));
+                      }}
+                    />
+                  </Tooltip>,
+                  <Popconfirm
+                    title="Delete this pattern?"
+                    onConfirm={() => handleDeletePattern(pattern.id)}
+                  >
+                    <Button type="link" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar style={{ backgroundColor: pattern.colors?.[0] || '#ccc' }}>
+                      {COLORWORK_TYPES[pattern.type]?.icon || '?'}
+                    </Avatar>
+                  }
+                  title={pattern.name}
+                  description={
+                    <Space>
+                      <Tag>{COLORWORK_TYPES[pattern.type]?.name || pattern.type}</Tag>
+                      <Text type="secondary">
+                        {pattern.colors?.length || 0} colors
+                      </Text>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      </Col>
+
+      <Col xs={24} lg={12}>
+        {colorworkState.activeWorkingPattern?.type && (
+          <PatternEditor
+            type={colorworkState.activeWorkingPattern.type}
+            initialPattern={colorworkState.activeWorkingPattern.pattern ? 
+              colorworkState.savedPatterns[colorworkState.activeWorkingPattern.pattern] : null}
+            onSave={handleSavePattern}
+            gauge={gauge}
+          />
+        )}
+      </Col>
+    </Row>
+  );
+
+  const renderComplexPatterns = () => (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} lg={8}>
+        <Card title="Complex Patterns" size="small">
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Input.Group compact>
+              <Input
+                placeholder="New complex pattern name"
+                value={newComplexPatternName}
+                onChange={(e) => setNewComplexPatternName(e.target.value)}
+                onPressEnter={handleCreateComplexPattern}
+                style={{ width: 'calc(100% - 40px)' }}
+              />
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={handleCreateComplexPattern}
+              />
+            </Input.Group>
+
+            <List
+              size="small"
+              dataSource={Object.values(colorworkState.complexPatterns || {})}
+              renderItem={(pattern) => (
+                <List.Item
+                  className={selectedComplexPattern === pattern.id ? 'ant-list-item-selected' : ''}
+                  style={{ 
+                    cursor: 'pointer',
+                    backgroundColor: selectedComplexPattern === pattern.id ? '#f0f8ff' : 'transparent'
+                  }}
+                  onClick={() => setSelectedComplexPattern(pattern.id)}
+                  actions={[
+                    <Badge count={pattern.components?.length || 0} size="small">
+                      <AppstoreAddOutlined />
+                    </Badge>,
+                    <Popconfirm
+                      title="Delete this complex pattern?"
+                      onConfirm={() => {
+                        dispatch(deleteComplexPattern(pattern.id));
+                        if (selectedComplexPattern === pattern.id) {
+                          setSelectedComplexPattern(null);
+                        }
+                      }}
+                    >
+                      <Button type="link" danger size="small" icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={pattern.name}
+                    description={`${pattern.components?.length || 0} components`}
+                  />
+                </List.Item>
+              )}
+            />
+          </Space>
+        </Card>
+
+        <Card title="Add Basic Patterns" size="small" style={{ marginTop: 16 }}>
+          <List
+            size="small"
+            dataSource={Object.values(colorworkState.savedPatterns || {})}
+            renderItem={(pattern) => (
+              <List.Item
+                actions={[
+                  <Button 
+                    type="link" 
+                    icon={<PlusOutlined />}
+                    disabled={!selectedComplexPattern}
+                    onClick={() => handleAddToComplex(pattern.id, selectedComplexPattern)}
+                  >
+                    Add
+                  </Button>
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar style={{ backgroundColor: pattern.colors?.[0] || '#ccc' }}>
+                      {COLORWORK_TYPES[pattern.type]?.icon || '?'}
+                    </Avatar>
+                  }
+                  title={pattern.name}
+                  description={COLORWORK_TYPES[pattern.type]?.name}
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      </Col>
+
+      <Col xs={24} lg={16}>
+        {selectedComplexPattern && (
+          <Card title={`Editing: ${colorworkState.complexPatterns?.[selectedComplexPattern]?.name}`} size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Alert
+                message="Complex Pattern Composition"
+                description="Arrange and position individual patterns to create complex designs. Use positioning and z-index to control layering."
+                type="info"
+                showIcon
+              />
+              
+              <List
+                size="small"
+                dataSource={colorworkState.complexPatterns?.[selectedComplexPattern]?.components || []}
+                renderItem={(component, index) => (
+                  <List.Item
+                    actions={[
+                      <InputNumber
+                        size="small"
+                        placeholder="Z-Index"
+                        value={component.zIndex}
+                        onChange={(value) => {
+                          const updatedComponents = [...(colorworkState.complexPatterns?.[selectedComplexPattern]?.components || [])];
+                          updatedComponents[index] = { ...component, zIndex: value };
+                          dispatch(updateComplexPattern({
+                            id: selectedComplexPattern,
+                            updates: { components: updatedComponents }
+                          }));
+                        }}
+                      />,
+                      <Select
+                        size="small"
+                        value={component.positioning}
+                        onChange={(value) => {
+                          const updatedComponents = [...(colorworkState.complexPatterns?.[selectedComplexPattern]?.components || [])];
+                          updatedComponents[index] = { ...component, positioning: value };
+                          dispatch(updateComplexPattern({
+                            id: selectedComplexPattern,
+                            updates: { components: updatedComponents }
+                          }));
+                        }}
+                      >
+                        {POSITIONING_OPTIONS.map(opt => (
+                          <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                        ))}
+                      </Select>,
+                      <Button 
+                        type="link" 
+                        danger 
+                        size="small" 
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                          const updatedComponents = (colorworkState.complexPatterns?.[selectedComplexPattern]?.components || []).filter((_, i) => i !== index);
+                          dispatch(updateComplexPattern({
+                            id: selectedComplexPattern,
+                            updates: { components: updatedComponents }
+                          }));
+                        }}
+                      />
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={(colorworkState.savedPatterns || {})[component.patternId]?.name || 'Unknown Pattern'}
+                      description={`Position: ${component.positioning}, Z-Index: ${component.zIndex}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Space>
+          </Card>
+        )}
+      </Col>
+    </Row>
+  );
+
+  const renderGarmentSequence = () => (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} lg={8}>
+        <Card title="Garment Sections" size="small">
+          <Select
+            value={garmentPreviewMode}
+            onChange={setGarmentPreviewMode}
+            style={{ width: '100%', marginBottom: 16 }}
+          >
+            <Option value="front">Front</Option>
+            <Option value="back">Back</Option>
+            <Option value="sleeves">Sleeves</Option>
+            <Option value="collar">Collar</Option>
+          </Select>
+
+          <Divider orientation="left" plain>Available Patterns</Divider>
+          
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Text strong>Basic Patterns</Text>
+            <List
+              size="small"
+              dataSource={Object.values(colorworkState.savedPatterns || {})}
+              renderItem={(pattern) => (
+                <List.Item
+                  actions={[
+                    <Button 
+                      type="link" 
+                      icon={<PlusOutlined />}
+                      onClick={() => handleAddToGarment(pattern.id, false)}
+                    >
+                      Add
+                    </Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar style={{ backgroundColor: pattern.colors?.[0] || '#ccc' }}>
+                        {COLORWORK_TYPES[pattern.type]?.icon || '?'}
+                      </Avatar>
+                    }
+                    title={pattern.name}
+                    description={COLORWORK_TYPES[pattern.type]?.name}
+                  />
+                </List.Item>
+              )}
+            />
+
+            <Text strong>Complex Patterns</Text>
+            <List
+              size="small"
+              dataSource={Object.values(colorworkState.complexPatterns || {})}
+              renderItem={(pattern) => (
+                <List.Item
+                  actions={[
+                    <Button 
+                      type="link" 
+                      icon={<PlusOutlined />}
+                      onClick={() => handleAddToGarment(pattern.id, true)}
+                    >
+                      Add
+                    </Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Badge count={pattern.components?.length || 0} size="small">
+                        <Avatar style={{ backgroundColor: '#722ed1' }}>
+                          <AppstoreAddOutlined />
+                        </Avatar>
+                      </Badge>
+                    }
+                    title={pattern.name}
+                    description="Complex Pattern"
+                  />
+                </List.Item>
+              )}
+            />
+          </Space>
+        </Card>
+      </Col>
+
+      <Col xs={24} lg={16}>
+        <Card title={`${garmentPreviewMode.charAt(0).toUpperCase() + garmentPreviewMode.slice(1)} Sequence`} size="small">
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Alert
+              message="Garment Pattern Sequencing"
+              description="Arrange patterns for the entire garment with positioning and z-index control. Patterns will be applied in sequence order."
+              type="info"
+              showIcon
+            />
+
+            <List
+              size="small"
+              dataSource={(colorworkState.garmentSequence || []).filter(item => item.garmentSection === garmentPreviewMode)}
+              renderItem={(item, index) => (
+                <List.Item
+                  actions={[
+                    <InputNumber
+                      size="small"
+                      placeholder="Z-Index"
+                      value={item.zIndex}
+                      onChange={(value) => {
+                        dispatch(updateGarmentSequence({
+                          id: item.id,
+                          updates: { zIndex: value }
+                        }));
+                      }}
+                    />,
+                    <Select
+                      size="small"
+                      value={item.positioning}
+                      onChange={(value) => {
+                        dispatch(updateGarmentSequence({
+                          id: item.id,
+                          updates: { positioning: value }
+                        }));
+                      }}
+                    >
+                      {POSITIONING_OPTIONS.map(opt => (
+                        <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                      ))}
+                    </Select>,
+                    <Button
+                      type="link"
+                      icon={item.visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                      onClick={() => {
+                        dispatch(updateGarmentSequence({
+                          id: item.id,
+                          updates: { visible: !item.visible }
+                        }));
+                      }}
+                    />,
+                    <Button 
+                      type="link" 
+                      danger 
+                      size="small" 
+                      icon={<DeleteOutlined />}
+                      onClick={() => dispatch(removeFromGarmentSequence(item.id))}
+                    />
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      item.isComplex 
+                        ? (colorworkState.complexPatterns || {})[item.patternId]?.name
+                        : (colorworkState.savedPatterns || {})[item.patternId]?.name
+                    }
+                    description={
+                      <Space>
+                        <Tag>{item.isComplex ? 'Complex' : 'Basic'}</Tag>
+                        <Text type="secondary">Position: {item.positioning}</Text>
+                        <Text type="secondary">Z-Index: {item.zIndex}</Text>
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </Space>
+        </Card>
+      </Col>
+    </Row>
+  );
+
+  const renderSwatchTester = () => (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} lg={12}>
+        <Card title="Swatch Settings" size="small">
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div>
+              <Text strong>Current Gauge</Text>
+              <div style={{ 
+                marginTop: 8,
+                padding: '12px',
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+                backgroundColor: '#f8f9fa',
+                textAlign: 'center'
+              }}>
+                <Text strong style={{ color: '#1890ff' }}>
+                  {gauge?.stitches || (gauge?.stitchesPerInch ? gauge.stitchesPerInch * 4 : 19)} sts × {gauge?.rows || (gauge?.rowsPerInch ? gauge.rowsPerInch * 4 : 30)} rows per 4"
+                </Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Set in the Gauge step
+                </Text>
+              </div>
+            </div>
+
+            <div>
+              <Text strong>Swatch Size</Text>
+              <Row gutter={8} style={{ marginTop: 8 }}>
+                <Col span={12}>
+                  <Text type="secondary">Width (inches)</Text>
+                  <InputNumber
+                    min={1}
+                    max={8}
+                    step={0.5}
+                    value={swatchSettings.size.width}
+                    onChange={(value) => setSwatchSettings(prev => ({
+                      ...prev,
+                      size: { ...prev.size, width: value }
+                    }))}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary">Height (inches)</Text>
+                  <InputNumber
+                    min={1}
+                    max={8}
+                    step={0.5}
+                    value={swatchSettings.size.height}
+                    onChange={(value) => setSwatchSettings(prev => ({
+                      ...prev,
+                      size: { ...prev.size, height: value }
+                    }))}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+              </Row>
+            </div>
+
+            <div>
+              <Text strong>Display Settings</Text>
+              <div style={{ marginTop: 8 }}>
+                <Text type="secondary">Stitch Size (pixels)</Text>
+                <InputNumber
+                  min={4}
+                  max={16}
+                  value={swatchSettings.stitchSize}
+                  onChange={(value) => setSwatchSettings(prev => ({
+                    ...prev,
+                    stitchSize: value
+                  }))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
+
+            <Divider />
+
+            {colorworkState.type !== 'solid' && (
+              <div>
+                <Text strong>Test Colors</Text>
+                <div style={{ marginTop: 8 }}>
+                  {testColors.map((color, index) => (
+                    <Row key={index} gutter={8} style={{ marginBottom: 8 }}>
+                      <Col span={16}>
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => {
+                            const newColors = [...testColors];
+                            newColors[index] = e.target.value;
+                            setTestColors(newColors);
+                          }}
+                          style={{
+                            width: '100%',
+                            height: '32px',
+                            border: '1px solid #d9d9d9',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        />
+                      </Col>
+                      <Col span={8}>
+                        <Button
+                          danger
+                          disabled={testColors.length <= 1}
+                          onClick={() => {
+                            setTestColors(testColors.filter((_, i) => i !== index));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </Col>
+                    </Row>
+                  ))}
+                  <Button
+                    type="dashed"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setTestColors([...testColors, '#ffffff']);
+                    }}
+                    style={{ width: '100%' }}
+                  >
+                    Add Color
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {colorworkState.type === 'solid' && (
+              <div>
+                <Text strong>Current Solid Color</Text>
+                <div style={{ 
+                  marginTop: 8,
+                  padding: '12px',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '4px',
+                  backgroundColor: colorworkState.color || '#ffffff',
+                  textAlign: 'center',
+                  color: colorworkState.color === '#ffffff' ? '#000000' : '#ffffff'
+                }}>
+                  {colorworkState.color || '#ffffff'}
+                </div>
+                <Text type="secondary" style={{ fontSize: '12px', marginTop: 4, display: 'block' }}>
+                  Change the color in the "Solid Color Selection" section above
+                </Text>
+              </div>
+            )}
+
+            <Divider />
+
+            <div>
+              <Text strong>Test Pattern</Text>
+              <Select
+                placeholder="Select a saved pattern to test"
+                value={swatchSettings.testPattern}
+                onChange={(value) => setSwatchSettings(prev => ({
+                  ...prev,
+                  testPattern: value
+                }))}
+                style={{ width: '100%', marginTop: 8 }}
+                allowClear
+              >
+                {Object.values(colorworkState.savedPatterns || {}).map(pattern => (
+                  <Option key={pattern.id} value={pattern.id}>
+                    {pattern.name} ({COLORWORK_TYPES[pattern.type]?.name})
+                  </Option>
+                ))}
+              </Select>
+              <Text type="secondary" style={{ fontSize: '12px', marginTop: 4, display: 'block' }}>
+                Leave empty for solid color swatch
+              </Text>
+            </div>
+          </Space>
+        </Card>
+      </Col>
+
+      <Col xs={24} lg={12}>
+        <Card title="Swatch Preview" size="small">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            minHeight: '400px',
+            padding: '16px'
+          }}>
+            <KnitSwatch
+              gauge={{
+                stitches: gauge?.stitches || (gauge?.stitchesPerInch ? gauge.stitchesPerInch * 4 : 19),
+                rows: gauge?.rows || (gauge?.rowsPerInch ? gauge.rowsPerInch * 4 : 30)
+              }}
+              colors={colorworkState.type === 'solid' ? 
+                [colorworkState.color || '#ffffff'] : 
+                testColors
+              }
+              pattern={swatchSettings.testPattern ? 
+                (colorworkState.savedPatterns || {})[swatchSettings.testPattern]?.pattern || [] : 
+                []
+              }
+              size={swatchSettings.size}
+              stitchSize={swatchSettings.stitchSize}
+              onClick={(row, stitch) => {
+                console.log(`Clicked stitch at row ${row}, position ${stitch}`);
+                message.info(`Clicked stitch at row ${row + 1}, position ${stitch + 1}`);
+              }}
+            />
+          </div>
+          
+          <Alert
+            message="Interactive Swatch"
+            description="This swatch shows how your colorwork pattern will look when knitted. The gauge is automatically taken from your gauge settings. Click on individual stitches to see their position."
+            type="info"
+            showIcon
+            style={{ marginTop: 16 }}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
 
   return (
     <div className="colorwork-step">
-      <Row gutter={[24, 24]}>
-        <Col xs={24} lg={14}>
-          <Card title="Colorwork Settings" className="settings-card">
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              {/* Enable Colorwork */}
-              <div>
-                <Space>
-                  <Title level={5} style={{ margin: 0 }}>Enable Colorwork</Title>
-                  <Switch 
-                    checked={colorworkData.enabled}
-                    onChange={toggleColorwork}
-                  />
-                </Space>
-                <Text type="secondary">
-                  Add multiple colors and patterns to your knitting project
-                </Text>
-              </div>
-
-              {colorworkData.enabled && (
-                <>
-                  <Divider />
-                  
-                  {/* Colorwork Type */}
-                  <div>
-                    <Title level={5}>Colorwork Type</Title>
-                    <Select
-                      value={colorworkData.type}
-                      onChange={(type) => setColorworkData(prev => ({ ...prev, type }))}
-                      style={{ width: '100%' }}
-                    >
-                      {Object.entries(COLORWORK_PATTERNS).map(([key, pattern]) => (
-                        <Option key={key} value={key}>
-                          <Space direction="vertical" size={0}>
-                            <Text strong>{pattern.name}</Text>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              {pattern.description} • {pattern.complexity}
-                            </Text>
-                          </Space>
-                        </Option>
-                      ))}
-                    </Select>
-                  </div>
-
-                  <Divider />
-
-                  {/* Color Palette */}
-                  <div>
-                    <Title level={5}>Color Palette</Title>
-                    <Row gutter={[8, 8]}>
-                      {colorworkData.colors.map((color, index) => (
-                        <Col key={index}>
-                          <Space direction="vertical" align="center" size={4}>
-                            <ColorPicker
-                              value={color}
-                              onChange={(color) => updateColor(index, color.toHexString())}
-                              showText={(color) => <span style={{ color: color.toHexString() }}>●</span>}
-                            />
-                            {colorworkData.colors.length > 2 && (
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<DeleteOutlined />}
-                                onClick={() => removeColor(index)}
-                                style={{ color: '#ff4d4f' }}
-                              />
-                            )}
-                          </Space>
-                        </Col>
-                      ))}
-                      {colorworkData.colors.length < COLORWORK_PATTERNS[colorworkData.type].maxColors && (
-                        <Col>
-                          <ColorPicker
-                            onChange={(color) => addColor(color.toHexString())}
-                            trigger="click"
-                          >
-                            <Button
-                              type="dashed"
-                              icon={<PlusOutlined />}
-                              style={{ height: 32, width: 32 }}
-                            />
-                          </ColorPicker>
-                        </Col>
-                      )}
-                    </Row>
+      <div className="step-header">
+        <Title level={3}>Colorwork Design</Title>
+        <Paragraph>
+          Create sophisticated colorwork patterns with our comprehensive design system. 
+          Choose from solid colors, stripes, stranded colorwork, or complex intarsia patterns.
+        </Paragraph>
+        
+        {/* Colorwork Type Selection */}
+        <Card title="Colorwork Type" size="small" style={{ marginBottom: 24 }}>
+          <Row gutter={[16, 16]}>
+            {Object.entries(COLORWORK_TYPES).map(([type, info]) => (
+              <Col xs={12} sm={8} md={6} key={type}>
+                <Card 
+                  size="small" 
+                  hoverable
+                  style={{ 
+                    border: colorworkState.type === type ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleColorworkTypeChange(type)}
+                >
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ 
+                      fontSize: '24px', 
+                      marginBottom: 8,
+                      fontFamily: 'monospace' 
+                    }}>
+                      {info.icon}
+                    </div>
+                    <Text strong>{info.name}</Text>
+                    <br />
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      {colorworkData.colors.length}/{COLORWORK_PATTERNS[colorworkData.type].maxColors} colors
+                      {info.description}
                     </Text>
+                    <br />
+                    <Tag 
+                      color={info.complexity === 'Beginner' ? 'green' : 
+                            info.complexity === 'Intermediate' ? 'orange' : 'red'}
+                      style={{ marginTop: 4 }}
+                    >
+                      {info.complexity}
+                    </Tag>
                   </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Card>
 
-                  <Divider />
-
-                  {/* Layer Management */}
-                  <div>
-                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                      <Title level={5}>
-                        <AppstoreOutlined /> Layers
-                      </Title>
-                      <Space>
-                        <Input
-                          placeholder="Layer name"
-                          value={newLayerName}
-                          onChange={(e) => setNewLayerName(e.target.value)}
-                          style={{ width: 120 }}
-                          onPressEnter={() => addLayer()}
-                        />
-                        <Button
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={() => addLayer()}
-                        >
-                          Add Layer
-                        </Button>
-                      </Space>
-                    </Space>
-
-                    <List
-                      dataSource={colorworkData.layers}
-                      renderItem={(layer) => (
-                        <List.Item
-                          className={`layer-item ${selectedLayer === layer.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedLayer(layer.id)}
-                          actions={[
-                            <Button
-                              type="text"
-                              icon={layer.visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleLayerVisibility(layer.id);
-                              }}
-                            />,
-                            <Popconfirm
-                              title="Delete this layer?"
-                              onConfirm={(e) => {
-                                e.stopPropagation();
-                                deleteLayer(layer.id);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                type="text"
-                                icon={<DeleteOutlined />}
-                                danger
-                              />
-                            </Popconfirm>
-                          ]}
-                        >
-                          <List.Item.Meta
-                            title={
-                              <Space>
-                                <Text strong>{layer.name}</Text>
-                                {!layer.visible && <Text type="secondary">(Hidden)</Text>}
-                              </Space>
-                            }
-                            description={`Opacity: ${layer.opacity}% • ${layer.pattern}`}
-                          />
-                        </List.Item>
-                      )}
-                      style={{ maxHeight: 200, overflowY: 'auto' }}
-                    />
-                  </div>
-
-                  {/* Layer Properties */}
-                  {currentLayer && (
-                    <>
-                      <Divider />
-                      <div>
-                        <Title level={5}>Layer Properties: {currentLayer.name}</Title>
-                        
-                        <Space direction="vertical" size="medium" style={{ width: '100%' }}>
-                          <div>
-                            <Text>Opacity</Text>
-                            <Slider
-                              value={currentLayer.opacity}
-                              onChange={(opacity) => updateLayer(currentLayer.id, { opacity })}
-                              min={0}
-                              max={100}
-                              marks={{ 0: '0%', 50: '50%', 100: '100%' }}
-                            />
-                          </div>
-
-                          <Row gutter={16}>
-                            <Col span={12}>
-                              <Text>Blend Mode</Text>
-                              <Select
-                                value={currentLayer.blendMode}
-                                onChange={(blendMode) => updateLayer(currentLayer.id, { blendMode })}
-                                style={{ width: '100%' }}
-                              >
-                                <Option value="normal">Normal</Option>
-                                <Option value="multiply">Multiply</Option>
-                                <Option value="overlay">Overlay</Option>
-                                <Option value="screen">Screen</Option>
-                              </Select>
-                            </Col>
-                            <Col span={12}>
-                              <Text>Pattern</Text>
-                              <Select
-                                value={currentLayer.pattern}
-                                onChange={(pattern) => updateLayer(currentLayer.id, { pattern })}
-                                style={{ width: '100%' }}
-                              >
-                                <Option value="solid">Solid</Option>
-                                <Option value="stripes">Stripes</Option>
-                                <Option value="dots">Dots</Option>
-                                <Option value="checkers">Checkers</Option>
-                              </Select>
-                            </Col>
-                          </Row>
-                        </Space>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </Space>
+        {/* Solid Color Picker for Solid Type */}
+        {colorworkState.type === 'solid' && (
+          <Card title="Solid Color Selection" size="small" style={{ marginBottom: 24 }}>
+            <Row align="middle" gutter={16}>
+              <Col>
+                <input
+                  type="color"
+                  value={colorworkState.color || '#ffffff'}
+                  onChange={(e) => handleColorChange(e.target.value)}
+                  style={{
+                    width: 50,
+                    height: 50,
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer'
+                  }}
+                />
+              </Col>
+              <Col>
+                <Text strong>Selected Color: {colorworkState.color || '#ffffff'}</Text>
+                <br />
+                <Text type="secondary">This color will be applied to the entire panel</Text>
+              </Col>
+            </Row>
           </Card>
-        </Col>
+        )}
 
-        <Col xs={24} lg={10}>
-          <Card title="Colorwork Preview" className="preview-card">
-            <div className="colorwork-preview">
-              {!colorworkData.enabled ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-                  <AppstoreOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-                  <br />
-                  <Text type="secondary">Enable colorwork to see preview</Text>
-                </div>
-              ) : (
-                <div className="pattern-preview" style={{ minHeight: '300px', background: '#f5f5f5', borderRadius: '8px', padding: '16px' }}>
-                  {/* Mock pattern preview */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(20, 1fr)', 
-                    gap: '1px',
-                    background: 'white',
-                    padding: '8px',
-                    borderRadius: '4px'
-                  }}>
-                    {Array.from({ length: 200 }, (_, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          backgroundColor: colorworkData.colors[Math.floor(Math.random() * colorworkData.colors.length)],
-                          borderRadius: '1px'
-                        }}
-                      />
-                    ))}
-                  </div>
-                  
-                  <Divider />
-                  
-                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    <Text strong>Pattern Information</Text>
-                    <Text type="secondary">
-                      Type: {COLORWORK_PATTERNS[colorworkData.type].name}
-                    </Text>
-                    <Text type="secondary">
-                      Colors: {colorworkData.colors.length}
-                    </Text>
-                    <Text type="secondary">
-                      Layers: {colorworkData.layers.length}
-                    </Text>
-                    <Text type="secondary">
-                      Complexity: {COLORWORK_PATTERNS[colorworkData.type].complexity}
-                    </Text>
-                  </Space>
-                </div>
-              )}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+        {/* Swatch Tester - Always Visible */}
+        <Card title="Swatch Tester" style={{ marginBottom: 24 }}>
+          {renderSwatchTester()}
+        </Card>
+      </div>
 
-      <div className="step-actions">
+      {/* Show pattern tools only for complex colorwork types */}
+      {colorworkState.type && colorworkState.type !== 'solid' && (
+        <Tabs activeKey={activeTab} onChange={setActiveTab} size="large">
+          <TabPane tab="Basic Patterns" key="basic">
+            {renderBasicPatterns()}
+          </TabPane>
+          <TabPane tab="Complex Patterns" key="complex">
+            {renderComplexPatterns()}
+          </TabPane>
+          <TabPane tab="Garment Sequence" key="garment">
+            {renderGarmentSequence()}
+          </TabPane>
+        </Tabs>
+      )}
+      
+      <div className="step-actions" style={{ marginTop: 32 }}>
         <Space>
-          <Button onClick={onPrev}>Previous</Button>
-          <Button type="primary" onClick={handleSave}>
-            Save Colorwork
+          <Button size="large" onClick={onPrev}>
+            Previous: Gauge
           </Button>
-          <Button type="primary" onClick={handleNext}>
+          <Button size="large" type="primary" onClick={handleNext}>
             Next: Preview
           </Button>
         </Space>

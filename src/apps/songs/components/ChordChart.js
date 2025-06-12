@@ -125,7 +125,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
   // Original sizes were: small: width 120, height 150 (ratio 0.8)
   //                      regular: width 200, height 250 (ratio 0.8)
   // Now we'll reduce by 60% while maintaining ratio
-  const size = small ? { width: 48, height: 60 } : { width: 80, height: 130 };
+  const size = small ? { width: 48, height: 60 } : { width: 80, height: 120 };
   
   const renderFretboardChord = (instrument) => {
     let chordData = CHORD_DATA[instrument]?.[chord];
@@ -140,7 +140,35 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     
     let strings = 6;
     if (instrument === 'ukulele' || instrument === 'bassUkulele' || instrument === 'baritoneUkulele' || instrument === 'bassGuitar') strings = 4;
-    const frets = 5;
+    
+    // Calculate fret window for display
+    const frettedNotes = chordData.frets.filter(fret => fret > 0);
+    const minFret = frettedNotes.length > 0 ? Math.min(...frettedNotes) : 1;
+    const maxFret = frettedNotes.length > 0 ? Math.max(...frettedNotes) : 5;
+    
+    // Determine the display window (5 frets wide)
+    let startFret, endFret;
+    if (maxFret <= 5 || minFret <= 1) {
+      // Show frets 1-5 (traditional view)
+      startFret = 1;
+      endFret = 5;
+    } else {
+      // Show a window that includes all fretted notes
+      const span = maxFret - minFret;
+      if (span <= 4) {
+        // All notes fit in 5-fret window, center them
+        const center = Math.floor((minFret + maxFret) / 2);
+        startFret = Math.max(1, center - 2);
+        endFret = startFret + 4;
+      } else {
+        // Use full span, starting from minFret
+        startFret = minFret;
+        endFret = Math.min(startFret + 4, maxFret);
+      }
+    }
+    
+    const frets = 5; // Always display 5 frets
+    const isNutShown = startFret === 1;
     const stringSpacing = size.width / (strings + 1);
     const fretSpacing = (size.height - 60) / frets;
 
@@ -155,9 +183,34 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             x2={size.width - stringSpacing}
             y2={40 + i * fretSpacing}
             stroke={i === 0 ? "#333" : "#666"}
-            strokeWidth={i === 0 ? 3 : 1}
+            strokeWidth={i === 0 ? (isNutShown ? 3 : 1) : 1}
           />
         ))}
+
+        {/* Fret number labels - show only marked frets (3, 5, 7, 9, 12, 15, etc.) */}
+        {Array.from({ length: frets }, (_, i) => {
+          const fretNumber = startFret + i;
+          const isMarkedFret = fretNumber === 3 || fretNumber === 5 || fretNumber === 7 || 
+                              fretNumber === 9 || fretNumber === 12 || fretNumber === 15 || 
+                              fretNumber === 17 || fretNumber === 19 || fretNumber === 21 || 
+                              fretNumber === 24;
+          
+          if (isMarkedFret) {
+            return (
+              <text
+                key={`fret-label-${fretNumber}`}
+                x={stringSpacing / 2}
+                y={40 + (i + 0.5) * fretSpacing + 2}
+                textAnchor="middle"
+                fontSize={small ? "7" : "9"}
+                fontWeight="bold"
+              >
+                {fretNumber}
+              </text>
+            );
+          }
+          return null;
+        })}
         
         {/* String lines */}
         {Array.from({ length: strings }, (_, i) => (
@@ -210,16 +263,20 @@ const ChordChart = ({ chord, instrument, small = false }) => {
               />
             );
           } else if (fret > 0) {
-            // Finger position - make smaller
-            return (
-              <circle
-                key={`finger-${stringIndex}`}
-                cx={stringSpacing * (stringIndex + 1)}
-                cy={40 + (fret - 0.5) * fretSpacing}
-                r={small ? 3 : 4}
-                fill="#333"
-              />
-            );
+            // Finger position - calculate relative to the fret window
+            const relativeFret = fret - startFret + 1;
+            // Only show if within the current fret window
+            if (relativeFret >= 1 && relativeFret <= frets) {
+              return (
+                <circle
+                  key={`finger-${stringIndex}`}
+                  cx={stringSpacing * (stringIndex + 1)}
+                  cy={40 + (relativeFret - 0.5) * fretSpacing}
+                  r={small ? 3 : 4}
+                  fill="#333"
+                />
+              );
+            }
           }
           return null;
         })}
@@ -228,19 +285,24 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         {chordData.fingers?.map((finger, stringIndex) => {
           const fret = chordData.frets[stringIndex];
           if (finger > 0 && fret > 0) {
-            return (
-              <text
-                key={`finger-num-${stringIndex}`}
-                x={stringSpacing * (stringIndex + 1)}
-                y={40 + (fret - 0.5) * fretSpacing + 2}
-                textAnchor="middle"
-                fill="white"
-                fontSize={small ? "6" : "8"}
-                fontWeight="bold"
-              >
-                {finger}
-              </text>
-            );
+            // Calculate relative fret position
+            const relativeFret = fret - startFret + 1;
+            // Only show if within the current fret window
+            if (relativeFret >= 1 && relativeFret <= frets) {
+              return (
+                <text
+                  key={`finger-num-${stringIndex}`}
+                  x={stringSpacing * (stringIndex + 1)}
+                  y={40 + (relativeFret - 0.5) * fretSpacing + 2}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize={small ? "6" : "8"}
+                  fontWeight="bold"
+                >
+                  {finger}
+                </text>
+              );
+            }
           }
           return null;
         })}

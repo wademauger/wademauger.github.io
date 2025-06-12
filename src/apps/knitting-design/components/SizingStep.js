@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Card, Form, Button, Row, Col, Typography, Space, Slider, InputNumber, Select, Divider } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+import { Card, Row, Col, Select, Button, Space, Typography, Slider, InputNumber, Divider } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import PatternDimensionVisualization from '../../../components/PatternDimensionVisualization';
-import { updatePatternData } from '../../../store/knittingDesignSlice';
+import { updatePatternData, selectPatternData } from '../../../store/knittingDesignSlice';
+
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -469,10 +470,17 @@ const SizingStep = ({ onNext, onPrevious }) => {
         <Col span={24}>
           <div style={{ textAlign: 'right', marginTop: '24px' }}>
             <Space>
-              <Button size="large" onClick={onPrevious}>
+              <Button 
+                size="large" 
+                onClick={onPrevious}
+              >
                 Previous
               </Button>
-              <Button type="primary" size="large" onClick={handleNext}>
+              <Button 
+                size="large" 
+                type="primary"
+                onClick={handleNext}
+              >
                 Next: Gauge
               </Button>
             </Space>

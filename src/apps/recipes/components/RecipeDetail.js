@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearchMinus, faSearchPlus } from '@fortawesome/free-solid-svg-icons';
+import RecipeControls from './RecipeControls';
 import { fixedFontStyle } from '../styles/fontStyles';
 
 const RecipeDetail = ({ recipe, fontSize, onFontSizeChange, currentView, onToggleView }) => {
@@ -48,43 +47,18 @@ const RecipeDetail = ({ recipe, fontSize, onFontSizeChange, currentView, onToggl
     >
       <div className="recipe-header">
         <h3>{recipe.title}</h3>
-        <div className="view-controls">
-          <button onClick={onToggleView}>
-            {currentView === 'reader' ? 'Standard View' : 'Reader View'}
-          </button>
-          <div className="font-controls">
-            <button 
-              onClick={() => onFontSizeChange(Math.max(70, fontSize - 10))}
-              className="zoom-btn zoom-out"
-              aria-label="Decrease font size"
-            >
-              <FontAwesomeIcon icon={faSearchMinus} />
-            </button>
-            <span style={fixedFontStyle}>Font: {fontSize} % </span>
-            <button 
-              onClick={() => onFontSizeChange(Math.min(150, fontSize + 10))}
-              className="zoom-btn zoom-in"
-              aria-label="Increase font size"
-            >
-              <FontAwesomeIcon icon={faSearchPlus} />
-            </button>
-          </div>
-        </div>
       </div>
       
-      <div className="scaling-controls">
-        <label htmlFor="scale" style={fixedFontStyle}>Scale: </label>
-        <input 
-          type="range" 
-          id="scale" 
-          min="0.25" 
-          max="4" 
-          step="0.25" 
-          value={scale}
-          onChange={(e) => setScale(parseFloat(e.target.value))}
-        />
-        <span>{scale}x</span>
-      </div>
+      {/* Unified Controls */}
+      <RecipeControls
+        currentView={currentView}
+        onToggleView={onToggleView}
+        fontSize={fontSize}
+        onFontSizeChange={onFontSizeChange}
+        scale={scale}
+        onScaleChange={setScale}
+        showScaleControl={true}
+      />
       
       <div className="recipe-content">
         <div className="ingredients-section">

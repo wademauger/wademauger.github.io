@@ -22,7 +22,7 @@ const HomePage = () => {
               <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" />
             </svg>
           </div>
-          <Link to="/recipes" className="app-link">Open Recipe App</Link>
+          <Link to="/crafts/recipes" className="app-link">Open Recipe App</Link>
         </div>
         
         <div className="app-card">
@@ -36,7 +36,7 @@ const HomePage = () => {
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
           </div>
-          <Link to="/tabs" className="app-link">Open Music Tabs App</Link>
+          <Link to="crafts/tabs" className="app-link">Open Music Tabs App</Link>
         </div>
         
         <div className="app-card">
@@ -50,7 +50,7 @@ const HomePage = () => {
               <path d="M19 5.5c0-1.38-1.12-2.5-2.5-2.5S14 4.12 14 5.5c0 .86.44 1.61 1.1 2.05C14.42 8.99 12 10.87 12 14c0-3.13-2.42-5.01-3.1-6.45.66-.44 1.1-1.19 1.1-2.05C10 4.12 8.88 3 7.5 3S5 4.12 5 5.5c0 .86.44 1.61 1.1 2.05C5.42 8.99 3 10.87 3 14c0 3.87 3.13 7 7 7 0-2.76 2.24-5 5-5s5 2.24 5 5c3.87 0 7-3.13 7-7 0-3.13-2.42-5.01-3.1-6.45.66-.44 1.1-1.19 1.1-2.05z" />
             </svg>
           </div>
-          <Link to="/knitting" className="app-link">Open Knitting App</Link>
+          <Link to="crafts/knitting" className="app-link">Open Knitting App</Link>
         </div>
         
         <div className="app-card">
@@ -64,7 +64,7 @@ const HomePage = () => {
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </div>
-          <Link to="/knitting-design" className="app-link">Open Design Studio (Alpha)</Link>
+          <Link to="crafts/knitting-design" className="app-link">Open Design Studio (Alpha)</Link>
         </div>
       </div>
     </div>
