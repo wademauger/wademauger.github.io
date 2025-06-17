@@ -64,7 +64,7 @@ const ProfessionalLanding = () => {
                     </div>
 
                     <div className="css-social-link">
-                        <a href="/crafts" title="Creative Projects" className="css-combined-link">
+                        <a href="/#/crafts" title="Creative Projects" className="css-combined-link">
                             <svg version="1.0" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="css-kqzqgg" style={{ width: '3.2rem', height: '3.2rem', color: '#556873' }} viewBox="0 0 475.000000 475.000000">
                                 <g transform="translate(0.000000,762.000000) scale(0.100000,-0.100000)" stroke="none">
                                     <path d="M1445 7166 c-155 -36 -314 -120 -501 -265 -90 -70 -257 -211 -266 -225 -4 -6 -8 -50 -8 -97 l0 -87 -37 -36 c-21 -20 -40 -36 -44 -36 -4 0 -23 7 -44 16 -55 23 -106 11 -163 -38 -100 -86 -193 -180 -190 -193 6 -24 457 -497 470 -493 18 7 212 195 229 222 22 35 24 88 7 136 -11 32 -10 34 33 72 82 72 102 70 223 -21 37 -29 74 -51 81 -49 13 3 405 366 405 374 0 3 -21 31 -46 61 -94 117 -105 169 -47 233 69 78 236 141 555 210 178 38 178 38 178 55 0 20 -211 93 -425 146 -105 27 -325 34 -410 15z" />

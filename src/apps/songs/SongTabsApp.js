@@ -232,18 +232,18 @@ const SongTabsApp = () => {
     setSelectedArtist(artist);
     setSelectedAlbum(null);
     setSelectedSong(null);
-    navigate(`/tabs/artist/${encodeURIComponent(artist.name)}`);
+    navigate(`/crafts/tabs/artist/${encodeURIComponent(artist.name)}`);
   };
 
   const handleAlbumSelect = (album) => {
     setSelectedAlbum(album);
     setSelectedSong(null);
-    navigate(`/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(album.title)}`);
+    navigate(`/crafts/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(album.title)}`);
   };
 
   const handleSongSelect = (song) => {
     setSelectedSong(song);
-    navigate(`/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(selectedAlbum.title)}/song/${encodeURIComponent(song.title)}`);
+    navigate(`/crafts/tabs/artist/${encodeURIComponent(selectedArtist.name)}/album/${encodeURIComponent(selectedAlbum.title)}/song/${encodeURIComponent(song.title)}`);
   };
 
   const handlePinChord = (chord) => {

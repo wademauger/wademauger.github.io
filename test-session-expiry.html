@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Expiry Test Tool</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        .error { background: #ffeeee; border-left: 4px solid #ff0000; }
+        .success { background: #eeffee; border-left: 4px solid #00ff00; }
+        .warning { background: #fff8dc; border-left: 4px solid #ffa500; }
+        .info { background: #e6f3ff; border-left: 4px solid #2196F3; }
+        button { margin: 5px; padding: 10px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .session-info { background: #f8f9fa; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Google Drive Session Expiry Test Tool</h1>
+    
+    <div class="section">
+        <h3>Authentication Controls</h3>
+        <button onclick="initializeAuth()">Initialize Auth</button>
+        <button onclick="signIn()">Sign In</button>
+        <button onclick="signOut()">Sign Out</button>
+        <button onclick="clearDebugLog()">Clear Log</button>
+    </div>
+
+    <div class="section">
+        <h3>Session Manipulation (For Testing)</h3>
+        <button onclick="expireSessionNow()">🕐 Expire Session Now</button>
+        <button onclick="expireSessionIn5Seconds()">⏱️ Expire in 5 seconds</button>
+        <button onclick="extendSession()">⏰ Extend Session (+1 hour)</button>
+        <button onclick="showSessionInfo()">📋 Show Session Info</button>
+        <button onclick="clearSession()">🗑️ Clear Session</button>
+    </div>
+
+    <div class="section">
+        <h3>API Test Calls (To Trigger Expiry Detection)</h3>
+        <button onclick="testTokenValidity()">🔍 Test Token Validity</button>
+        <button onclick="loadLibrary()">📚 Load Library</button>
+        <button onclick="simulateUserAction()">👤 Simulate User Action</button>
+    </div>
+    
+    <div class="section">
+        <h3>Current Status:</h3>
+        <div id="status">Not initialized</div>
+        
+        <h4>Session Information:</h4>
+        <div id="sessionInfo" class="session-info">No session data</div>
+    </div>
+    
+    <div class="section">
+        <h3>Debug Log:</h3>
+        <div id="debugLog"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const CLIENT_ID = '142363137498-21kcdpvi8l9h1vn3oqpjqpjgk2qbdp03.apps.googleusercontent.com';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        
+        // Session keys (matching GoogleDriveServiceModern)
+        const SESSION_KEYS = {
+            ACCESS_TOKEN: 'googleDrive_accessToken',
+            USER_EMAIL: 'googleDrive_userEmail',
+            USER_NAME: 'googleDrive_userName',
+            USER_PICTURE: 'googleDrive_userPicture',
+            IS_SIGNED_IN: 'googleDrive_isSignedIn',
+            TOKEN_EXPIRY: 'googleDrive_tokenExpiry'
+        };
+        
+        let gapiInited = false;
+        let gisInited = false;
+        let tokenClient = null;
+        let accessToken = null;
+        let userInfo = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logDiv = document.getElementById('debugLog');
+            const entry = document.createElement('div');
+            entry.className = `log ${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+            showSessionInfo();
+        }
+
+        function clearDebugLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        function showSessionInfo() {
+            const sessionInfoDiv = document.getElementById('sessionInfo');
+            const token = localStorage.getItem(SESSION_KEYS.ACCESS_TOKEN);
+            const expiry = localStorage.getItem(SESSION_KEYS.TOKEN_EXPIRY);
+            const email = localStorage.getItem(SESSION_KEYS.USER_EMAIL);
+            const isSignedIn = localStorage.getItem(SESSION_KEYS.IS_SIGNED_IN);
+            
+            let html = '<strong>Session Data:</strong><br>';
+            html += `Access Token: ${token ? token.substring(0, 20) + '...' : 'None'}<br>`;
+            html += `Email: ${email || 'None'}<br>`;
+            html += `Signed In: ${isSignedIn || 'false'}<br>`;
+            
+            if (expiry) {
+                const expiryTime = new Date(parseInt(expiry));
+                const now = new Date();
+                const isExpired = now > expiryTime;
+                const timeUntilExpiry = expiryTime - now;
+                
+                html += `Expiry: ${expiryTime.toLocaleString()}<br>`;
+                html += `Status: ${isExpired ? '❌ EXPIRED' : '✅ Valid'}<br>`;
+                
+                if (!isExpired) {
+                    const minutes = Math.floor(timeUntilExpiry / (1000 * 60));
+                    const seconds = Math.floor((timeUntilExpiry % (1000 * 60)) / 1000);
+                    html += `Time remaining: ${minutes}m ${seconds}s<br>`;
+                }
+            } else {
+                html += 'Expiry: Not set<br>';
+            }
+            
+            sessionInfoDiv.innerHTML = html;
+        }
+
+        // Session manipulation functions for testing
+        function expireSessionNow() {
+            const pastTime = Date.now() - (60 * 60 * 1000); // 1 hour ago
+            localStorage.setItem(SESSION_KEYS.TOKEN_EXPIRY, pastTime.toString());
+            log('🕐 Session manually expired (set to 1 hour ago)', 'warning');
+            showSessionInfo();
+        }
+
+        function expireSessionIn5Seconds() {
+            const futureTime = Date.now() + 5000; // 5 seconds from now
+            localStorage.setItem(SESSION_KEYS.TOKEN_EXPIRY, futureTime.toString());
+            log('⏱️ Session will expire in 5 seconds!', 'warning');
+            showSessionInfo();
+            
+            // Update countdown
+            let countdown = 5;
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                log(`Session expires in ${countdown} seconds...`, 'warning');
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    log('💥 Session has expired!', 'error');
+                    showSessionInfo();
+                }
+            }, 1000);
+        }
+
+        function extendSession() {
+            const futureTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
+            localStorage.setItem(SESSION_KEYS.TOKEN_EXPIRY, futureTime.toString());
+            log('⏰ Session extended by 1 hour', 'success');
+            showSessionInfo();
+        }
+
+        function clearSession() {
+            Object.values(SESSION_KEYS).forEach(key => {
+                localStorage.removeItem(key);
+            });
+            accessToken = null;
+            userInfo = null;
+            log('🗑️ Session cleared completely', 'info');
+            updateStatus('Session cleared');
+        }
+
+        async function initializeAuth() {
+            try {
+                log('Starting authentication initialization...', 'info');
+
+                // Initialize GAPI
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {
+                        callback: async () => {
+                            try {
+                                await gapi.client.init({
+                                    discoveryDocs: [DISCOVERY_DOC],
+                                });
+                                gapiInited = true;
+                                log('✓ GAPI initialized successfully', 'success');
+                                resolve();
+                            } catch (error) {
+                                log(`✗ GAPI initialization failed: ${error.message}`, 'error');
+                                reject(error);
+                            }
+                        },
+                        onerror: () => {
+                            log('✗ Failed to load GAPI client', 'error');
+                            reject(new Error('Failed to load GAPI client'));
+                        }
+                    });
+                });
+
+                // Initialize GIS
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (response) => {
+                        log(`Token response received: ${JSON.stringify(response, null, 2)}`, 'info');
+                        
+                        if (response.error !== undefined) {
+                            log(`Authentication error: ${response.error}`, 'error');
+                            return;
+                        }
+                        
+                        accessToken = response.access_token;
+                        gapi.client.setToken({ access_token: accessToken });
+                        
+                        // Save session with normal 1-hour expiry
+                        localStorage.setItem(SESSION_KEYS.ACCESS_TOKEN, accessToken);
+                        localStorage.setItem(SESSION_KEYS.IS_SIGNED_IN, 'true');
+                        const expiryTime = Date.now() + (60 * 60 * 1000);
+                        localStorage.setItem(SESSION_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+                        
+                        log('✓ Access token received and session saved', 'success');
+                        loadUserProfile();
+                    },
+                });
+                
+                gisInited = true;
+                log('✓ GIS initialized successfully', 'success');
+                
+                updateStatus('Initialized - Ready to sign in');
+                
+            } catch (error) {
+                log(`Initialization failed: ${error.message}`, 'error');
+                updateStatus('Initialization failed');
+            }
+        }
+
+        async function signIn() {
+            if (!gapiInited || !gisInited) {
+                log('Authentication not initialized. Please click Initialize Auth first.', 'warning');
+                return;
+            }
+
+            try {
+                log('Requesting access token...', 'info');
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } catch (error) {
+                log(`Sign-in failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadUserProfile() {
+            if (!accessToken) {
+                log('No access token available', 'warning');
+                return;
+            }
+
+            try {
+                log('Loading user profile...', 'info');
+                
+                const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    userInfo = await response.json();
+                    
+                    // Save user info to session
+                    localStorage.setItem(SESSION_KEYS.USER_EMAIL, userInfo.email);
+                    localStorage.setItem(SESSION_KEYS.USER_NAME, userInfo.name);
+                    if (userInfo.picture) {
+                        localStorage.setItem(SESSION_KEYS.USER_PICTURE, userInfo.picture);
+                    }
+                    
+                    log(`✓ User profile loaded: ${userInfo.email} (${userInfo.name})`, 'success');
+                    updateStatus(`Signed in as: ${userInfo.email}`);
+                } else {
+                    log(`Failed to load user profile: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`Error loading user profile: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTokenValidity() {
+            // First check if session is expired according to our stored expiry time
+            const expiry = localStorage.getItem(SESSION_KEYS.TOKEN_EXPIRY);
+            if (expiry) {
+                const expiryTime = parseInt(expiry);
+                const now = Date.now();
+                
+                if (now > expiryTime) {
+                    log('❌ Session is expired according to stored expiry time!', 'error');
+                    log('This should trigger a re-authentication prompt when using the service.', 'warning');
+                    return;
+                }
+            }
+
+            const token = localStorage.getItem(SESSION_KEYS.ACCESS_TOKEN);
+            if (!token) {
+                log('No access token to test', 'warning');
+                return;
+            }
+
+            try {
+                log('Testing token with Google Drive API...', 'info');
+                
+                // Set the token in gapi client
+                gapi.client.setToken({ access_token: token });
+                
+                const response = await gapi.client.drive.about.get({
+                    fields: 'user'
+                });
+
+                if (response.status === 200) {
+                    log(`✓ Token is valid. User: ${response.result.user?.emailAddress}`, 'success');
+                } else {
+                    log(`Token test failed with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Token test failed: ${error.message}`, 'error');
+                
+                // Check for specific 401 error (expired token)
+                if (error.status === 401) {
+                    log('❌ 401 UNAUTHENTICATED error detected!', 'error');
+                    
+                    if (error.result && error.result.error) {
+                        log(`Error message: ${error.result.error.message}`, 'error');
+                        
+                        if (error.result.error.message.includes('Expected OAuth 2 access token')) {
+                            log('🎯 This is the exact error pattern we fixed!', 'error');
+                            log('The service should now detect this and trigger re-authentication.', 'info');
+                        }
+                    }
+                }
+            }
+        }
+
+        async function loadLibrary() {
+            const token = localStorage.getItem(SESSION_KEYS.ACCESS_TOKEN);
+            if (!token) {
+                log('No access token available for library loading', 'warning');
+                return;
+            }
+
+            try {
+                log('Searching for song-tabs-library.json...', 'info');
+                
+                gapi.client.setToken({ access_token: token });
+                
+                const response = await gapi.client.drive.files.list({
+                    q: "name='song-tabs-library.json' and trashed=false",
+                    fields: 'files(id, name, modifiedTime)'
+                });
+
+                if (response.status === 200) {
+                    const files = response.result.files;
+                    if (files.length > 0) {
+                        log(`✓ Library file found: ${files[0].name}`, 'success');
+                    } else {
+                        log('No library file found (this is normal for new accounts)', 'info');
+                    }
+                } else {
+                    log(`Library search failed with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Library loading failed: ${error.message}`, 'error');
+                
+                if (error.status === 401) {
+                    log('❌ Authentication error during library load!', 'error');
+                    log('In the real app, this would trigger automatic re-authentication.', 'info');
+                }
+            }
+        }
+
+        async function simulateUserAction() {
+            log('🎭 Simulating user action that would trigger authentication check...', 'info');
+            
+            // Check if session is expired
+            const expiry = localStorage.getItem(SESSION_KEYS.TOKEN_EXPIRY);
+            if (expiry) {
+                const expiryTime = parseInt(expiry);
+                const now = Date.now();
+                
+                if (now > expiryTime) {
+                    log('❌ Session expired detected! In real app, this would:', 'error');
+                    log('1. Clear the expired session', 'info');
+                    log('2. Show login prompt to user', 'info');
+                    log('3. After login, retry the original action', 'info');
+                    
+                    // Simulate what our service would do
+                    log('Clearing expired session...', 'warning');
+                    clearSession();
+                    log('🔄 User would now see the Google Sign-In button', 'info');
+                    return;
+                }
+            }
+            
+            // If not expired, try to load library
+            await loadLibrary();
+        }
+
+        function signOut() {
+            const token = localStorage.getItem(SESSION_KEYS.ACCESS_TOKEN);
+            if (token) {
+                google.accounts.oauth2.revoke(token, () => {
+                    log('✓ Token revoked with Google', 'success');
+                });
+            }
+            
+            clearSession();
+            gapi.client.setToken(null);
+            
+            log('✓ Signed out successfully', 'success');
+            updateStatus('Signed out');
+        }
+
+        // Auto-update session info every 2 seconds
+        setInterval(showSessionInfo, 2000);
+
+        // Auto-initialize when page loads
+        window.onload = function() {
+            log('Session Expiry Test Tool loaded.', 'info');
+            log('📋 Instructions:', 'info');
+            log('1. Click "Initialize Auth" then "Sign In"', 'info');
+            log('2. Use session manipulation buttons to test expiry scenarios', 'info');
+            log('3. Use API test calls to see how expired sessions are handled', 'info');
+            
+            showSessionInfo();
+            
+            // Check if required scripts are loaded
+            if (typeof gapi === 'undefined') {
+                log('ERROR: Google APIs JavaScript client not loaded', 'error');
+            }
+            
+            if (typeof google === 'undefined' || !google.accounts) {
+                log('ERROR: Google Identity Services not loaded', 'error');
+            }
+        };
+    </script>
+</body>
+</html>

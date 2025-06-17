@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import store from './store';
@@ -81,6 +81,27 @@ function App() {
             
             {/* Music Tabs App Routes */}
             <Route path="/crafts/tabs" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Layout>
+                  <SongTabsApp />
+                </Layout>
+              </Suspense>
+            } />
+            <Route path="/crafts/tabs/artist/:artistName" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Layout>
+                  <SongTabsApp />
+                </Layout>
+              </Suspense>
+            } />
+            <Route path="/crafts/tabs/artist/:artistName/album/:albumTitle" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Layout>
+                  <SongTabsApp />
+                </Layout>
+              </Suspense>
+            } />
+            <Route path="/crafts/tabs/artist/:artistName/album/:albumTitle/song/:songTitle" element={
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
                   <SongTabsApp />

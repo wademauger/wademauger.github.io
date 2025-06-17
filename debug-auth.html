@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Drive Auth Debug</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        .error { background: #ffeeee; border-left: 4px solid #ff0000; }
+        .success { background: #eeffee; border-left: 4px solid #00ff00; }
+        .warning { background: #fff8dc; border-left: 4px solid #ffa500; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Google Drive Authentication Debug Tool</h1>
+    
+    <div>
+        <button onclick="initializeAuth()">Initialize Auth</button>
+        <button onclick="signIn()">Sign In</button>
+        <button onclick="testToken()">Test Token</button>
+        <button onclick="loadLibrary()">Load Library</button>
+        <button onclick="signOut()">Sign Out</button>
+        <button onclick="clearDebugLog()">Clear Log</button>
+    </div>
+    
+    <div>
+        <h3>Current Status:</h3>
+        <div id="status">Not initialized</div>
+    </div>
+    
+    <div>
+        <h3>Debug Log:</h3>
+        <div id="debugLog"></div>
+    </div>
+
+    <script>
+        // Configuration - Update these with your actual values
+        const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'; // Replace with actual client ID
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        
+        let gapiInited = false;
+        let gisInited = false;
+        let tokenClient = null;
+        let accessToken = null;
+        let userInfo = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logDiv = document.getElementById('debugLog');
+            const entry = document.createElement('div');
+            entry.className = `log ${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+        }
+
+        function clearDebugLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        async function initializeAuth() {
+            try {
+                log('Starting authentication initialization...', 'info');
+                
+                if (!CLIENT_ID || CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+                    log('ERROR: Please update CLIENT_ID in the script with your actual Google Client ID', 'error');
+                    return;
+                }
+
+                // Initialize GAPI
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {
+                        callback: async () => {
+                            try {
+                                await gapi.client.init({
+                                    discoveryDocs: [DISCOVERY_DOC],
+                                });
+                                gapiInited = true;
+                                log('✓ GAPI initialized successfully', 'success');
+                                resolve();
+                            } catch (error) {
+                                log(`✗ GAPI initialization failed: ${error.message}`, 'error');
+                                reject(error);
+                            }
+                        },
+                        onerror: () => {
+                            log('✗ Failed to load GAPI client', 'error');
+                            reject(new Error('Failed to load GAPI client'));
+                        }
+                    });
+                });
+
+                // Initialize GIS
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (response) => {
+                        log(`Token response received: ${JSON.stringify(response, null, 2)}`, 'info');
+                        
+                        if (response.error !== undefined) {
+                            log(`Authentication error: ${response.error}`, 'error');
+                            return;
+                        }
+                        
+                        accessToken = response.access_token;
+                        gapi.client.setToken({ access_token: accessToken });
+                        
+                        log('✓ Access token received and set', 'success');
+                        loadUserProfile();
+                    },
+                });
+                
+                gisInited = true;
+                log('✓ GIS initialized successfully', 'success');
+                
+                updateStatus('Initialized - Ready to sign in');
+                
+            } catch (error) {
+                log(`Initialization failed: ${error.message}`, 'error');
+                updateStatus('Initialization failed');
+            }
+        }
+
+        async function signIn() {
+            if (!gapiInited || !gisInited) {
+                log('Authentication not initialized. Please click Initialize Auth first.', 'warning');
+                return;
+            }
+
+            try {
+                log('Requesting access token...', 'info');
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } catch (error) {
+                log(`Sign-in failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadUserProfile() {
+            if (!accessToken) {
+                log('No access token available', 'warning');
+                return;
+            }
+
+            try {
+                log('Loading user profile...', 'info');
+                
+                const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    userInfo = await response.json();
+                    log(`✓ User profile loaded: ${userInfo.email} (${userInfo.name})`, 'success');
+                    updateStatus(`Signed in as: ${userInfo.email}`);
+                } else {
+                    log(`Failed to load user profile: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`Error loading user profile: ${error.message}`, 'error');
+            }
+        }
+
+        async function testToken() {
+            if (!accessToken) {
+                log('No access token to test', 'warning');
+                return;
+            }
+
+            try {
+                log('Testing token with Google Drive API...', 'info');
+                
+                const response = await gapi.client.drive.about.get({
+                    fields: 'user'
+                });
+
+                if (response.status === 200) {
+                    log(`✓ Token is valid. User: ${response.result.user?.emailAddress}`, 'success');
+                } else {
+                    log(`Token test failed with status: ${response.status}`, 'error');
+                    log(`Response: ${JSON.stringify(response, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`Token test failed: ${error.message}`, 'error');
+                log(`Error details: ${JSON.stringify(error, null, 2)}`, 'error');
+                
+                // Check for specific 401 error
+                if (error.status === 401) {
+                    log('❌ 401 UNAUTHENTICATED error detected!', 'error');
+                    
+                    if (error.result && error.result.error) {
+                        log(`Error code: ${error.result.error.code}`, 'error');
+                        log(`Error message: ${error.result.error.message}`, 'error');
+                        
+                        if (error.result.error.message.includes('Expected OAuth 2 access token')) {
+                            log('This is the exact error users are experiencing!', 'error');
+                        }
+                    }
+                }
+            }
+        }
+
+        async function loadLibrary() {
+            if (!accessToken) {
+                log('No access token available for library loading', 'warning');
+                return;
+            }
+
+            try {
+                log('Searching for song-tabs-library.json...', 'info');
+                
+                const response = await gapi.client.drive.files.list({
+                    q: "name='song-tabs-library.json' and trashed=false",
+                    fields: 'files(id, name, modifiedTime)'
+                });
+
+                if (response.status === 200) {
+                    const files = response.result.files;
+                    if (files.length > 0) {
+                        log(`✓ Library file found: ${files[0].name} (ID: ${files[0].id})`, 'success');
+                        log(`Last modified: ${files[0].modifiedTime}`, 'info');
+                    } else {
+                        log('No library file found', 'warning');
+                    }
+                } else {
+                    log(`Library search failed with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Library loading failed: ${error.message}`, 'error');
+                log(`Error details: ${JSON.stringify(error, null, 2)}`, 'error');
+            }
+        }
+
+        async function signOut() {
+            if (accessToken) {
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    log('✓ Token revoked', 'success');
+                });
+                
+                gapi.client.setToken(null);
+                accessToken = null;
+                userInfo = null;
+                
+                log('✓ Signed out successfully', 'success');
+                updateStatus('Signed out');
+            } else {
+                log('No active session to sign out from', 'warning');
+            }
+        }
+
+        // Auto-initialize when page loads
+        window.onload = function() {
+            log('Debug tool loaded. Click "Initialize Auth" to start.', 'info');
+            
+            // Check if required scripts are loaded
+            if (typeof gapi === 'undefined') {
+                log('ERROR: Google APIs JavaScript client not loaded', 'error');
+            }
+            
+            if (typeof google === 'undefined' || !google.accounts) {
+                log('ERROR: Google Identity Services not loaded', 'error');
+            }
+        };
+    </script>
+</body>
+</html>

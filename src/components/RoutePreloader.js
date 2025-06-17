@@ -13,7 +13,7 @@ const RoutePreloader = () => {
     // Add hover listeners to navigation links
     const handleMouseEnter = (e) => {
       const href = e.target.getAttribute('href');
-      if (href && href.startsWith('/crafts')) {
+      if (href && (href.startsWith('/crafts') || href.includes('#/crafts'))) {
         // Prefetch the Layout component and related chunks
         import('../components/Layout');
         
@@ -27,8 +27,8 @@ const RoutePreloader = () => {
       }
     };
 
-    // Add listeners to all navigation links
-    const links = document.querySelectorAll('a[href^="/crafts"]');
+    // Add listeners to all navigation links (both hash and non-hash)
+    const links = document.querySelectorAll('a[href^="/crafts"], a[href*="#/crafts"]');
     links.forEach(link => {
       link.addEventListener('mouseenter', handleMouseEnter);
     });
