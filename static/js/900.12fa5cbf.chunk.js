@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkhobbies=self.webpackChunkhobbies||[]).push([[900],{1900:(e,s,o)=>{o.r(s),o.d(s,{default:()=>h});o(5043);var n=o(3709),a=o(579);const h=()=>(0,a.jsxs)("div",{className:"not-found-page",children:[(0,a.jsx)("h1",{children:"404 - Page Not Found"}),(0,a.jsx)("p",{children:"Sorry, the page you are looking for does not exist."}),(0,a.jsx)(n.N_,{to:"/",className:"home-link",children:"Return to Home"})]})}}]);
+//# sourceMappingURL=900.12fa5cbf.chunk.js.map
