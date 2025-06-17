@@ -6,6 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { configureStore } from '@reduxjs/toolkit';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
@@ -58,9 +59,11 @@ const createTestStore = () => configureStore({
 const renderWithProviders = (component, { initialState = {} } = {}) => {
   const store = createTestStore();
   return render(
-    <Provider store={store}>
-      {component}
-    </Provider>
+    <GoogleOAuthProvider clientId="test-client-id">
+      <Provider store={store}>
+        {component}
+      </Provider>
+    </GoogleOAuthProvider>
   );
 };
 

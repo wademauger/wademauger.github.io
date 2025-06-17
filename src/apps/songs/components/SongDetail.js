@@ -237,6 +237,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const dispatch = useDispatch();
   const instrument = useSelector((state) => state.chords.currentInstrument);
   const transpose = useSelector((state) => state.chords.transposeBy?.[song.title] || 0);
+  const chordFingerings = useSelector((state) => state.chords.chordFingerings);
   const isGoogleDriveConnected = useSelector((state) => state.songs.isGoogleDriveConnected);
 
   // Set up sensors for drag and drop
@@ -749,7 +750,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       const updatedSong = { 
         ...song, 
         lyrics: transposedLyrics,
-        chords: extractChords(transposedLyrics)
+        chords: extractChords(transposedLyrics),
+        chordFingerings: chordFingerings
       };
       
       await onUpdateSong(updatedSong);

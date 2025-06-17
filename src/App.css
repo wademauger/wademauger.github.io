@@ -224,3 +224,97 @@ footer {
   background-color: #f9f9f9;
   border-radius: 4px;
 }
+
+/* React Folder Tree alignment fixes */
+.FolderTree .TreeNode {
+  display: flex !important;
+  align-items: center !important;
+  padding: 4px 0 !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.FolderTree .TreeNode > * {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.FolderTree .TreeNode .iconContainer {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 2px !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+}
+
+.FolderTree .TreeNode .iconContainer svg {
+  vertical-align: middle !important;
+  padding-top: 0 !important;
+}
+
+.FolderTree .EditableName {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.5 !important;
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+.FolderTree .EditableName .displayName {
+  line-height: 1.5 !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 300px !important;
+}
+
+.FolderTree .TreeNode .TreeNodeToolBar {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+.FolderTree .TreeNode .TreeNodeToolBar svg {
+  padding: 0 2px !important;
+  vertical-align: middle !important;
+}
+
+/* Ensure all elements are vertically centered and don't wrap */
+.FolderTree .TreeNode,
+.FolderTree .TreeNode span,
+.FolderTree .TreeNode button,
+.FolderTree .TreeNode input,
+.FolderTree .TreeNode svg {
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+}
+
+/* Prevent input fields from wrapping when editing */
+.FolderTree .TreeNode input {
+  max-width: 300px !important;
+  overflow: hidden !important;
+}
+
+/* Additional specific fixes for expand/collapse icons */
+.FolderTree .TreeNode .iconContainer.typeIconContainer svg {
+  color: #666 !important;
+}
+
+.FolderTree .TreeNode .iconContainer:not(.typeIconContainer) svg {
+  color: #999 !important;
+}
+
+/* Highlight selected song in tree */
+.FolderTree .TreeNode.selected {
+  background-color: #e6f7ff !important;
+  border-left: 3px solid #1890ff !important;
+  padding-left: 7px !important;
+}
+
+.FolderTree .TreeNode.selected .EditableName .displayName {
+  color: #1890ff !important;
+  font-weight: 500 !important;
+}

@@ -1,3 +1,42 @@
+
+/* 2-Column Layout Styles */
+.song-tabs-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.songs-content {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 2rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.song-list {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  overflow-y: auto;
+  min-width: 332px;
+}
+
+.empty-state {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state p:first-child {
+  font-size: 1.1em;
+  margin-bottom: 1rem;
+}
+
 /* Add these styles for the chord labels above lyrics */
 
 .lyric-line {
@@ -438,6 +477,7 @@
 
 .lyrics-section {
   margin-top: 20px;
+  margin-bottom: 100px; /* Ensure space for pinned chords */
 }
 
 .lyrics-container {

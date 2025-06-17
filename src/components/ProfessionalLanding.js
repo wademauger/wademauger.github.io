@@ -1,7 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import './ProfessionalLanding.critical.css';
 import '../ProfessionalLanding.css';
 
 const ProfessionalLanding = () => {
+    useEffect(() => {
+        // Register service worker for caching
+        const registerServiceWorker = () => {
+            if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+                navigator.serviceWorker.register('/sw.js')
+                  .then((registration) => {
+                    console.log('SW registered: ', registration);
+                  })
+                  .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                  });
+            }
+        };
+        
+        // Register service worker after a short delay
+        const timer = setTimeout(registerServiceWorker, 100);
+        
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <div className="css-1jmej02">
             <div className="css-18dmi9v">

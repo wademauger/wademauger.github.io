@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import GoogleDriveServiceModern from '../apps/songs/services/GoogleDriveServiceModern';
+import googleDriveService from '../apps/songs/services/GoogleDriveServiceModern';
 
 // Async thunk for loading library from Google Drive
 export const loadLibraryFromDrive = createAsyncThunk(
   'songs/loadLibraryFromDrive',
   async (_, { rejectWithValue }) => {
     try {
-      const library = await GoogleDriveServiceModern.loadLibrary();
+      const library = await googleDriveService.loadLibrary();
       return library;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -24,9 +24,9 @@ export const updateSong = createAsyncThunk(
       const library = JSON.parse(JSON.stringify(state.songs.library));
       
       if (isGoogleDriveConnected) {
-        await GoogleDriveServiceModern.updateSong(library, artistName, albumTitle, songTitle, updatedSongData);
+        await googleDriveService.updateSong(library, artistName, albumTitle, songTitle, updatedSongData);
         // Return the updated library from Google Drive
-        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+        const updatedLibrary = await googleDriveService.loadLibrary();
         return { library: updatedLibrary, artistName, albumTitle, songTitle };
       } else {
         // For local updates, we'll handle this in the reducer
@@ -48,13 +48,61 @@ export const addSong = createAsyncThunk(
       const library = JSON.parse(JSON.stringify(state.songs.library));
       
       if (isGoogleDriveConnected) {
-        await GoogleDriveServiceModern.addSong(library, artistName, albumTitle, songData);
+        await googleDriveService.addSong(library, artistName, albumTitle, songData);
         // Return the updated library from Google Drive
-        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+        const updatedLibrary = await googleDriveService.loadLibrary();
         return { library: updatedLibrary, artistName, albumTitle, songTitle: songData.title };
       } else {
         // For local updates, we'll handle this in the reducer
         return { songData, artistName, albumTitle, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for adding an empty artist
+export const addArtist = createAsyncThunk(
+  'songs/addArtist',
+  async ({ artistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      // Create a deep clone to pass a plain JS object to the service
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.addArtist(library, artistName);
+        // Return the updated library from Google Drive
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, artistName };
+      } else {
+        // For local updates, we'll handle this in the reducer
+        return { artistName, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for adding an empty album
+export const addAlbum = createAsyncThunk(
+  'songs/addAlbum',
+  async ({ artistName, albumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      // Create a deep clone to pass a plain JS object to the service
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.addAlbum(library, artistName, albumTitle);
+        // Return the updated library from Google Drive
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, artistName, albumTitle };
+      } else {
+        // For local updates, we'll handle this in the reducer
+        return { artistName, albumTitle, isLocal: true };
       }
     } catch (error) {
       return rejectWithValue(error.message);
@@ -72,13 +120,97 @@ export const deleteSong = createAsyncThunk(
       const library = JSON.parse(JSON.stringify(state.songs.library));
       
       if (isGoogleDriveConnected) {
-        await GoogleDriveServiceModern.deleteSong(library, artistName, albumTitle, songTitle);
+        await googleDriveService.deleteSong(library, artistName, albumTitle, songTitle);
         // Return the updated library from Google Drive
-        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+        const updatedLibrary = await googleDriveService.loadLibrary();
         return { library: updatedLibrary, artistName, albumTitle, songTitle };
       } else {
         // For local updates, we'll handle this in the reducer
         return { artistName, albumTitle, songTitle, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for updating an artist
+export const updateArtist = createAsyncThunk(
+  'songs/updateArtist',
+  async ({ oldArtistName, newArtistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.updateArtist(library, oldArtistName, newArtistName);
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, oldArtistName, newArtistName };
+      } else {
+        return { oldArtistName, newArtistName, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for updating an album
+export const updateAlbum = createAsyncThunk(
+  'songs/updateAlbum',
+  async ({ artistName, oldAlbumTitle, newAlbumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.updateAlbum(library, artistName, oldAlbumTitle, newAlbumTitle);
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, artistName, oldAlbumTitle, newAlbumTitle };
+      } else {
+        return { artistName, oldAlbumTitle, newAlbumTitle, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for deleting an artist
+export const deleteArtist = createAsyncThunk(
+  'songs/deleteArtist',
+  async ({ artistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.deleteArtist(library, artistName);
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, artistName };
+      } else {
+        return { artistName, isLocal: true };
+      }
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk for deleting an album
+export const deleteAlbum = createAsyncThunk(
+  'songs/deleteAlbum',
+  async ({ artistName, albumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const library = JSON.parse(JSON.stringify(state.songs.library));
+      
+      if (isGoogleDriveConnected) {
+        await googleDriveService.deleteAlbum(library, artistName, albumTitle);
+        const updatedLibrary = await googleDriveService.loadLibrary();
+        return { library: updatedLibrary, artistName, albumTitle };
+      } else {
+        return { artistName, albumTitle, isLocal: true };
       }
     } catch (error) {
       return rejectWithValue(error.message);
@@ -441,6 +573,228 @@ const songsSlice = createSlice({
         }
       })
       .addCase(deleteSong.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Add artist
+      .addCase(addArtist.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(addArtist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local add
+          const existingArtist = state.library.artists.find(a => a.name === artistName);
+          if (!existingArtist) {
+            state.library.artists.push({ name: artistName, albums: [] });
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+      })
+      .addCase(addArtist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Add album
+      .addCase(addAlbum.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(addAlbum.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, albumTitle, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local add
+          let artist = state.library.artists.find(a => a.name === artistName);
+          if (!artist) {
+            artist = { name: artistName, albums: [] };
+            state.library.artists.push(artist);
+          }
+          
+          const existingAlbum = artist.albums.find(a => a.title === albumTitle);
+          if (!existingAlbum) {
+            artist.albums.push(normalizeAlbum({ title: albumTitle, songs: [] }));
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+      })
+      .addCase(addAlbum.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Update artist
+      .addCase(updateArtist.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateArtist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, oldArtistName, newArtistName, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local update - find and rename artist
+          const artist = state.library.artists.find(a => a.name === oldArtistName);
+          if (artist) {
+            artist.name = newArtistName;
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+      })
+      .addCase(updateArtist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Update album
+      .addCase(updateAlbum.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateAlbum.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, oldAlbumTitle, newAlbumTitle, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local update - find and rename album
+          const artist = state.library.artists.find(a => a.name === artistName);
+          if (artist) {
+            const album = artist.albums.find(a => a.title === oldAlbumTitle);
+            if (album) {
+              album.title = newAlbumTitle;
+            }
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+      })
+      .addCase(updateAlbum.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Delete artist
+      .addCase(deleteArtist.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteArtist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local delete
+          state.library.artists = state.library.artists.filter(a => a.name !== artistName);
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+        
+        // Deselect song if the artist of the selected song was deleted
+        if (state.selectedSong && state.selectedSong.artist.name === artistName) {
+          state.selectedSong = null;
+        }
+      })
+      .addCase(deleteArtist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Delete album
+      .addCase(deleteAlbum.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteAlbum.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { library, artistName, albumTitle, isLocal } = action.payload;
+        
+        if (isLocal) {
+          // Handle local delete
+          const artist = state.library.artists.find(a => a.name === artistName);
+          if (artist) {
+            artist.albums = artist.albums.filter(a => a.title !== albumTitle);
+          }
+        } else {
+          // Update with library from Google Drive
+          const normalizedLibrary = {
+            ...library,
+            artists: library.artists.map(artist => ({
+              ...artist,
+              albums: artist.albums.map(album => ({
+                ...normalizeAlbum(album),
+                songs: album.songs.map(normalizeSong)
+              }))
+            }))
+          };
+          state.library = normalizedLibrary;
+        }
+        
+        // Deselect song if the album of the selected song was deleted
+        if (state.selectedSong && 
+            state.selectedSong.album.title === albumTitle &&
+            state.selectedSong.artist.name === artistName) {
+          state.selectedSong = null;
+        }
+      })
+      .addCase(deleteAlbum.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

@@ -851,6 +851,7 @@ class GoogleDriveServiceModern {
       chords: songData.chords || '',
       lyrics: songData.lyrics || '',
       notes: songData.notes || '',
+      chordFingerings: songData.chordFingerings || {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -902,6 +903,7 @@ class GoogleDriveServiceModern {
     song.chords = songData.chords !== undefined ? songData.chords : song.chords;
     song.lyrics = songData.lyrics !== undefined ? songData.lyrics : song.lyrics;
     song.notes = songData.notes !== undefined ? songData.notes : song.notes;
+    song.chordFingerings = songData.chordFingerings !== undefined ? songData.chordFingerings : song.chordFingerings;
     song.updatedAt = new Date().toISOString();
 
     await this.saveLibrary(libraryData);

@@ -1,11 +1,10 @@
 // Simplified SongTabsApp.js using TreeSelect and modal for adding songs with Redux state management
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { pinChord } from '../../store/chordsSlice';
+import { pinChord, loadChordFingerings } from '../../store/chordsSlice';
 import { 
   loadLibraryFromDrive, 
   updateSong, 
-  addSong, 
   setSelectedSong, 
   setGoogleDriveConnection,
   setUserInfo,
@@ -14,12 +13,13 @@ import {
   loadMockLibrary
 } from '../../store/songsSlice';
 import SongDetail from './components/SongDetail';
+import SongListTest from './components/SongListTest';
 import GoogleSignInButton from './components/GoogleSignInButton';
 import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Switch, TreeSelect, Modal, Form, Input, AutoComplete, Button, Spin, App } from 'antd';
-import { FaUnlock, FaLock, FaPlus } from 'react-icons/fa';
+import { Switch, Button, Spin, App } from 'antd';
+import { FaUnlock, FaLock } from 'react-icons/fa';
 
 const SongTabsApp = () => {
   const { message } = App.useApp();
@@ -42,11 +42,7 @@ const SongTabsApp = () => {
   } = useSelector(state => state.songs);
   
   // Local component state for UI interactions only
-  const [expandedKeys, setExpandedKeys] = useState([]);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm();
-  const [selectedArtist, setSelectedArtist] = useState('');
+  // Note: Modal removed - using inline editing with RichTreeView
 
   // Helper function to count total songs in library
   const getTotalSongsCount = useCallback(() => {
@@ -188,89 +184,27 @@ const SongTabsApp = () => {
     }
   };
 
-  // Generate tree data for TreeSelect
-  const generateTreeData = () => {
-    return library.artists.map(artist => ({
-      title: artist.name,
-      value: `artist_${artist.name}`,
-      key: `artist_${artist.name}`,
-      selectable: true,
-      children: artist.albums.map(album => ({
-        title: album.title,
-        value: `album_${artist.name}_${album.title}`,
-        key: `album_${artist.name}_${album.title}`,
-        selectable: true,
-        children: (album.songs || []).map(song => ({
-          title: song.title,
-          value: `song_${artist.name}_${album.title}_${song.title}`,
-          key: `song_${artist.name}_${album.title}_${song.title}`,
-          selectable: true,
-          isLeaf: true
-        }))
-      }))
-    }));
-  };
-
-  // Handle song selection from TreeSelect
-  const handleSongSelect = (value) => {
-    if (value && value.startsWith('song_')) {
-      const parts = value.replace('song_', '').split('_');
-      if (parts.length >= 3) {
-        const artistName = parts[0];
-        const albumTitle = parts[1];
-        const songTitle = parts.slice(2).join('_');
-        
-        const artist = library.artists.find(a => a.name === artistName);
-        const album = artist?.albums.find(a => a.title === albumTitle);
-        const song = album?.songs.find(s => s.title === songTitle);
-        
-        if (song) {
-          // Create normalized song object for Redux
-          const normalizedSong = {
-            ...song,
-            title: song.title,
-            artist: { name: artistName },
-            album: { title: albumTitle }
-          };
-          dispatch(setSelectedSong(normalizedSong));
-        }
-      }
-    } else if (value && (value.startsWith('artist_') || value.startsWith('album_'))) {
-      const isExpanded = expandedKeys.includes(value);
-      if (isExpanded) {
-        setExpandedKeys(prev => prev.filter(key => key !== value));
-      } else {
-        setExpandedKeys(prev => [...prev, value]);
-      }
+  // Handle song selection from SongList
+  const handleSongSelect = useCallback((songData, artistName, albumTitle) => {
+    if (songData && artistName && albumTitle) {
+      // Create normalized song object for Redux
+      const normalizedSong = {
+        ...songData,
+        title: songData.title,
+        artist: { name: artistName },
+        album: { title: albumTitle }
+      };
+      dispatch(setSelectedSong(normalizedSong));
       
-      setTimeout(() => {
-        setDropdownOpen(true);
-      }, 0);
+      // Load chord fingerings if they exist in the song data
+      if (songData.chordFingerings) {
+        dispatch(loadChordFingerings(songData.chordFingerings));
+      } else {
+        // Clear chord fingerings if song doesn't have any saved
+        dispatch(loadChordFingerings({}));
+      }
     }
-  };
-
-  // Handle dropdown visibility changes
-  const handleDropdownVisibleChange = (open) => {
-    setDropdownOpen(open);
-  };
-
-  // Handle tree expansion changes
-  const handleTreeExpand = (expandedKeys) => {
-    setExpandedKeys(expandedKeys);
-  };
-
-  // Get unique artist names for autocomplete
-  const getArtistOptions = () => {
-    return library.artists.map(artist => ({ value: artist.name }));
-  };
-
-  // Get album options based on selected artist
-  const getAlbumOptions = (artistName) => {
-    const artist = library.artists.find(a => a.name === artistName);
-    return artist ? artist.albums.map(album => ({ 
-      value: album.title 
-    })) : [];
-  };
+  }, [dispatch]);
 
   // Helper function to check if error is authentication-related
   const isAuthError = (error) => {
@@ -294,50 +228,6 @@ const SongTabsApp = () => {
     );
   };
 
-  // Handle adding new song via modal
-  const handleAddSong = useCallback(async () => {
-    try {
-      const values = await form.validateFields();
-
-      const songData = {
-        title: values.songTitle,
-        lyrics: [],
-        notes: ''
-      };
-
-      await dispatch(addSong({
-        artistName: values.artistName,
-        albumTitle: values.albumTitle,
-        songData,
-        isGoogleDriveConnected
-      })).unwrap();
-
-      // Close modal and reset form
-      setIsModalVisible(false);
-      form.resetFields();
-      
-      // Auto-select the newly created song
-      const newValue = `song_${values.artistName}_${values.albumTitle}_${values.songTitle}`;
-      handleSongSelect(newValue);
-      
-      message.success('Song added successfully!');
-
-    } catch (error) {
-      console.error('Failed to add song:', error);
-      
-      // Check if this is an authentication error
-      if (isAuthError(error)) {
-        // Update UI state to reflect that user is no longer authenticated
-        dispatch(setGoogleDriveConnection(false));
-        dispatch(setUserInfo(null));
-        
-        message.error('Your Google Drive session has expired. Please sign in again to save songs.');
-      } else {
-        message.error(error.message || 'Failed to add song. Please try again.');
-      }
-    }
-  }, [form, isGoogleDriveConnected, dispatch, handleSongSelect, message]);
-
   // Handle chord pinning
   const handlePinChord = (chord) => {
     dispatch(pinChord(chord));
@@ -347,11 +237,6 @@ const SongTabsApp = () => {
   const handleEditingToggle = (enabled) => {
     dispatch(setEditingEnabled(enabled));
   };
-
-  // Derive TreeSelect value from Redux state
-  const treeSelectValue = selectedSong 
-    ? `song_${selectedSong.artist.name}_${selectedSong.album.title}_${selectedSong.title}` 
-    : null;
 
   return (
     <div className="song-tabs-app">
@@ -405,38 +290,16 @@ const SongTabsApp = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="song-tabs-content">        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ flex: 1 }}>
-            <TreeSelect
-              style={{ width: '100%' }}
-              value={treeSelectValue}
-              open={dropdownOpen}
-              onDropdownVisibleChange={handleDropdownVisibleChange}
-              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-              treeData={generateTreeData()}
-              placeholder="Select a song..."
-              treeDefaultExpandAll={false}
-              treeExpandedKeys={expandedKeys}
-              onTreeExpand={handleTreeExpand}
-              onChange={handleSongSelect}
-              showSearch
-              treeNodeFilterProp="title"
-            />
-          </div>
-          {editingEnabled && (
-            <Button 
-              type="primary" 
-              icon={<FaPlus />}
-              onClick={() => setIsModalVisible(true)}
-            >
-              Add Song
-            </Button>
-          )}
-        </div>
+      {/* Main Content - 2 Column Layout */}
+      <div className="songs-content">
+        <SongListTest 
+          library={library}
+          onSelectSong={handleSongSelect}
+          selectedSong={selectedSong}
+          editingEnabled={editingEnabled}
+        />
 
-        {selectedSong && (
+        {selectedSong ? (
           <SongDetail
             song={selectedSong}
             artist={selectedSong.artist}
@@ -445,6 +308,15 @@ const SongTabsApp = () => {
             onUpdateSong={handleSongUpdate}
             onPinChord={handlePinChord}
           />
+        ) : (
+          <div className="empty-state">
+            <p>Select a song to see its chord chart, or toggle the edit lock to add and edit songs in your Google Drive library.</p>
+            {!isGoogleDriveConnected && (
+              <p style={{ color: '#666', fontSize: '0.9em' }}>
+                Sign in to Google Drive to access your saved songs, or use the mock library to get started.
+              </p>
+            )}
+          </div>
         )}
       </div>
 
@@ -458,67 +330,6 @@ const SongTabsApp = () => {
           />
         </div>
       )}
-
-      {/* Add Song Modal */}
-      <Modal
-        title="Add New Song"
-        open={isModalVisible}
-        onOk={handleAddSong}
-        onCancel={() => {
-          setIsModalVisible(false);
-          form.resetFields();
-          setSelectedArtist('');
-        }}
-        confirmLoading={isLoading}
-        okText="Add Song"
-        cancelText="Cancel"
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          name="addSongForm"
-        >
-          <Form.Item
-            name="songTitle"
-            label="Song Title"
-            rules={[{ required: true, message: 'Please enter a song title!' }]}
-          >
-            <Input placeholder="Enter song title" />
-          </Form.Item>
-          
-          <Form.Item
-            name="artistName"
-            label="Artist"
-            rules={[{ required: true, message: 'Please enter an artist name!' }]}
-          >
-            <AutoComplete
-              placeholder="Enter or select artist"
-              options={getArtistOptions()}
-              filterOption={(input, option) =>
-                option.value.toLowerCase().includes(input.toLowerCase())
-              }
-              onChange={(value) => {
-                setSelectedArtist(value || '');
-                form.setFieldsValue({ albumTitle: undefined });
-              }}
-            />
-          </Form.Item>
-          
-          <Form.Item
-            name="albumTitle"
-            label="Album"
-            rules={[{ required: true, message: 'Please enter an album title!' }]}
-          >
-            <AutoComplete
-              placeholder="Enter or select album"
-              options={getAlbumOptions(selectedArtist)}
-              filterOption={(input, option) =>
-                option.value.toLowerCase().includes(input.toLowerCase())
-              }
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
 
       {/* Display Redux errors */}
       {error && (

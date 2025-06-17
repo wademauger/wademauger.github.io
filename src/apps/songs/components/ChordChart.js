@@ -1,4 +1,6 @@
 import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { cycleChordFingering } from '../../../store/chordsSlice';
 import { guitarChords } from '../data/guitarChords';
 import { ukuleleChords } from '../data/ukuleleChords';
 import { pianoChords } from '../data/pianoChords';
@@ -121,14 +123,40 @@ const CHORD_DATA = {
 };
 
 const ChordChart = ({ chord, instrument, small = false }) => {
+  const dispatch = useDispatch();
+  const chordFingerings = useSelector(state => state.chords.chordFingerings);
+  
   // Calculate new sizes with exact same aspect ratio as original
   // Original sizes were: small: width 120, height 150 (ratio 0.8)
   //                      regular: width 200, height 250 (ratio 0.8)
   // Now we'll reduce by 60% while maintaining ratio
   const size = small ? { width: 48, height: 60 } : { width: 80, height: 120 };
   
+  // Get the current fingering index for this chord (default to 0)
+  const currentFingeringIndex = chordFingerings[chord] || 0;
+  
+  // Handle right-click to cycle through fingering alternatives
+  const handleRightClick = (e) => {
+    e.preventDefault(); // Prevent context menu
+    dispatch(cycleChordFingering(chord));
+  };
+  
   const renderFretboardChord = (instrument) => {
     let chordData = CHORD_DATA[instrument]?.[chord];
+    
+    // Handle alternative fingerings
+    if (chordData) {
+      const alternatives = chordData.inversions || [];
+      const totalFingerings = 1 + alternatives.length; // 1 for default + alternatives
+      
+      // Wrap around if current index exceeds available fingerings
+      const validIndex = currentFingeringIndex % totalFingerings;
+      
+      // Use alternative fingering if index > 0
+      if (validIndex > 0 && alternatives[validIndex - 1]) {
+        chordData = alternatives[validIndex - 1];
+      }
+    }
     
     // If chord not found in static data, try to generate a basic version
     if (!chordData) {
@@ -458,8 +486,27 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     }
   };
 
+  // Calculate fingering info for display
+  const getFingeringInfo = () => {
+    const baseChordData = CHORD_DATA[instrument]?.[chord];
+    if (!baseChordData) return { current: 1, total: 1 };
+    
+    const alternatives = baseChordData.inversions || [];
+    const totalFingerings = 1 + alternatives.length;
+    const currentDisplay = (currentFingeringIndex % totalFingerings) + 1;
+    
+    return { current: currentDisplay, total: totalFingerings };
+  };
+
+  const fingeringInfo = getFingeringInfo();
+
   return (
-    <div className={`chord-chart ${small ? 'small' : ''}`}>
+    <div 
+      className={`chord-chart ${small ? 'small' : ''}`}
+      onContextMenu={handleRightClick}
+      style={{ cursor: fingeringInfo.total > 1 ? 'pointer' : 'default' }}
+      title={fingeringInfo.total > 1 ? 'Right-click to cycle through fingering alternatives' : ''}
+    >
       {renderChordDiagram()}
       {/* Generated chord indicator for piano chords */}
       {instrument === 'piano' && !CHORD_DATA.piano[chord] && (
@@ -467,7 +514,20 @@ const ChordChart = ({ chord, instrument, small = false }) => {
           *
         </div>
       )}
-      <div className="chord-name">{chord}</div>
+      <div className="chord-name">
+        {chord}
+        {/* Show fingering indicator if there are multiple fingerings available */}
+        {fingeringInfo.total > 1 && (
+          <div style={{ 
+            fontSize: small ? '6px' : '8px', 
+            color: '#666', 
+            marginTop: '2px',
+            fontWeight: 'normal'
+          }}>
+            ({fingeringInfo.current}/{fingeringInfo.total})
+          </div>
+        )}
+      </div>
     </div>
   );
 };

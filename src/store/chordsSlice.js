@@ -4,6 +4,9 @@ const initialState = {
   pinnedChords: [],
   currentInstrument: 'ukulele',
   transposeBy: {}, // song.title -> semitone offset
+  // New state for alternative chord fingerings: 
+  // { "C": 0, "Am": 1 } means C uses fingering 0 (default), Am uses fingering 1 (first alternative)
+  chordFingerings: {},
 };
 
 const chordsSlice = createSlice({
@@ -25,6 +28,8 @@ const chordsSlice = createSlice({
     },
     setInstrument: (state, action) => {
       state.currentInstrument = action.payload;
+      // Clear chord fingerings when instrument changes since different instruments have different alternatives
+      state.chordFingerings = {};
     },
     transposeSongUp: (state, action) => {
       const songTitle = action.payload;
@@ -40,8 +45,35 @@ const chordsSlice = createSlice({
       const { songTitle, value } = action.payload;
       state.transposeBy[songTitle] = value;
     },
+    // New action to cycle chord fingering to next alternative
+    cycleChordFingering: (state, action) => {
+      const chord = action.payload;
+      const currentIndex = state.chordFingerings[chord] || 0;
+      // Will increment and wrap around - the component will handle max checking
+      state.chordFingerings[chord] = currentIndex + 1;
+    },
+    // New action to set specific chord fingering index
+    setChordFingering: (state, action) => {
+      const { chord, fingeringIndex } = action.payload;
+      state.chordFingerings[chord] = fingeringIndex;
+    },
+    // New action to load fingerings from Google Drive save data
+    loadChordFingerings: (state, action) => {
+      state.chordFingerings = action.payload || {};
+    },
   },
 });
 
-export const { pinChord, unpinChord, clearPinnedChords, setInstrument, transposeSongUp, transposeSongDown, setTranspose } = chordsSlice.actions;
+export const { 
+  pinChord, 
+  unpinChord, 
+  clearPinnedChords, 
+  setInstrument, 
+  transposeSongUp, 
+  transposeSongDown, 
+  setTranspose,
+  cycleChordFingering,
+  setChordFingering,
+  loadChordFingerings,
+} = chordsSlice.actions;
 export default chordsSlice.reducer;
