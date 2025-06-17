@@ -18,6 +18,10 @@ const Layout = ({ children, footer }) => {
   const isCraftsPage = location.pathname.startsWith('/crafts');
   
   const isActive = (path) => {
+    // For root path, check exact match to avoid highlighting on all pages
+    if (path === '/') {
+      return location.pathname === '/' ? 'active' : '';
+    }
     return location.pathname.startsWith(path) ? 'active' : '';
   };
 
@@ -72,15 +76,16 @@ const Layout = ({ children, footer }) => {
             {/* Desktop navigation - will be visible only on desktop */}
             <nav className="desktop-navigation">
               <ul className="nav-list">
+                <li className={isActive('/')}>
+                  <Link to="/">Professional</Link>
+                </li>
                 <li className={isActive('/crafts/recipes')}>
                   <Link to="/crafts/recipes">Recipes</Link>
                 </li>
                 <li className={isActive('/crafts/tabs')}>
                   <Link to="/crafts/tabs">Music Tabs</Link>
                 </li>
-                <li className={isActive('/crafts/knitting')}>
-                  <Link to="/crafts/knitting">Knitting Patterns</Link>
-                </li>
+
               </ul>
             </nav>
             
@@ -101,15 +106,16 @@ const Layout = ({ children, footer }) => {
         <div className={`mobile-navigation-container ${menuOpen ? 'open' : ''}`}>
           <nav className="main-navigation">
             <ul className="nav-list">
+              <li className={isActive('/')}>
+                <Link to="/" onClick={() => setMenuOpen(false)}>Professional</Link>
+              </li>
               <li className={isActive('/crafts/recipes')}>
                 <Link to="/crafts/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
               </li>
               <li className={isActive('/crafts/tabs')}>
                 <Link to="/crafts/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
               </li>
-              <li className={isActive('/crafts/knitting')}>
-                <Link to="/crafts/knitting" onClick={() => setMenuOpen(false)}>Knitting Patterns</Link>
-              </li>
+              
             </ul>
           </nav>
         </div>

@@ -5,10 +5,6 @@ import '../styles/HomePage.css';
 const HomePage = () => {
   return (
     <div className="home-page">
-      <p className="intro-text">
-        This site hosts a collection of useful tools I've created for different hobbies and interests.
-        Choose an application below to get started.
-      </p>
       
       <div className="app-cards">
         <div className="app-card">
@@ -40,31 +36,16 @@ const HomePage = () => {
         </div>
         
         <div className="app-card">
-          <h2>Knitting Patterns</h2>
+          <h2>Knitting Studio</h2>
           <p>
-            Design, modify, and follow machine knitting patterns with
-            visualizations for shaping and colorwork.
-          </p>
-          <div className="app-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" className="app-svg">
-              <path d="M19 5.5c0-1.38-1.12-2.5-2.5-2.5S14 4.12 14 5.5c0 .86.44 1.61 1.1 2.05C14.42 8.99 12 10.87 12 14c0-3.13-2.42-5.01-3.1-6.45.66-.44 1.1-1.19 1.1-2.05C10 4.12 8.88 3 7.5 3S5 4.12 5 5.5c0 .86.44 1.61 1.1 2.05C5.42 8.99 3 10.87 3 14c0 3.87 3.13 7 7 7 0-2.76 2.24-5 5-5s5 2.24 5 5c3.87 0 7-3.13 7-7 0-3.13-2.42-5.01-3.1-6.45.66-.44 1.1-1.19 1.1-2.05z" />
-            </svg>
-          </div>
-          <Link to="/crafts/knitting" className="app-link">Open Knitting App</Link>
-        </div>
-        
-        <div className="app-card">
-          <h2>Knitting Design Studio</h2>
-          <p>
-            Alpha version of an interactive knitting design app with step-by-step 
-            pattern creation, sizing tools, colorwork design, and row-by-row knitting guidance.
+            Scale and resize, apply decorate patterns, and interactively knit garments with row-by-row guidance. 
           </p>
           <div className="app-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" className="app-svg">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </div>
-          <Link to="/crafts/knitting-design" className="app-link">Open Design Studio (Alpha)</Link>
+          <Link to="/crafts" className="app-link">Coming Soon</Link>
         </div>
       </div>
     </div>
