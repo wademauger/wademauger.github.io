@@ -67,40 +67,40 @@ export default function AppFrame(props) {
     };
     const items = [
         {
-            key: '/hobbies',
-            label: <NavLink to="/hobbies" onClick={closeDrawer}>Super Secret Emporium</NavLink>,
+            key: '/crafts',
+            label: <NavLink to="/crafts" onClick={closeDrawer}>Super Secret Emporium</NavLink>,
         },
         {
-            key: '/hobbies/recipes',
-            label: <NavLink to="/hobbies/recipes" onClick={closeDrawer}>Recipes</NavLink>,
+            key: '/crafts/recipes',
+            label: <NavLink to="/crafts/recipes" onClick={closeDrawer}>Recipes</NavLink>,
             children: Object.keys(newRecipes).map((category, index) => ({
-                key: `/hobbies/recipes/${category}`,
+                key: `/crafts/recipes/${category}`,
                 label: category,
                 children: newRecipes[category].map(recipe => ({
-                    key: `/hobbies/recipes/${recipe.permalink}`,
-                    label: <NavLink to={`/hobbies/recipes/${recipe.permalink}`} onClick={closeDrawer}>{recipe.title}</NavLink>,
+                    key: `/crafts/recipes/${recipe.permalink}`,
+                    label: <NavLink to={`/crafts/recipes/${recipe.permalink}`} onClick={closeDrawer}>{recipe.title}</NavLink>,
                 })),
             })),
         },
         {
-            key: '/hobbies/patterns',
-            label: <NavLink to="/hobbies/patterns" onClick={closeDrawer}>Knitting Patterns</NavLink>,
+            key: '/crafts/patterns',
+            label: <NavLink to="/crafts/patterns" onClick={closeDrawer}>Knitting Patterns</NavLink>,
             children: garments.map(pattern => ({
-                key: `/hobbies/patterns/${pattern.permalink}`,
-                label: <NavLink to={`/hobbies/patterns/${pattern.permalink}`} onClick={closeDrawer}>{pattern.title}</NavLink>,
+                key: `/crafts/patterns/${pattern.permalink}`,
+                label: <NavLink to={`/crafts/patterns/${pattern.permalink}`} onClick={closeDrawer}>{pattern.title}</NavLink>,
             })),
         },
         {
-            key: '/hobbies/tabs',
-            label: <NavLink to="/hobbies/tabs" onClick={closeDrawer}>Ukulele Tabs</NavLink>,
+            key: '/crafts/tabs',
+            label: <NavLink to="/crafts/tabs" onClick={closeDrawer}>Ukulele Tabs</NavLink>,
         },
         {
-            key: '/hobbies/record-catalog',
+            key: '/crafts/record-catalog',
             label: <a href="https://www.discogs.com/user/wadeanthony0100/collection" onClick={closeDrawer}>Record Catalog</a>,
         },
         {
-            key: '/hobbies/houseplants',
-            label: <NavLink to="/hobbies/houseplants" onClick={closeDrawer}>Houseplants</NavLink>,
+            key: '/crafts/houseplants',
+            label: <NavLink to="/crafts/houseplants" onClick={closeDrawer}>Houseplants</NavLink>,
         },
         {
             key: '/',

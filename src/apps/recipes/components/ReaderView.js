@@ -64,11 +64,50 @@ const ReaderView = ({ recipe, fontSize, onFontSizeChange, onToggleView }) => {
       <div className="reader-split-view">
         <div className="reader-ingredients">
           <h6>Ingredients</h6>
-          <ul>
-            {recipe.ingredients.map((ingredient, i) => (
-              <li key={i}>{renderIngredient(ingredient)}</li>
-            ))}
-          </ul>
+          <table className="ingredients-table">
+            <thead>
+              <tr>
+                <th className="quantity-column">Qty</th>
+                <th className="unit-column">Unit</th>
+                <th className="ingredient-column">Ingredient</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recipe.ingredients.map((ingredient, i) => {
+                if (ingredient && typeof ingredient === 'object') {
+                  const scaledIngredient = scaleIngredient(ingredient);
+                  return (
+                    <tr key={i}>
+                      <td className="quantity-column">{scaledIngredient.quantity}</td>
+                      <td className="unit-column">{scaledIngredient.unit || ''}</td>
+                      <td className="ingredient-column">{scaledIngredient.name}</td>
+                    </tr>
+                  );
+                } else {
+                  // Handle legacy string format
+                  const scaledIngredient = scaleIngredient(ingredient);
+                  const match = String(scaledIngredient).match(/^([\d./]+)\s+(\S+)\s+(.+)$/);
+                  if (match) {
+                    return (
+                      <tr key={i}>
+                        <td className="quantity-column">{match[1]}</td>
+                        <td className="unit-column">{match[2]}</td>
+                        <td className="ingredient-column">{match[3]}</td>
+                      </tr>
+                    );
+                  } else {
+                    return (
+                      <tr key={i}>
+                        <td className="quantity-column"></td>
+                        <td className="unit-column"></td>
+                        <td className="ingredient-column">{scaledIngredient}</td>
+                      </tr>
+                    );
+                  }
+                }
+              })}
+            </tbody>
+          </table>
         </div>
 
         <div className="reader-instructions">

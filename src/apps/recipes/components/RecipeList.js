@@ -1,124 +1,128 @@
-import React, { useState, useMemo } from 'react';
-import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
-import { Box, TextField } from '@mui/material';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import FolderTree from 'react-folder-tree';
+import 'react-folder-tree/dist/style.css';
+import './RecipeList.css';
 
-const RecipeList = ({ recipes, onSelectRecipe, fontSize }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedItems, setExpandedItems] = useState([]);
+const RecipeList = ({ recipes, onSelectRecipe, activeurlPermalink }) => {
+  const { driveRecipes } = useSelector(state => state.recipes);
 
-  // Helper function to check if a recipe contains the search term - memoized
-  const recipeMatchesSearch = useMemo(() => {
-    return (recipe) => {
-      if (!searchTerm.trim()) return true;
+  // Transform recipe data to react-folder-tree format
+  const treeData = useMemo(() => {
+    const topLevelSections = [];
 
-      const term = searchTerm.toLowerCase();
-      // Check if any property in the recipe contains the search term
-      return Object.values(recipe).some(value => {
-        if (typeof value === 'string') {
-          return value.toLowerCase().includes(term);
-        } else if (Array.isArray(value)) {
-          return value.some(item =>
-            typeof item === 'string' && item.toLowerCase().includes(term)
-          );
+    // Create Recipe Library section if there are local recipes
+    const hasLocalRecipes = Object.entries(recipes).some(([, sectionRecipes]) => 
+      Array.isArray(sectionRecipes) && sectionRecipes.length > 0
+    );
+
+    if (hasLocalRecipes) {
+      const recipeLibrary = {
+        name: 'Recipe Library',
+        isOpen: true,
+        type: 'top-section',
+        children: []
+      };
+
+      // Add local recipe sections
+      Object.entries(recipes).forEach(([sectionKey, sectionRecipes]) => {
+        if (Array.isArray(sectionRecipes) && sectionRecipes.length > 0) {
+          const sectionNode = {
+            name: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
+            isOpen: true,
+            type: 'section',
+            children: []
+          };
+
+          sectionRecipes.forEach(recipe => {
+            const isSelected = activeurlPermalink === recipe.permalink;
+            
+            sectionNode.children.push({
+              name: recipe.title,
+              type: 'recipe',
+              recipeData: recipe,
+              isSelected: isSelected
+            });
+          });
+
+          recipeLibrary.children.push(sectionNode);
         }
-        return false;
       });
-    };
-  }, [searchTerm]);
 
-  // Filter regular recipes by section - memoized to prevent infinite loops
-  const filteredRecipes = useMemo(() => {
-    return Object.entries(recipes).reduce((acc, [sectionKey, sectionRecipes]) => {
-      const filtered = sectionRecipes.filter(recipeMatchesSearch);
-      if (filtered.length > 0) {
-        acc[sectionKey] = filtered;
-      }
-      return acc;
-    }, {});
-  }, [recipes, searchTerm]); // Only depend on recipes and searchTerm, not the function itself
+      topLevelSections.push(recipeLibrary);
+    }
 
-  // Auto-expand all sections when user is searching
-  React.useEffect(() => {
-    if (searchTerm.trim()) {
-      // When searching, expand all sections that have results
-      const sectionsWithResults = Object.keys(filteredRecipes);
-      setExpandedItems(sectionsWithResults);
+    // Create Google Drive Library section if there are Google Drive recipes
+    if (driveRecipes && driveRecipes.length > 0) {
+      const googleDriveLibrary = {
+        name: 'Google Drive Library',
+        isOpen: true,
+        type: 'top-section',
+        children: []
+      };
+
+      driveRecipes.forEach(recipe => {
+        const isSelected = activeurlPermalink === recipe.permalink;
+        
+        googleDriveLibrary.children.push({
+          name: recipe.title,
+          type: 'recipe',
+          recipeData: recipe,
+          isSelected: isSelected
+        });
+      });
+
+      topLevelSections.push(googleDriveLibrary);
+    }
+
+    // Return a root wrapper if we have multiple sections
+    if (topLevelSections.length > 1) {
+      return {
+        name: 'Recipes',
+        isOpen: true,
+        type: 'root',
+        children: topLevelSections
+      };
+    } else if (topLevelSections.length === 1) {
+      // If only one section, return it directly
+      return topLevelSections[0];
     } else {
-      // When not searching, collapse all sections
-      setExpandedItems([]);
+      // No recipes at all
+      return {
+        name: 'Recipes',
+        isOpen: true,
+        type: 'root',
+        children: []
+      };
     }
-  }, [searchTerm, filteredRecipes]);
+  }, [recipes, driveRecipes, activeurlPermalink]);
 
-  const handleItemSelectionToggle = (event, itemId, isSelected) => {
-    // Find the recipe by itemId (permalink) in original recipes (not filtered)
-    for (const [sectionKey, sectionRecipes] of Object.entries(recipes)) {
-      const recipe = sectionRecipes.find(recipe => recipe.permalink === itemId);
-      if (recipe) {
-        onSelectRecipe(recipe);
-        break;
-      }
-    }
+  const handleTreeStateChange = (newTreeState, event) => {
+    console.log('Recipe tree state changed:', { newTreeState, event });
   };
 
-  const handleExpandedItemsChange = (event, itemIds) => {
-    setExpandedItems(itemIds);
+  const handleNameClick = ({ defaultOnClick, nodeData }) => {
+    console.log('Recipe name clicked:', { nodeData });
+    
+    // Handle recipe selection - only select if this is actually a recipe node
+    if (nodeData && nodeData.type === 'recipe' && onSelectRecipe) {
+      console.log('Selecting recipe:', nodeData.recipeData.title);
+      onSelectRecipe(nodeData.recipeData);
+    } else {
+      // For non-recipe nodes, use default behavior (expand/collapse)
+      defaultOnClick();
+    }
   };
 
   return (
-    <div className="recipe-list" style={{ fontSize: `${fontSize}%` }}>
-      <div className="search-bar">
-        <TextField
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Filter by ingredients, etc."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2 }}
-        />
-      </div>
-
-      <div className="recipe-items">
-        {Object.keys(filteredRecipes).length > 0 ? (
-          <Box sx={{ minHeight: 352, minWidth: 300 }}>
-            <SimpleTreeView
-              expandedItems={expandedItems}
-              onExpandedItemsChange={handleExpandedItemsChange}
-              onItemSelectionToggle={handleItemSelectionToggle}
-              sx={{
-                '& .MuiTreeItem-content': {
-                  padding: '8px',
-                  '&:hover': {
-                    backgroundColor: '#f5f5f5',
-                  },
-                },
-                '& .MuiTreeItem-label': {
-                  fontSize: 'inherit',
-                },
-              }}
-            >
-              {Object.entries(filteredRecipes).map(([sectionKey, sectionRecipes]) => (
-                <TreeItem 
-                  key={sectionKey} 
-                  itemId={sectionKey} 
-                  label={sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}
-                >
-                  {sectionRecipes.map(recipe => (
-                    <TreeItem 
-                      key={recipe.permalink} 
-                      itemId={recipe.permalink} 
-                      label={recipe.title}
-                    />
-                  ))}
-                </TreeItem>
-              ))}
-            </SimpleTreeView>
-          </Box>
-        ) : (
-          <p>No recipes found.</p>
-        )}
-      </div>
+    <div className="recipe-list">
+      <FolderTree
+        data={treeData}
+        onTreeStateChange={handleTreeStateChange}
+        onNameClick={handleNameClick}
+        showCheckbox={false}
+        indentPixels={20}
+      />
     </div>
   );
 };

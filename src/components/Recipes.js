@@ -7,17 +7,40 @@ import '../App.css';
 import recipes from '../data/recipes/index';
 import { useSelector, useDispatch } from 'react-redux';
 import { setIsPrintMode, setFontSize } from '../reducers/recipes.reducer';
+import FloatingRecipeChat from './FloatingRecipeChat';
+import DraftRecipePreview from './DraftRecipePreview';
 
-const RecipeIndex = () => Object.keys(recipes).map((category, index) => {
+const RecipeIndex = ({ onAIClick }) => {
+  console.log('RecipeIndex rendered, onAIClick:', typeof onAIClick);
   return (
-    <div key={index}>
-      <h1 className="text-2xl font-semibold">{category}</h1>
-      <ul>
-        {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
-      </ul>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Recipes</h1>
+        <Button 
+          type="primary" 
+          onClick={() => {
+            console.log('AI button clicked!');
+            onAIClick && onAIClick();
+          }}
+          className="ai-recipe-button"
+          style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+        >
+          ✨ Add with AI
+        </Button>
+      </div>
+      {Object.keys(recipes).map((category, index) => {
+        return (
+          <div key={index}>
+            <h2 className="text-2xl font-semibold">{category}</h2>
+            <ul>
+              {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
-});
+};
 
 function Recipes() {
   const { id } = useParams();
@@ -26,9 +49,12 @@ function Recipes() {
     return found ? found : acc;
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
+  const [showAIChat, setShowAIChat] = useState(false);
   const dispatch = useDispatch();
   const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
   const fontSize = useSelector((state) => state.recipes.printModeFontSize);
+
+  console.log('Recipes component rendered:', { id, hasRecipe: !!recipe, showAIChat });
 
   useEffect(() => {
     if (recipe) {
@@ -50,6 +76,11 @@ function Recipes() {
 
   const handleDecreaseFontSize = () => {
     dispatch(setFontSize(fontSize - 7));
+  };
+
+  const handleAIClick = () => {
+    console.log('handleAIClick called, setting showAIChat to true');
+    setShowAIChat(true);
   };
 
   const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
@@ -125,8 +156,16 @@ function Recipes() {
               </>
             ) : null}
           </Flex>
-        ) : <RecipeIndex />}
+        ) : <RecipeIndex onAIClick={handleAIClick} />}
       </main>
+      
+      {/* Show floating chat and draft preview only on recipe index page */}
+      {!recipe && (
+        <>
+          <FloatingRecipeChat isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
+          <DraftRecipePreview />
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,242 @@
+/* Recipe List Folder Tree Styles */
+.recipe-folder-tree {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  height: fit-content;
+  font-family: inherit;
+  min-width: 800px;
+}
+
+.recipe-folder-tree h2 {
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.recipe-items {
+  overflow: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.empty-message {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+.recipe-count {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: normal;
+  margin-left: auto;
+}
+
+/* Custom styling for MUI TreeView */
+.MuiTreeView-root {
+  padding: 0;
+}
+
+.MuiTreeItem-root {
+  margin: 0;
+}
+
+.MuiTreeItem-content {
+  border-radius: 4px !important;
+  transition: all 0.2s !important;
+}
+
+.MuiTreeItem-content:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.MuiTreeItem-label {
+  font-size: inherit !important;
+  padding: 4px 0 !important;
+}
+
+/* Folder styles */
+.MuiTreeItem-content[aria-expanded] {
+  font-weight: 600 !important;
+  color: #333 !important;
+}
+
+/* Active recipe item */
+.MuiTreeItem-content[data-active="true"] {
+  background-color: #e1f5fe !important;
+  color: #0277bd !important;
+  font-weight: 500 !important;
+}
+
+/* Icon spacing */
+.MuiSvgIcon-root {
+  margin-right: 4px;
+}
+
+.recipe-folder-tree h2 {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Override default react-folder-tree styles */
+.recipe-folder-tree .rft-default-theme {
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Folder styling */
+.recipe-folder-tree .rft-node {
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+}
+
+.recipe-folder-tree .rft-node-label {
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.recipe-folder-tree .rft-node-label:hover {
+  background-color: #f5f5f5;
+  color: #2c3e50;
+}
+
+/* Folder (section) specific styling */
+.recipe-folder-tree .rft-node[data-is-folder="true"] .rft-node-label {
+  font-weight: 600;
+  color: #2c3e50;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  margin-bottom: 4px;
+}
+
+.recipe-folder-tree .rft-node[data-is-folder="true"] .rft-node-label:hover {
+  background-color: #e9ecef;
+}
+
+/* File (recipe) specific styling */
+.recipe-folder-tree .rft-node[data-is-folder="false"] .rft-node-label {
+  font-weight: 400;
+  margin-left: 20px;
+  padding-left: 16px;
+  border-left: 2px solid #e9ecef;
+}
+
+.recipe-folder-tree .rft-node[data-is-folder="false"] .rft-node-label:hover {
+  background-color: #f0f8ff;
+  border-left-color: #4CAF50;
+}
+
+/* Active recipe styling */
+.recipe-folder-tree .rft-node[data-is-active="true"] .rft-node-label {
+  background-color: #e1f5fe;
+  color: #1976d2;
+  font-weight: 500;
+  border-left-color: #1976d2;
+}
+
+/* Icons */
+.recipe-folder-tree .rft-icon {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom folder/file icons */
+.folder-icon {
+  color: #ffa726;
+  font-size: 16px;
+}
+
+.file-icon {
+  color: #66bb6a;
+  font-size: 14px;
+}
+
+/* Folder tree container */
+.recipe-folder-tree .rft-tree {
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove default list styling */
+.recipe-folder-tree ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recipe-folder-tree li {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Recipe count badge */
+.recipe-count {
+  background-color: #e0e0e0;
+  color: #666;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+.recipe-folder-tree .rft-node[data-is-folder="true"] .recipe-count {
+  background-color: #bbdefb;
+  color: #1976d2;
+}
+
+/* Empty state */
+.recipe-folder-tree .empty-message {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .recipe-folder-tree {
+    padding: 0.75rem;
+  }
+  
+  .recipe-folder-tree .rft-node-label {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .recipe-folder-tree .rft-node[data-is-folder="false"] .rft-node-label {
+    margin-left: 16px;
+    padding-left: 12px;
+  }
+}

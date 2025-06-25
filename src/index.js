@@ -6,13 +6,15 @@ import './styles/index.css';
 import App from './App';
 // Finally, import our custom overrides stylesheet that will take precedence
 import './styles/typography.css';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntApp } from 'antd';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ConfigProvider>
-      <App />
+      <AntApp>
+        <App />
+      </AntApp>
     </ConfigProvider>
   </React.StrictMode>
 );
