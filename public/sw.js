@@ -3,7 +3,7 @@ const STATIC_CACHE_URLS = [
   '/',
   '/static/js/',
   '/static/css/',
-  'https://s.gravatar.com/userimage/244664585/f7a5e0c9518c7c7c176fb815ca4bd846.jpeg?size=56'
+  'https://s.gravatar.com/userimage/244664585/f7a5e0c9518c7c7c176fb815ca4bd846.jpeg?size=256'
 ];
 
 // Install event - cache static resources

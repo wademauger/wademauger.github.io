@@ -28,6 +28,47 @@ import { CSS } from '@dnd-kit/utilities';
 
 const { TextArea } = Input;
 
+// Utility function to convert quantities to numbers
+const convertQuantityToNumber = (quantity) => {
+  if (typeof quantity === 'number') {
+    return quantity;
+  }
+  
+  if (typeof quantity === 'string') {
+    // Handle empty strings
+    if (!quantity.trim()) {
+      return 0;
+    }
+    
+    // Handle fractions like "1/2"
+    if (quantity.includes('/')) {
+      const [numerator, denominator] = quantity.split('/');
+      const num = parseFloat(numerator.trim());
+      const den = parseFloat(denominator.trim());
+      if (!isNaN(num) && !isNaN(den) && den !== 0) {
+        return num / den;
+      }
+    }
+    
+    // Handle ranges like "2-3" (take first number)
+    if (quantity.includes('-')) {
+      const firstNum = quantity.split('-')[0];
+      const parsed = parseFloat(firstNum.trim());
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    
+    // Handle regular numeric strings
+    const parsed = parseFloat(quantity);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  
+  return 0; // Default fallback
+};
+
 // Sortable ingredient component
 const SortableIngredient = ({ 
   ingredient, 
@@ -661,14 +702,21 @@ const RecipeDetail = ({
   const handleSaveIngredient = async (newIngredient, index) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients];
-    updatedIngredients[index] = newIngredient;
+    
+    // Ensure quantity is stored as a number
+    const processedIngredient = {
+      ...newIngredient,
+      quantity: convertQuantityToNumber(newIngredient.quantity)
+    };
+    
+    updatedIngredients[index] = processedIngredient;
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
     setEditingIngredientIndex(null);
   };
 
   const handleInsertIngredientAfter = async (index) => {
-    const newIngredient = { quantity: '', unit: '', name: '' };
+    const newIngredient = { quantity: 0, unit: '', name: '' };
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients];
     updatedIngredients.splice(index + 1, 0, newIngredient);
@@ -796,7 +844,7 @@ const RecipeDetail = ({
 
   // Add new item handlers
   const handleAddIngredient = async () => {
-    const newIngredient = { quantity: '', unit: '', name: '' };
+    const newIngredient = { quantity: 0, unit: '', name: '' };
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients, newIngredient];
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
@@ -1019,8 +1067,8 @@ const RecipeDetail = ({
         {/* Ingredients Section */}
         <div className="ingredients-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <h6 style={{ margin: 0 }}>Ingredients</h6>
-            {editingEnabled && !isDraft && (
+            <h6 style={{ margin: 0, margin: 'auto'}}>Ingredients</h6>
+            {editingEnabled && !isDraft && Array.isArray(recipe.ingredients) && (
               <Button 
                 type="dashed" 
                 icon={<PlusOutlined />} 
@@ -1051,30 +1099,94 @@ const RecipeDetail = ({
                   items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index) => `ingredient-${index}`) : []}
                   strategy={verticalListSortingStrategy}
                 >
-                  {Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ingredient, index) => (
-                    <SortableIngredient
-                      key={`ingredient-${index}`}
-                      id={`ingredient-${index}`}
-                      ingredient={ingredient}
-                      index={index}
-                      editingIndex={editingIngredientIndex}
-                      editingEnabled={editingEnabled && !isDraft}
-                      hoveredIndex={hoveredIngredientIndex}
-                      setHoveredIndex={setHoveredIngredientIndex}
-                      handleEdit={handleEditIngredient}
-                      handleInsertAfter={handleInsertIngredientAfter}
-                      handleDelete={handleDeleteIngredient}
-                      handleSave={handleSaveIngredient}
-                      handleCancel={handleCancelIngredientEdit}
-                      scale={scale}
-                    />
-                  )) : (
-                    <tr>
-                      <td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                        Recipe ingredients are in an incompatible format. Please edit this recipe to fix the ingredients.
-                      </td>
-                    </tr>
-                  )}
+                  {(() => {
+                    // Handle both flat array and grouped object ingredients
+                    if (Array.isArray(recipe.ingredients)) {
+                      // Flat array format - render as before with full editing support
+                      return recipe.ingredients.map((ingredient, index) => (
+                        <SortableIngredient
+                          key={`ingredient-${index}`}
+                          id={`ingredient-${index}`}
+                          ingredient={ingredient}
+                          index={index}
+                          editingIndex={editingIngredientIndex}
+                          editingEnabled={editingEnabled && !isDraft}
+                          hoveredIndex={hoveredIngredientIndex}
+                          setHoveredIndex={setHoveredIngredientIndex}
+                          handleEdit={handleEditIngredient}
+                          handleInsertAfter={handleInsertIngredientAfter}
+                          handleDelete={handleDeleteIngredient}
+                          handleSave={handleSaveIngredient}
+                          handleCancel={handleCancelIngredientEdit}
+                          scale={scale}
+                        />
+                      ));
+                    } else if (recipe.ingredients && typeof recipe.ingredients === 'object') {
+                      // Grouped object format - render each group with a header (read-only for now)
+                      const groups = Object.entries(recipe.ingredients);
+                      let ingredientIndex = 0;
+                      
+                      return groups.map(([groupName, groupIngredients]) => {
+                        if (!Array.isArray(groupIngredients)) return null;
+                        
+                        return (
+                          <React.Fragment key={groupName}>
+                            {/* Group header row */}
+                            <tr style={{ backgroundColor: '#f8f9fa' }}>
+                              <td colSpan="4" style={{ 
+                                padding: '8px 12px', 
+                                fontWeight: 'bold', 
+                                fontSize: '14px',
+                                color: '#555',
+                                borderTop: '2px solid #e9ecef'
+                              }}>
+                                {groupName}
+                              </td>
+                            </tr>
+                            {/* Group ingredients - read only for now */}
+                            {groupIngredients.map((ingredient) => {
+                              const currentIndex = ingredientIndex++;
+                              return (
+                                <tr key={`ingredient-${currentIndex}`}>
+                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    {typeof ingredient === 'object' && ingredient.quantity !== undefined ? 
+                                      (ingredient.quantity * scale).toFixed(2).replace(/\.?0+$/, '') : ''}
+                                  </td>
+                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    {typeof ingredient === 'object' ? ingredient.unit : ''}
+                                  </td>
+                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    {typeof ingredient === 'object' ? (
+                                      <>
+                                        {ingredient.name}
+                                        {ingredient.notes && (
+                                          <span style={{ fontSize: '11px', color: '#888', fontStyle: 'italic' }}>
+                                            {' '}({ingredient.notes})
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : ingredient}
+                                  </td>
+                                  <td style={{ padding: '8px' }}>
+                                    {/* No editing controls for grouped ingredients yet */}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      });
+                    } else {
+                      // No ingredients or invalid format
+                      return (
+                        <tr>
+                          <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                            No ingredients found. Click "Add" to add ingredients.
+                          </td>
+                        </tr>
+                      );
+                    }
+                  })()}
                 </SortableContext>
               </tbody>
             </table>
@@ -1084,7 +1196,7 @@ const RecipeDetail = ({
         {/* Instructions Section */}
         <div className="instructions-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <h6 style={{ margin: 0 }}>Instructions</h6>
+            <h6 style={{ margin: 0 , margin: 'auto'}}>Instructions</h6>
             {editingEnabled && !isDraft && (
               <>
                 <Button 
@@ -1133,7 +1245,7 @@ const RecipeDetail = ({
         {((recipe.notes && recipe.notes.length > 0) || (editingEnabled && !isDraft)) && (
           <div className="notes-section">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <h6 style={{ margin: 0 }}>Notes</h6>
+              <h6 style={{ margin: 0, margin: 'auto'}}>Notes</h6>
               {editingEnabled && !isDraft && (
                 <Button 
                   type="dashed" 

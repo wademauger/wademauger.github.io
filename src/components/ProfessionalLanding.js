@@ -26,7 +26,7 @@ const ProfessionalLanding = () => {
     return (
         <div className="css-1jmej02">
             <div className="css-18dmi9v">
-                <img src="https://s.gravatar.com/userimage/244664585/f7a5e0c9518c7c7c176fb815ca4bd846.jpeg?size=56" alt="" aria-hidden="true" className="css-liixgw" />
+                <img src="https://s.gravatar.com/userimage/244664585/f7a5e0c9518c7c7c176fb815ca4bd846.jpeg?size=256" alt="" aria-hidden="true" className="css-liixgw" />
                 <h1 className="css-17ahnq4">Wade Ahlstrom</h1>
                 <p className="css-so0bfi">Software Engineer</p>
                 <div className="css-gmuwbf">

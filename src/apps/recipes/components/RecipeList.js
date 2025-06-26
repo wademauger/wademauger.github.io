@@ -18,8 +18,8 @@ const RecipeList = ({ recipes, onSelectRecipe, activeurlPermalink }) => {
 
     if (hasLocalRecipes) {
       const recipeLibrary = {
-        name: 'Recipe Library',
-        isOpen: true,
+        name: 'Test Recipe Library',
+        isOpen: false,
         type: 'top-section',
         children: []
       };
@@ -29,7 +29,7 @@ const RecipeList = ({ recipes, onSelectRecipe, activeurlPermalink }) => {
         if (Array.isArray(sectionRecipes) && sectionRecipes.length > 0) {
           const sectionNode = {
             name: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
-            isOpen: true,
+            isOpen: false,
             type: 'section',
             children: []
           };

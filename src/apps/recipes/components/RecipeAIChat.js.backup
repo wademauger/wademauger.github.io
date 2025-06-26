@@ -8,47 +8,6 @@ const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-// Helper function to safely render ingredient list
-const renderIngredientsList = (ingredients, maxItems = 3) => {
-  if (!ingredients) return null;
-  
-  let flatIngredients = [];
-  
-  // Handle both flat arrays and grouped objects
-  if (Array.isArray(ingredients)) {
-    // Flat array format: [{ quantity: "1", unit: "cup", name: "flour" }, ...]
-    flatIngredients = ingredients;
-  } else if (typeof ingredients === 'object' && ingredients !== null) {
-    // Grouped object format: { "For the Cake": [...], "For the Frosting": [...] }
-    Object.entries(ingredients).forEach(([groupName, groupIngredients]) => {
-      if (Array.isArray(groupIngredients)) {
-        flatIngredients.push(...groupIngredients);
-      }
-    });
-  }
-  
-  // Convert to display strings
-  const ingredientStrings = flatIngredients.slice(0, maxItems).map((ing, index) => {
-    if (typeof ing === 'object' && ing !== null) {
-      // Convert structured ingredient to readable string
-      const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.toString().trim()).join(' ');
-      return ing.notes ? `${parts} (${ing.notes})` : parts;
-    } else if (typeof ing === 'string') {
-      // Already a string
-      return ing;
-    } else {
-      // Fallback for any other type
-      return String(ing);
-    }
-  });
-  
-  return {
-    displayItems: ingredientStrings,
-    totalCount: flatIngredients.length,
-    hasMore: flatIngredients.length > maxItems
-  };
-};
-
 // Recipe Card Component for displaying recipe suggestions in chat
 const RecipeCard = ({ recipe, onOpenRecipe, isCompact = false }) => {
   const handleOpenRecipe = () => {
@@ -56,9 +15,6 @@ const RecipeCard = ({ recipe, onOpenRecipe, isCompact = false }) => {
       onOpenRecipe(recipe);
     }
   };
-
-  // Safely process ingredients
-  const ingredientInfo = renderIngredientsList(recipe.ingredients, isCompact ? 2 : 3);
 
   return (
     <Card
@@ -87,33 +43,12 @@ const RecipeCard = ({ recipe, onOpenRecipe, isCompact = false }) => {
                 display: '-webkit-box',
                 WebkitLineClamp: isCompact ? 2 : 3,
                 WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                marginBottom: 4
+                overflow: 'hidden'
               }}
             >
               {recipe.description}
             </Paragraph>
           )}
-          
-          {/* Safely display ingredients preview */}
-          {ingredientInfo && ingredientInfo.displayItems.length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              <Text type="secondary" style={{ fontSize: '11px', fontWeight: 'bold' }}>
-                Ingredients:
-              </Text>
-              {ingredientInfo.displayItems.map((ing, index) => (
-                <div key={index} style={{ fontSize: '11px', color: '#666', marginLeft: 8 }}>
-                  • {ing}
-                </div>
-              ))}
-              {ingredientInfo.hasMore && (
-                <Text type="secondary" style={{ fontSize: '10px', marginLeft: 8 }}>
-                  ... and {ingredientInfo.totalCount - ingredientInfo.displayItems.length} more
-                </Text>
-              )}
-            </div>
-          )}
-          
           <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {recipe.difficulty && (
               <Tag size="small" color={
@@ -182,7 +117,7 @@ const parseRecipesFromMessage = (messageContent) => {
 };
 
 // Enhanced Message Content Component
-const MessageContent = ({ message, onOpenRecipe, editingEnabled, onApplyChanges }) => {
+const MessageContent = ({ message, onOpenRecipe, editingEnabled, onApplyChanges, userInfo }) => {
   const { recipes, recipeSuggestions } = parseRecipesFromMessage(message.content);
   
   // Remove JSON blocks from display content
@@ -646,30 +581,6 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
             return ingredient;
           });
           changesApplied.push('ingredients');
-        }
-        // Handle grouped ingredients from AI responses
-        else if (suggestedChanges.groupedIngredients && typeof suggestedChanges.groupedIngredients === 'object') {
-          // Convert grouped ingredients to flat array
-          const flatIngredients = [];
-          Object.entries(suggestedChanges.groupedIngredients).forEach(([groupName, groupIngredients]) => {
-            if (Array.isArray(groupIngredients)) {
-              flatIngredients.push(...groupIngredients);
-            }
-          });
-          
-          if (flatIngredients.length > 0) {
-            updatedRecipe.ingredients = flatIngredients.map(ingredient => {
-              if (typeof ingredient === 'object' && ingredient !== null) {
-                // Already in proper format
-                return ingredient;
-              } else if (typeof ingredient === 'string') {
-                // Parse string format
-                return { quantity: '', unit: '', name: ingredient };
-              }
-              return ingredient;
-            });
-            changesApplied.push('ingredients');
-          }
         }
         
         // Apply instruction/step changes

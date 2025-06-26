@@ -86,7 +86,7 @@ IMPORTANT: Please respond with a complete recipe in valid JSON format. Make sure
 3. Use the exact JSON structure specified in the system prompt
 
 For example, format ingredients like:
-{"quantity": 2, "unit": "cups", "name": "all-purpose flour", "notes": "sifted"}
+{"quantity": "2", "unit": "cups", "name": "all-purpose flour", "notes": "sifted"}
 
 NOT like:
 {"quantity": "2 cups", "unit": "", "name": "all-purpose flour, sifted", "notes": ""}`;
@@ -236,13 +236,13 @@ CRITICAL: Always respond with a valid JSON object in this EXACT format:
   "difficulty": "Easy/Medium/Hard",
   "ingredients": [
     {
-      "quantity": 2,
+      "quantity": "2",
       "unit": "cups",
       "name": "all-purpose flour",
       "notes": "sifted (optional)"
     },
     {
-      "quantity": 1,
+      "quantity": "1",
       "unit": "tsp",
       "name": "baking powder",
       "notes": ""
@@ -264,7 +264,7 @@ IMPORTANT:
 - The "commentary" field should contain your conversational response - tips about technique, dietary modifications (gluten-free, vegan, etc.), flavor variations, cultural context, or personal insights
 - Always return valid JSON only, no markdown or extra text
 - CRITICAL: For ingredients, ALWAYS separate quantity, unit, and name into distinct fields:
-  * "quantity": NUMBER ONLY - the numeric amount as a number, not a string (e.g., 2, 0.5, 3.5, 1, 3) - NO QUOTES around numbers!
+  * "quantity": the numeric amount only (e.g., "2", "1/2", "3-4", "1", "3")
   * "unit": the measurement unit only (e.g., "cups", "tsp", "oz", "large", "medium", "cloves", "slices", "tbsp")
   * "name": the ingredient name only (e.g., "all-purpose flour", "baking powder", "garlic", "thick bread", "eggs")
   * "notes": any preparation notes (e.g., "sifted", "softened", "chopped fine", "day-old preferred", "for cooking")
@@ -274,22 +274,22 @@ INGREDIENT EXAMPLES - Follow this exact format:
 ❌ WRONG: {"quantity": "2", "unit": "cups all-purpose", "name": "flour", "notes": ""}
 ❌ WRONG: {"quantity": "", "unit": "", "name": "2 cups all-purpose flour, sifted", "notes": ""}
 
-✅ CORRECT: {"quantity": 2, "unit": "cups", "name": "all-purpose flour", "notes": "sifted"}
-✅ CORRECT: {"quantity": 3, "unit": "large", "name": "eggs", "notes": "room temperature"}
-✅ CORRECT: {"quantity": 0.5, "unit": "tsp", "name": "vanilla extract", "notes": ""}
-✅ CORRECT: {"quantity": 6, "unit": "slices", "name": "thick bread", "notes": "day-old preferred"}
+✅ CORRECT: {"quantity": "2", "unit": "cups", "name": "all-purpose flour", "notes": "sifted"}
+✅ CORRECT: {"quantity": "3", "unit": "large", "name": "eggs", "notes": "room temperature"}
+✅ CORRECT: {"quantity": "1/2", "unit": "tsp", "name": "vanilla extract", "notes": ""}
+✅ CORRECT: {"quantity": "6", "unit": "slices", "name": "thick bread", "notes": "day-old preferred"}
 
 - Include specific temperatures, cooking times, and helpful techniques in the steps
 - Add helpful notes for tips, substitutions, and storage
 - For complex recipes with multiple components, you can use grouped ingredients like this:
   "ingredients": {
     "For the Cake": [
-      {"quantity": 2, "unit": "cups", "name": "all-purpose flour", "notes": "sifted"},
-      {"quantity": 1, "unit": "cup", "name": "granulated sugar", "notes": ""}
+      {"quantity": "2", "unit": "cups", "name": "all-purpose flour", "notes": "sifted"},
+      {"quantity": "1", "unit": "cup", "name": "granulated sugar", "notes": ""}
     ],
     "For the Frosting": [
-      {"quantity": 1, "unit": "cup", "name": "unsalted butter", "notes": "softened"},
-      {"quantity": 2, "unit": "cups", "name": "powdered sugar", "notes": "sifted"}
+      {"quantity": "1", "unit": "cup", "name": "unsalted butter", "notes": "softened"},
+      {"quantity": "2", "unit": "cups", "name": "powdered sugar", "notes": "sifted"}
     ]
   }
 - Use simple array format for single-component recipes, grouped object format for multi-component recipes
@@ -847,15 +847,41 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
           changes.title = jsonRecipe.title;
         }
         
-        if (jsonRecipe.ingredients && Array.isArray(jsonRecipe.ingredients)) {
-          changes.ingredients = jsonRecipe.ingredients.map(ing => {
-            if (typeof ing === 'object') {
-              // Convert structured ingredient to string format for compatibility
-              const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
-              return ing.notes ? `${parts} (${ing.notes})` : parts;
-            }
-            return ing;
-          });
+        if (jsonRecipe.ingredients) {
+          // Handle both flat arrays and grouped objects
+          if (Array.isArray(jsonRecipe.ingredients)) {
+            // Flat array format
+            changes.ingredients = jsonRecipe.ingredients.map(ing => {
+              if (typeof ing === 'object') {
+                // Convert structured ingredient to string format for compatibility
+                const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
+                return ing.notes ? `${parts} (${ing.notes})` : parts;
+              }
+              return ing;
+            });
+          } else if (typeof jsonRecipe.ingredients === 'object' && jsonRecipe.ingredients !== null) {
+            // Grouped object format: { "For the Cake": [...], "For the Frosting": [...] }
+            console.log('🔄 Processing grouped ingredients:', jsonRecipe.ingredients);
+            
+            // Store grouped ingredients separately for special handling
+            changes.groupedIngredients = jsonRecipe.ingredients;
+            
+            // Also create a flat version for compatibility
+            const flatIngredients = [];
+            Object.entries(jsonRecipe.ingredients).forEach(([groupName, groupIngredients]) => {
+              if (Array.isArray(groupIngredients)) {
+                const processedGroup = groupIngredients.map(ing => {
+                  if (typeof ing === 'object') {
+                    const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
+                    return ing.notes ? `${parts} (${ing.notes})` : parts;
+                  }
+                  return ing;
+                });
+                flatIngredients.push(...processedGroup);
+              }
+            });
+            changes.ingredients = flatIngredients;
+          }
         }
         
         if (jsonRecipe.steps && Array.isArray(jsonRecipe.steps)) {

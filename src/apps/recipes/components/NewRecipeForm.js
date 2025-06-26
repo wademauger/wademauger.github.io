@@ -14,18 +14,93 @@ import recipeAIService from '../services/RecipeAIService';
 const { Text } = Typography;
 
 const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
+  console.log('🚀 NewRecipeForm component called! visible:', visible, 'props:', { visible, onCancel, onSave, loading });
+  console.log('🔍 NewRecipeForm render called with visible:', visible);
+  
   const [form] = Form.useForm();
   const [titleValue, setTitleValue] = useState('');
   const [slugValue, setSlugValue] = useState('');
   const [manualSlugEdit, setManualSlugEdit] = useState(false);
-  const [showAiChat, setShowAiChat] = useState(false);
+  const [showManualMode, setShowManualMode] = useState(false); // Start with AI mode, allow switch to manual
   const [aiMessages, setAiMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  // Preserve original form values when switching to AI mode
-  const [originalTitle, setOriginalTitle] = useState('');
-  const [originalSlug, setOriginalSlug] = useState('');
+  // Recipe preview state
+  const [currentRecipePreview, setCurrentRecipePreview] = useState(null);
   const messagesEndRef = useRef(null);
+
+  console.log('🔍 Current showManualMode state:', showManualMode);
+
+  // Reset states when modal opens
+  useEffect(() => {
+    if (visible) {
+      console.log('🔧 NewRecipeForm modal opened - defaulting to AI mode');
+      console.log('🔧 Previous showManualMode state:', showManualMode);
+      
+      // Immediately set to AI mode
+      setShowManualMode(false);
+      setAiMessages([]);
+      setAiLoading(false);
+      setCurrentRecipePreview(null);
+      setTitleValue('');
+      setSlugValue('');
+      setManualSlugEdit(false);
+      
+      console.log('🔧 After reset - showManualMode set to false');
+    } else {
+      console.log('🔧 NewRecipeForm modal closed');
+    }
+  }, [visible]);
+
+  // Additional effect to ensure AI mode is always the default on mount
+  useEffect(() => {
+    if (visible && showManualMode !== false) {
+      console.log('🔧 Force correcting showManualMode to false');
+      setShowManualMode(false);
+    }
+  }, [visible, showManualMode]);
+
+  // Utility function to convert string quantities to numbers
+  const convertQuantityToNumber = (quantity) => {
+    if (typeof quantity === 'number') {
+      return quantity;
+    }
+    
+    if (typeof quantity === 'string') {
+      // Handle empty string
+      if (!quantity.trim()) {
+        return 0;
+      }
+      
+      // Handle fractions like "1/2", "3/4", etc.
+      if (quantity.includes('/')) {
+        const [numerator, denominator] = quantity.split('/');
+        const num = parseFloat(numerator);
+        const den = parseFloat(denominator);
+        if (!isNaN(num) && !isNaN(den) && den !== 0) {
+          return num / den;
+        }
+      }
+      
+      // Handle ranges like "2-3", "1-2", etc. - take the first number
+      if (quantity.includes('-')) {
+        const firstNum = quantity.split('-')[0];
+        const parsed = parseFloat(firstNum);
+        if (!isNaN(parsed)) {
+          return parsed;
+        }
+      }
+      
+      // Handle standard numbers
+      const parsed = parseFloat(quantity);
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    
+    // Default to 0 if can't parse
+    return 0;
+  };
 
   // Parse recipe from AI response (JSON or markdown)
   const parseRecipeFromText = (text) => {
@@ -86,46 +161,90 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       // Parse the JSON
       const parsed = JSON.parse(jsonString);
       
+      console.log('🔍 DEBUG: Parsed JSON structure:', {
+        hasIngredients: !!parsed.ingredients,
+        ingredientsType: typeof parsed.ingredients,
+        isIngredientsArray: Array.isArray(parsed.ingredients),
+        ingredientsKeys: parsed.ingredients && typeof parsed.ingredients === 'object' && !Array.isArray(parsed.ingredients) 
+          ? Object.keys(parsed.ingredients) : 'N/A'
+      });
+      
       // Validate that it has the expected recipe structure
       if (parsed && (parsed.title || parsed.ingredients || parsed.steps)) {
         // Handle both simple array and grouped ingredient formats
         let ingredients = [];
+        let ingredientsGrouped = null;
         
         if (parsed.ingredients) {
           if (Array.isArray(parsed.ingredients)) {
-            // Simple array format
+            console.log('🔄 Processing ingredients as array format');
+            // Simple array format - preserve structured objects
             ingredients = parsed.ingredients.map(ing => {
-              if (typeof ing === 'object') {
-                const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
-                return ing.notes ? `${parts} (${ing.notes})` : parts;
+              if (typeof ing === 'object' && ing !== null) {
+                // Keep structured format for proper ingredient handling, preserving numeric quantities
+                return {
+                  quantity: ing.quantity !== undefined ? ing.quantity : '',
+                  unit: ing.unit || '',
+                  name: ing.name || '',
+                  notes: ing.notes || ''
+                };
               }
-              return ing;
+              // If it's a string, try to parse it into structured format
+              return {
+                quantity: '',
+                unit: '',
+                name: ing.toString(),
+                notes: ''
+              };
             });
+            ingredientsGrouped = null;
           } else if (typeof parsed.ingredients === 'object') {
-            // Grouped format - preserve the structure but also create a flat list for display
+            console.log('🔄 Processing ingredients as grouped object format');
+            console.log('🔍 Groups found:', Object.keys(parsed.ingredients));
+            
+            // Grouped format - preserve the structure and convert to flat structured list
             const flatIngredients = [];
             Object.entries(parsed.ingredients).forEach(([group, items]) => {
               if (Array.isArray(items)) {
-                flatIngredients.push(`**${group}:**`);
+                // Add group header as a special ingredient
+                flatIngredients.push({
+                  quantity: '',
+                  unit: '',
+                  name: `**${group}:**`,
+                  notes: '',
+                  isGroupHeader: true
+                });
+                
                 items.forEach(ing => {
-                  if (typeof ing === 'object') {
-                    const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
-                    flatIngredients.push(ing.notes ? `${parts} (${ing.notes})` : parts);
+                  if (typeof ing === 'object' && ing !== null) {
+                    flatIngredients.push({
+                      quantity: ing.quantity !== undefined ? ing.quantity : '',
+                      unit: ing.unit || '',
+                      name: ing.name || '',
+                      notes: ing.notes || ''
+                    });
                   } else {
-                    flatIngredients.push(ing);
+                    flatIngredients.push({
+                      quantity: '',
+                      unit: '',
+                      name: ing.toString(),
+                      notes: ''
+                    });
                   }
                 });
               }
             });
             ingredients = flatIngredients;
+            ingredientsGrouped = parsed.ingredients; // Preserve original grouped structure
           }
         }
         
-        return {
+        const result = {
           title: parsed.title || 'AI Generated Recipe',
           description: parsed.description || '',
+          commentary: parsed.commentary || '', // Add commentary field
           ingredients: ingredients,
-          ingredientsGrouped: Array.isArray(parsed.ingredients) ? null : parsed.ingredients, // Preserve original grouped structure
+          ingredientsGrouped: ingredientsGrouped, // This should be the original grouped object
           steps: parsed.steps || [],
           notes: parsed.notes || [],
           prepTime: parsed.prepTime || '',
@@ -135,6 +254,15 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           tags: parsed.tags || [],
           nutrition: parsed.nutrition || {}
         };
+        
+        console.log('✅ Final parsed recipe:', {
+          title: result.title,
+          hasIngredients: result.ingredients && result.ingredients.length > 0,
+          hasIngredientsGrouped: !!result.ingredientsGrouped,
+          ingredientsGroupedKeys: result.ingredientsGrouped ? Object.keys(result.ingredientsGrouped) : 'null'
+        });
+        
+        return result;
       }
       
       return null;
@@ -251,9 +379,9 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
 
   // Check if a message contains a complete recipe
   const isCompleteRecipe = (text) => {
-    // First check if it looks like JSON structure (even if malformed)
+    // PRIORITY 1: Check for JSON structure first (most reliable)
     const trimmedText = text.trim();
-    const looksLikeJson = trimmedText.startsWith('{') && trimmedText.endsWith('}') &&
+    const looksLikeJson = (trimmedText.startsWith('{') && trimmedText.includes('}')) &&
                          (text.includes('"title"') || text.includes('"ingredients"') || text.includes('"steps"'));
     
     if (looksLikeJson) {
@@ -269,43 +397,291 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       return isComplete;
     }
     
-    // Try to parse JSON if it looks like JSON
+    // PRIORITY 2: Try to parse as JSON even if not perfectly formatted
     try {
       const parsed = parseJsonRecipe(text);
       if (parsed && parsed.title && parsed.ingredients && parsed.steps) {
+        console.log('🔍 Parsed JSON recipe successfully');
         return parsed.ingredients.length > 0 && parsed.steps.length > 0;
       }
     } catch (e) {
       // Continue with markdown check
     }
     
-    // Fall back to markdown detection - make it more flexible
+    // PRIORITY 3: Only if JSON parsing fails, check markdown format
+    // Before checking markdown patterns, eliminate obvious suggestion lists
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    const suggestionLines = lines.filter(line => {
+      const trimmed = line.trim();
+      return (
+        /^\d+\.\s*[\*]*[A-Z][^:]+:\s*/.test(trimmed) ||       // Number + Recipe Name: Description  
+        /^[\*]{1,2}[A-Z][^:*]+[\*]{1,2}:\s*/.test(trimmed)    // **Recipe Name**: Description
+      );
+    }).length;
+    
+    // If we have multiple suggestion-style lines, this is likely a suggestion list, not a complete recipe
+    if (suggestionLines >= 2) {
+      console.log('🔍 Detected suggestion list format, not a complete recipe');
+      return false;
+    }
+    
+    // Fall back to markdown detection - more flexible for AI responses
     const lowerText = text.toLowerCase();
     
-    // Check for title (recipe name at start, ## header, or "recipe" keyword)
+    // Check for recipe indicators (more flexible)
     const hasTitle = text.match(/^[A-Z][^:\n]{3,50}$/m) || // Title-like line at start
                     text.includes('##') || 
-                    lowerText.includes('recipe');
+                    (lowerText.includes('recipe') && !lowerText.includes('recipes')) || // Single recipe, not multiple
+                    /(?:here'?s|this is).*(?:recipe|toast|dish)/i.test(text.substring(0, 200)) || // Intro phrases
+                    /^[A-Z][^.!?]*(?:recipe|instructions?|directions?)$/im.test(text); // Recipe/instruction titles
     
-    // Check for ingredients section (more flexible)
-    const hasIngredients = lowerText.includes('ingredients') && (
-      text.includes('- ') ||           // Bullet points
-      /\d+\.?\s+(?:oz|cup|tsp|tbsp|pound|lb|kg|gram|g)\b/i.test(text) || // Measurements
-      /\d+\s+(?:large|medium|small|cloves?)\s+\w+/i.test(text) ||        // Counted items
-      /^\s*\d+/m.test(text.split(/ingredients:?/i)[1] || '')             // Numbered ingredients
+    // Check for ingredients section with actual measurements
+    const hasDetailedIngredients = lowerText.includes('ingredients') && (
+      /\d+\s*(?:oz|cup|cups|tsp|tbsp|teaspoons?|tablespoons?|pound|pounds|lb|lbs|kg|grams?|g)\b/i.test(text) || // Measurements
+      /\d+\s+(?:large|medium|small|cloves?)\s+\w+/i.test(text) ||        // Counted items with descriptions
+      /(?:^|\n)\s*[\-\*•]\s*\d+/m.test(text.split(/ingredients:?/i)[1] || '') // Bulleted measurements
     );
     
-    // Check for instructions/steps - more flexible pattern matching
-    const hasInstructions = (lowerText.includes('instructions') || lowerText.includes('steps')) && (
-      /\d+\./.test(text) ||                    // Standard numbered steps
-      /^\s*\w+[^:]*:\s*\w+/m.test(text) ||     // Steps with descriptive headers like "Cook the pasta: ..."
-      /(?:first|then|next|finally|step)/i.test(text) // Step indicators
+    // Check for step-by-step instructions
+    const hasDetailedInstructions = (lowerText.includes('instructions') || lowerText.includes('steps')) && (
+      /(?:^|\n)\s*\d+\.\s+(?:heat|cook|add|mix|stir|bake|boil|simmer|season|serve|preheat|prepare|place|remove|create|whisk|dip|soak)/im.test(text) || // Cooking verbs
+      /(?:first|then|next|finally|step)\s+(?:heat|cook|add|mix|stir|bake|boil|simmer|create|whisk|dip|soak)/i.test(text) || // Step indicators with cooking
+      /\d+\.\s*\w+[^:]*(?:for\s+\d+|until|degrees|minutes|hours)/i.test(text) // Steps with timing/temperature
     );
     
-    const isComplete = hasTitle && hasIngredients && hasInstructions;
-    console.log('🔍 Recipe detection:', { hasTitle, hasIngredients, hasInstructions, isComplete });
+    const isComplete = hasTitle && hasDetailedIngredients && hasDetailedInstructions;
+    console.log('🔍 Complete recipe detection for text:', text.substring(0, 100) + '...'); 
+    console.log('🔍 Complete recipe detection:', { 
+      hasTitle, 
+      hasDetailedIngredients, 
+      hasDetailedInstructions, 
+      isComplete,
+      suggestionLines,
+      titleTests: {
+        titleLine: !!text.match(/^[A-Z][^:\n]{3,50}$/m),
+        hasHashTitle: text.includes('##'),
+        singleRecipe: (lowerText.includes('recipe') && !lowerText.includes('recipes')),
+        introPhrase: /(?:here'?s|this is).*(?:recipe|toast|dish)/i.test(text.substring(0, 200)),
+        recipeTitle: /^[A-Z][^.!?]*(?:recipe|instructions?|directions?)$/im.test(text)
+      },
+      ingredientTests: {
+        hasIngredientsWord: lowerText.includes('ingredients'),
+        hasMeasurements: /\d+\s*(?:oz|cup|cups|tsp|tbsp|teaspoons?|tablespoons?|pound|pounds|lb|lbs|kg|grams?|g)\b/i.test(text),
+        hasCountedItems: /\d+\s+(?:large|medium|small|cloves?)\s+\w+/i.test(text)
+      },
+      instructionTests: {
+        hasInstructionsWord: (lowerText.includes('instructions') || lowerText.includes('steps')),
+        hasCookingVerbs: /(?:^|\n)\s*\d+\.\s+(?:heat|cook|add|mix|stir|bake|boil|simmer|season|serve|preheat|prepare|place|remove|create|whisk|dip|soak)/im.test(text),
+        hasStepIndicators: /(?:first|then|next|finally|step)\s+(?:heat|cook|add|mix|stir|bake|boil|simmer|create|whisk|dip|soak)/i.test(text)
+      }
+    });
     
     return isComplete;
+  };
+
+  // Check if a message contains recipe suggestions
+  // Helper function to extract JSON from mixed content
+  const extractJsonFromMixedContent = (text) => {
+    // First try to parse as pure JSON
+    try {
+      return JSON.parse(text.trim());
+    } catch (e) {
+      // Not pure JSON - look for JSON blocks in mixed text
+      // Split by lines and try to find consecutive lines that form valid JSON
+      const lines = text.split('\n');
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Look for lines that start with '{'
+        if (line.startsWith('{')) {
+          // Try to parse from this line forward until we get valid JSON
+          for (let j = i; j < lines.length; j++) {
+            const candidate = lines.slice(i, j + 1).join('\n').trim();
+            
+            // Only try to parse if it ends with '}'
+            if (candidate.endsWith('}')) {
+              try {
+                const parsed = JSON.parse(candidate);
+                if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
+                  return parsed;
+                }
+              } catch (e2) {
+                // Continue trying longer candidates
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const isRecipeSuggestions = (text) => {
+    const trimmedText = text.trim();
+    
+    // Check for JSON format with suggestions array (including mixed content)
+    const jsonData = extractJsonFromMixedContent(trimmedText);
+    if (jsonData && jsonData.suggestions && Array.isArray(jsonData.suggestions) && jsonData.suggestions.length > 0) {
+      console.log('🔍 Detected JSON suggestions format with', jsonData.suggestions.length, 'suggestions');
+      return true;
+    }
+    
+    // Look for the specific SUGGESTIONS format
+    if (trimmedText.includes('SUGGESTIONS:')) {
+      return true;
+    }
+    
+    // Look for multiple recipe sections with ingredients and instructions
+    const ingredientsSections = (text.match(/ingredients/gi) || []).length;
+    const instructionsSections = (text.match(/instructions/gi) || []).length;
+    
+    // If we have multiple ingredient/instruction sections, it's likely suggestions
+    if (ingredientsSections >= 2 && instructionsSections >= 2) {
+      return true;
+    }
+    
+    // Look for multiple recipe names with colons or numbered list pattern
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    const recipeLineCount = lines.filter(line => {
+      const trimmed = line.trim();
+      return (
+        /^[•\-\*]\s*[\*]*[A-Z][^:]+:\s*/.test(trimmed) ||     // Bullet + Recipe Name: Description
+        /^\d+\.\s*[\*]*[A-Z][^:]+:\s*/.test(trimmed) ||       // Number + Recipe Name: Description  
+        /^[\*]{1,2}[A-Z][^:*]+[\*]{1,2}:\s*/.test(trimmed)    // **Recipe Name**: Description
+      );
+    }).length;
+    
+    // Additional check: if we have multiple recipe-like names, but no actual detailed 
+    // ingredients list (with measurements) or step-by-step instructions, it's suggestions
+    if (recipeLineCount >= 2) {
+      const hasDetailedIngredients = /\d+\s*(?:oz|cup|cups|tsp|tbsp|teaspoons?|tablespoons?|pound|pounds|lb|lbs|kg|grams?|g)\b/i.test(text);
+      const hasNumberedSteps = /(?:^|\n)\s*\d+\.\s+(?:heat|cook|add|mix|stir|bake|boil|simmer|season|serve)/im.test(text);
+      
+      // If it has recipe-like names but lacks detailed cooking instructions, it's suggestions
+      if (!hasDetailedIngredients && !hasNumberedSteps) {
+        console.log('🔍 Detected suggestions: multiple recipe names without detailed instructions');
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Parse recipe suggestions from text
+  const parseRecipeSuggestions = (text) => {
+    const suggestions = [];
+    
+    // First try to extract JSON format using helper function
+    const jsonData = extractJsonFromMixedContent(text);
+    if (jsonData && jsonData.suggestions && Array.isArray(jsonData.suggestions)) {
+      console.log('🔍 Parsing JSON suggestions format with', jsonData.suggestions.length, 'suggestions');
+      return jsonData.suggestions.map(suggestion => ({
+        name: suggestion.title || suggestion.name || 'Unnamed Recipe',
+        description: suggestion.description || 'No description available',
+        difficulty: suggestion.difficulty
+      }));
+    }
+    
+    // First try to parse the structured SUGGESTIONS format
+    const lines = text.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Match patterns like "• Recipe Name: Description" or "- Recipe Name: Description"
+      const bulletMatch = trimmedLine.match(/^[•\-\*]\s*([^:]+):\s*(.+)$/);
+      if (bulletMatch) {
+        const name = bulletMatch[1].replace(/\*\*/g, '').trim(); // Remove bold markdown
+        suggestions.push({
+          name: name,
+          description: bulletMatch[2].trim()
+        });
+        continue;
+      }
+      
+      // Match patterns like "1. Recipe Name: Description" or "1. **Recipe Name**: Description"
+      const numberMatch = trimmedLine.match(/^\d+\.\s*\*{0,2}([^:*]+)\*{0,2}:\s*(.+)$/);
+      if (numberMatch) {
+        const name = numberMatch[1].replace(/\*\*/g, '').trim(); // Remove bold markdown
+        suggestions.push({
+          name: name,
+          description: numberMatch[2].trim()
+        });
+        continue;
+      }
+      
+      // Match patterns like "**Recipe Name**: Description" (without number)
+      const boldMatch = trimmedLine.match(/^\*\*([^*:]+)\*\*:\s*(.+)$/);
+      if (boldMatch) {
+        suggestions.push({
+          name: boldMatch[1].trim(),
+          description: boldMatch[2].trim()
+        });
+        continue;
+      }
+    }
+    
+    // If we found structured suggestions, return them
+    if (suggestions.length > 0) {
+      console.log('🔍 Parsed recipe suggestions:', suggestions);
+      return suggestions;
+    }
+    
+    // Fall back to parsing multiple recipe sections
+    const sections = text.split(/(?=Ingredients|INGREDIENTS)/i);
+    
+    for (let i = 1; i < sections.length; i++) { // Skip first section (usually intro text)
+      const section = sections[i].trim();
+      
+      // Try to extract a recipe name from the context before ingredients
+      const prevSection = i > 0 ? sections[i - 1] : '';
+      const contextLines = prevSection.split('\n').slice(-3); // Last 3 lines of previous section
+      
+      // Look for a recipe name in the context
+      let recipeName = `Recipe ${i}`;
+      for (const line of contextLines) {
+        const trimmed = line.trim();
+        // Look for recipe-like names (capitalized, not too long, not ingredients/instructions)
+        if (trimmed && 
+            trimmed.length < 50 && 
+            trimmed.charAt(0) === trimmed.charAt(0).toUpperCase() &&
+            !trimmed.toLowerCase().includes('ingredient') &&
+            !trimmed.toLowerCase().includes('instruction') &&
+            !trimmed.includes(':') &&
+            !/^(here|these|you|this|try)/i.test(trimmed)) {
+          recipeName = trimmed;
+          break;
+        }
+      }
+      
+      // Extract basic description from ingredients
+      const ingredientsMatch = section.match(/ingredients[^]*?(?=instructions|$)/i);
+      let description = '';
+      if (ingredientsMatch) {
+        const ingredients = ingredientsMatch[0].replace(/ingredients/i, '').trim();
+        const firstIngredients = ingredients.split(/[,.]/).slice(0, 3).join(', ');
+        description = `Made with ${firstIngredients}...`;
+      }
+      
+      suggestions.push({
+        name: recipeName,
+        description: description || 'A delicious recipe suggestion'
+      });
+    }
+    
+    return suggestions;
+  };
+
+  // Determine the response type
+  const getResponseType = (text) => {
+    if (isCompleteRecipe(text)) {
+      return 'recipe';
+    }
+    if (isRecipeSuggestions(text)) {
+      return 'suggestions';
+    }
+    return 'advice';
   };
 
   // Handle saving AI-generated recipe
@@ -322,14 +698,13 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
         return;
       }
 
-      // Use preserved original title and slug if available, otherwise fall back to AI-generated values
-      const finalTitle = originalTitle || parsedRecipe.title;
-      const finalSlug = originalSlug || generateSlug(parsedRecipe.title);
+      // Use AI-generated title and slug since we're not preserving form values anymore
+      const finalTitle = parsedRecipe.title;
+      const finalSlug = generateSlug(parsedRecipe.title);
       
-      console.log('📝 Using recipe title and slug:', { 
+      console.log('📝 Using AI-generated recipe title and slug:', { 
         finalTitle, 
         finalSlug, 
-        fromOriginal: !!originalTitle,
         aiTitle: parsedRecipe.title 
       });
       
@@ -361,14 +736,14 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
               if (typeof ing === 'object') {
                 ingredientsForSave.push({
                   name: ing.name || '',
-                  quantity: ing.quantity || '',
+                  quantity: convertQuantityToNumber(ing.quantity),
                   unit: ing.unit || '',
                   notes: ing.notes || ''
                 });
               } else {
                 ingredientsForSave.push({
                   name: ing,
-                  quantity: '',
+                  quantity: 0,
                   unit: ''
                 });
               }
@@ -381,14 +756,14 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           if (typeof ing === 'object') {
             return {
               name: ing.name || ing.toString(),
-              quantity: ing.quantity || '',
+              quantity: convertQuantityToNumber(ing.quantity),
               unit: ing.unit || '',
               notes: ing.notes || ''
             };
           } else {
             return {
               name: ing,
-              quantity: '',
+              quantity: 0,
               unit: ''
             };
           }
@@ -473,13 +848,11 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     setTitleValue('');
     setSlugValue('');
     setManualSlugEdit(false);
-    setShowAiChat(false);
+    setShowManualMode(false); // Reset to AI mode
     setAiMessages([]);
     setAiLoading(false);
     setChatInput('');
-    // Reset preserved values
-    setOriginalTitle('');
-    setOriginalSlug('');
+    setCurrentRecipePreview(null);
   };
 
   const handleCancel = () => {
@@ -526,78 +899,6 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       resetForm();
     } catch (error) {
       console.error('Form validation failed:', error);
-    }
-  };
-
-  // Handle AI button click
-  const handleCreateWithAI = async () => {
-    // Validate and preserve the current form values before switching to AI mode
-    try {
-      const values = await form.validateFields(['title']);
-      
-      // Preserve the original title and slug from the form
-      const currentTitle = titleValue || values.title;
-      const currentSlug = slugValue || generateSlug(currentTitle);
-      
-      setOriginalTitle(currentTitle);
-      setOriginalSlug(currentSlug);
-      
-      console.log('🔄 Switching to AI mode. Preserving:', { 
-        originalTitle: currentTitle, 
-        originalSlug: currentSlug 
-      });
-    } catch (error) {
-      message.error('Please enter a recipe title before using AI assistance');
-      return;
-    }
-    
-    // Get the current title value
-    let title = titleValue || 'a new dish';
-    setShowAiChat(true);
-    setAiLoading(true);
-    
-    // Pre-send user message
-    const userMsg = { 
-      id: Date.now(), 
-      text: `Can you give me a recipe for ${title}?`, 
-      isUser: true, 
-      timestamp: new Date().toLocaleTimeString() 
-    };
-    setAiMessages([userMsg]);
-    
-    try {
-      // Use the real AI service
-      const aiResponse = await recipeAIService.generateResponse(
-        userMsg.text,
-        null, // No existing recipe context
-        [] // No conversation history yet
-      );
-      
-      // Handle both old string format and new structured format
-      const responseText = typeof aiResponse === 'string' ? aiResponse : aiResponse.text;
-      const providerInfo = typeof aiResponse === 'object' ? aiResponse : null;
-      
-      const botMsg = { 
-        id: Date.now() + 1, 
-        text: responseText, 
-        isUser: false, 
-        timestamp: new Date().toLocaleTimeString(),
-        provider: providerInfo?.provider,
-        providerName: providerInfo?.providerName,
-        model: providerInfo?.model
-      };
-      setAiMessages([userMsg, botMsg]);
-    } catch (error) {
-      console.error('AI service error:', error);
-      const errorMsg = { 
-        id: Date.now() + 1, 
-        text: `Sorry, I'm having trouble connecting to the AI service. Here's what I can suggest for ${title}: Try starting with basic ingredients like salt, pepper, and your main protein or vegetable. Would you like me to help you build the recipe step by step?`, 
-        isUser: false, 
-        timestamp: new Date().toLocaleTimeString() 
-      };
-      setAiMessages([userMsg, errorMsg]);
-    } finally {
-      setAiLoading(false);
     }
   };
 
@@ -724,6 +1025,50 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     }
   };
 
+  // Get response type styling
+  const getResponseTypeStyle = (responseType) => {
+    const baseStyle = {
+      fontSize: 9,
+      padding: '2px 5px',
+      borderRadius: 3,
+      fontWeight: '600',
+      letterSpacing: '0.3px',
+      textTransform: 'uppercase',
+      opacity: 0.8
+    };
+    
+    switch (responseType) {
+      case 'recipe':
+        return {
+          ...baseStyle,
+          background: '#e6f7ff',
+          color: '#0050b3',
+          border: '1px solid #91d5ff'
+        };
+      case 'suggestions':
+        return {
+          ...baseStyle,
+          background: '#f6ffed',
+          color: '#389e0d',
+          border: '1px solid #b7eb8f'
+        };
+      case 'advice':
+        return {
+          ...baseStyle,
+          background: '#f9f0ff',
+          color: '#722ed1',
+          border: '1px solid #d3adf7'
+        };
+      default:
+        return {
+          ...baseStyle,
+          background: '#f5f5f5',
+          color: '#595959',
+          border: '1px solid #d9d9d9'
+        };
+    }
+  };
+
   // Auto-scroll to bottom of chat
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -778,6 +1123,14 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       };
       
       setAiMessages(prev => [...prev, aiMessage]);
+      
+      // Check if this is a complete recipe and update preview
+      if (isCompleteRecipe(responseText)) {
+        const parsedRecipe = parseRecipeFromText(responseText);
+        if (parsedRecipe) {
+          setCurrentRecipePreview(parsedRecipe);
+        }
+      }
     } catch (error) {
       console.error('AI service error:', error);
       const errorMessage = {
@@ -792,49 +1145,180 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     }
   };
 
+  // Handle showing recipe preview from chat
+  const handleShowRecipePreview = (messageText) => {
+    console.log('🔍 DEBUG: handleShowRecipePreview called with messageText length:', messageText.length);
+    const parsedRecipe = parseRecipeFromText(messageText);
+    console.log('🔍 DEBUG: parsedRecipe result:', {
+      hasRecipe: !!parsedRecipe,
+      title: parsedRecipe?.title,
+      hasIngredients: parsedRecipe?.ingredients && parsedRecipe.ingredients.length > 0,
+      hasIngredientsGrouped: !!parsedRecipe?.ingredientsGrouped,
+      ingredientsGroupedKeys: parsedRecipe?.ingredientsGrouped ? Object.keys(parsedRecipe.ingredientsGrouped) : 'null'
+    });
+    if (parsedRecipe) {
+      setCurrentRecipePreview(parsedRecipe);
+      console.log('✅ DEBUG: Recipe preview set successfully');
+    } else {
+      console.log('❌ DEBUG: Failed to parse recipe from message text');
+    }
+  };
+
+  // Handle saving the current recipe preview
+  const handleSaveCurrentRecipe = async () => {
+    if (currentRecipePreview) {
+      await handleSaveAiRecipe(JSON.stringify(currentRecipePreview));
+    }
+  };
+
+  // Handle clicking on a recipe suggestion to get the full recipe
+  const handleRequestFullRecipe = async (recipeName) => {
+    const userMessage = {
+      id: Date.now(),
+      text: `Please give me the complete recipe for ${recipeName}`,
+      isUser: true,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    setAiMessages(prev => [...prev, userMessage]);
+    setAiLoading(true);
+
+    try {
+      // Convert messages to conversation history format for AI service
+      const conversationHistory = aiMessages.map(msg => ({
+        type: msg.isUser ? 'user' : 'ai',
+        content: msg.text
+      }));
+
+      // Get AI response for full recipe
+      const aiResponse = await recipeAIService.generateResponse(
+        userMessage.text,
+        null,
+        conversationHistory
+      );
+
+      // Handle both old string format and new structured format
+      const responseText = typeof aiResponse === 'string' ? aiResponse : aiResponse.text;
+      const providerInfo = typeof aiResponse === 'object' ? aiResponse : null;
+
+      const aiMessage = {
+        id: Date.now() + 1,
+        text: responseText,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString(),
+        provider: providerInfo?.provider,
+        providerName: providerInfo?.providerName,
+        model: providerInfo?.model
+      };
+      
+      setAiMessages(prev => [...prev, aiMessage]);
+      
+      // Check if this is a complete recipe and update preview
+      if (isCompleteRecipe(responseText)) {
+        const parsedRecipe = parseRecipeFromText(responseText);
+        if (parsedRecipe) {
+          setCurrentRecipePreview(parsedRecipe);
+        }
+      }
+    } catch (error) {
+      console.error('AI service error:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: `I'm having trouble getting the full recipe for ${recipeName}. Could you try asking again?`,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setAiMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <Modal
-      title={showAiChat && originalTitle ? `Create "${originalTitle}" Recipe with AI` : showAiChat ? 'Create Recipe with AI' : 'Create New Recipe'}
+      key={visible ? 'modal-open' : 'modal-closed'} // Force re-render when opening
+      title={showManualMode ? 'Create New Recipe' : 'Create Recipe with Sous Chef AI'}
       open={visible}
       onCancel={handleCancel}
       footer={
-        showAiChat ? [
-          <Button key="back" onClick={() => setShowAiChat(false)}>
-            ← Back to Form
+        !showManualMode ? [
+          <Button 
+            key="manual-mode" 
+            onClick={() => {
+              console.log('🔄 Switching to manual mode');
+              setShowManualMode(true);
+            }}
+            style={{ marginRight: 'auto' }}
+          >
+            📝 Switch to Manual Entry
           </Button>,
           <Button key="cancel" onClick={handleCancel}>
             Close
-          </Button>
+          </Button>,
+          ...(currentRecipePreview ? [
+            <div key="recipe-slug-info" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8,
+              fontSize: 12,
+              color: '#666',
+              padding: '0 8px'
+            }}>
+              <span>URL:</span>
+              <code style={{ 
+                background: '#f5f5f5', 
+                padding: '2px 6px', 
+                borderRadius: 4,
+                fontSize: 11 
+              }}>
+                /crafts/recipes/{generateSlug(currentRecipePreview.title)}
+              </code>
+            </div>,
+            <Button 
+              key="save-recipe" 
+              type="primary" 
+              style={{
+                background: '#52c41a',
+                borderColor: '#52c41a',
+                fontWeight: 600
+              }}
+              onClick={handleSaveCurrentRecipe}
+            >
+              💾 Save Recipe
+            </Button>
+          ] : [])
         ] : [
+          <Button 
+            key="ai-mode" 
+            onClick={() => {
+              console.log('🔄 Switching to AI mode');
+              setShowManualMode(false);
+            }}
+            style={{ marginRight: 'auto' }}
+          >
+            🤖 Switch to AI Mode
+          </Button>,
           <Button key="cancel" onClick={handleCancel}>
             Cancel
-          </Button>,
-          <Button 
-            key="ai"
-            style={{
-              background: 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)',
-              color: '#fff',
-              fontWeight: 600,
-              border: 0
-            }}
-            loading={aiLoading}
-            onClick={handleCreateWithAI}
-          >
-            🤖 Create Recipe with AI
           </Button>,
           <Button key="save" type="primary" onClick={handleSubmit} loading={loading}>
             Create Recipe
           </Button>
         ]
       }
-      width={showAiChat ? 700 : 600}
+      width={!showManualMode ? 1200 : 600}
       style={{ top: 20 }}
     >
-      {!showAiChat ? (
+      {(() => {
+        console.log('🎨 Rendering modal content:', { showManualMode, visible });
+        console.log('🎨 Will render:', showManualMode ? 'MANUAL MODE' : 'AI MODE');
+        console.log('🎨 Manual condition result:', showManualMode ? true : false);
+      })()}
+      {showManualMode ? (
         <>
           <Alert
-            message="Recipe Creation"
-            description="Create a new recipe with a title and permanent URL slug. You'll be able to add ingredients, instructions, and other details after creation."
+            message="Manual Recipe Creation"
+            description="Create a new recipe manually with a custom title and URL slug. You'll add ingredients and instructions after creation."
             type="info"
             showIcon
             style={{ marginBottom: 24 }}
@@ -893,438 +1377,548 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           </Form>
         </>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 400 }}>
-          {/* Chat Header */}
-          <div style={{ 
-            borderBottom: '1px solid #f0f0f0', 
-            paddingBottom: 12, 
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}>
-
-          </div>
-
-          {/* Chat Messages */}
-          <div style={{
-            flex: 1,
-            background: '#fafafa',
-            borderRadius: 8,
-            padding: 16,
-            overflowY: 'auto',
-            marginBottom: 16,
-            minHeight: 250,
-            maxHeight: 250
-          }}>
-            {aiMessages.length === 0 && (
+        <>
+          <div style={{ display: 'flex', height: 500, gap: 20 }}>
+            {/* Left Column - Recipe Preview */}
+            <div style={{ 
+              flex: 1, 
+              borderRight: '1px solid #f0f0f0', 
+              paddingRight: 20,
+              overflowY: 'auto'
+            }}>
+            {currentRecipePreview ? (
+              <div style={{ fontSize: 14 }}>
+                <h2 style={{ 
+                  fontSize: 20, 
+                  fontWeight: 'bold', 
+                  marginBottom: 8, 
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  🍽️ {currentRecipePreview.title}
+                </h2>
+              
+                {currentRecipePreview.description && (
+                  <p style={{ 
+                    fontSize: 14, 
+                    color: '#666', 
+                    marginBottom: 12,
+                    fontStyle: 'italic'
+                  }}>
+                    {currentRecipePreview.description}
+                  </p>
+                )}
+                
+                {/* Recipe Meta */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: 16, 
+                  marginBottom: 16,
+                  fontSize: 13,
+                  color: '#666'
+                }}>
+                  {currentRecipePreview.prepTime && (
+                    <span>⏱️ Prep: {currentRecipePreview.prepTime}</span>
+                  )}
+                  {currentRecipePreview.cookTime && (
+                    <span>🔥 Cook: {currentRecipePreview.cookTime}</span>
+                  )}
+                  {currentRecipePreview.servings && (
+                    <span>👥 Serves: {currentRecipePreview.servings}</span>
+                  )}
+                  {currentRecipePreview.difficulty && (
+                    <span>📊 {currentRecipePreview.difficulty}</span>
+                  )}
+                </div>
+                
+                {/* Ingredients */}
+                {((currentRecipePreview.ingredients && currentRecipePreview.ingredients.length > 0) || currentRecipePreview.ingredientsGrouped) && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ 
+                      fontSize: 16, 
+                      fontWeight: '600', 
+                      marginBottom: 8, 
+                      color: '#555' 
+                    }}>
+                      🥗 Ingredients
+                    </h3>
+                    
+                    {(() => {
+                      // Debug logging for ingredient rendering decision
+                      console.log('🔍 DEBUG: Ingredient rendering decision:', {
+                        hasIngredients: !!(currentRecipePreview.ingredients && currentRecipePreview.ingredients.length > 0),
+                        hasIngredientsGrouped: !!currentRecipePreview.ingredientsGrouped,
+                        ingredientsGroupedType: typeof currentRecipePreview.ingredientsGrouped,
+                        ingredientsGroupedKeys: currentRecipePreview.ingredientsGrouped ? Object.keys(currentRecipePreview.ingredientsGrouped) : 'null',
+                        willRenderGrouped: !!currentRecipePreview.ingredientsGrouped
+                      });
+                      
+                      return currentRecipePreview.ingredientsGrouped ? (
+                        // Render grouped ingredients as tables
+                        (() => {
+                          console.log('🔍 DEBUG: Rendering grouped ingredients as tables');
+                          console.log('🔍 DEBUG: ingredientsGrouped keys:', Object.keys(currentRecipePreview.ingredientsGrouped));
+                          return (
+                            <div>
+                              {Object.entries(currentRecipePreview.ingredientsGrouped).map(([groupName, groupIngredients], groupIdx) => (
+                                <div key={groupIdx} style={{ marginBottom: 16 }}>
+                                  <h4 style={{ 
+                                    fontSize: 14, 
+                                    fontWeight: '600', 
+                                    marginBottom: 8, 
+                                    color: '#666',
+                                    borderBottom: '1px solid #e8e8e8',
+                                    paddingBottom: 2
+                                  }}>
+                                    {groupName}
+                                  </h4>
+                                  <table style={{
+                                    width: '100%',
+                                    borderCollapse: 'collapse',
+                                    fontSize: '13px',
+                                    marginBottom: 12
+                                  }}>
+                                    <tbody>
+                                      {Array.isArray(groupIngredients) && groupIngredients.map((ingredient, idx) => (
+                                        <tr key={idx} style={{ 
+                                          borderBottom: '1px solid #f0f0f0',
+                                          verticalAlign: 'top'
+                                        }}>
+                                          <td style={{ 
+                                            padding: '6px 8px 6px 0',
+                                            width: '80px',
+                                            fontWeight: '500',
+                                            color: '#555'
+                                          }}>
+                                            {typeof ingredient === 'object' ? (
+                                              [
+                                                typeof ingredient.quantity === 'number' && ingredient.quantity > 0 ? ingredient.quantity : '',
+                                                ingredient.unit
+                                              ].filter(p => p).join(' ')
+                                            ) : (
+                                              // Try to extract quantity from string
+                                              ingredient.match(/^[\d\s\/\-\.]+(?:\s*\w+)?/) ? 
+                                                ingredient.match(/^[\d\s\/\-\.]+(?:\s*\w+)?/)[0].trim() : 
+                                                ''
+                                            )}
+                                          </td>
+                                          <td style={{ 
+                                            padding: '6px 0',
+                                            lineHeight: 1.4
+                                          }}>
+                                            {typeof ingredient === 'object' ? (
+                                              <>
+                                                <span>{ingredient.name}</span>
+                                                {ingredient.notes && (
+                                                  <span style={{ fontSize: '11px', color: '#888', fontStyle: 'italic' }}>
+                                                    {' '}({ingredient.notes})
+                                                  </span>
+                                                )}
+                                              </>
+                                            ) : (
+                                              // Remove quantity from string ingredient
+                                              ingredient.replace(/^[\d\s\/\-]+(?:\s*\w+)?\s*/, '').trim() || ingredient
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        // Render simple ingredient list
+                        (() => {
+                          console.log('🔍 DEBUG: Rendering simple ingredient list');
+                          console.log('🔍 DEBUG: ingredients length:', currentRecipePreview.ingredients?.length || 0);
+                          return (
+                            <ul style={{ 
+                              paddingLeft: 20, 
+                              marginBottom: 0,
+                              lineHeight: 1.6
+                            }}>
+                              {currentRecipePreview.ingredients.map((ingredient, idx) => (
+                                <li key={idx} style={{ marginBottom: 4 }}>
+                                  {typeof ingredient === 'object' ? (
+                                    // Handle ingredient objects
+                                    <>
+                                      <span style={{ fontWeight: '500' }}>
+                                        {[
+                                          typeof ingredient.quantity === 'number' && ingredient.quantity > 0 ? ingredient.quantity : '',
+                                          ingredient.unit
+                                        ].filter(p => p).join(' ')}
+                                      </span>
+                                      {' '}
+                                      <span>{ingredient.name}</span>
+                                      {ingredient.notes && (
+                                        <span style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
+                                          {' '}({ingredient.notes})
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : ingredient.startsWith && ingredient.startsWith('**') && ingredient.endsWith(':**') ? (
+                                    // Handle grouped headers in flat format
+                                    <strong style={{ color: '#666', fontSize: '14px' }}>
+                                      {ingredient.replace(/\*\*/g, '').replace(':', '')}
+                                    </strong>
+                                  ) : (
+                                    ingredient
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          );
+                        })()
+                      );
+                    })()}
+                  </div>
+                )}
+                
+                {/* Instructions */}
+                {currentRecipePreview.steps && currentRecipePreview.steps.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ 
+                      fontSize: 16, 
+                      fontWeight: '600', 
+                      marginBottom: 8, 
+                      color: '#555' 
+                    }}>
+                      👨‍🍳 Instructions
+                    </h3>
+                    <ol style={{ 
+                      paddingLeft: 20, 
+                      marginBottom: 0,
+                      lineHeight: 1.6
+                    }}>
+                      {currentRecipePreview.steps.map((step, idx) => (
+                        <li key={idx} style={{ marginBottom: 8 }}>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                
+                {/* Notes */}
+                {currentRecipePreview.notes && currentRecipePreview.notes.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ 
+                      fontSize: 16, 
+                      fontWeight: '600', 
+                      marginBottom: 8, 
+                      color: '#555' 
+                    }}>
+                      💡 Notes & Tips
+                    </h3>
+                    <ul style={{ 
+                      paddingLeft: 20, 
+                      marginBottom: 0,
+                      lineHeight: 1.6
+                    }}>
+                      {currentRecipePreview.notes.map((note, idx) => (
+                        <li key={idx} style={{ marginBottom: 4 }}>
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Tags */}
+                {currentRecipePreview.tags && currentRecipePreview.tags.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 4, 
+                      flexWrap: 'wrap' 
+                    }}>
+                      {currentRecipePreview.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            background: '#f0f2ff',
+                            color: '#1890ff',
+                            fontSize: 11,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            border: '1px solid #d6e4ff'
+                          }}
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
               <div style={{ 
                 textAlign: 'center', 
                 color: '#666', 
-                fontStyle: 'italic',
-                marginTop: 60
+                marginTop: 60,
+                padding: 20,
+                border: '2px dashed #e8e8e8',
+                borderRadius: 8
               }}>
-                Hi! I'm ready to help you create a recipe. Just ask me anything!
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📝</div>
+                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>
+                  No Recipe Yet
+                </div>
+                <Text type="secondary">
+                  Ask the AI to create a recipe and it will appear here
+                </Text>
               </div>
             )}
-            
-            {aiMessages.map(message => {
-              const messageFormat = message.isUser ? null : detectMessageFormat(message.text);
-              
-              return (
-                <div key={message.id} style={{
-                  marginBottom: 16,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: message.isUser ? 'flex-end' : 'flex-start'
+          </div>
+
+          {/* Right Column - Chat */}
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column',
+            height: '100%'
+          }}>
+            {/* Chat Messages */}
+            <div style={{
+              flex: 1,
+              background: '#fafafa',
+              borderRadius: 8,
+              padding: 16,
+              overflowY: 'auto',
+              marginBottom: 16,
+              minHeight: 350,
+            }}>
+              {aiMessages.length === 0 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  color: '#666', 
+                  marginTop: 60,
+                  padding: 20
                 }}>
-                  {/* Provider Label for AI messages - above the message */}
-                  {!message.isUser && message.providerName && (
-                    <div style={{
-                      fontSize: 11,
-                      color: '#666',
-                      marginBottom: 4,
-                      padding: '2px 8px',
-                      background: '#f5f5f5',
-                      borderRadius: 4,
-                      fontWeight: '500'
-                    }}>
-                      {message.providerName}
-                    </div>
-                  )}
-                  
-                  <div style={{
-                    maxWidth: '80%',
-                    padding: '10px 14px',
-                    borderRadius: 16,
-                    background: message.isUser ? '#1890ff' : '#fff',
-                    color: message.isUser ? '#fff' : '#333',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    fontSize: 14,
-                    lineHeight: 1.4
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>🤖👨‍🍳</div>
+                  <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>
+                    AI Recipe Assistant
+                  </div>
+                  <div style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 16 }}>
+                    Hi! I'm ready to help you create a recipe. Try asking:
+                  </div>
+                  <div style={{ 
+                    fontSize: 13, 
+                    color: '#888', 
+                    lineHeight: 1.6,
+                    textAlign: 'left',
+                    maxWidth: 300,
+                    margin: '0 auto'
                   }}>
-                    <div>
-                      {message.isUser ? (
-                        message.text
-                      ) : (
-                        (() => {
-                          // Try to render as structured JSON recipe first
-                          const jsonRecipe = parseJsonRecipe(message.text);
-                          if (jsonRecipe) {
-                            return (
-                              <div style={{ fontSize: 14 }}>
-                                <h2 style={{ 
-                                  fontSize: 18, 
-                                  fontWeight: 'bold', 
-                                  marginBottom: 8, 
-                                  color: '#333',
-                                  display: 'flex',
+                    • "Create a recipe for chicken parmesan"<br/>
+                    • "What can I make with garlic and olives?"<br/>
+                    • "I have tomatoes and basil, what can I make?"<br/>
+                    • "Give me a chocolate cake recipe"
+                  </div>
+                </div>
+              )}
+              
+              {aiMessages.map(message => {
+                const messageFormat = message.isUser ? null : detectMessageFormat(message.text);
+                const responseType = !message.isUser ? getResponseType(message.text) : null;
+                
+                return (
+                  <div key={message.id} style={{
+                    marginBottom: 16,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: message.isUser ? 'flex-end' : 'flex-start'
+                  }}>
+                    {/* Provider Label for AI messages - above the message */}
+                    {!message.isUser && message.providerName && (
+                      <div style={{
+                        fontSize: 11,
+                        color: '#666',
+                        marginBottom: 4,
+                        padding: '2px 8px',
+                        background: '#f5f5f5',
+                        borderRadius: 4,
+                        fontWeight: '500'
+                      }}>
+                        {message.providerName}
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      maxWidth: '80%',
+                      padding: '10px 14px',
+                      borderRadius: 16,
+                      background: message.isUser ? '#1890ff' : '#fff',
+                      color: message.isUser ? '#fff' : '#333',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      fontSize: 14,
+                      lineHeight: 1.4
+                    }}>
+                      <div>
+                        {message.isUser ? (
+                          message.text
+                        ) : responseType === 'recipe' ? (
+                          // For complete recipe messages, show commentary and a clickable link
+                          <div>
+                            <div style={{ marginBottom: 8 }}>
+                              {(() => {
+                                // Try to extract commentary from JSON recipe
+                                try {
+                                  const parsedRecipe = parseRecipeFromText(message.text);
+                                  if (parsedRecipe && parsedRecipe.commentary) {
+                                    return parsedRecipe.commentary;
+                                  }
+                                } catch (e) {
+                                  // Fall back to generic message
+                                }
+                                return "🍽️ I've created a complete recipe for you!";
+                              })()}
+                            </div>
+                            <Button
+                              type="link"
+                              size="small"
+                              style={{
+                                padding: 0,
+                                height: 'auto',
+                                fontSize: 13,
+                                fontWeight: 500
+                              }}
+                              onClick={() => handleShowRecipePreview(message.text)}
+                            >
+                              📖 View Recipe →
+                            </Button>
+                          </div>
+                        ) : responseType === 'suggestions' ? (
+                          // For recipe suggestions, show clickable recipe links
+                          <div>
+                            <div style={{ marginBottom: 12, fontWeight: 500 }}>
+                              🍽️ Here are some recipe suggestions:
+                            </div>
+                            {parseRecipeSuggestions(message.text).map((suggestion, idx) => (
+                              <div key={idx} style={{ 
+                                marginBottom: 8, 
+                                padding: '8px 12px', 
+                                background: '#f8f9fa', 
+                                borderRadius: 8,
+                                border: '1px solid #e9ecef'
+                              }}>
+                                <div style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
                                   alignItems: 'center',
                                   gap: 8
                                 }}>
-                                  🍽️ {jsonRecipe.title}
-                                </h2>
-                              
-                              {jsonRecipe.description && (
-                                <p style={{ 
-                                  fontSize: 14, 
-                                  color: '#666', 
-                                  marginBottom: 12,
-                                  fontStyle: 'italic'
-                                }}>
-                                  {jsonRecipe.description}
-                                </p>
-                              )}
-                              
-                              {/* Recipe Meta */}
-                              <div style={{ 
-                                display: 'flex', 
-                                gap: 16, 
-                                marginBottom: 16,
-                                fontSize: 13,
-                                color: '#666'
-                              }}>
-                                {jsonRecipe.prepTime && (
-                                  <span>⏱️ Prep: {jsonRecipe.prepTime}</span>
-                                )}
-                                {jsonRecipe.cookTime && (
-                                  <span>🔥 Cook: {jsonRecipe.cookTime}</span>
-                                )}
-                                {jsonRecipe.servings && (
-                                  <span>👥 Serves: {jsonRecipe.servings}</span>
-                                )}
-                                {jsonRecipe.difficulty && (
-                                  <span>📊 {jsonRecipe.difficulty}</span>
-                                )}
-                              </div>
-                              
-                              {/* Ingredients */}
-                              {((jsonRecipe.ingredients && jsonRecipe.ingredients.length > 0) || jsonRecipe.ingredientsGrouped) && (
-                                <div style={{ marginBottom: 16 }}>
-                                  <h3 style={{ 
-                                    fontSize: 16, 
-                                    fontWeight: '600', 
-                                    marginBottom: 8, 
-                                    color: '#555' 
-                                  }}>
-                                    🥗 Ingredients
-                                  </h3>
-                                  
-                                  {jsonRecipe.ingredientsGrouped ? (
-                                    // Render grouped ingredients
-                                    <div>
-                                      {Object.entries(jsonRecipe.ingredientsGrouped).map(([groupName, groupIngredients], groupIdx) => (
-                                        <div key={groupIdx} style={{ marginBottom: 12 }}>
-                                          <h4 style={{ 
-                                            fontSize: 14, 
-                                            fontWeight: '600', 
-                                            marginBottom: 6, 
-                                            color: '#666',
-                                            borderBottom: '1px solid #e8e8e8',
-                                            paddingBottom: 2
-                                          }}>
-                                            {groupName}
-                                          </h4>
-                                          <ul style={{ 
-                                            paddingLeft: 16, 
-                                            marginBottom: 0,
-                                            lineHeight: 1.6
-                                          }}>
-                                            {Array.isArray(groupIngredients) && groupIngredients.map((ingredient, idx) => (
-                                              <li key={idx} style={{ marginBottom: 3 }}>
-                                                {typeof ingredient === 'object' ? (
-                                                  <>
-                                                    <span style={{ fontWeight: '500' }}>
-                                                      {[ingredient.quantity, ingredient.unit].filter(p => p).join(' ')}
-                                                    </span>
-                                                    {' '}
-                                                    <span>{ingredient.name}</span>
-                                                    {ingredient.notes && (
-                                                      <span style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
-                                                        {' '}({ingredient.notes})
-                                                      </span>
-                                                    )}
-                                                  </>
-                                                ) : (
-                                                  ingredient
-                                                )}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      ))}
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 500, marginBottom: 2 }}>
+                                      {suggestion.name}
                                     </div>
-                                  ) : (
-                                    // Render simple ingredient list
-                                    <ul style={{ 
-                                      paddingLeft: 20, 
-                                      marginBottom: 0,
-                                      lineHeight: 1.6
-                                    }}>
-                                      {jsonRecipe.ingredients.map((ingredient, idx) => (
-                                        <li key={idx} style={{ marginBottom: 4 }}>
-                                          {ingredient.startsWith('**') && ingredient.endsWith(':**') ? (
-                                            // Handle grouped headers in flat format
-                                            <strong style={{ color: '#666', fontSize: '14px' }}>
-                                              {ingredient.replace(/\*\*/g, '').replace(':', '')}
-                                            </strong>
-                                          ) : (
-                                            ingredient
-                                          )}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Instructions */}
-                              {jsonRecipe.steps && jsonRecipe.steps.length > 0 && (
-                                <div style={{ marginBottom: 16 }}>
-                                  <h3 style={{ 
-                                    fontSize: 16, 
-                                    fontWeight: '600', 
-                                    marginBottom: 8, 
-                                    color: '#555' 
-                                  }}>
-                                    👨‍🍳 Instructions
-                                  </h3>
-                                  <ol style={{ 
-                                    paddingLeft: 20, 
-                                    marginBottom: 0,
-                                    lineHeight: 1.6
-                                  }}>
-                                    {jsonRecipe.steps.map((step, idx) => (
-                                      <li key={idx} style={{ marginBottom: 8 }}>
-                                        {step}
-                                      </li>
-                                    ))}
-                                  </ol>
-                                </div>
-                              )}
-                              
-                              {/* Notes */}
-                              {jsonRecipe.notes && jsonRecipe.notes.length > 0 && (
-                                <div style={{ marginBottom: 16 }}>
-                                  <h3 style={{ 
-                                    fontSize: 16, 
-                                    fontWeight: '600', 
-                                    marginBottom: 8, 
-                                    color: '#555' 
-                                  }}>
-                                    💡 Notes & Tips
-                                  </h3>
-                                  <ul style={{ 
-                                    paddingLeft: 20, 
-                                    marginBottom: 0,
-                                    lineHeight: 1.6
-                                  }}>
-                                    {jsonRecipe.notes.map((note, idx) => (
-                                      <li key={idx} style={{ marginBottom: 4 }}>
-                                        {note}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              
-                              {/* Tags */}
-                              {jsonRecipe.tags && jsonRecipe.tags.length > 0 && (
-                                <div style={{ marginTop: 12 }}>
-                                  <div style={{ 
-                                    display: 'flex', 
-                                    gap: 4, 
-                                    flexWrap: 'wrap' 
-                                  }}>
-                                    {jsonRecipe.tags.map((tag, idx) => (
-                                      <span
-                                        key={idx}
-                                        style={{
-                                          background: '#f0f2ff',
-                                          color: '#1890ff',
-                                          fontSize: 11,
-                                          padding: '2px 6px',
-                                          borderRadius: 4,
-                                          border: '1px solid #d6e4ff'
-                                        }}
-                                      >
-                                        #{tag}
-                                      </span>
-                                    ))}
+                                    <div style={{ fontSize: 12, color: '#666' }}>
+                                      {suggestion.description}
+                                    </div>
                                   </div>
+                                  <Button
+                                    type="link"
+                                    size="small"
+                                    style={{
+                                      padding: '4px 8px',
+                                      height: 'auto',
+                                      fontSize: 11,
+                                      fontWeight: 500
+                                    }}
+                                    onClick={() => handleRequestFullRecipe(suggestion.name)}
+                                  >
+                                    Get Recipe →
+                                  </Button>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        }
-                        
-                        // Fall back to markdown rendering
-                        return (
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          // For advice/conversation messages, show as markdown
                           <ReactMarkdown
                             components={{
-                              h2: ({ children }) => (
-                                <h2 style={{ 
-                                  fontSize: 18, 
-                                  fontWeight: 'bold', 
-                                  marginBottom: 12, 
-                                  color: '#333' 
-                                }}>
-                                  {children}
-                                </h2>
-                              ),
-                              h3: ({ children }) => (
-                                <h3 style={{ 
-                                  fontSize: 16, 
-                                  fontWeight: '600', 
-                                  marginTop: 16, 
-                                  marginBottom: 8, 
-                                  color: '#555' 
-                                }}>
-                                  {children}
-                                </h3>
-                              ),
-                              ul: ({ children }) => (
-                                <ul style={{ 
-                                  paddingLeft: 20, 
-                                  marginBottom: 12 
-                                }}>
-                                  {children}
-                                </ul>
-                              ),
-                              ol: ({ children }) => (
-                                <ol style={{ 
-                                  paddingLeft: 20, 
-                                  marginBottom: 12 
-                                }}>
-                                  {children}
-                                </ol>
-                              ),
-                              li: ({ children }) => (
-                                <li style={{ 
-                                  marginBottom: 4, 
-                                  lineHeight: 1.5 
-                                }}>
-                                  {children}
-                                </li>
-                              ),
-                              strong: ({ children }) => (
-                                <strong style={{ 
-                                  fontWeight: 'bold', 
-                                  color: '#222' 
-                                }}>
-                                  {children}
-                                </strong>
-                              )
+                              p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                              strong: ({ children }) => <strong style={{ fontWeight: 'bold', color: '#222' }}>{children}</strong>
                             }}
                           >
                             {message.text}
                           </ReactMarkdown>
-                        );
-                      })()
-                    )}
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Timestamp and Format Info */}
+                    <div style={{ 
+                      fontSize: 11, 
+                      opacity: 0.7, 
+                      marginTop: 4,
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center'
+                    }}>
+                      <span>{message.timestamp}</span>
+                      {!message.isUser && responseType && (
+                        <span style={getResponseTypeStyle(responseType)}>
+                          {responseType === 'recipe' ? 'Complete Recipe (JSON)' : 
+                           responseType === 'suggestions' ? 'Recipe Suggestions (JSON)' : 
+                           'Recipe Advice (Plain text)'}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Timestamp and Format Info */}
-                  <div style={{ 
-                    fontSize: 11, 
-                    opacity: 0.7, 
-                    marginTop: 4,
-                    display: 'flex',
-                    gap: 8,
-                    alignItems: 'center'
-                  }}>
-                    <span>{message.timestamp}</span>
-                    {!message.isUser && messageFormat && (
-                      <span style={getFormatLabelStyle(messageFormat)}>
-                        {messageFormat}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Save Recipe Button for AI messages with complete recipes */}
-                {!message.isUser && isCompleteRecipe(message.text) && (
-                  <Button
-                    type="primary"
-                    size="small"
-                    style={{
-                      marginTop: 8,
-                      background: '#52c41a',
-                      borderColor: '#52c41a',
-                      fontWeight: 600
-                    }}
-                    onClick={() => handleSaveAiRecipe(message.text)}
-                  >
-                    💾 Save Recipe
-                  </Button>
-                )}
-              </div>
-            );
-            })}
-            
-            {aiLoading && (
-              <div style={{
-                marginBottom: 16,
-                display: 'flex',
-                justifyContent: 'flex-start'
-              }}>
+                );
+              })}
+              
+              {aiLoading && (
                 <div style={{
-                  padding: '10px 14px',
-                  borderRadius: 16,
-                  background: '#fff',
-                  color: '#666',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                  fontSize: 14,
-                  fontStyle: 'italic'
+                  marginBottom: 16,
+                  display: 'flex',
+                  justifyContent: 'flex-start'
                 }}>
-                  <span>🤔 Thinking...</span>
+                  <div style={{
+                    padding: '10px 14px',
+                    borderRadius: 16,
+                    background: '#fff',
+                    color: '#666',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    fontSize: 14,
+                    fontStyle: 'italic'
+                  }}>
+                    <span>🤔 Thinking...</span>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
 
-          {/* Chat Input */}
-          <form onSubmit={handleChatSubmit} style={{ display: 'flex', gap: 8 }}>
-            <Input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask me about your recipe..."
-              disabled={aiLoading}
-              style={{ flex: 1 }}
-              onPressEnter={handleChatSubmit}
-            />
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              disabled={aiLoading || !chatInput.trim()}
-              style={{ minWidth: 60 }}
-            >
-              Send
-            </Button>
-          </form>
+            {/* Chat Input */}
+            <form onSubmit={handleChatSubmit} style={{ display: 'flex', gap: 8 }}>
+              <Input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask me about your recipe..."
+                disabled={aiLoading}
+                style={{ flex: 1 }}
+                onPressEnter={handleChatSubmit}
+              />
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                disabled={aiLoading || !chatInput.trim()}
+                style={{ minWidth: 60 }}
+              >
+                Send
+              </Button>
+            </form>
+          </div>
         </div>
+        </>
       )}
     </Modal>
   );

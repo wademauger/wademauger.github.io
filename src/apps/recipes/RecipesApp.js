@@ -26,6 +26,12 @@ const RecipesApp = ({ view = 'standard' }) => {
   const [activeRecipe, setActiveRecipe] = useState(null);
   const [fontSize, setFontSize] = useState(100); // Font size in percentage
   const [showNewRecipeModal, setShowNewRecipeModal] = useState(false);
+  
+  // Debug logging for modal state changes
+  useEffect(() => {
+    console.log('🔍 RecipesApp - showNewRecipeModal changed to:', showNewRecipeModal);
+  }, [showNewRecipeModal]);
+  
   const [driveService] = useState(() => new GoogleDriveRecipeService());
   const recipeDetailRef = useRef(null); // Ref for scrolling to recipe detail
   
@@ -150,10 +156,16 @@ const RecipesApp = ({ view = 'standard' }) => {
 
   // Handle creating a new recipe
   const handleCreateNewRecipe = () => {
+    console.log('🔍 "New Recipe" button clicked');
+    console.log('🔍 Google Drive connected:', isGoogleDriveConnected);
+    
     if (!isGoogleDriveConnected) {
+      console.log('⚠️ Not signed in to Google Drive - showing warning');
       message.warning('Please sign in to Google Drive to create recipes');
       return;
     }
+    
+    console.log('🔧 Opening New Recipe modal - setting showNewRecipeModal to true');
     setShowNewRecipeModal(true);
   };
 
@@ -310,37 +322,20 @@ const RecipesApp = ({ view = 'standard' }) => {
       <div className="app-header">
         <div className="header-controls">
           <Space size="large" wrap>
-            {/* Google Drive Integration */}
-            <div className="google-drive-section">
-              <GoogleSignInButton
-                onSuccess={handleGoogleSignIn}
-                onError={(error) => message.error('Sign in failed')}
-                onSignOut={handleGoogleSignOut}
-                isSignedIn={isGoogleDriveConnected}
-                loading={isLoading}
-                userInfo={userInfo}
-              />
-            </div>
-
             {/* Recipe Creation Controls */}
             {isGoogleDriveConnected && (
-              <Space>
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />}
-                  onClick={handleCreateNewRecipe}
-                  loading={isLoading}
-                >
-                  New Recipe
-                </Button>
-                <Button 
-                  icon={<FolderAddOutlined />}
-                  onClick={handleCreateNewGroup}
-                  loading={isLoading}
-                >
-                  New Group
-                </Button>
-              </Space>
+              <Button 
+                type="primary"
+                style={{
+                  background: 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)',
+                  borderColor: 'transparent',
+                }}
+                icon={<PlusOutlined />}
+                onClick={handleCreateNewRecipe}
+                loading={isLoading}
+              >
+                🤖 New Recipe
+              </Button>
             )}
 
             {/* Editing Toggle */}
@@ -361,18 +356,34 @@ const RecipesApp = ({ view = 'standard' }) => {
                 <span className="library-count-header">
                   {getTotalRecipesCount()} recipes total
                 </span>
-                {isGoogleDriveConnected && (
-                  <span className="sync-indicator">
-                    ✓ Google Drive Connected
-                  </span>
-                )}
-                {isLoading && (
+                
+                {isLoading ? (
                   <div className="loading-indicator-header">
                     <Spin size="small" />
                     <span className="loading-text-header">Loading...</span>
                   </div>
-                )}
+                ) : (isGoogleDriveConnected ? (
+                  <span className="sync-indicator connected">
+                    ✓ Google Drive Connected
+                  </span>
+                ) : (
+                  <span className="sync-indicator disconnected">
+                    ✗ Not Connected to Google Drive
+                  </span>
+                ))}
               </Space>
+            </div>
+
+            {/* Google Drive Integration */}
+            <div className="google-drive-section">
+              <GoogleSignInButton
+                onSuccess={handleGoogleSignIn}
+                onError={(error) => message.error('Sign in failed')}
+                onSignOut={handleGoogleSignOut}
+                isSignedIn={isGoogleDriveConnected}
+                loading={isLoading}
+                userInfo={userInfo}
+              />
             </div>
           </Space>
         </div>
