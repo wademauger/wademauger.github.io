@@ -83,12 +83,18 @@ function Recipes() {
     setShowAIChat(true);
   };
 
-  const scaledIngredients = recipe ? recipe.ingredients.map(ingredient => {
-    const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
-    return {
-      ...ingredient,
-      quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity,
-    };
+  const scaledIngredients = recipe && Array.isArray(recipe.ingredients) ? recipe.ingredients.map(ingredient => {
+    // Handle both object and string ingredient formats
+    if (typeof ingredient === 'object' && ingredient !== null && ingredient.quantity !== undefined) {
+      const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
+      return {
+        ...ingredient,
+        quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity,
+      };
+    } else {
+      // For string ingredients or objects without quantity, return as-is
+      return ingredient;
+    }
   }) : [];
 
   const minServings = recipe ? Math.max(1, Math.floor(recipe.defaultServings / 5)) : 1;

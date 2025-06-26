@@ -659,7 +659,8 @@ const RecipeDetail = ({
   };
 
   const handleSaveIngredient = async (newIngredient, index) => {
-    const updatedIngredients = [...recipe.ingredients];
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = [...ingredients];
     updatedIngredients[index] = newIngredient;
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
@@ -668,7 +669,8 @@ const RecipeDetail = ({
 
   const handleInsertIngredientAfter = async (index) => {
     const newIngredient = { quantity: '', unit: '', name: '' };
-    const updatedIngredients = [...recipe.ingredients];
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = [...ingredients];
     updatedIngredients.splice(index + 1, 0, newIngredient);
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
@@ -677,7 +679,8 @@ const RecipeDetail = ({
   };
 
   const handleDeleteIngredient = async (index) => {
-    const updatedIngredients = recipe.ingredients.filter((_, i) => i !== index);
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = ingredients.filter((_, i) => i !== index);
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -755,10 +758,11 @@ const RecipeDetail = ({
     const { active, over } = event;
     
     if (active.id !== over.id) {
-      const oldIndex = recipe.ingredients.findIndex((_, index) => `ingredient-${index}` === active.id);
-      const newIndex = recipe.ingredients.findIndex((_, index) => `ingredient-${index}` === over.id);
+      const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+      const oldIndex = ingredients.findIndex((_, index) => `ingredient-${index}` === active.id);
+      const newIndex = ingredients.findIndex((_, index) => `ingredient-${index}` === over.id);
       
-      const updatedIngredients = arrayMove(recipe.ingredients, oldIndex, newIndex);
+      const updatedIngredients = arrayMove(ingredients, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
       await saveRecipeChanges(updatedRecipe);
     }
@@ -793,7 +797,8 @@ const RecipeDetail = ({
   // Add new item handlers
   const handleAddIngredient = async () => {
     const newIngredient = { quantity: '', unit: '', name: '' };
-    const updatedIngredients = [...recipe.ingredients, newIngredient];
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = [...ingredients, newIngredient];
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
     // Start editing the new ingredient
@@ -1043,10 +1048,10 @@ const RecipeDetail = ({
               </thead>
               <tbody>
                 <SortableContext 
-                  items={recipe.ingredients.map((_, index) => `ingredient-${index}`)}
+                  items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index) => `ingredient-${index}`) : []}
                   strategy={verticalListSortingStrategy}
                 >
-                  {recipe.ingredients.map((ingredient, index) => (
+                  {Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ingredient, index) => (
                     <SortableIngredient
                       key={`ingredient-${index}`}
                       id={`ingredient-${index}`}
@@ -1063,7 +1068,13 @@ const RecipeDetail = ({
                       handleCancel={handleCancelIngredientEdit}
                       scale={scale}
                     />
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                        Recipe ingredients are in an incompatible format. Please edit this recipe to fix the ingredients.
+                      </td>
+                    </tr>
+                  )}
                 </SortableContext>
               </tbody>
             </table>

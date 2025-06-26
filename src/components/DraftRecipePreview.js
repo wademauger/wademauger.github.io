@@ -126,9 +126,13 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
           <div className="ingredients-section">
             <h4>Ingredients:</h4>
             <ul className="ingredients-list">
-              {draftRecipe.ingredients?.map((ingredient, index) => (
+              {(Array.isArray(draftRecipe.ingredients) ? draftRecipe.ingredients : []).map((ingredient, index) => (
                 <li key={index}>
-                  {ingredient.quantity} {ingredient.units} {ingredient.ingredient}
+                  {typeof ingredient === 'object' && ingredient !== null ? (
+                    `${ingredient.quantity || ''} ${ingredient.unit || ingredient.units || ''} ${ingredient.name || ingredient.ingredient || ''}`.trim()
+                  ) : (
+                    ingredient
+                  )}
                 </li>
               ))}
             </ul>

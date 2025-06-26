@@ -65,11 +65,82 @@ function handleOptions(request, env) {
 }
 
 // Transform conversation history to OpenAI format
-function formatMessages(userMessage, recipeContext, conversationHistory = []) {
+function formatMessages(userMessage, recipeContext, conversationHistory = [], isFullRecipeRequest = false) {
   const messages = [];
   
-  // System prompt for recipe assistance
-  const systemPrompt = `You are an expert culinary assistant helping with recipe development and cooking advice. 
+  // Different system prompts based on request type
+  let systemPrompt;
+  
+  if (isFullRecipeRequest) {
+    // JSON-focused system prompt for complete recipe generation
+    systemPrompt = `You are a professional chef and recipe developer. Generate complete, detailed recipes with all necessary information.
+
+CRITICAL: Always respond with a valid JSON object in this EXACT format:
+
+{
+  "title": "Recipe Name",
+  "description": "Brief description of the dish",
+  "prepTime": "15 minutes",
+  "cookTime": "30 minutes",
+  "totalTime": "45 minutes",
+  "servings": "4 people",
+  "difficulty": "Easy|Medium|Hard",
+  "ingredients": [
+    {
+      "quantity": "2",
+      "unit": "cups",
+      "name": "all-purpose flour",
+      "notes": "sifted (optional)"
+    },
+    {
+      "quantity": "1",
+      "unit": "tsp",
+      "name": "baking powder",
+      "notes": ""
+    }
+  ],
+  "steps": [
+    "Preheat oven to 375°F (190°C). Line baking sheets with parchment paper.",
+    "In a medium bowl, whisk together flour, baking soda, and salt. Set aside.",
+    "In a large bowl, cream together softened butter and both sugars until light and fluffy, about 3-4 minutes."
+  ],
+  "notes": [
+    "For chewier cookies, slightly underbake them",
+    "Store in airtight container for up to 1 week",
+    "Dough can be refrigerated for up to 3 days"
+  ],
+  "tags": ["dessert", "baking", "cookies"],
+  "nutrition": {
+    "calories": "250 per serving",
+    "protein": "4g",
+    "carbs": "35g",
+    "fat": "12g"
+  }
+}
+
+IMPORTANT: 
+- Always return valid JSON only, no markdown or extra text
+- Include specific temperatures, cooking times, and helpful techniques in the steps
+- Make ingredients precise with quantities, units, and names
+- Add helpful notes for tips, substitutions, and storage
+- If nutrition info is unknown, use empty strings
+- For complex recipes with multiple components, you can use grouped ingredients like this:
+  "ingredients": {
+    "For the Cake": [
+      {"quantity": "2", "unit": "cups", "name": "flour", "notes": ""},
+      {"quantity": "1", "unit": "cup", "name": "sugar", "notes": ""}
+    ],
+    "For the Frosting": [
+      {"quantity": "1", "unit": "cup", "name": "butter", "notes": "softened"},
+      {"quantity": "2", "unit": "cups", "name": "powdered sugar", "notes": ""}
+    ]
+  }
+- Use simple array format for single-component recipes, grouped object format for multi-component recipes
+
+Create recipes that are clear, detailed, and easy to follow.`;
+  } else {
+    // Regular assistance system prompt
+    systemPrompt = `You are an expert culinary assistant helping with recipe development and cooking advice. 
 
 Current Recipe Context:
 ${recipeContext ? JSON.stringify(recipeContext, null, 2) : 'No recipe loaded'}
@@ -81,6 +152,7 @@ Guidelines:
 - Consider food safety and best practices
 - If asked to generate a complete recipe, format it clearly with ingredients, instructions, and notes
 - Keep responses concise but informative`;
+  }
 
   messages.push({ role: 'system', content: systemPrompt });
   
@@ -100,7 +172,7 @@ Guidelines:
 }
 
 // Call AI provider
-async function callAIProvider(provider, messages, env) {
+async function callAIProvider(provider, messages, env, isFullRecipeRequest = false) {
   const config = AI_PROVIDERS[provider];
   if (!config) {
     throw new Error(`Unknown provider: ${provider}`);
@@ -114,10 +186,13 @@ async function callAIProvider(provider, messages, env) {
     throw new Error(`API key not configured for ${provider}`);
   }
   
+  // Adjust max_tokens based on request type
+  const maxTokens = isFullRecipeRequest ? 2000 : 1000;
+  
   const requestBody = {
     model: config.model,
     messages: messages,
-    max_tokens: 1000,
+    max_tokens: maxTokens,
     temperature: 0.7,
     stream: false
   };
@@ -141,7 +216,14 @@ async function callAIProvider(provider, messages, env) {
 // Main request handler
 async function handleRequest(request, env) {
   try {
-    const { userMessage, recipeContext, conversationHistory, preferredProvider } = await request.json();
+    const { 
+      userMessage, 
+      recipeContext, 
+      conversationHistory, 
+      preferredProvider,
+      isFullRecipeRequest = false,
+      requestType
+    } = await request.json();
     
     if (!userMessage) {
       return new Response(JSON.stringify({ error: 'Missing userMessage' }), {
@@ -150,7 +232,14 @@ async function handleRequest(request, env) {
       });
     }
     
-    const messages = formatMessages(userMessage, recipeContext, conversationHistory);
+    console.log('🔄 Worker processing request:', { 
+      userMessage: userMessage.substring(0, 50) + '...', 
+      isFullRecipeRequest,
+      requestType,
+      preferredProvider 
+    });
+    
+    const messages = formatMessages(userMessage, recipeContext, conversationHistory, isFullRecipeRequest);
     
     // Try providers in order of preference
     const providers = preferredProvider 
@@ -163,8 +252,8 @@ async function handleRequest(request, env) {
     
     for (const provider of providers) {
       try {
-        console.log(`Trying provider: ${provider}`);
-        response = await callAIProvider(provider, messages, env);
+        console.log(`Trying provider: ${provider} (full recipe: ${isFullRecipeRequest})`);
+        response = await callAIProvider(provider, messages, env, isFullRecipeRequest);
         usedProvider = provider;
         break;
       } catch (error) {

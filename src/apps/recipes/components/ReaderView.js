@@ -73,7 +73,7 @@ const ReaderView = ({ recipe, fontSize, onFontSizeChange, onToggleView }) => {
               </tr>
             </thead>
             <tbody>
-              {recipe.ingredients.map((ingredient, i) => {
+              {(Array.isArray(recipe.ingredients) ? recipe.ingredients : []).map((ingredient, i) => {
                 if (ingredient && typeof ingredient === 'object') {
                   const scaledIngredient = scaleIngredient(ingredient);
                   return (

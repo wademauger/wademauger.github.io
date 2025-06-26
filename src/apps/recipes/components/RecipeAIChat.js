@@ -71,7 +71,8 @@ const RecipeAIChat = ({
     if (isOpen && messages.length === 0) {
       // Build contextual welcome message based on current recipe state
       const recipeTitle = recipe?.title || 'your recipe';
-      const hasIngredients = recipe?.ingredients?.length > 0;
+      const ingredients = Array.isArray(recipe?.ingredients) ? recipe.ingredients : [];
+      const hasIngredients = ingredients.length > 0;
       const hasSteps = recipe?.steps?.length > 0;
       const hasNotes = recipe?.notes?.length > 0;
       
@@ -79,7 +80,7 @@ const RecipeAIChat = ({
       if (hasIngredients || hasSteps || hasNotes) {
         recipeStatus = `\n\n**Current Recipe Status:**\n`;
         if (hasIngredients) {
-          recipeStatus += `✅ ${recipe.ingredients.length} ingredient${recipe.ingredients.length > 1 ? 's' : ''}\n`;
+          recipeStatus += `✅ ${ingredients.length} ingredient${ingredients.length > 1 ? 's' : ''}\n`;
         } else {
           recipeStatus += `❌ No ingredients yet\n`;
         }
@@ -131,7 +132,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
         timestamp: new Date()
       }]);
     }
-  }, [isOpen, recipe?.title, recipe?.ingredients?.length, recipe?.steps?.length, recipe?.notes?.length, modelStatus.isInitialized]);
+  }, [isOpen, recipe?.title, Array.isArray(recipe?.ingredients) ? recipe.ingredients.length : 0, recipe?.steps?.length, recipe?.notes?.length, modelStatus.isInitialized]);
 
   const handleModelChange = async (newModelName) => {
     if (newModelName === selectedModel || isSwitchingModel) return;

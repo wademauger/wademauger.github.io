@@ -19,19 +19,22 @@ const RecipeEditor = ({ recipe }) => {
   };
 
   const updateIngredient = (index, field, value) => {
-    const updatedIngredients = [...localRecipe.ingredients];
+    const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
+    const updatedIngredients = [...ingredients];
     updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
     updateRecipe({ ingredients: updatedIngredients });
   };
 
   const addIngredient = () => {
     const newIngredient = { name: '', quantity: '', unit: '' };
-    const updatedIngredients = [...(localRecipe?.ingredients || []), newIngredient];
+    const ingredients = Array.isArray(localRecipe?.ingredients) ? localRecipe.ingredients : [];
+    const updatedIngredients = [...ingredients, newIngredient];
     updateRecipe({ ingredients: updatedIngredients });
   };
 
   const removeIngredient = (index) => {
-    const updatedIngredients = localRecipe.ingredients.filter((_, i) => i !== index);
+    const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
+    const updatedIngredients = ingredients.filter((_, i) => i !== index);
     updateRecipe({ ingredients: updatedIngredients });
   };
 
