@@ -13,8 +13,7 @@ const Layout = React.lazy(() => import('./components/Layout'));
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const RecipesApp = React.lazy(() => import('./apps/recipes/RecipesApp'));
 const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern'));
-const KnittingApp = React.lazy(() => import('./apps/knitting/KnittingApp'));
-const KnittingDesignApp = React.lazy(() => import('./apps/knitting-design/KnittingDesignApp'));
+const KnittingDesignerApp = React.lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -116,48 +115,11 @@ function App() {
               </Suspense>
             } />
             
-            {/* Knitting Pattern App Routes */}
-            <Route path="/crafts/knitting" element={
+            {/* Colorwork Designer App Routes */}
+            <Route path="/crafts/colorwork-designer" element={
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
-                  <KnittingApp />
-                </Layout>
-              </Suspense>
-            } />
-            <Route path="/crafts/knitting/pattern/:patternId" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <KnittingApp />
-                </Layout>
-              </Suspense>
-            } />
-            <Route path="/crafts/knitting/editor" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <KnittingApp view="editor" />
-                </Layout>
-              </Suspense>
-            } />
-            
-            {/* Knitting Design Studio Routes */}
-            <Route path="/crafts/knitting-design" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <KnittingDesignApp />
-                </Layout>
-              </Suspense>
-            } />
-            <Route path="/crafts/knitting-design/designer" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <KnittingDesignApp view="designer" />
-                </Layout>
-              </Suspense>
-            } />
-            <Route path="/crafts/knitting-design/interactive" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <KnittingDesignApp view="interactive" />
+                  <KnittingDesignerApp />
                 </Layout>
               </Suspense>
             } />

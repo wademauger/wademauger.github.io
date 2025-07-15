@@ -1,0 +1,32 @@
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-buttons {
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.tool-actions {
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.tool-info {
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.tool-info strong {
+  color: #595959;
+}
+
+.tool-info br {
+  margin-bottom: 4px;
+}

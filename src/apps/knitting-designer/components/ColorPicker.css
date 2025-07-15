@@ -1,0 +1,60 @@
+.color-picker-modal .ant-modal-body {
+  padding: 12px;
+}
+
+.color-picker-modal .ant-modal-footer {
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.color-picker-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-height: 200px;
+}
+
+.color-picker-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.color-picker-label label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+
+.color-picker-main {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 120px;
+}
+
+.color-picker-main label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+
+/* Override react-color styles */
+.color-picker-main .sketch-picker {
+  width: 100% !important;
+  max-width: 160px !important;
+  box-shadow: none !important;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 4px !important;
+  transform: scale(0.5) !important;
+  transform-origin: top left !important;
+}
+
+.color-picker-main .sketch-picker > div:first-child {
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.color-picker-main .sketch-picker > div:last-child {
+  border-radius: 0 0 4px 4px !important;
+}

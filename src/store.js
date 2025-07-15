@@ -3,6 +3,7 @@ import knittingDesignReducer from './store/knittingDesignSlice';
 import recipesReducer from './reducers/recipes.reducer';
 import chordsReducer from './store/chordsSlice';
 import songsReducer from './store/songsSlice';
+import colorworkGridReducer from './apps/knitting-designer/store/colorworkGridSlice';
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     recipes: recipesReducer,
     chords: chordsReducer,
     songs: songsReducer,
+    colorworkGrid: colorworkGridReducer,
   },
 });
 

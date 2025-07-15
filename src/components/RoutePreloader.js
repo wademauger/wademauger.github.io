@@ -22,7 +22,6 @@ const RoutePreloader = () => {
         } else if (href.includes('songs') || href.includes('tabs')) {
           import('../apps/songs/SongTabsAppModern');
         } else if (href.includes('knitting')) {
-          import('../apps/knitting/KnittingApp');
         }
       }
     };

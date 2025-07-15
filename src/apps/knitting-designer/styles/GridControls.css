@@ -1,0 +1,53 @@
+.grid-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grid-size-controls {
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.size-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.size-input-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.size-input-group .ant-input-number {
+  width: 80px;
+}
+
+.quick-resize {
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.quick-resize .ant-space {
+  width: 100%;
+  justify-content: center;
+}
+
+.grid-actions {
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 6px;
+}
+
+.grid-info {
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+}

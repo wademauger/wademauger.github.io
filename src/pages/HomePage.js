@@ -36,6 +36,35 @@ const HomePage = () => {
         </div>
         
         <div className="app-card">
+          <h2>Colorwork Designer</h2>
+          <p>
+            Create colorwork patterns for any kind of knitting project.
+            Design charts for intarsia or fair isle designs.
+            Design faster using advanced area select tools.
+          </p>
+          <div className="app-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" className="app-svg">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+          <Link to="/crafts/colorwork-designer" className="app-link">Open Colorwork Designer</Link>
+        </div>
+        
+        <div className="app-card">
+          <h2>Knitting Pattern Wizard</h2>
+          <p>
+            Create machine knitting patterns for almost any project. Make a sweater in one size, and knit it
+            again and again in different sizes, with different yarns, and with complex colorwork patterns from Colorwork Designer. 
+          </p>
+          <div className="app-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" className="app-svg">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+          <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Pattern Wizard</Link>
+        </div>
+        
+        <div className="app-card">
           <h2>Knitting Studio</h2>
           <p>
             Scale and resize, apply decorate patterns, and interactively knit garments with row-by-row guidance. 

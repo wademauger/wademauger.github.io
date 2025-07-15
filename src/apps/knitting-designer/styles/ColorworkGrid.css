@@ -1,0 +1,113 @@
+.grid-info {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  background-color: #fafafa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #666;
+  justify-content: center;
+}
+
+.paste-mode {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+.colorwork-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.grid-svg {
+  border: 2px solid #d9d9d9;
+  border-radius: 4px;
+  background-color: #ffffff;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.stitch {
+  transition: stroke 0.1s ease, stroke-width 0.1s ease;
+}
+
+.stitch:hover {
+  stroke: #1890ff !important;
+  stroke-width: 2px !important;
+}
+
+.stitch.selected {
+  stroke: #0064ff !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 2,2;
+}
+
+.stitch.current-selection {
+  stroke: #ff6600 !important;
+  stroke-width: 2px !important;
+}
+
+.stitch.paste-preview {
+  stroke: #00ff00 !important;
+  stroke-width: 2px !important;
+  opacity: 0.8;
+}
+
+/* Optimized scrolling */
+.colorwork-grid::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.colorwork-grid::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.colorwork-grid::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 6px;
+  border: 2px solid #f1f1f1;
+}
+
+.colorwork-grid::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.colorwork-grid::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Status bar styles */
+.status-bar {
+  display: flex;
+  gap: 20px;
+  padding: 8px 20px;
+  background-color: #fafafa;
+  border-top: 1px solid #e8e8e8;
+  font-size: 12px;
+  color: #666;
+  margin-top: 16px;
+  border-radius: 4px;
+  width: 100%;
+  align-self: stretch;
+}
+
+.status-bar .paste-mode {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+/* Responsive design for status bar */
+@media (max-width: 768px) {
+  .status-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 6px 16px;
+  }
+}
