@@ -14,6 +14,7 @@ const HomePage = React.lazy(() => import('./pages/HomePage'));
 const RecipesApp = React.lazy(() => import('./apps/recipes/RecipesApp'));
 const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern'));
 const KnittingDesignerApp = React.lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
+const ColorworkDesignerApp = React.lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -120,6 +121,15 @@ function App() {
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
                   <KnittingDesignerApp />
+                </Layout>
+              </Suspense>
+            } />
+            
+            {/* Knitting Pattern Designer App Routes */}
+            <Route path="/crafts/knitting-pattern-designer" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Layout>
+                  <ColorworkDesignerApp />
                 </Layout>
               </Suspense>
             } />

@@ -110,7 +110,6 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
               onClick={() => handleColorSelect(colorCode)}
               title={`${colorCode}: ${colorValue}`}
             >
-              <div className="color-label">{colorCode}</div>
               {activeColor === colorCode && (
                 <div className="active-indicator">●</div>
               )}

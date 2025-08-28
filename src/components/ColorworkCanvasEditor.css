@@ -1,0 +1,217 @@
+.colorwork-canvas-editor {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f5;
+}
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.canvas-main-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.canvas-container {
+  flex: 1;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid #f0f0f0;
+}
+
+.main-canvas {
+  display: block;
+  margin: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.side-panel {
+  width: 320px;
+  background: #fafafa;
+  padding: 16px;
+  overflow-y: auto;
+  border-left: 1px solid #f0f0f0;
+}
+
+.side-panel .ant-card {
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Drag and drop styles */
+.layers-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.drag-handle {
+  cursor: grab !important;
+  color: #8c8c8c;
+  transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: #1890ff;
+}
+
+.drag-handle:active {
+  cursor: grabbing !important;
+}
+
+/* Collapse panel customizations */
+.layers-list .ant-collapse {
+  border: 1px solid #f0f0f0;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.layers-list .ant-collapse > .ant-collapse-item {
+  border-bottom: none;
+}
+
+.layers-list .ant-collapse > .ant-collapse-item:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+.layers-list .ant-collapse-header {
+  padding: 8px 12px !important;
+  align-items: center !important;
+}
+
+.layers-list .ant-collapse-content-box {
+  padding: 12px !important;
+}
+
+.side-panel .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.side-panel .ant-card-body {
+  padding: 12px;
+}
+
+/* Canvas interaction styles */
+.main-canvas:hover {
+  cursor: grab;
+}
+
+.main-canvas:active {
+  cursor: grabbing;
+}
+
+/* Layer management styles */
+.layers-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.layer-card {
+  transition: all 0.2s ease;
+}
+
+.layer-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #8c8c8c;
+}
+
+.drag-handle:hover {
+  color: #1890ff;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.layer-card .ant-card-head {
+  padding: 8px 12px;
+  min-height: auto;
+}
+
+.layer-card .ant-card-body {
+  padding: 8px;
+}
+
+.layer-card .ant-card-head-title {
+  font-size: 12px;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .canvas-main-layout {
+    flex-direction: column;
+  }
+  
+  .side-panel {
+    width: 100%;
+    max-height: 300px;
+    border-left: none;
+    border-top: 1px solid #f0f0f0;
+  }
+  
+  .canvas-container {
+    border-right: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .canvas-toolbar {
+    padding: 8px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .side-panel {
+    padding: 12px;
+  }
+}
+
+/* Scrollbars */
+.side-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.side-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.side-panel::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.side-panel::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Animation */
+.colorwork-canvas-editor {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

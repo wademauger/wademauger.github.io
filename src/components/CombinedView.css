@@ -1,0 +1,252 @@
+.combined-view {
+  margin-top: 24px;
+}
+
+.instructions-container {
+  padding: 16px 0;
+}
+
+.instructions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Detailed Instructions */
+.detailed-instructions .instruction-steps {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.instruction-detail {
+  margin-top: 8px;
+}
+
+.instruction-text {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.colorwork-detail {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.colorwork-sequence {
+  margin-bottom: 8px;
+}
+
+.colorwork-sequence .ant-tag {
+  margin: 2px;
+  font-size: 11px;
+}
+
+.row-visual {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.row-visual svg {
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+}
+
+/* Compact Instructions */
+.compact-instructions {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.instruction-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.instruction-item {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.instruction-item:hover {
+  background-color: #f8f9fa;
+}
+
+.instruction-item.current {
+  background-color: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.instruction-number {
+  font-weight: 600;
+  color: #1890ff;
+  min-width: 40px;
+  margin-right: 12px;
+}
+
+.instruction-content {
+  flex: 1;
+  color: #333;
+}
+
+.colorwork-compact {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Visual Instructions */
+.visual-instructions {
+  padding: 16px 0;
+}
+
+.pattern-chart {
+  text-align: center;
+  background: white;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+}
+
+.pattern-chart svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.color-legend {
+  padding: 8px 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid #d9d9d9;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.color-label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.color-code {
+  color: #666;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+/* Overview */
+.overview-container {
+  padding: 16px 0;
+}
+
+.materials-list ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.materials-list li {
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+/* Pattern Data */
+.pattern-data-container {
+  padding: 16px 0;
+}
+
+.pattern-json {
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  max-height: 400px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #24292e;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .instructions-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .instructions-header .ant-btn-group {
+    width: 100%;
+  }
+  
+  .instructions-header .ant-btn {
+    flex: 1;
+  }
+  
+  .detailed-instructions .instruction-steps {
+    max-height: 400px;
+  }
+  
+  .compact-instructions {
+    max-height: 400px;
+  }
+  
+  .instruction-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .instruction-number {
+    margin-bottom: 4px;
+  }
+  
+  .pattern-chart {
+    padding: 8px;
+  }
+  
+  .legend-item {
+    flex-wrap: wrap;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .instructions-header,
+  .ant-tabs-nav {
+    display: none !important;
+  }
+  
+  .combined-view {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .instruction-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .colorwork-detail {
+    background: white !important;
+    border: 1px solid #ccc !important;
+  }
+}

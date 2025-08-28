@@ -82,7 +82,6 @@ const ColorPicker = ({
     >
       <div className="color-picker-content">
         <div className="color-picker-label">
-          <label htmlFor="color-label">Color Label:</label>
           <Input
             id="color-label"
             placeholder="Enter color label"

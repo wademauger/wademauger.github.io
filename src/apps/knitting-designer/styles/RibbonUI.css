@@ -33,6 +33,19 @@
   max-width: 400px;
 }
 
+/* Two-row color palette layout */
+.ribbon-color-palette.two-row {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.color-palette-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .ribbon-color-item {
   display: flex;
   flex-direction: column;
@@ -41,8 +54,8 @@
 }
 
 .ribbon-color-swatch {
-  width: 48px;
-  height: 32px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #d9d9d9;
   border-radius: 4px;
   cursor: pointer;
@@ -112,13 +125,10 @@
 
 .ribbon-color-swatch .active-dot {
   position: absolute;
-  top: 2px;
-  right: 2px;
   color: #1890ff;
   font-size: 12px;
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  z-index: 3;
 }
 
 .ribbon-color-picker {
@@ -154,5 +164,71 @@
   .color-label {
     font-size: 9px;
     max-width: 36px;
+  }
+}
+
+/* Selection tools layout */
+.selection-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selection-tools-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.selection-tools-row .ant-btn {
+  min-width: 28px;
+}
+
+@media (max-width: 768px) {
+  .selection-tools-row {
+    gap: 2px;
+  }
+  
+  .selection-tools-row .ant-btn {
+    min-width: 24px;
+  }
+}
+
+/* Symmetry section layout */
+.symmetry-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.symmetry-toggle {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.symmetry-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.symmetry-button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.symmetry-button-row .ant-btn {
+  min-width: 28px;
+}
+
+@media (max-width: 768px) {
+  .symmetry-container {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .symmetry-button-row .ant-btn {
+    min-width: 24px;
   }
 }

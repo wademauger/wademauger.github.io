@@ -1,5 +1,5 @@
-import { StitchPlan } from "./StitchPlan";
-import { defaultGauge } from "./Gauge";
+import { StitchPlan } from "./StitchPlan.js";
+import { defaultGauge } from "./Gauge.js";
 
 class Trapezoid {
     /**

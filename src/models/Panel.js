@@ -1,5 +1,5 @@
-import { Trapezoid } from './Trapezoid';
-import { defaultGauge } from './Gauge';
+import { Trapezoid } from './Trapezoid.js';
+import { defaultGauge } from './Gauge.js';
 
 class Panel {
     /**

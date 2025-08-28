@@ -1,0 +1,237 @@
+.colorwork-designer-app {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.colorwork-designer-app .ant-layout-content {
+  padding: 0;
+}
+
+/* Home View */
+.colorwork-home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.home-header .ant-typography h1 {
+  margin-bottom: 16px;
+  color: #1890ff;
+}
+
+.action-card {
+  height: 200px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.card-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+/* Recent Projects Styling */
+.recent-projects .recent-project-item:hover {
+  background-color: #f0f2f5;
+}
+
+.recent-project-item {
+  transition: background-color 0.2s ease;
+}
+
+/* Interactive Knitting View */
+.interactive-knitting-view {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.knitting-header {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.progress-card .progress-info {
+  text-align: center;
+}
+
+.instructions-card {
+  min-height: 500px;
+}
+
+/* Settings View */
+.settings-actions {
+  padding: 20px 0;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+  margin: 0 -24px -24px -24px;
+  margin-top: 24px;
+}
+
+.combined-preview {
+  min-height: 300px;
+}
+
+/* Preview Mode */
+.preview-mode {
+  padding: 16px 0;
+}
+
+.preview-mode .instructions-header {
+  display: none; /* Hide controls in preview mode */
+}
+
+.card-content .ant-typography h3 {
+  margin: 12px 0 8px 0;
+  color: #262626;
+}
+
+.card-content .ant-typography {
+  color: #8c8c8c;
+  margin: 0;
+}
+
+/* Gallery View */
+.colorwork-gallery {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.gallery-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.gallery-header .ant-typography h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.project-preview {
+  min-height: 80px;
+}
+
+/* Editor View */
+.colorwork-editor-wrapper {
+  background: white;
+  min-height: 100vh;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.editor-toolbar .ant-typography h3 {
+  margin: 0;
+  flex: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .colorwork-home,
+  .colorwork-gallery {
+    padding: 24px 16px;
+  }
+  
+  .home-header {
+    margin-bottom: 24px;
+  }
+  
+  .action-card {
+    height: 160px;
+  }
+  
+  .card-icon {
+    font-size: 36px;
+  }
+  
+  .gallery-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .editor-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+  }
+}
+
+/* Loading and Error States */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.error-state {
+  text-align: center;
+  padding: 40px;
+  color: #ff4d4f;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.colorwork-home,
+.colorwork-gallery,
+.colorwork-editor-wrapper {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Print Styles */
+@media print {
+  .editor-toolbar,
+  .gallery-header,
+  .home-header {
+    display: none !important;
+  }
+  
+  .colorwork-designer-app {
+    background: white !important;
+  }
+}

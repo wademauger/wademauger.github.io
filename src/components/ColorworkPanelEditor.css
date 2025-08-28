@@ -1,0 +1,82 @@
+.colorwork-panel-editor {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.editor-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.config-card {
+  height: 100%;
+}
+
+.config-card .ant-card-body {
+  padding: 16px;
+}
+
+.panel-preview {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+  background: white;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.colorwork-preview {
+  background: white;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+}
+
+.pattern-info {
+  color: #666;
+  font-size: 12px;
+}
+
+.pattern-stats {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.combination-settings {
+  margin: 16px 0;
+}
+
+.combination-settings .ant-radio-group {
+  width: 100%;
+}
+
+.combination-settings .ant-radio-button-wrapper {
+  flex: 1;
+  text-align: center;
+}
+
+.gauge-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.gauge-inputs .ant-select {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .colorwork-panel-editor {
+    padding: 16px;
+  }
+  
+  .config-card {
+    margin-bottom: 16px;
+  }
+}

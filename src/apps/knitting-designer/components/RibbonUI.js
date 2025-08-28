@@ -157,81 +157,84 @@ const RibbonUI = ({
       {/* Selection Actions */}
       <div className="ribbon-group">
         <div className="ribbon-group-title">Selection</div>
-        <Space wrap>
-          <Tooltip title="Copy (Ctrl+C)">
-            <Button
-              icon={<CopyOutlined />}
-              onClick={onCopy}
-              disabled={!hasSelection}
-              size="small"
-            />
-          </Tooltip>
+        <div className="selection-tools">
+          <div className="selection-tools-row">
+            <Tooltip title="Copy (Ctrl+C)">
+              <Button
+                icon={<CopyOutlined />}
+                onClick={onCopy}
+                disabled={!hasSelection}
+                size="small"
+              />
+            </Tooltip>
+            
+            <Tooltip title="Paste (Ctrl+V)">
+              <Button
+                icon={<FileImageOutlined />}
+                onClick={onPaste}
+                disabled={!hasClipboard}
+                type={pasteMode ? 'primary' : 'default'}
+                size="small"
+              />
+            </Tooltip>
+            
+            <Tooltip title="Fill Selection">
+              <Button
+                icon={<BgColorsOutlined />}
+                onClick={onFillSelection}
+                disabled={!hasSelection}
+                size="small"
+              />
+            </Tooltip>
+            
+            <Tooltip title="Clear Selection">
+              <Button
+                icon={<ClearOutlined />}
+                onClick={onClearSelection}
+                disabled={!hasSelection && !pasteMode}
+                size="small"
+              />
+            </Tooltip>
+          </div>
           
-          <Tooltip title="Paste (Ctrl+V)">
-            <Button
-              icon={<FileImageOutlined />}
-              onClick={onPaste}
-              disabled={!hasClipboard}
-              type={pasteMode ? 'primary' : 'default'}
-              size="small"
-            />
-          </Tooltip>
-          
-          <Tooltip title="Fill Selection">
-            <Button
-              icon={<BgColorsOutlined />}
-              onClick={onFillSelection}
-              disabled={!hasSelection}
-              size="small"
-            />
-          </Tooltip>
-          
-          <Tooltip title="Clear Selection">
-            <Button
-              icon={<ClearOutlined />}
-              onClick={onClearSelection}
-              disabled={!hasSelection && !pasteMode}
-              size="small"
-            />
-          </Tooltip>
-          
-          {/* Selection Tools - only show when rectangular areas are selected */}
-          {hasSelection && (
-            <>
-              <Tooltip title="Duplicate Selection">
-                <Button
-                  icon={<BlockOutlined />}
-                  onClick={onDuplicateSelection}
-                  size="small"
-                />
-              </Tooltip>
-              
-              <Tooltip title="Rotate Selection">
-                <Button
-                  icon={<RotateRightOutlined />}
-                  onClick={onRotateSelection}
-                  size="small"
-                />
-              </Tooltip>
-              
-              <Tooltip title="Reflect Horizontal">
-                <Button
-                  icon={<SwapOutlined />}
-                  onClick={() => onReflectSelection('horizontal')}
-                  size="small"
-                />
-              </Tooltip>
-              
-              <Tooltip title="Reflect Vertical">
-                <Button
-                  icon={<VerticalAlignMiddleOutlined />}
-                  onClick={() => onReflectSelection('vertical')}
-                  size="small"
-                />
-              </Tooltip>
-            </>
-          )}
-        </Space>
+          <div className="selection-tools-row">
+            <Tooltip title="Duplicate Selection">
+              <Button
+                icon={<BlockOutlined />}
+                onClick={onDuplicateSelection}
+                size="small"
+                disabled={!hasSelection}
+              />
+            </Tooltip>
+            
+            <Tooltip title="Rotate Selection">
+              <Button
+                icon={<RotateRightOutlined />}
+                onClick={onRotateSelection}
+                size="small"
+                disabled={!hasSelection}
+              />
+            </Tooltip>
+            
+            <Tooltip title="Reflect Horizontal">
+              <Button
+                icon={<SwapOutlined />}
+                onClick={() => onReflectSelection('horizontal')}
+                size="small"
+                disabled={!hasSelection}
+              />
+            </Tooltip>
+            
+            <Tooltip title="Reflect Vertical">
+              <Button
+                icon={<VerticalAlignMiddleOutlined />}
+                onClick={() => onReflectSelection('vertical')}
+                size="small"
+                disabled={!hasSelection}
+              />
+            </Tooltip>
+          </div>
+        </div>
       </div>
       
       <Divider type="vertical" />
@@ -239,32 +242,82 @@ const RibbonUI = ({
       {/* Colors Section */}
       <div className="ribbon-group">
         <div className="ribbon-group-title">Colors</div>
-        <div className="ribbon-color-palette">
-          {Object.values(colors).map((color) => (
-            <div key={color.id} className="ribbon-color-item">
-              <div
-                className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
-                style={{ backgroundColor: color.color }}
-                onClick={() => handleColorSelect(color.id)}
-                title={`${color.label} (${color.color})`}
-              >
-                {activeColorId === color.id && <div className="active-dot">●</div>}
+        <div className={`ribbon-color-palette ${colorsCount >= 5 ? 'two-row' : ''}`}>
+          {colorsCount >= 5 ? (
+            // Two-row layout for 5+ colors
+            <>
+              <div className="color-palette-row">
+                {Object.values(colors).slice(0, Math.ceil(colorsCount / 2)).map((color) => (
+                  <div key={color.id} className="ribbon-color-item">
+                    <div
+                      className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
+                      style={{ backgroundColor: color.color }}
+                      onClick={() => handleColorSelect(color.id)}
+                      title={`${color.label} (${color.color})`}
+                    >
+                      {activeColorId === color.id && <div className="active-dot">●</div>}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <span className="color-label">{color.label}</span>
-            </div>
-          ))}
-          
-          <div className="ribbon-color-item">
-            <Tooltip title="Add New Color">
-              <Button
-                size="small"
-                icon={<PlusOutlined />}
-                className="add-color-btn"
-                onClick={handleAddColor}
-              />
-            </Tooltip>
-            <span className="color-label add-label">Add</span>
-          </div>
+              
+              <div className="color-palette-row">
+                {Object.values(colors).slice(Math.ceil(colorsCount / 2)).map((color) => (
+                  <div key={color.id} className="ribbon-color-item">
+                    <div
+                      className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
+                      style={{ backgroundColor: color.color }}
+                      onClick={() => handleColorSelect(color.id)}
+                      title={`${color.label} (${color.color})`}
+                    >
+                      {activeColorId === color.id && <div className="active-dot">●</div>}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Add button in the second row */}
+                <div className="ribbon-color-item">
+                  <Tooltip title="Add New Color">
+                    <Button
+                      size="small"
+                      style={{height: '18px', width: '18px', fontSize: '8px'  }}
+                      icon={<PlusOutlined />}
+                      className="add-color-btn"
+                      onClick={handleAddColor}
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+            </>
+          ) : (
+            // Single-row layout for 1-4 colors
+            <>
+              {Object.values(colors).map((color) => (
+                <div key={color.id} className="ribbon-color-item">
+                  <div
+                    className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
+                    style={{ backgroundColor: color.color }}
+                    onClick={() => handleColorSelect(color.id)}
+                    title={`${color.label} (${color.color})`}
+                  >
+                    {activeColorId === color.id && <div className="active-dot">●</div>}
+                  </div>
+                </div>
+              ))}
+              
+              <div className="ribbon-color-item">
+                <Tooltip title="Add New Color">
+                  <Button
+                    size="small"
+                    style={{height: '18px', width: '18px', fontSize: '8px'  }}
+                    icon={<PlusOutlined />}
+                    className="add-color-btn"
+                    onClick={handleAddColor}
+                  />
+                </Tooltip>
+              </div>
+            </>
+          )}
         </div>
       </div>
       
@@ -325,7 +378,7 @@ const RibbonUI = ({
       {/* Symmetry Section */}
       <div className="ribbon-group">
         <div className="ribbon-group-title">Symmetry</div>
-        <Space direction="vertical" size="small">
+        <div className="symmetry-container">
           <div className="symmetry-toggle">
             <Switch
               checked={symmetry.enabled}
@@ -335,50 +388,52 @@ const RibbonUI = ({
             <span style={{ marginLeft: '4px', fontSize: '11px' }}>Enable</span>
           </div>
           
-          <Space size="small">
-            <Tooltip title="Horizontal Symmetry">
-              <Button
-                size="small"
-                type={symmetry.direction === 'horizontal' ? 'primary' : 'default'}
-                icon={<ColumnWidthOutlined />}
-                onClick={() => onSymmetryChange({ ...symmetry, direction: 'horizontal' })}
-                disabled={!symmetry.enabled}
-              />
-            </Tooltip>
+          <div className="symmetry-buttons">
+            <div className="symmetry-button-row">
+              <Tooltip title="Horizontal Symmetry">
+                <Button
+                  size="small"
+                  type={symmetry.direction === 'horizontal' ? 'primary' : 'default'}
+                  icon={<ColumnWidthOutlined />}
+                  onClick={() => onSymmetryChange({ ...symmetry, direction: 'horizontal' })}
+                  disabled={!symmetry.enabled}
+                />
+              </Tooltip>
+              
+              <Tooltip title="Vertical Symmetry">
+                <Button
+                  size="small"
+                  type={symmetry.direction === 'vertical' ? 'primary' : 'default'}
+                  icon={<ColumnHeightOutlined />}
+                  onClick={() => onSymmetryChange({ ...symmetry, direction: 'vertical' })}
+                  disabled={!symmetry.enabled}
+                />
+              </Tooltip>
+            </div>
             
-            <Tooltip title="Vertical Symmetry">
-              <Button
-                size="small"
-                type={symmetry.direction === 'vertical' ? 'primary' : 'default'}
-                icon={<ColumnHeightOutlined />}
-                onClick={() => onSymmetryChange({ ...symmetry, direction: 'vertical' })}
-                disabled={!symmetry.enabled}
-              />
-            </Tooltip>
-          </Space>
-          
-          <Space size="small">
-            <Tooltip title="Mirror Symmetry">
-              <Button
-                size="small"
-                type={symmetry.type === 'mirror' ? 'primary' : 'default'}
-                icon={<SwapOutlined />}
-                onClick={() => onSymmetryChange({ ...symmetry, type: 'mirror' })}
-                disabled={!symmetry.enabled}
-              />
-            </Tooltip>
-            
-            <Tooltip title="Rotational Symmetry">
-              <Button
-                size="small"
-                type={symmetry.type === 'rotational' ? 'primary' : 'default'}
-                icon={<SyncOutlined />}
-                onClick={() => onSymmetryChange({ ...symmetry, type: 'rotational' })}
-                disabled={!symmetry.enabled}
-              />
-            </Tooltip>
-          </Space>
-        </Space>
+            <div className="symmetry-button-row">
+              <Tooltip title="Mirror Symmetry">
+                <Button
+                  size="small"
+                  type={symmetry.type === 'mirror' ? 'primary' : 'default'}
+                  icon={<SwapOutlined />}
+                  onClick={() => onSymmetryChange({ ...symmetry, type: 'mirror' })}
+                  disabled={!symmetry.enabled}
+                />
+              </Tooltip>
+              
+              <Tooltip title="Rotational Symmetry">
+                <Button
+                  size="small"
+                  type={symmetry.type === 'rotational' ? 'primary' : 'default'}
+                  icon={<SyncOutlined />}
+                  onClick={() => onSymmetryChange({ ...symmetry, type: 'rotational' })}
+                  disabled={!symmetry.enabled}
+                />
+              </Tooltip>
+            </div>
+          </div>
+        </div>
       </div>
       
       <Divider type="vertical" />
