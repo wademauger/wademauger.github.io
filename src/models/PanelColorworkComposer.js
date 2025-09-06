@@ -33,6 +33,16 @@ export class PanelColorworkComposer {
             alignmentMode
         });
 
+        // Augment the StitchPlan with colorwork data
+        stitchPlan.setColorworkMapping(mappedPattern, colorworkPattern);
+        
+        // Also add colorwork to individual rows
+        mappedPattern.forEach((mappedRow, index) => {
+            if (stitchPlan.rows[index]) {
+                stitchPlan.rows[index].setColorwork(mappedRow.colorwork, colorworkPattern);
+            }
+        });
+
         return new CombinedPattern(panel, colorworkPattern, mappedPattern, stitchPlan);
     }
 

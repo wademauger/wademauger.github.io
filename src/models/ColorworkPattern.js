@@ -3,14 +3,23 @@
  * Reuses the existing colorwork grid structure from knitting-designer
  */
 export class ColorworkPattern {
-    constructor(grid = [], colors = {}, metadata = {}) {
-        this.grid = grid; // 2D array of color IDs
+    constructor(width = 0, height = 0, grid = null, colors = {}, metadata = {}) {
+        if (grid) {
+            this.grid = grid; // 2D array of color IDs
+        } else {
+            // Initialize empty grid
+            this.grid = [];
+            for (let row = 0; row < height; row++) {
+                this.grid.push(new Array(width).fill('MC'));
+            }
+        }
         this.colors = colors; // Map of colorId -> { id, label, color }
         this.metadata = metadata; // Pattern name, description, etc.
     }
 
     static fromJSON(json) {
         return new ColorworkPattern(
+            0, 0,
             json.grid || [],
             json.colors || {},
             json.metadata || {}
@@ -23,6 +32,22 @@ export class ColorworkPattern {
             colors: this.colors,
             metadata: this.metadata
         };
+    }
+
+    // Set a color definition
+    setColor(colorId, hexColor, label) {
+        this.colors[colorId] = {
+            id: colorId,
+            color: hexColor,
+            label: label || colorId
+        };
+    }
+
+    // Set a stitch color
+    setStitch(row, col, colorId) {
+        if (row >= 0 && row < this.grid.length && col >= 0 && col < this.grid[row].length) {
+            this.grid[row][col] = colorId;
+        }
     }
 
     getRowCount() {

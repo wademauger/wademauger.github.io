@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, Button, Select, Radio, Row, Col, Space, Typography, Divider, ColorPicker, InputNumber, Switch, Collapse, Slider, List } from 'antd';
-import { ZoomInOutlined, ZoomOutOutlined, ExpandOutlined, DragOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ZoomInOutlined, ZoomOutOutlined, ExpandOutlined, DragOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import { ColorworkPattern } from '../models/ColorworkPattern.js';
 import { Gauge } from '../models/Gauge.js';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -8,6 +8,60 @@ import './ColorworkCanvasEditor.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+// Draggable Layer Item Component - defined outside to prevent re-creation
+const DraggableLayerItem = React.memo(({ layer, index, children, onLayerReorder, dragItemHoverStyle, dragItemNormalStyle }) => {
+    const layerRef = useRef(null);
+    const [isDraggedOver, setIsDraggedOver] = useState(false);
+
+    useEffect(() => {
+        const element = layerRef.current;
+        if (!element) return;
+
+        // Set up draggable
+        const draggableCleanup = draggable({
+            element,
+            getInitialData: () => ({ layerId: layer.id, type: 'layer' }),
+            onDragStart: () => {
+                element.style.opacity = '0.5';
+            },
+            onDrop: () => {
+                element.style.opacity = '1';
+            }
+        });
+
+        // Set up drop target
+        const dropTargetCleanup = dropTargetForElements({
+            element,
+            onDragEnter: () => setIsDraggedOver(true),
+            onDragLeave: () => setIsDraggedOver(false),
+            onDrop: ({ source }) => {
+                setIsDraggedOver(false);
+                const draggedLayerId = source.data.layerId;
+                if (draggedLayerId && draggedLayerId !== layer.id) {
+                    onLayerReorder(draggedLayerId, layer.id);
+                }
+            },
+            canDrop: ({ source }) => {
+                return source.data.type === 'layer' && source.data.layerId !== layer.id;
+            }
+        });
+
+        return () => {
+            draggableCleanup();
+            dropTargetCleanup();
+        };
+    }, [layer.id, onLayerReorder]);
+
+    return (
+        <div 
+            ref={layerRef}
+            style={isDraggedOver ? dragItemHoverStyle : dragItemNormalStyle}
+        >
+            {children}
+        </div>
+    );
+});
 
 /**
  * ColorworkCanvasEditor - Full-page canvas-based editor with pan/zoom controls
@@ -27,16 +81,17 @@ const ColorworkCanvasEditor = ({
     const [isDragging, setIsDragging] = useState(false);
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+    const hasInitialized = useRef(false);
 
     // Pattern creation functions (same as original)
-    const createDefaultPatterns = () => ({
-        'solid': { name: 'Solid Color', pattern: createSolidPattern() },
-        'stripes': { name: 'Stripes', pattern: createStripesPattern() },
-        'checkerboard': { name: 'Checkerboard', pattern: createCheckerboardPattern() },
-        'argyle': { name: 'Argyle', pattern: createArgylePattern() }
-    });
+    const availablePatterns = {
+        'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{color: '#ffffff'}] } },
+        'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{color: '#ffffff', rows: 2}, {color: '#000000', rows: 2}], width: 4 } },
+        'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{color: '#ffffff', columns: 2}, {color: '#000000', columns: 2}], height: 4 } },
+        'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{color: '#ffffff'}, {color: '#000000'}] } },
+        'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}] } }
+    };
 
-    const [availablePatterns] = useState(createDefaultPatterns());
     const [selectedPatternKey, setSelectedPatternKey] = useState('checkerboard');
     const [collapsedLayers, setCollapsedLayers] = useState(new Set()); // Track collapsed layers
 
@@ -191,8 +246,10 @@ const ColorworkCanvasEditor = ({
         // Initialize grid with transparent background
         const grid = Array(totalRows).fill().map(() => Array(totalStitches).fill('transparent'));
         
-        // Process layers from bottom to top (lower priority to higher priority)
-        patternLayers.sort((a, b) => a.priority - b.priority).forEach(layer => {
+        // Process layers from bottom to top using reverse array order
+        // First item in array = top visual layer, so render it last
+        // Last item in array = bottom visual layer, so render it first
+        [...patternLayers].reverse().forEach(layer => {
             applyPatternLayerCentered(grid, totalStitches, totalRows, layer, displayWidth, displayHeight);
         });
         
@@ -200,7 +257,20 @@ const ColorworkCanvasEditor = ({
     };
 
     const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer, displayWidth, displayHeight) => {
-        const { pattern, settings } = layer;
+        let { pattern, settings } = layer;
+        
+        // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
+        if (layer.patternType === 'stripes' && layer.patternConfig && layer.patternConfig.colors) {
+            const hasZeroRows = layer.patternConfig.colors.some(c => c.rows === 0);
+            if (hasZeroRows) {
+                pattern = generatePattern('stripes', layer.patternConfig, totalRows);
+            }
+        } else if (layer.patternType === 'vstripes' && layer.patternConfig && layer.patternConfig.colors) {
+            const hasZeroColumns = layer.patternConfig.colors.some(c => c.columns === 0);
+            if (hasZeroColumns) {
+                pattern = generatePattern('vstripes', layer.patternConfig, totalStitches);
+            }
+        }
         
         if (!pattern || !pattern.grid || pattern.grid.length === 0) {
             return;
@@ -679,13 +749,6 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         setIsDragging(false);
     };
 
-    const handleWheel = (e) => {
-        e.preventDefault();
-        const delta = e.deltaY * -0.01;
-        const newZoom = Math.min(Math.max(0.1, zoom + delta), 5);
-        setZoom(newZoom);
-    };
-
     const resetView = () => {
         setZoom(1);
         setPan({ x: 0, y: 0 });
@@ -794,19 +857,44 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
 
+    // Initialize default background layer
+    useEffect(() => {
+        if (patternLayers.length === 0 && !hasInitialized.current) {
+            hasInitialized.current = true;
+            const defaultBackgroundLayer = {
+                id: Date.now(),
+                name: 'solid color bg',
+                pattern: generatePattern('solid', { colors: [{color: '#cfcfcf'}] }),
+                patternType: 'solid',
+                patternConfig: { colors: [{color: '#cfcfcf'}] },
+                priority: 1,
+                settings: {
+                    repeatMode: 'both', // repeat in both x and y
+                    repeatCountX: 0, // 0 means infinite
+                    repeatCountY: 0, // 0 means infinite
+                    offsetHorizontal: 0,
+                    offsetVertical: 0,
+                    colorMapping: {}
+                }
+            };
+            onLayersChange([defaultBackgroundLayer]);
+        }
+    }, [patternLayers.length, onLayersChange]);
+
     // Pattern layer management
-    const handleLayerSettingChange = (layerId, setting, value) => {
-        const updatedLayers = patternLayers.map(layer => {
-            if (layer.id === layerId) {
-                return {
-                    ...layer,
-                    settings: { ...layer.settings, [setting]: value }
-                };
-            }
-            return layer;
-        });
-        onLayersChange(updatedLayers);
-    };
+    const handleLayerSettingChange = useCallback((layerId, setting, value) => {
+        onLayersChange(prevLayers => 
+            prevLayers.map(layer => {
+                if (layer.id === layerId) {
+                    return {
+                        ...layer,
+                        settings: { ...layer.settings, [setting]: value }
+                    };
+                }
+                return layer;
+            })
+        );
+    }, [onLayersChange]);
 
     const handleLayerColorChange = (layerId, colorId, newColor) => {
         // Convert color to hex string if it's a color object
@@ -846,7 +934,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         });
     }, [onLayersChange]);
 
-    const handleLayerCollapse = useCallback((layerId) => {
+    // Simple handler for collapse changes
+    const handleCollapseChange = useCallback((layerId) => {
         setCollapsedLayers(prev => {
             const newCollapsed = new Set(prev);
             if (newCollapsed.has(layerId)) {
@@ -858,11 +947,14 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         });
     }, []);
 
-    const addPatternLayer = () => {
+    const addPatternLayer = useCallback(() => {
+        const defaultType = 'checkerboard';
         const newLayer = {
             id: Date.now(),
             name: `Layer ${patternLayers.length + 1}`,
-            pattern: availablePatterns.checkerboard.pattern,
+            pattern: generatePattern(availablePatterns[defaultType].type, availablePatterns[defaultType].defaultConfig),
+            patternType: availablePatterns[defaultType].type,
+            patternConfig: availablePatterns[defaultType].defaultConfig,
             priority: patternLayers.length + 1,
             settings: {
                 repeatMode: 'none', // 'none', 'x', 'y', 'both'
@@ -874,13 +966,58 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
             }
         };
         // Add new layer to the top of the stack
-        onLayersChange([newLayer, ...patternLayers]);
-    };
+        onLayersChange(prevLayers => [newLayer, ...prevLayers]);
+    }, [patternLayers.length, onLayersChange]);
 
-    const removePatternLayer = (layerId) => {
-        const updatedLayers = patternLayers.filter(layer => layer.id !== layerId);
-        onLayersChange(updatedLayers);
-    };
+    // Memoized style objects to prevent re-renders
+    const textStyle12 = useMemo(() => ({ fontSize: '12px' }), []);
+    const textStyle11 = useMemo(() => ({ minWidth: 30, fontSize: '11px' }), []);
+    const fullWidthStyle = useMemo(() => ({ width: '100%' }), []);
+    const spaceStyle = useMemo(() => ({ width: '100%' }), []);
+    
+    // Memoized style objects for draggable items
+    const dragItemBaseStyle = useMemo(() => ({
+        marginBottom: 8,
+        transition: 'all 0.2s ease'
+    }), []);
+    
+    const dragItemHoverStyle = useMemo(() => ({
+        ...dragItemBaseStyle,
+        border: '2px dashed #1890ff',
+        borderRadius: '4px'
+    }), [dragItemBaseStyle]);
+    
+    const dragItemNormalStyle = useMemo(() => ({
+        ...dragItemBaseStyle,
+        border: 'none',
+        borderRadius: '0'
+    }), [dragItemBaseStyle]);
+
+    // Memoized pattern key finder to prevent recalculation
+    const getPatternKeyForLayer = useCallback((layer) => {
+        return layer.patternType || 'checkerboard';
+    }, []);
+
+    const removePatternLayer = useCallback((layerId) => {
+        onLayersChange(prevLayers => prevLayers.filter(layer => layer.id !== layerId));
+    }, [onLayersChange]);
+
+    const copyPatternLayer = useCallback((layerId) => {
+        onLayersChange(prevLayers => {
+            const layerToCopy = prevLayers.find(layer => layer.id === layerId);
+            if (!layerToCopy) return prevLayers;
+            
+            const copiedLayer = {
+                ...layerToCopy,
+                id: Date.now(), // New unique ID
+                name: `${layerToCopy.name} Copy`,
+                priority: prevLayers.length + 1
+            };
+            
+            // Add copied layer to the top of the stack (beginning of array)
+            return [copiedLayer, ...prevLayers];
+        });
+    }, [onLayersChange]);
 
     const moveLayer = (fromIndex, toIndex) => {
         const newLayers = [...patternLayers];
@@ -896,14 +1033,18 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         onLayersChange(updatedLayers);
     };
 
-    const handlePatternChangeForLayer = (layerId, patternKey) => {
-        const pattern = availablePatterns[patternKey]?.pattern;
-        if (pattern) {
-            const updatedLayers = patternLayers.map(layer => {
+    const handlePatternChangeForLayer = useCallback((layerId, patternKey) => {
+        const patternType = availablePatterns[patternKey].type;
+        const config = availablePatterns[patternKey].defaultConfig;
+        const pattern = generatePattern(patternType, config);
+        onLayersChange(prevLayers => 
+            prevLayers.map(layer => {
                 if (layer.id === layerId) {
                     return { 
                         ...layer, 
                         pattern,
+                        patternType,
+                        patternConfig: config,
                         settings: {
                             ...layer.settings,
                             colorMapping: {} // Reset color mapping when changing patterns
@@ -911,95 +1052,43 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                     };
                 }
                 return layer;
-            });
-            onLayersChange(updatedLayers);
-        }
-    };
-
-    // Draggable Layer Item Component
-    const DraggableLayerItem = ({ layer, index, children }) => {
-        const layerRef = useRef(null);
-        const [isDraggedOver, setIsDraggedOver] = useState(false);
-
-        useEffect(() => {
-            const element = layerRef.current;
-            if (!element) return;
-
-            // Set up draggable
-            const draggableCleanup = draggable({
-                element,
-                getInitialData: () => ({ layerId: layer.id, type: 'layer' }),
-                onDragStart: () => {
-                    element.style.opacity = '0.5';
-                },
-                onDrop: () => {
-                    element.style.opacity = '1';
-                }
-            });
-
-            // Set up drop target
-            const dropTargetCleanup = dropTargetForElements({
-                element,
-                onDragEnter: () => setIsDraggedOver(true),
-                onDragLeave: () => setIsDraggedOver(false),
-                onDrop: ({ source }) => {
-                    setIsDraggedOver(false);
-                    const draggedLayerId = source.data.layerId;
-                    if (draggedLayerId && draggedLayerId !== layer.id) {
-                        handleLayerReorder(draggedLayerId, layer.id);
-                    }
-                },
-                canDrop: ({ source }) => {
-                    return source.data.type === 'layer' && source.data.layerId !== layer.id;
-                }
-            });
-
-            return () => {
-                draggableCleanup();
-                dropTargetCleanup();
-            };
-        }, [layer.id]);
-
-        return (
-            <div 
-                ref={layerRef}
-                style={{
-                    marginBottom: 8,
-                    border: isDraggedOver ? '2px dashed #1890ff' : 'none',
-                    borderRadius: isDraggedOver ? '4px' : '0',
-                    transition: 'all 0.2s ease'
-                }}
-            >
-                {children}
-            </div>
+            })
         );
-    };
+    }, [onLayersChange]);
+
+    const handlePatternConfigChange = useCallback((layerId, newConfig) => {
+        onLayersChange(prevLayers => 
+            prevLayers.map(layer => {
+                if (layer.id === layerId) {
+                    const newPattern = generatePattern(layer.patternType, newConfig);
+                    return {
+                        ...layer,
+                        patternConfig: newConfig,
+                        pattern: newPattern
+                    };
+                }
+                return layer;
+            })
+        );
+    }, [onLayersChange]);
 
     return (
         <div className="colorwork-canvas-editor">
             {/* Zoom controls integrated at top */}
             <div className="canvas-header" style={{ 
                 display: 'flex', 
-                justifyContent: 'flex-end', 
                 alignItems: 'center', 
                 padding: '8px 16px', 
                 borderBottom: '1px solid #f0f0f0',
                 background: '#fafafa'
             }}>
                 <Space>
+                    <Text>Zoom: {Math.round(zoom * 100)}%</Text>
                     <Button 
                         icon={<ZoomInOutlined />} 
                         onClick={() => setZoom(prev => Math.min(prev * 1.2, 5))}
                         size="small"
                     >
-                        Zoom In
-                    </Button>
-                    <Button 
-                        icon={<ZoomOutOutlined />} 
-                        onClick={() => setZoom(prev => Math.max(prev / 1.2, 0.1))}
-                        size="small"
-                    >
-                        Zoom Out
                     </Button>
                     <Slider
                         min={0.1}
@@ -1010,13 +1099,18 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         style={{ width: 100 }}
                     />
                     <Button 
+                        icon={<ZoomOutOutlined />} 
+                        onClick={() => setZoom(prev => Math.max(prev / 1.2, 0.1))}
+                        size="small"
+                    >
+                    </Button>
+                    <Button 
                         icon={<ExpandOutlined />} 
                         onClick={resetView}
                         size="small"
                     >
-                        Reset View
+                        Reset Zoom
                     </Button>
-                    <Text>Zoom: {Math.round(zoom * 100)}%</Text>
                 </Space>
             </div>
             
@@ -1030,13 +1124,108 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        onWheel={handleWheel}
                         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                     />
                 </div>
 
                 {/* Side panel with controls */}
                 <div className="side-panel">
+                    <Card title="Gauge Settings" size="small" style={{ marginTop: 8 }}>
+                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                            <div>
+                                <Text style={textStyle12}>Stitches per 4":</Text>
+                                <InputNumber
+                                    value={gauge?.stitchesPerFourInches || 19}
+                                    onChange={(value) => onGaugeChange(new Gauge(value || 19, gauge?.rowsPerFourInches || 30, gauge?.scalingFactor || 1.0))}
+                                    min={10}
+                                    max={40}
+                                    style={{ width: '100%' }}
+                                    size="small"
+                                />
+                            </div>
+                            <div>
+                                <Text style={textStyle12}>Rows per 4":</Text>
+                                <InputNumber
+                                    value={gauge?.rowsPerFourInches || 30}
+                                    onChange={(value) => onGaugeChange(new Gauge(gauge?.stitchesPerFourInches || 19, value || 30, gauge?.scalingFactor || 1.0))}
+                                    min={20}
+                                    max={60}
+                                    style={{ width: '100%' }}
+                                    size="small"
+                                />
+                            </div>
+                            
+                            <div>
+                                <Text style={textStyle12}>Scaling Factor:</Text>
+                                <InputNumber
+                                    value={gauge?.scalingFactor || 1.0}
+                                    onChange={(value) => {
+                                        const newGauge = new Gauge(
+                                            gauge?.stitchesPerFourInches || 19, 
+                                            gauge?.rowsPerFourInches || 30,
+                                            value || 1.0
+                                        );
+                                        onGaugeChange(newGauge);
+                                    }}
+                                    min={0.5}
+                                    max={3.0}
+                                    step={0.1}
+                                    style={{ width: '100%' }}
+                                    size="small"
+                                    formatter={(value) => `${value}x`}
+                                    parser={(value) => value.replace('x', '')}
+                                />
+                                <Text style={{ fontSize: '10px', color: '#999', display: 'block', marginTop: 2 }}>
+                                    Scales the entire garment size (0.5x = 50%, 2.0x = 200%)
+                                </Text>
+                            </div>
+                            
+                            {/* Panel Dimensions Display */}
+                            {shape && gauge && (() => {
+                                try {
+                                    const currentGauge = gauge || new Gauge(19, 30);
+                                    const scalingFactor = currentGauge.scalingFactor || 1.0;
+                                    
+                                    // Calculate actual dimensions in inches using existing function
+                                    let actualDimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+                                    calculateTrapezoidDimensions(shape, scalingFactor, 0, 0, actualDimensions); // Apply scaling factor
+                                    
+                                    const actualWidthInches = actualDimensions.maxX - actualDimensions.minX;
+                                    const actualHeightInches = actualDimensions.maxY - actualDimensions.minY;
+                                    
+                                    // Convert to stitches and rows using gauge
+                                    const stitchesPerInch = currentGauge.stitchesPerFourInches / 4;
+                                    const rowsPerInch = currentGauge.rowsPerFourInches / 4;
+                                    
+                                    const totalStitches = Math.round(actualWidthInches * stitchesPerInch);
+                                    const totalRows = Math.round(actualHeightInches * rowsPerInch);
+                                    
+                                    return (
+                                        <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+                                            <div style={{ fontSize: '11px', color: '#333', marginTop: 2 }}>
+                                                <div>{totalStitches} stitches x {totalRows} rows</div>
+                                                {scalingFactor && (
+                                                    <div style={{ color: '#1890ff', marginTop: 2 }}>
+                                                        {scalingFactor === 1 ? 'Default sized' : `Resized by ${scalingFactor}x`}: ({actualWidthInches.toFixed(1)}" × {actualHeightInches.toFixed(1)}")
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                } catch (error) {
+                                    console.warn('Error calculating panel dimensions:', error);
+                                    return (
+                                        <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+                                            <div style={{ fontSize: '11px', color: '#999', marginTop: 2 }}>
+                                                Unable to calculate dimensions
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            })()}
+                        </Space>
+                    </Card>
+
                     <Card title="Pattern Settings" size="small">
                         <Space direction="vertical" style={{ width: '100%' }} size="small">
                             <Button 
@@ -1051,12 +1240,19 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                             
                             <div className="layers-list">
                                 {patternLayers.map((layer, index) => (
-                                    <DraggableLayerItem key={layer.id} layer={layer} index={index}>
+                                    <DraggableLayerItem 
+                                        key={layer.id} 
+                                        layer={layer} 
+                                        index={index} 
+                                        onLayerReorder={handleLayerReorder}
+                                        dragItemHoverStyle={dragItemHoverStyle}
+                                        dragItemNormalStyle={dragItemNormalStyle}
+                                    >
                                         <Collapse
                                             size="small"
                                             ghost
                                             activeKey={collapsedLayers.has(layer.id) ? [] : [layer.id]}
-                                            onChange={() => handleLayerCollapse(layer.id)}
+                                            onChange={() => handleCollapseChange(layer.id)}
                                             items={[
                                                 {
                                                     key: layer.id,
@@ -1066,29 +1262,40 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                                 <DragOutlined className="drag-handle" style={{ cursor: 'grab' }} />
                                                                 {layer.name}
                                                             </span>
-                                                            <Button 
-                                                                size="small" 
-                                                                danger 
-                                                                type="text"
-                                                                icon={<DeleteOutlined />}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    removePatternLayer(layer.id);
-                                                                }}
-                                                                disabled={patternLayers.length === 1}
-                                                            />
+                                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                                <Button 
+                                                                    size="small" 
+                                                                    type="text"
+                                                                    icon={<CopyOutlined />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        copyPatternLayer(layer.id);
+                                                                    }}
+                                                                    title="Make a copy"
+                                                                />
+                                                                <Button 
+                                                                    size="small" 
+                                                                    danger 
+                                                                    type="text"
+                                                                    icon={<DeleteOutlined />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        removePatternLayer(layer.id);
+                                                                    }}
+                                                                    disabled={patternLayers.length === 1}
+                                                                    title="Delete layer"
+                                                                />
+                                                            </div>
                                                         </div>
                                                     ),
                                                     children: (
-                                                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                                                        <Space direction="vertical" style={spaceStyle} size="small">
                                             <div>
-                                                <Text style={{ fontSize: '12px' }}>Pattern:</Text>
+                                                <Text style={textStyle12}>Pattern:</Text>
                                                 <Select
-                                                    value={Object.keys(availablePatterns).find(key => 
-                                                        availablePatterns[key].pattern === layer.pattern
-                                                    ) || 'checkerboard'}
+                                                    value={getPatternKeyForLayer(layer)}
                                                     onChange={(patternKey) => handlePatternChangeForLayer(layer.id, patternKey)}
-                                                    style={{ width: '100%' }}
+                                                    style={fullWidthStyle}
                                                     size="small"
                                                 >
                                                     {Object.entries(availablePatterns).map(([key, pattern]) => (
@@ -1097,31 +1304,198 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                 </Select>
                                             </div>
                                             
+                                            {layer.patternType === 'stripes' && (
+                                                <div>
+                                                    <Text style={textStyle12}>Pattern Width (stitches):</Text>
+                                                    <InputNumber
+                                                        value={layer.patternConfig?.width || 4}
+                                                        onChange={(value) => {
+                                                            const newConfig = { ...layer.patternConfig, width: value || 4 };
+                                                            handlePatternConfigChange(layer.id, newConfig);
+                                                        }}
+                                                        min={1}
+                                                        max={20}
+                                                        size="small"
+                                                        style={fullWidthStyle}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {layer.patternType === 'vstripes' && (
+                                                <div>
+                                                    <Text style={textStyle12}>Pattern Height (rows):</Text>
+                                                    <InputNumber
+                                                        value={layer.patternConfig?.height || 4}
+                                                        onChange={(value) => {
+                                                            const newConfig = { ...layer.patternConfig, height: value || 4 };
+                                                            handlePatternConfigChange(layer.id, newConfig);
+                                                        }}
+                                                        min={1}
+                                                        max={20}
+                                                        size="small"
+                                                        style={fullWidthStyle}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {layer.patternType === 'checkerboard' && (
+                                                <div>
+                                                    <Text style={textStyle12}>Cell Size (n x n):</Text>
+                                                    <InputNumber
+                                                        value={layer.patternConfig?.cellSize || 2}
+                                                        onChange={(value) => {
+                                                            const newConfig = { ...layer.patternConfig, cellSize: value || 2 };
+                                                            handlePatternConfigChange(layer.id, newConfig);
+                                                        }}
+                                                        min={1}
+                                                        max={10}
+                                                        size="small"
+                                                        style={fullWidthStyle}
+                                                        formatter={(value) => `${value} x ${value}`}
+                                                        parser={(value) => value.replace(' x ' + value.split(' x ')[1], '')}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {/* Removed Pattern Colors UI to avoid duplication with Color Assignment */}
+                                            
+                                            {layer.patternType === 'stripes' && (
+                                                <div>
+                                                    <Text style={textStyle12}>Stripe Configuration:</Text>
+                                                    <Text style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: 2 }}>
+                                                        Enter 0 rows to fill remaining space with that color
+                                                    </Text>
+                                                    {(() => {
+                                                        const zeroRowIndices = layer.patternConfig.colors
+                                                            .map((c, i) => c.rows === 0 ? i : -1)
+                                                            .filter(i => i !== -1);
+                                                        const invalidZeroRows = zeroRowIndices.filter(i => 
+                                                            i !== 0 && i !== layer.patternConfig.colors.length - 1
+                                                        );
+                                                        
+                                                        if (invalidZeroRows.length > 0) {
+                                                            return (
+                                                                <Text style={{ fontSize: '11px', color: '#ff6b35', display: 'block', marginTop: 2 }}>
+                                                                    Warning: Only first or last colors should have 0 rows
+                                                                </Text>
+                                                            );
+                                                        }
+                                                        
+                                                        return null;
+                                                    })()}
+                                                    <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
+                                                        {layer.patternConfig.colors.map((colorConfig, index) => (
+                                                            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <InputNumber
+                                                                    value={colorConfig.rows}
+                                                                    onChange={(value) => {
+                                                                        const newColors = [...layer.patternConfig.colors];
+                                                                        newColors[index].rows = value || 0;
+                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                    }}
+                                                                    min={0}
+                                                                    size="small"
+                                                                    style={{ width: 60 }}
+                                                                    placeholder="0"
+                                                                />
+                                                                <Text>{colorConfig.rows === 0 ? 'rows (fill)' : 'rows'}</Text>
+                                                                {layer.patternConfig.colors.length > 1 && (
+                                                                    <Button size="small" danger onClick={() => {
+                                                                        const newColors = layer.patternConfig.colors.filter((_, i) => i !== index);
+                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                    }}>Remove</Button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        <Button size="small" onClick={() => {
+                                                            const newColors = [...layer.patternConfig.colors, {color: '#ff0000', rows: 2}];
+                                                            handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                        }}>Add Color</Button>
+                                                    </Space>
+                                                </div>
+                                            )}
+                                            
+                                            {layer.patternType === 'vstripes' && (
+                                                <div>
+                                                    <Text style={textStyle12}>Vertical Stripe Configuration:</Text>
+                                                    <Text style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: 2 }}>
+                                                        Enter 0 columns to fill remaining space with that color
+                                                    </Text>
+                                                    {(() => {
+                                                        const zeroColumnIndices = layer.patternConfig.colors
+                                                            .map((c, i) => c.columns === 0 ? i : -1)
+                                                            .filter(i => i !== -1);
+                                                        const invalidZeroColumns = zeroColumnIndices.filter(i => 
+                                                            i !== 0 && i !== layer.patternConfig.colors.length - 1
+                                                        );
+                                                        
+                                                        if (invalidZeroColumns.length > 0) {
+                                                            return (
+                                                                <Text style={{ fontSize: '11px', color: '#ff6b35', display: 'block', marginTop: 2 }}>
+                                                                    Warning: Only first or last colors should have 0 columns
+                                                                </Text>
+                                                            );
+                                                        }
+                                                        
+                                                        return null;
+                                                    })()}
+                                                    <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
+                                                        {layer.patternConfig.colors.map((colorConfig, index) => (
+                                                            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <InputNumber
+                                                                    value={colorConfig.columns}
+                                                                    onChange={(value) => {
+                                                                        const newColors = [...layer.patternConfig.colors];
+                                                                        newColors[index].columns = value || 0;
+                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                    }}
+                                                                    min={0}
+                                                                    size="small"
+                                                                    style={{ width: 60 }}
+                                                                    placeholder="0"
+                                                                />
+                                                                <Text>{colorConfig.columns === 0 ? 'cols (fill)' : 'cols'}</Text>
+                                                                {layer.patternConfig.colors.length > 1 && (
+                                                                    <Button size="small" danger onClick={() => {
+                                                                        const newColors = layer.patternConfig.colors.filter((_, i) => i !== index);
+                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                    }}>Remove</Button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        <Button size="small" onClick={() => {
+                                                            const newColors = [...layer.patternConfig.colors, {color: '#ff0000', columns: 2}];
+                                                            handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                        }}>Add Color</Button>
+                                                    </Space>
+                                                </div>
+                                            )}
+                                            
                                             <div>
-                                                <Text style={{ fontSize: '12px' }}>Repeat:</Text>
+                                                <Text style={textStyle12}>Repeat:</Text>
                                                 <Select
                                                     value={layer.settings.repeatMode || 'none'}
                                                     onChange={(value) => handleLayerSettingChange(layer.id, 'repeatMode', value)}
-                                                    style={{ width: '100%' }}
+                                                    style={fullWidthStyle}
                                                     size="small"
                                                 >
                                                     <Option value="none">Non-repeating</Option>
-                                                    <Option value="x">Repeat X</Option>
-                                                    <Option value="y">Repeat Y</Option>
-                                                    <Option value="both">Repeat X and Y</Option>
+                                                    <Option value="x">Repeat Horizontal</Option>
+                                                    <Option value="y">Repeat Vertical</Option>
+                                                    <Option value="both">Repeat Both Directions</Option>
                                                 </Select>
                                             </div>
                                             
                                             {(layer.settings.repeatMode === 'x' || layer.settings.repeatMode === 'both') && (
                                                 <div>
-                                                    <Text style={{ fontSize: '12px' }}>X Repeats (0=infinity):</Text>
+                                                    <Text style={textStyle12}>Horizontal Repeats (0=infinity):</Text>
                                                     <InputNumber
                                                         value={layer.settings.repeatCountX || 0}
                                                         onChange={(value) => handleLayerSettingChange(layer.id, 'repeatCountX', value || 0)}
                                                         min={0}
                                                         max={50}
                                                         size="small"
-                                                        style={{ width: '100%' }}
+                                                        style={fullWidthStyle}
                                                         formatter={(value) => value === 0 ? 'infinity' : value}
                                                         parser={(value) => value === 'infinity' ? 0 : parseInt(value) || 0}
                                                     />
@@ -1130,14 +1504,14 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                             
                                             {(layer.settings.repeatMode === 'y' || layer.settings.repeatMode === 'both') && (
                                                 <div>
-                                                    <Text style={{ fontSize: '12px' }}>Y Repeats (0=infinity):</Text>
+                                                    <Text style={textStyle12}>Vertical Repeats (0=infinity):</Text>
                                                     <InputNumber
                                                         value={layer.settings.repeatCountY || 0}
                                                         onChange={(value) => handleLayerSettingChange(layer.id, 'repeatCountY', value || 0)}
                                                         min={0}
                                                         max={50}
                                                         size="small"
-                                                        style={{ width: '100%' }}
+                                                        style={fullWidthStyle}
                                                         formatter={(value) => value === 0 ? 'infinity' : value}
                                                         parser={(value) => value === 'infinity' ? 0 : parseInt(value) || 0}
                                                     />
@@ -1146,31 +1520,31 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                             
                                             <Row gutter={4}>
                                                 <Col span={12}>
-                                                    <Text style={{ fontSize: '12px' }}>H Offset:</Text>
+                                                    <Text style={textStyle12}>Horizontal Offset:</Text>
                                                     <InputNumber
                                                         value={layer.settings.offsetHorizontal}
                                                         onChange={(value) => handleLayerSettingChange(layer.id, 'offsetHorizontal', value || 0)}
                                                         size="small"
-                                                        style={{ width: '100%' }}
+                                                        style={fullWidthStyle}
                                                     />
                                                 </Col>
                                                 <Col span={12}>
-                                                    <Text style={{ fontSize: '12px' }}>V Offset:</Text>
+                                                    <Text style={textStyle12}>Vertical Offset:</Text>
                                                     <InputNumber
                                                         value={layer.settings.offsetVertical}
                                                         onChange={(value) => handleLayerSettingChange(layer.id, 'offsetVertical', value || 0)}
                                                         size="small"
-                                                        style={{ width: '100%' }}
+                                                        style={fullWidthStyle}
                                                     />
                                                 </Col>
                                             </Row>
                                             
                                             <div>
-                                                <Text style={{ fontSize: '12px' }}>Color Assignment:</Text>
+                                                <Text style={textStyle12}>Color Assignment:</Text>
                                                 <div style={{ marginTop: 4 }}>
                                                     {layer.pattern && layer.pattern.colors && Object.entries(layer.pattern.colors).map(([colorId, colorInfo]) => (
                                                         <div key={colorId} style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                            <Text style={{ minWidth: 30, fontSize: '11px' }}>{colorInfo.label}:</Text>
+                                                            <Text style={textStyle11}>{colorInfo.label}:</Text>
                                                             <ColorPicker
                                                                 value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
                                                                 onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
@@ -1195,32 +1569,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         </Space>
                     </Card>
 
-                    <Card title="Gauge Settings" size="small" style={{ marginTop: 8 }}>
-                        <Space direction="vertical" style={{ width: '100%' }} size="small">
-                            <div>
-                                <Text style={{ fontSize: '12px' }}>Stitches per 4":</Text>
-                                <InputNumber
-                                    value={gauge?.stitchesPerFourInches || 19}
-                                    onChange={(value) => onGaugeChange(new Gauge(value || 19, gauge?.rowsPerFourInches || 30))}
-                                    min={10}
-                                    max={40}
-                                    style={{ width: '100%' }}
-                                    size="small"
-                                />
-                            </div>
-                            <div>
-                                <Text style={{ fontSize: '12px' }}>Rows per 4":</Text>
-                                <InputNumber
-                                    value={gauge?.rowsPerFourInches || 30}
-                                    onChange={(value) => onGaugeChange(new Gauge(gauge?.stitchesPerFourInches || 19, value || 30))}
-                                    min={20}
-                                    max={60}
-                                    style={{ width: '100%' }}
-                                    size="small"
-                                />
-                            </div>
-                        </Space>
-                    </Card>
+
                 </div>
             </div>
         </div>
@@ -1228,57 +1577,66 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 };
 
 // Helper pattern creation functions
-function createSolidPattern() {
+function createSolidPattern(colors = [{color: '#ffffff'}]) {
+    const colorMap = {};
+    colors.forEach((colorConfig, index) => {
+        colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
+    });
+    
     return new ColorworkPattern(
+        0,
+        0,
         [
             [0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0]
         ],
-        { 0: { id: 0, label: 'Color 1', color: '#ffffff' } },
+        colorMap,
         { width: 4, height: 4 }
     );
 }
 
-function createStripesPattern() {
+function createCheckerboardPattern(cellSize = 2, colors = [{color: '#ffffff'}, {color: '#000000'}]) {
+    const patternSize = cellSize * 2; // Each full checkerboard cycle is 2x the cell size
+    const grid = [];
+    
+    for (let row = 0; row < patternSize; row++) {
+        const gridRow = [];
+        for (let col = 0; col < patternSize; col++) {
+            // Determine which cell we're in
+            const cellRow = Math.floor(row / cellSize);
+            const cellCol = Math.floor(col / cellSize);
+            // Checkerboard pattern: alternating cells
+            const colorId = (cellRow + cellCol) % 2;
+            gridRow.push(colorId);
+        }
+        grid.push(gridRow);
+    }
+    
+    const colorMap = {};
+    colors.forEach((colorConfig, index) => {
+        colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
+    });
+    
     return new ColorworkPattern(
-        [
-            [0, 0, 0, 0],
-            [1, 1, 1, 1],
-            [0, 0, 0, 0],
-            [1, 1, 1, 1]
-        ],
-        { 
-            0: { id: 0, label: 'Color 1', color: '#ffffff' },
-            1: { id: 1, label: 'Color 2', color: '#000000' }
-        },
-        { width: 4, height: 4 }
+        0,
+        0,
+        grid,
+        colorMap,
+        { width: patternSize, height: patternSize }
     );
 }
 
-function createCheckerboardPattern() {
+function createArgylePattern(colors = [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}]) {
+    const colorMap = {};
+    colors.forEach((colorConfig, index) => {
+        colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
+    });
+    
     return new ColorworkPattern(
-        [
-            [0, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0],
-            [0, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0],
-            [0, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0],
-            [0, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0]
-        ],
-        { 
-            0: { id: 0, label: 'Color 1', color: '#ffffff' },
-            1: { id: 1, label: 'Color 2', color: '#000000' }
-        },
-        { width: 8, height: 8 }
-    );
-}
-
-function createArgylePattern() {
-    return new ColorworkPattern(
+        0,
+        0,
         [
             [0, 0, 1, 1, 1, 1, 0, 0],
             [0, 1, 1, 2, 2, 1, 1, 0],
@@ -1289,13 +1647,264 @@ function createArgylePattern() {
             [0, 1, 1, 2, 2, 1, 1, 0],
             [0, 0, 1, 1, 1, 1, 0, 0]
         ],
-        { 
-            0: { id: 0, label: 'Color 1', color: '#ffffff' },
-            1: { id: 1, label: 'Color 2', color: '#ff0000' },
-            2: { id: 2, label: 'Color 3', color: '#0000ff' }
-        },
+        colorMap,
         { width: 8, height: 8 }
     );
+}
+
+function generatePattern(type, config, targetDimension = null) {
+    if (type === 'stripes') {
+        const { colors } = config;
+        
+        // Calculate pattern height - if targetDimension is provided and we have 0-row colors,
+        // use targetDimension, otherwise use sum of explicit row counts
+        let patternHeight;
+        const zeroRowColors = colors.filter(c => c.rows === 0);
+        const definedRowsTotal = colors.reduce((sum, c) => sum + (c.rows || 0), 0);
+        
+        if (zeroRowColors.length > 0 && targetDimension) {
+            patternHeight = targetDimension;
+        } else if (zeroRowColors.length > 0 && !targetDimension) {
+            // Default height when we have zero-row colors but no target
+            patternHeight = Math.max(definedRowsTotal * 2, 20);
+        } else {
+            patternHeight = Math.max(definedRowsTotal, 1);
+        }
+        
+        const width = config.width || 4;
+        const grid = [];
+        let currentRow = 0;
+        let colorIndex = 0;
+        
+        // If first and last colors have 0 rows, split remaining space between them
+        if (colors.length >= 2 && colors[0].rows === 0 && colors[colors.length - 1].rows === 0) {
+            const remainingRows = patternHeight - definedRowsTotal;
+            const rowsPerEndColor = Math.floor(remainingRows / 2);
+            const extraRow = remainingRows % 2;
+            
+            colors.forEach((colorConfig, index) => {
+                if (index === 0) {
+                    // First color gets half of remaining rows (plus extra if odd)
+                    const rowsToAdd = rowsPerEndColor + extraRow;
+                    for (let i = 0; i < rowsToAdd; i++) {
+                        grid.push(new Array(width).fill(index));
+                    }
+                } else if (index === colors.length - 1) {
+                    // Last color gets half of remaining rows
+                    const rowsToAdd = rowsPerEndColor;
+                    for (let i = 0; i < rowsToAdd; i++) {
+                        grid.push(new Array(width).fill(index));
+                    }
+                } else {
+                    // Middle colors use their defined row count
+                    for (let i = 0; i < colorConfig.rows; i++) {
+                        grid.push(new Array(width).fill(index));
+                    }
+                }
+            });
+        } else if (colors.every(c => c.rows === 0)) {
+            // If all colors have 0 rows, split area evenly
+            const rowsPerColor = Math.floor(patternHeight / colors.length);
+            let extra = patternHeight - rowsPerColor * colors.length;
+            colors.forEach((colorConfig, index) => {
+                let thisRows = rowsPerColor + (index < extra ? 1 : 0);
+                for (let i = 0; i < thisRows; i++) {
+                    grid.push(new Array(width).fill(index));
+                }
+            });
+        } else {
+            // Calculate remaining rows for zero-row colors
+            const remainingRowsAfterDefined = Math.max(0, patternHeight - definedRowsTotal);
+            const rowsPerZeroColor = zeroRowColors.length > 0 ? 
+                Math.floor(remainingRowsAfterDefined / zeroRowColors.length) : 0;
+            colors.forEach((colorConfig, index) => {
+                if (colorConfig.rows === 0) {
+                    // For zero-row colors, behavior depends on position
+                    if (index === 0) {
+                        // First color with 0 rows: fill from beginning until other colors start
+                        const rowsToAdd = remainingRowsAfterDefined;
+                        for (let i = 0; i < rowsToAdd && currentRow < patternHeight; i++) {
+                            grid.push(new Array(width).fill(colorIndex));
+                            currentRow++;
+                        }
+                    } else if (index === colors.length - 1) {
+                        // Last color with 0 rows: fill remaining rows at the end
+                        const rowsToAdd = patternHeight - currentRow;
+                        for (let i = 0; i < rowsToAdd; i++) {
+                            grid.push(new Array(width).fill(colorIndex));
+                            currentRow++;
+                        }
+                    } else {
+                        // Middle color with 0 rows: split remaining evenly (fallback behavior)
+                        const rowsToAdd = zeroRowColors.length > 1 ? 
+                            Math.floor(remainingRowsAfterDefined / zeroRowColors.length) : 
+                            remainingRowsAfterDefined;
+                        for (let i = 0; i < rowsToAdd && currentRow < patternHeight; i++) {
+                            grid.push(new Array(width).fill(colorIndex));
+                            currentRow++;
+                        }
+                    }
+                } else {
+                    // Add specified number of rows
+                    for (let i = 0; i < colorConfig.rows && currentRow < patternHeight; i++) {
+                        grid.push(new Array(width).fill(colorIndex));
+                        currentRow++;
+                    }
+                }
+                colorIndex++;
+            });
+        }
+        
+        // If we didn't fill all rows, repeat the pattern
+        while (grid.length < patternHeight) {
+            const remainingRows = patternHeight - grid.length;
+            const patternToRepeat = grid.slice(0, Math.min(grid.length, remainingRows));
+            grid.push(...patternToRepeat);
+        }
+        
+        const colorMap = {};
+        colors.forEach((colorConfig, index) => {
+            colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
+        });
+    return new ColorworkPattern(0, 0, grid, colorMap, { width, height: patternHeight });
+    } else if (type === 'vstripes') {
+        const { colors } = config;
+        
+        // Calculate pattern width - if targetDimension is provided and we have 0-column colors,
+        // use targetDimension, otherwise use sum of explicit column counts
+        let patternWidth;
+        const zeroColumnColors = colors.filter(c => c.columns === 0);
+        const definedColumnsTotal = colors.reduce((sum, c) => sum + (c.columns || 0), 0);
+        
+        if (zeroColumnColors.length > 0 && targetDimension) {
+            patternWidth = targetDimension;
+        } else if (zeroColumnColors.length > 0 && !targetDimension) {
+            // Default width when we have zero-column colors but no target
+            patternWidth = Math.max(definedColumnsTotal * 2, 20);
+        } else {
+            patternWidth = Math.max(definedColumnsTotal, 1);
+        }
+        
+        const height = config.height || 4;
+        const grid = Array(height).fill().map(() => []);
+        let currentColumn = 0;
+        let colorIndex = 0;
+        
+        // Calculate remaining columns for zero-column colors
+        const remainingColumnsAfterDefined = Math.max(0, patternWidth - definedColumnsTotal);
+        
+        // If first and last colors have 0 columns, split remaining space between them
+        if (colors.length >= 2 && colors[0].columns === 0 && colors[colors.length - 1].columns === 0) {
+            const remainingColumns = patternWidth - definedColumnsTotal;
+            const colsPerEndColor = Math.floor(remainingColumns / 2);
+            const extraCol = remainingColumns % 2;
+            
+            colors.forEach((colorConfig, index) => {
+                if (index === 0) {
+                    // First color gets half of remaining columns (plus extra if odd)
+                    const colsToAdd = colsPerEndColor + extraCol;
+                    for (let i = 0; i < colsToAdd; i++) {
+                        for (let row = 0; row < height; row++) {
+                            grid[row].push(index);
+                        }
+                    }
+                } else if (index === colors.length - 1) {
+                    // Last color gets half of remaining columns
+                    const colsToAdd = colsPerEndColor;
+                    for (let i = 0; i < colsToAdd; i++) {
+                        for (let row = 0; row < height; row++) {
+                            grid[row].push(index);
+                        }
+                    }
+                } else {
+                    // Middle colors use their defined column count
+                    for (let i = 0; i < colorConfig.columns; i++) {
+                        for (let row = 0; row < height; row++) {
+                            grid[row].push(index);
+                        }
+                    }
+                }
+            });
+        } else if (colors.every(c => c.columns === 0)) {
+            // If all colors have 0 columns, split area evenly
+            const colsPerColor = Math.floor(patternWidth / colors.length);
+            let extra = patternWidth - colsPerColor * colors.length;
+            colors.forEach((colorConfig, index) => {
+                let thisCols = colsPerColor + (index < extra ? 1 : 0);
+                for (let i = 0; i < thisCols; i++) {
+                    for (let row = 0; row < height; row++) {
+                        grid[row].push(index);
+                    }
+                }
+            });
+        } else {
+            colors.forEach((colorConfig, index) => {
+                if (colorConfig.columns === 0) {
+                    // For zero-column colors, behavior depends on position
+                    if (index === 0) {
+                        // First color with 0 columns: fill from beginning until other colors start
+                        const columnsToAdd = remainingColumnsAfterDefined;
+                        for (let i = 0; i < columnsToAdd && currentColumn < patternWidth; i++) {
+                            for (let row = 0; row < height; row++) {
+                                grid[row].push(colorIndex);
+                            }
+                            currentColumn++;
+                        }
+                    } else if (index === colors.length - 1) {
+                        // Last color with 0 columns: fill remaining columns at the end
+                        const columnsToAdd = patternWidth - currentColumn;
+                        for (let i = 0; i < columnsToAdd; i++) {
+                            for (let row = 0; row < height; row++) {
+                                grid[row].push(colorIndex);
+                            }
+                            currentColumn++;
+                        }
+                    } else {
+                        // Middle color with 0 columns: split remaining evenly (fallback behavior)
+                        const columnsToAdd = zeroColumnColors.length > 1 ? 
+                            Math.floor(remainingColumnsAfterDefined / zeroColumnColors.length) : 
+                            remainingColumnsAfterDefined;
+                        for (let i = 0; i < columnsToAdd && currentColumn < patternWidth; i++) {
+                            for (let row = 0; row < height; row++) {
+                                grid[row].push(colorIndex);
+                            }
+                            currentColumn++;
+                        }
+                    }
+                } else {
+                    // Add specified number of columns
+                    for (let i = 0; i < colorConfig.columns && currentColumn < patternWidth; i++) {
+                        for (let row = 0; row < height; row++) {
+                            grid[row].push(colorIndex);
+                        }
+                        currentColumn++;
+                    }
+                }
+                colorIndex++;
+            });
+        }
+        
+        // If we didn't fill all columns, repeat the pattern
+        while (grid[0].length < patternWidth) {
+            const remainingColumns = patternWidth - grid[0].length;
+            for (let row = 0; row < height; row++) {
+                const patternToRepeat = grid[row].slice(0, Math.min(grid[row].length, remainingColumns));
+                grid[row].push(...patternToRepeat);
+            }
+        }
+        
+        const colorMap = {};
+        colors.forEach((colorConfig, index) => {
+            colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
+        });
+    return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });
+    } else if (type === 'solid') {
+        return createSolidPattern(config.colors || [{color: '#ffffff'}]);
+    } else if (type === 'checkerboard') {
+        return createCheckerboardPattern(config.cellSize || 2, config.colors || [{color: '#ffffff'}, {color: '#000000'}]);
+    } else if (type === 'argyle') {
+        return createArgylePattern(config.colors || [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}]);
+    }
 }
 
 export default ColorworkCanvasEditor;

@@ -1,6 +1,7 @@
 import { theme } from 'antd'; // Import theme from antd
 
-const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0, fillColor) => {
+const renderTrapezoid = (trap, scale, xOffset = 0, yOffset = 0, fillColor, selectedId, onSelect) => {
+    const shape = trap;
     const width = Math.max(shape.baseA, shape.baseB) * scale;
     const xTopLeft = xOffset + (width - shape.baseB * scale) / 2 + (shape.baseBHorizontalOffset || 0) * scale;
     const xTopRight = xOffset + (width + shape.baseB * scale) / 2 + (shape.baseBHorizontalOffset || 0) * scale;
@@ -8,19 +9,43 @@ const renderTrapezoid = (shape, scale, xOffset = 0, yOffset = 0, fillColor) => {
     const xBottomRight = xOffset + (width + shape.baseA * scale) / 2;
     const yTop = yOffset;
     const yBottom = yOffset + shape.height * scale;
+    const isSelected = selectedId && trap.id && trap.id === selectedId;
+    const centerX = (xTopLeft + xTopRight + xBottomLeft + xBottomRight) / 4;
+    const centerY = (yTop + yBottom) / 2;
     return (
-        <polygon
-            key={`${xOffset}-${yOffset}`}
-            points={`${xTopLeft},${yTop} ${xTopRight},${yTop} ${xBottomRight},${yBottom} ${xBottomLeft},${yBottom}`}
-            fill={fillColor}
-            stroke="#a1a8af"
-            strokeWidth={3}
-            strokeLinejoin="round"
-        />
+        <g key={trap.id || `${xOffset}-${yOffset}`}>
+            <polygon
+                points={`${xTopLeft},${yTop} ${xTopRight},${yTop} ${xBottomRight},${yBottom} ${xBottomLeft},${yBottom}`}
+                fill={fillColor}
+                fillOpacity={isSelected ? 0.95 : 0.85}
+                stroke={isSelected ? '#1677ff' : '#a1a8af'}
+                strokeWidth={isSelected ? 4 : 3}
+                strokeLinejoin="round"
+                style={{ cursor: onSelect ? 'pointer' : 'default' }}
+                onClick={onSelect ? () => onSelect(trap.id) : undefined}
+                data-trapezoid-id={trap.id}
+                role={onSelect ? 'button' : undefined}
+                tabIndex={onSelect ? 0 : undefined}
+            />
+            {trap.label ? (
+                <text
+                    x={centerX}
+                    y={centerY}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    style={{ pointerEvents: 'none', fontWeight: 700, fontSize: '24px' }}
+                    fill="#ffffff"
+                    stroke="#000000"
+                    strokeWidth={2}
+                >
+                    {trap.label}
+                </text>
+            ) : null}
+        </g>
     );
 };
 
-const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor) => {
+const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor, selectedId, onSelect) => {
     const elements = [];
     const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
 
@@ -39,7 +64,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
 
     // Render the current trapezoid
-    elements.push(renderTrapezoid(trap, scale, xOffset, yOffset, fillColor));
+    elements.push(renderTrapezoid(trap, scale, xOffset, yOffset, fillColor, selectedId, onSelect));
 
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
@@ -49,14 +74,14 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
         // Compute initial offset to center the row
         let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
-        // **Reverse the order of successors before rendering**
-        for (let i = trap.successors.length - 1; i >= 0; i--) {
+        // Render successors left-to-right in their array order
+        for (let i = 0; i < trap.successors.length; i++) {
             const successor = trap.successors[i];
             const successorWidth = successorWidths[i];
 
             // Place each successor ABOVE the parent (but now in the correct order)
             const childDimensions = { minX: dimensions.minX, maxX: dimensions.maxX, minY: dimensions.minY, maxY: dimensions.maxY };
-            elements.push(...renderHierarchy(successor, scale, childXOffset, yTop - successor.height * scale, childDimensions, fillColor));
+            elements.push(...renderHierarchy(successor, scale, childXOffset, yTop - successor.height * scale, childDimensions, fillColor, selectedId, onSelect));
 
             // Update dimensions
             dimensions.minX = childDimensions.minX;
@@ -72,14 +97,14 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     return elements;
 };
 
-const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
+const PanelDiagram = ({ shape, label = "", size = 200, padding = 10, selectedId = null, onSelect = null }) => {
     const { token } = theme.useToken(); // Get the theme token
     const fillColor = token.colorPrimary; // Get the primary color from the theme
 
     let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     // First pass: Compute bounding box *including negative coordinates*
-    renderHierarchy(shape, 1, 0, 0, dimensions, fillColor);
+    renderHierarchy(shape, 1, 0, 0, dimensions, fillColor, null, null);
 
     const width = dimensions.maxX - dimensions.minX;
     const height = dimensions.maxY - dimensions.minY;
@@ -99,7 +124,7 @@ const PanelDiagram = ({ shape, label = "", size = 200, padding = 10 }) => {
 
     // Second pass: Render with the calculated scale.  This isn't strictly necessary, but is good practice.
     dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    const elements = renderHierarchy(shape, scaleFactor, 0, 0, dimensions, fillColor);
+    const elements = renderHierarchy(shape, scaleFactor, 0, 0, dimensions, fillColor, selectedId, onSelect);
 
     return (
         <div style={{ width: size + padding * 2, height: size + padding * 3, float: 'left' }}>

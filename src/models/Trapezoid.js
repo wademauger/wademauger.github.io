@@ -1,12 +1,12 @@
-import { StitchPlan } from "./StitchPlan.js";
-import { defaultGauge } from "./Gauge.js";
+import { StitchPlan } from "./StitchPlan";
+import { defaultGauge } from "./Gauge";
 
 class Trapezoid {
     /**
      * Represents a trapezoidal section of the knitting panel.
      * Responsible for increases and decreases in instructions.
      */
-    constructor(height, baseA, baseB, baseBHorizontalOffset = 0, successors = [], finishingSteps = [], sizeModifier = 1) {
+    constructor(height, baseA, baseB, baseBHorizontalOffset = 0, successors = [], finishingSteps = [], sizeModifier = 1, label = null) {
         this.height = height;
         this.baseA = baseA;
         this.baseB = baseB;
@@ -14,6 +14,7 @@ class Trapezoid {
         this.successors = successors;
         this.modificationScale = sizeModifier;
         this.finishingSteps = finishingSteps; // Array of extra instructions for finishing
+        this.label = label; // Optional display label (e.g., "A", "B", "C")
     }
 
     setSizeModifier(sizeModifier) {
@@ -51,7 +52,9 @@ class Trapezoid {
             json.baseB,
             json.baseBHorizontalOffset || 0,
             successors,
-            json.finishingSteps || [] // Ensure finishingSteps is an array
+            json.finishingSteps || [], // Ensure finishingSteps is an array
+            json.sizeModifier || 1,
+            json.label || null
         );
     }
 

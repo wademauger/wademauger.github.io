@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Select, Radio, Row, Col, Space, Typography, Divider, ColorPicker, InputNumber, Switch, Collapse } from 'antd';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Card, Button, Select, Radio, Row, Col, Space, Typography, Divider } from 'antd';
 import { ColorworkPattern } from '../models/ColorworkPattern.js';
 import { PanelColorworkComposer, CombinedPattern } from '../models/PanelColorworkComposer.js';
 import { InstructionGenerator } from '../models/InstructionGenerator.js';
@@ -7,28 +7,68 @@ import { Trapezoid } from '../models/Trapezoid.js';
 import { Panel } from '../models/Panel.js';
 import { Gauge } from '../models/Gauge.js';
 import { PanelDiagram } from './PanelDiagram.js';
-import { ColorworkPanelDiagram } from './ColorworkPanelDiagram.js';
 import ColorworkCanvasEditor from './ColorworkCanvasEditor.js';
 import CombinedView from './CombinedView.js';
+import InteractiveKnittingView from './InteractiveKnittingView.js';
 import './ColorworkPanelEditor.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+// Helper function for pattern configurations
+function getDefaultConfigForPattern(patternType) {
+    switch (patternType) {
+        case 'solid':
+            return { colors: [{ color: '#ffffff' }] };
+        case 'stripes':
+            return { 
+                colors: [
+                    { color: '#ffffff', rows: 2 }, 
+                    { color: '#000000', rows: 2 }
+                ], 
+                width: 4 
+            };
+        case 'checkerboard':
+            return { 
+                cellSize: 2, 
+                colors: [
+                    { color: '#ffffff' }, 
+                    { color: '#000000' }
+                ] 
+            };
+        case 'argyle':
+            return { 
+                colors: [
+                    { color: '#ffffff' }, 
+                    { color: '#ff0000' }, 
+                    { color: '#0000ff' }
+                ] 
+            };
+        default:
+            return { 
+                colors: [
+                    { color: '#ffffff' }, 
+                    { color: '#000000' }
+                ] 
+            };
+    }
+}
+
 /**
  * ColorworkPanelEditor - Main component for combining panels with colorwork
  * Now supports two-stage workflow: Settings/Preview -> Interactive Knitting
  */
-const ColorworkPanelEditor = ({
+const ColorworkPanelEditor = forwardRef(({ 
     initialPanel = null,
     initialColorwork = null,
     project = null,
     onSave = null,
-    onCancel = null
-}) => {
+    onCancel = null,
+    onStageChange = null
+}, ref) => {
     // Workflow state: 'settings' or 'knitting'
     const [currentStage, setCurrentStage] = useState('settings');
-
+    
     // Progress tracking for interactive knitting
     const [knittingProgress, setKnittingProgress] = useState({
         currentRow: 0,
@@ -64,36 +104,54 @@ const ColorworkPanelEditor = ({
     const [selectedPatternKey, setSelectedPatternKey] = useState('checkerboard');
 
     // Color assignment state
-    const [patternColors, setPatternColors] = useState(['#ffffff', '#000000']); // Default colors
+    const [patternColors, setPatternColors] = useState(['#cfcfcf']); // Default to soft gray
 
     // Pattern layers state for complex colorwork compositions
-    const [patternLayers, setPatternLayers] = useState([
-        {
-            id: 1,
-            name: 'Base Pattern',
-            pattern: null,
-            priority: 1,
-            settings: {
-                repeatMode: 'none',
-                repeatCountX: 0, // 0 means infinite
-                repeatCountY: 0, // 0 means infinite
-                offsetHorizontal: 0,
-                offsetVertical: 0
+    const [patternLayers, setPatternLayers] = useState(() => {
+        // Default to a solid background that repeats in both directions
+        const defaultSolid = new ColorworkPattern(
+            0, 0,
+            [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            { 0: { id: 0, label: 'Color 1', color: '#cfcfcf' } },
+            { width: 4, height: 4 }
+        );
+        return [
+            {
+                id: 1,
+                name: 'Base Pattern',
+                pattern: defaultSolid,
+                patternType: 'solid',
+                patternConfig: { colors: [{ color: '#cfcfcf' }] },
+                priority: 1,
+                settings: {
+                    repeatMode: 'both',
+                    repeatCountX: 0, // 0 means infinite
+                    repeatCountY: 0, // 0 means infinite
+                    offsetHorizontal: 0,
+                    offsetVertical: 0,
+                    colorMapping: {}
+                }
             }
-        }
-    ]);
+        ];
+    });
 
     // State for combination settings
     const [combinationSettings, setCombinationSettings] = useState({
         stretchMode: 'repeat',
         alignmentMode: 'center',
-        instructionFormat: 'compact' // Default to compact as requested
+        instructionFormat: 'compact'
     });
 
     // State for the combined result
     const [combinedPattern, setCombinedPattern] = useState(null);
     const [instructions, setInstructions] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [renderKey, setRenderKey] = useState(0); // Force re-renders when needed
 
     // Composers and generators
     const [composer] = useState(new PanelColorworkComposer());
@@ -102,19 +160,7 @@ const ColorworkPanelEditor = ({
     // Generate combined pattern when settings change (make this synchronous and fast)
     useEffect(() => {
         generateCombinedPattern();
-    }, [panelConfig, colorworkPattern, combinationSettings, patternColors, patternLayers]);
-
-    // Initialize with default pattern
-    useEffect(() => {
-        if (!colorworkPattern) {
-            handlePatternChange('checkerboard');
-        } else if (patternLayers[0] && !patternLayers[0].pattern) {
-            // Initialize first layer with current pattern
-            setPatternLayers(prev => prev.map((layer, index) => 
-                index === 0 ? { ...layer, pattern: colorworkPattern } : layer
-            ));
-        }
-    }, [colorworkPattern, patternLayers]);
+    }, [panelConfig, colorworkPattern, combinationSettings, patternColors]);
 
     const generateCombinedPattern = () => {
         if (!panelConfig.shape || !colorworkPattern) {
@@ -136,6 +182,7 @@ const ColorworkPanelEditor = ({
 
             // Update pattern colors
             const updatedPattern = new ColorworkPattern(
+                0, 0,
                 colorworkPattern.grid,
                 colorsObject,
                 {
@@ -153,7 +200,6 @@ const ColorworkPanelEditor = ({
 
             setCombinedPattern(combined);
             setInstructions(generatedInstructions);
-            setColorworkPattern(updatedPattern);
         } catch (error) {
             console.error('Error generating combined pattern:', error);
         } finally {
@@ -181,10 +227,15 @@ const ColorworkPanelEditor = ({
         if (selectedPattern) {
             setColorworkPattern(selectedPattern.pattern);
 
-            // Update the first layer with the new pattern
-            setPatternLayers(prev => prev.map((layer, index) => 
-                index === 0 ? { ...layer, pattern: selectedPattern.pattern } : layer
-            ));
+            // Update the first layer with the new pattern and proper configuration
+            setPatternLayers(prev => [...prev.map((layer, index) => 
+                index === 0 ? { 
+                    ...layer, 
+                    pattern: selectedPattern.pattern,
+                    patternType: patternKey,
+                    patternConfig: getDefaultConfigForPattern(patternKey)
+                } : { ...layer }
+            )]);
 
             // Set default colors based on pattern
             const colorCount = selectedPattern.pattern.getColorsUsed().length;
@@ -227,19 +278,41 @@ const ColorworkPanelEditor = ({
         const newColors = [...patternColors];
         newColors[colorIndex] = typeof newColor === 'string' ? newColor : newColor.toHexString();
         setPatternColors(newColors);
+        
+        // Update pattern layers with new colors
+        setPatternLayers(prev => [...prev.map(layer => {
+            if (layer.patternConfig && layer.patternConfig.colors) {
+                const updatedColors = layer.patternConfig.colors.map((colorConfig, index) => {
+                    if (index === colorIndex && newColors[index]) {
+                        return { ...colorConfig, color: newColors[index] };
+                    }
+                    return colorConfig;
+                });
+                return {
+                    ...layer,
+                    patternConfig: {
+                        ...layer.patternConfig,
+                        colors: updatedColors
+                    }
+                };
+            }
+            return layer;
+        })]);
+        
+        // Force immediate update by incrementing a render key
+        setRenderKey(prev => prev + 1);
     };
 
     const handleSave = () => {
         if (onSave && combinedPattern) {
             onSave({
-                combinedPattern,
-                instructions,
-                knittingProgress,
+                panel: panelConfig,
+                colorwork: colorworkPattern,
+                combined: combinedPattern,
+                instructions: instructions,
                 metadata: {
                     created: new Date().toISOString(),
-                    panelConfig,
-                    combinationSettings,
-                    stage: currentStage
+                    settings: combinationSettings
                 }
             });
         }
@@ -253,16 +326,27 @@ const ColorworkPanelEditor = ({
             completedRows: [],
             currentSection: 0
         });
+        if (onStageChange) {
+            onStageChange('knitting');
+        }
     };
+
+    // Expose methods to parent component
+    useImperativeHandle(ref, () => ({
+        startKnitting: handleStartKnitting
+    }));
 
     const handleBackToSettings = () => {
         setCurrentStage('settings');
+        if (onStageChange) {
+            onStageChange('settings');
+        }
     };
 
     const handleRowComplete = (rowIndex) => {
         setKnittingProgress(prev => ({
             ...prev,
-            currentRow: rowIndex + 1,
+            currentRow: Math.min(rowIndex + 1, instructions.length - 1),
             completedRows: [...prev.completedRows, rowIndex]
         }));
     };
@@ -271,85 +355,25 @@ const ColorworkPanelEditor = ({
     const renderSettingsView = () => (
         <div className="colorwork-settings-view">
             <ColorworkCanvasEditor
+                key={renderKey}
                 shape={panelConfig.shape}
-                patternLayers={patternLayers.filter(layer => layer.pattern)}
+                patternLayers={patternLayers}
                 gauge={panelConfig.gauge}
                 onLayersChange={setPatternLayers}
                 onGaugeChange={(newGauge) => handlePanelConfigChange('gauge', newGauge)}
             />
             
-            <div className="settings-actions" style={{ 
-                position: 'fixed', 
-                bottom: 0, 
-                left: 0, 
-                right: 0, 
-                padding: '16px 24px', 
-                background: 'white', 
-                borderTop: '1px solid #f0f0f0',
-                zIndex: 1000
-            }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                    <Space size="large">
-                        <Button onClick={onCancel}>Cancel</Button>
-                        <Button
-                            type="primary"
-                            size="large"
-                            onClick={handleStartKnitting}
-                            disabled={!combinedPattern || isGenerating}
-                        >
-                            Start Knitting →
-                        </Button>
-                    </Space>
-                </div>
-            </div>
         </div>
     );
 
     const renderKnittingView = () => (
-        <div className="interactive-knitting-view">
-            <div className="knitting-header">
-                <Button onClick={handleBackToSettings}>← Back to Settings</Button>
-                <Title level={2}>Interactive Knitting</Title>
-                <Text>
-                    Row {knittingProgress.currentRow + 1} of {instructions.length}
-                </Text>
-            </div>
-
-            <Row gutter={[16, 16]}>
-                {/* Progress Tracking */}
-                <Col xs={24} lg={8}>
-                    <Card title="Progress" className="progress-card">
-                        <div className="progress-info">
-                            <Text strong>Current Row: {knittingProgress.currentRow + 1}</Text>
-                            <br />
-                            <Text>Completed: {knittingProgress.completedRows.length} rows</Text>
-                            <div style={{ marginTop: 16 }}>
-                                <Button
-                                    type="primary"
-                                    onClick={() => handleRowComplete(knittingProgress.currentRow)}
-                                    disabled={knittingProgress.currentRow >= instructions.length}
-                                >
-                                    Mark Row Complete
-                                </Button>
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-
-                {/* Full Instructions & Visual */}
-                <Col xs={24} lg={16}>
-                    <Card title="Instructions & Visual" className="instructions-card">
-                        <CombinedView
-                            combinedPattern={combinedPattern}
-                            instructions={instructions}
-                            isLoading={isGenerating}
-                            currentRow={knittingProgress.currentRow}
-                            completedRows={knittingProgress.completedRows}
-                        />
-                    </Card>
-                </Col>
-            </Row>
-        </div>
+        <InteractiveKnittingView
+            combinedPattern={combinedPattern}
+            instructions={instructions}
+            knittingProgress={knittingProgress}
+            onRowComplete={handleRowComplete}
+            onBackToSettings={handleBackToSettings}
+        />
     );
 
     return (
@@ -358,7 +382,7 @@ const ColorworkPanelEditor = ({
             {currentStage === 'knitting' && renderKnittingView()}
         </div>
     );
-};
+});
 
 // Helper functions
 function convertToTrapezoid(shape) {
@@ -403,6 +427,7 @@ function createDefaultShape() {
 
 function createDefaultColorwork() {
     return new ColorworkPattern(
+        0, 0,
         [
             [0, 1, 0, 1, 0, 1, 0, 1],
             [1, 0, 1, 0, 1, 0, 1, 0],
@@ -420,6 +445,7 @@ function createDefaultColorwork() {
 
 function createSolidPattern() {
     return new ColorworkPattern(
+        0, 0,
         [
             [0, 0, 0, 0],
             [0, 0, 0, 0],
@@ -433,6 +459,7 @@ function createSolidPattern() {
 
 function createStripesPattern() {
     return new ColorworkPattern(
+        0, 0,
         [
             [0, 0, 1, 1, 0, 0],
             [0, 0, 1, 1, 0, 0],
@@ -446,6 +473,7 @@ function createStripesPattern() {
 
 function createCheckerboardPattern() {
     return new ColorworkPattern(
+        0, 0,
         [
             [0, 1, 0, 1, 0, 1, 0, 1],
             [1, 0, 1, 0, 1, 0, 1, 0],
@@ -463,6 +491,7 @@ function createCheckerboardPattern() {
 
 function createArgylePattern() {
     return new ColorworkPattern(
+        0, 0,
         [
             [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0],

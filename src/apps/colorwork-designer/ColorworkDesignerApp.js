@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
 import { PlusOutlined, HistoryOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.js';
+import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.js';
 import { Trapezoid } from '../../models/Trapezoid.js';
 import { Panel } from '../../models/Panel.js'; 
 import { Gauge } from '../../models/Gauge.js';
 import { ColorworkPattern } from '../../models/ColorworkPattern.js';
+import PanelShapeCreator from './PanelShapeCreator.js';
 import { garments, colorworkCharts, visualMotifs } from '../../data/garments.js';
 
 const { Title, Text } = Typography;
@@ -21,6 +23,8 @@ const ColorworkDesignerApp = () => {
     const [savedPatterns, setSavedPatterns] = useState([]);
     const [currentProject, setCurrentProject] = useState(null);
     const [showGarmentSelector, setShowGarmentSelector] = useState(false);
+    const [knittingStage, setKnittingStage] = useState('settings'); // 'settings' or 'knitting'
+    const editorRef = useRef(null);
     const [recentProjects, setRecentProjects] = useState([
         { id: 1, name: "Raglan Sweater Front", garment: "cozy-raglan-sweater", panel: "Front", lastModified: "2 hours ago" },
         { id: 2, name: "Hat Crown", garment: "seam-top-hat", panel: "Hat", lastModified: "1 day ago" }
@@ -87,6 +91,7 @@ const ColorworkDesignerApp = () => {
     const handleBackToHome = () => {
         setCurrentView('home');
         setCurrentProject(null);
+        setKnittingStage('settings'); // Reset stage when going back to home
     };
 
     // Helper function to fix legacy projects missing panelShape data
@@ -254,17 +259,33 @@ const ColorworkDesignerApp = () => {
         <div className="colorwork-editor-wrapper">
             <div className="editor-toolbar">
                 <Button onClick={handleBackToHome}>← Back to Home</Button>
-                <Title level={3} style={{ margin: 0 }}>
-                    {currentProject?.name || 'Untitled Project'}
+                <Title level={3} style={{ margin: 0, flex: 1 }}>
+                    Knitting Options for {currentProject?.name || 'Untitled Project'}
                 </Title>
+                {knittingStage === 'settings' && (
+                    <Button 
+                        type="primary" 
+                        size="large"
+                        onClick={() => {
+                            if (editorRef.current && editorRef.current.startKnitting) {
+                                editorRef.current.startKnitting();
+                                setKnittingStage('knitting');
+                            }
+                        }}
+                    >
+                        Start Knitting →
+                    </Button>
+                )}
             </div>
             
             <ColorworkPanelEditor
+                ref={editorRef}
                 initialPanel={currentProject?.panel}
                 initialColorwork={currentProject?.colorwork}
                 project={currentProject}
                 onSave={handleSaveProject}
                 onCancel={handleBackToHome}
+                onStageChange={(stage) => setKnittingStage(stage)}
             />
         </div>
     );
@@ -275,17 +296,26 @@ const ColorworkDesignerApp = () => {
                 {currentView === 'home' && renderHomeView()}
                 {currentView === 'editor' && renderEditorView()}
                 {currentView === 'shape-creator' && (
-                    <div style={{ padding: '20px' }}>
-                        <Button onClick={handleBackToHome}>← Back to Home</Button>
-                        <Title level={2}>Panel Shape Creator</Title>
-                        <Text>Coming soon: Custom panel shape creator</Text>
+                    <div className="panel-shape-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                        <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                            <Button onClick={handleBackToHome}>← Back to Home</Button>
+                            <Title level={3} style={{ margin: 0, flex: 1 }}>Panel Shape Creator</Title>
+                        </div>
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                            <PanelShapeCreator />
+                        </div>
                     </div>
                 )}
                 {currentView === 'colorwork-creator' && (
-                    <div style={{ padding: '20px' }}>
-                        <Button onClick={handleBackToHome}>← Back to Home</Button>
-                        <Title level={2}>Colorwork Pattern Creator</Title>
-                        <Text>Coming soon: Colorwork pattern grid editor</Text>
+                    <div className="colorwork-pattern-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                        <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                            <Button onClick={handleBackToHome}>← Back to Home</Button>
+                            <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
+                        </div>
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                            {/* Embed the same UX as /crafts/colorwork-designer */}
+                            <KnittingDesignerApp />
+                        </div>
                     </div>
                 )}
             </Content>

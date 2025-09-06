@@ -1,12 +1,96 @@
 import { ColorworkVisualizer } from './ColorworkVisualizer.js';
 
 /**
+ * CombinedInstruction - Represents a single row instruction with both shaping and colorwork
+ */
+export class CombinedInstruction {
+    constructor(row, machineRow, shaping, colorwork, visualChart = null) {
+        this.row = row;
+        this.machineRow = machineRow;
+        this.shaping = shaping;
+        this.colorwork = colorwork;
+        this.visualChart = visualChart;
+    }
+
+    hasShaping() {
+        return this.shaping && (
+            this.shaping.description.includes('Increase') || 
+            this.shaping.description.includes('Decrease')
+        );
+    }
+
+    hasColorwork() {
+        return this.colorwork && this.colorwork.colorSequence && this.colorwork.colorSequence.length > 0;
+    }
+
+    toString() {
+        let instruction = `Row ${this.row}`;
+        if (this.machineRow && this.machineRow !== this.row) {
+            instruction += ` (RC: ${this.machineRow})`;
+        }
+
+        if (this.hasShaping()) {
+            instruction += `: ${this.shaping.description}`;
+        }
+
+        if (this.hasColorwork()) {
+            instruction += ` Colorwork: ${this.colorwork.description}`;
+        }
+
+        return instruction;
+    }
+}
+
+/**
  * InstructionGenerator - Generates combined knitting instructions
  * Synchronizes shaping instructions with colorwork instructions
  */
 export class InstructionGenerator {
     constructor() {
         this.colorworkVisualizer = new ColorworkVisualizer();
+    }
+
+    /**
+     * Generate instructions in the specified format
+     * @param {CombinedPattern} combinedPattern - The combined pattern
+     * @param {string} format - 'compact', 'detailed', or 'visual'
+     */
+    generateInstructions(combinedPattern, format = 'compact') {
+        const instructions = this.generateCombinedInstructions(combinedPattern);
+        
+        // Apply format-specific filtering/transformation
+        switch (format) {
+            case 'compact':
+                return this.formatCompactInstructions(instructions);
+            case 'detailed':
+                return instructions; // Full instructions
+            case 'visual':
+                return this.formatVisualInstructions(instructions);
+            default:
+                return instructions;
+        }
+    }
+
+    /**
+     * Format instructions for compact display
+     */
+    formatCompactInstructions(instructions) {
+        // Return only key instructions, skip redundant details
+        return instructions.filter(instruction => 
+            instruction.hasShaping() || 
+            instruction.hasColorwork() || 
+            instruction.row % 5 === 1 // Every 5th row for reference
+        ).slice(0, 10); // Limit to first 10 for preview
+    }
+
+    /**
+     * Format instructions for visual display
+     */
+    formatVisualInstructions(instructions) {
+        // Return instructions with visual charts
+        return instructions.filter(instruction => 
+            instruction.visualChart
+        ).slice(0, 5); // Limit for preview
     }
 
     /**
@@ -162,49 +246,6 @@ export class InstructionGenerator {
     }
 
     /**
-     * Generate instructions in the specified format
-     * @param {CombinedPattern} combinedPattern - The combined pattern
-     * @param {string} format - 'compact', 'detailed', or 'visual'
-     */
-    generateInstructions(combinedPattern, format = 'compact') {
-        const instructions = this.generateCombinedInstructions(combinedPattern);
-        
-        // Apply format-specific filtering/transformation
-        switch (format) {
-            case 'compact':
-                return this.formatCompactInstructions(instructions);
-            case 'detailed':
-                return instructions; // Full instructions
-            case 'visual':
-                return this.formatVisualInstructions(instructions);
-            default:
-                return instructions;
-        }
-    }
-
-    /**
-     * Format instructions for compact display
-     */
-    formatCompactInstructions(instructions) {
-        // Return only key instructions, skip redundant details
-        return instructions.filter(instruction => 
-            instruction.hasShaping() || 
-            instruction.hasColorwork() || 
-            instruction.row % 5 === 1 // Every 5th row for reference
-        ).slice(0, 10); // Limit to first 10 for preview
-    }
-
-    /**
-     * Format instructions for visual display
-     */
-    formatVisualInstructions(instructions) {
-        // Return instructions with visual charts
-        return instructions.filter(instruction => 
-            instruction.visualChart
-        ).slice(0, 5); // Limit for preview
-    }
-
-    /**
      * Generate a visual chart for a specific row
      */
     generateRowVisualChart(combinedPattern, rowIndex) {
@@ -263,72 +304,5 @@ export class InstructionGenerator {
                 }
             }
         });
-    }
-}
-
-/**
- * CombinedInstruction - Represents a single row's complete knitting instruction
- */
-export class CombinedInstruction {
-    constructor(row, machineRow, shapingInstruction, colorworkInstruction, visualChart) {
-        this.row = row; // Human-readable row number
-        this.machineRow = machineRow; // Machine row counter
-        this.shaping = shapingInstruction;
-        this.colorwork = colorworkInstruction;
-        this.visualChart = visualChart;
-        this.timestamp = new Date().toISOString();
-    }
-
-    /**
-     * Get a human-readable description of the instruction
-     */
-    getDescription() {
-        const parts = [];
-        
-        if (this.row) {
-            parts.push(`Row ${this.row}`);
-        }
-        
-        if (this.machineRow) {
-            parts.push(`(RC ${this.machineRow})`);
-        }
-
-        if (this.shaping && this.shaping.description) {
-            parts.push(this.shaping.description);
-        }
-
-        if (this.colorwork && this.colorwork.description) {
-            parts.push(`Colorwork: ${this.colorwork.description}`);
-        }
-
-        return parts.join(' - ');
-    }
-
-    /**
-     * Check if this instruction has colorwork
-     */
-    hasColorwork() {
-        return this.colorwork && this.colorwork.colorSequence && this.colorwork.colorSequence.length > 0;
-    }
-
-    /**
-     * Check if this instruction has shaping
-     */
-    hasShaping() {
-        return this.shaping && this.shaping.description;
-    }
-
-    /**
-     * Export instruction as JSON
-     */
-    toJSON() {
-        return {
-            row: this.row,
-            machineRow: this.machineRow,
-            shaping: this.shaping,
-            colorwork: this.colorwork,
-            visualChart: this.visualChart,
-            timestamp: this.timestamp
-        };
     }
 }
