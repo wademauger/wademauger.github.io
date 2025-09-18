@@ -278,6 +278,7 @@ class GoogleDriveService {
       let file = await this.findLibraryFile();
       
       if (!file) {
+        console.log('Library file not found, creating new one...');
         file = await this.createLibraryFile();
       }
 
@@ -286,10 +287,35 @@ class GoogleDriveService {
         alt: 'media'
       });
 
-      return JSON.parse(response.body);
+      if (!response.body) {
+        throw new Error('Empty response from Google Drive API');
+      }
+
+      try {
+        return JSON.parse(response.body);
+      } catch (jsonError) {
+        throw new Error(`Invalid JSON in library file: ${jsonError.message}`);
+      }
     } catch (error) {
-      this.handleAuthError(error);
-      throw error;
+      // Enhanced error handling with specific messages
+      if (error.message?.includes('JSON')) {
+        throw error; // Re-throw JSON parsing errors as-is
+      }
+      
+      if (error.status === 401) {
+        throw new Error('Google Drive authentication expired (401)');
+      } else if (error.status === 403) {
+        throw new Error('Access forbidden to Google Drive (403) - check permissions');
+      } else if (error.status === 404) {
+        throw new Error('Library file not found in Google Drive (404)');
+      } else if (error.status === 500) {
+        throw new Error('Google Drive server error (500) - try again later');
+      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')) {
+        throw new Error('Network error - check your internet connection');
+      }
+      
+      await this.handleAuthError(error);
+      throw new Error(`Google Drive API error: ${error.message || error.toString()}`);
     }
   }
 

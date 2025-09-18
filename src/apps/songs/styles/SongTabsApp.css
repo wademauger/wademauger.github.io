@@ -1,11 +1,61 @@
 
-/* 2-Column Layout Styles */
+/* Vertical Stack Layout Styles */
 .song-tabs-app {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100vh; /* Use min-height instead of fixed height */
+  overflow: visible; /* Allow content to expand */
 }
 
+/* New vertical layout styles */
+.songs-content-vertical {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: visible; /* Allow content to expand */
+  padding: 1rem;
+  gap: 1rem;
+  min-height: fit-content; /* Allow natural content sizing */
+}
+
+.song-library-section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.song-library-section.no-selected-song {
+  /* When no song is selected, library takes up most space */
+  flex: 1;
+  min-height: 400px;
+}
+
+.song-library-section.has-selected-song {
+  /* When song is selected, library becomes compact */
+  flex: 0 0 auto;
+  max-height: 250px;
+}
+
+.selected-song-section {
+  flex: none; /* Allow natural sizing instead of forcing flex grow */
+  overflow: visible; /* Allow content to show fully */
+  display: flex;
+  flex-direction: column;
+  min-height: fit-content; /* Allow content to determine height */
+  width: 100%;
+}
+
+.song-view-header {
+  flex: 0 0 auto;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* Legacy 2-column layout styles (keeping for backwards compatibility) */
 .songs-content {
   display: grid;
   grid-template-columns: 1fr 3fr;
@@ -19,8 +69,43 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 1rem;
-  overflow-y: auto;
   min-width: 332px;
+}
+
+/* Responsive adjustments for vertical layout */
+@media (max-width: 768px) {
+  .songs-content-vertical {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .song-library-section.has-selected-song {
+    max-height: 200px;
+  }
+  
+  .song-view-header {
+    padding: 0.75rem;
+  }
+  
+  .song-view-header > div:first-child h2 {
+    font-size: 1.25rem;
+  }
+  
+  .song-view-header > div:first-child p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .song-view-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .song-library-section.has-selected-song {
+    max-height: 150px;
+  }
 }
 
 .empty-state {

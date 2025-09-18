@@ -16,32 +16,59 @@ import {
 } from '../../../store/songsSlice';
 
 function SongListTest({ library, selectedSong, editingEnabled, onSelectSong }) {
+  // Controlled open nodes: only root expanded by default
+  // Helper to generate unique node keys
+  const ROOT_KEY = "Music Library";
+  const [openNodes, setOpenNodes] = React.useState([]);
+  // ...existing code...
   const dispatch = useDispatch();
   const isGoogleDriveConnected = useSelector(selectIsGoogleDriveConnected);
+  const [filterText, setFilterText] = React.useState("");
 
-  // Transform library data to react-folder-tree format
+  // Transform library data to react-folder-tree format, with filter
   const treeData = useMemo(() => {
     if (!library || !library.artists) return { name: 'Music Library', isOpen: true, children: [] };
-    
+
+    const filter = (str) =>
+      filterText.trim() === "" ||
+      (str && str.toLowerCase().includes(filterText.trim().toLowerCase()));
+
+    // Helper to recursively collapse all nodes except root
+    const collapseAll = (node) => {
+      if (node && node.children && node.children.length > 0) {
+        node.children = node.children.map(child => {
+          return collapseAll({ ...child, isOpen: false });
+        });
+      }
+      return node;
+    };
+
     const tree = {
       name: 'Music Library',
+      key: ROOT_KEY,
       isOpen: true,
       children: []
     };
 
     library.artists.forEach(artist => {
-      const artistNode = {
+      const artistMatches = filter(artist.name);
+      const artistKey = `${ROOT_KEY}/${artist.name}`;
+      let artistNode = {
         name: artist.name,
-        isOpen: true,
+        key: artistKey,
+        isOpen: false,
         type: 'artist',
         children: []
       };
 
       if (artist.albums) {
         artist.albums.forEach(album => {
-          const albumNode = {
+          const albumMatches = filter(album.title);
+          const albumKey = `${artistKey}/${album.title}`;
+          let albumNode = {
             name: album.title,
-            isOpen: true,
+            key: albumKey,
+            isOpen: false,
             type: 'album',
             artistName: artist.name,
             children: []
@@ -49,32 +76,43 @@ function SongListTest({ library, selectedSong, editingEnabled, onSelectSong }) {
 
           if (album.songs) {
             album.songs.forEach(song => {
-              // Check if this song is currently selected
+              const songMatches = filter(song.title);
+              const songKey = `${albumKey}/${song.title}`;
               const isSelected = selectedSong && 
                 selectedSong.title === song.title && 
                 selectedSong.artist?.name === artist.name && 
                 selectedSong.album?.title === album.title;
-              
-              albumNode.children.push({
-                name: song.title,
-                type: 'song',
-                artistName: artist.name,
-                albumTitle: album.title,
-                songData: song,
-                isSelected: isSelected
-              });
+
+              if (artistMatches || albumMatches || songMatches) {
+                if (songMatches || albumMatches || artistMatches) {
+                  albumNode.children.push({
+                    name: song.title,
+                    key: songKey,
+                    type: 'song',
+                    artistName: artist.name,
+                    albumTitle: album.title,
+                    songData: song,
+                    isSelected: isSelected,
+                    isOpen: false
+                  });
+                }
+              }
             });
           }
 
-          artistNode.children.push(albumNode);
+          if (albumNode.children.length > 0 || albumMatches || artistMatches) {
+            artistNode.children.push(albumNode);
+          }
         });
       }
 
-      tree.children.push(artistNode);
+      if (artistNode.children.length > 0 || artistMatches) {
+        tree.children.push(artistNode);
+      }
     });
 
-    return tree;
-  }, [library, selectedSong]);
+    return collapseAll(tree);
+  }, [library, selectedSong, filterText]);
 
   const handleTreeStateChange = (newTreeState, event) => {
     console.log('Tree state changed:', { newTreeState, event });
@@ -189,13 +227,19 @@ function SongListTest({ library, selectedSong, editingEnabled, onSelectSong }) {
 
   return (
     <div>
-      <h3>Song Library</h3>
+      <div style={{ marginBottom: '10px' }}>
+        <input
+          type="text"
+          value={filterText}
+          onChange={e => setFilterText(e.target.value)}
+          placeholder="Search by song, artist, or album..."
+          style={{ width: '100%', padding: '8px', fontSize: '1em', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+      </div>
       <div style={{ 
         border: '1px solid #ddd', 
         borderRadius: '4px', 
-        padding: '10px',
-        maxHeight: '500px',
-        overflowY: 'auto'
+        padding: '10px'
       }}>
         <style>{`
           .FolderTree .TreeNode[data-selected="true"] {
@@ -210,6 +254,9 @@ function SongListTest({ library, selectedSong, editingEnabled, onSelectSong }) {
         `}</style>
         <FolderTree
           data={treeData}
+          nodeKey="key"
+          openNodes={openNodes}
+          onOpenNodesChange={setOpenNodes}
           onChange={handleTreeStateChange}
           onNameClick={handleNameClick}
           onNameChange={editingEnabled ? handleNameChange : undefined}

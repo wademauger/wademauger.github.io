@@ -727,6 +727,10 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 
     // Canvas event handlers
     const handleMouseDown = (e) => {
+        // Only handle left mouse button for panning
+        if (e.button !== 0) return;
+        
+        e.preventDefault();
         setIsDragging(true);
         setLastMousePos({ x: e.clientX, y: e.clientY });
     };
@@ -734,6 +738,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
     const handleMouseMove = (e) => {
         if (!isDragging) return;
         
+        e.preventDefault();
         const deltaX = e.clientX - lastMousePos.x;
         const deltaY = e.clientY - lastMousePos.y;
         
@@ -745,14 +750,59 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         setLastMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e) => {
+        e.preventDefault();
         setIsDragging(false);
+    };
+
+    // Prevent context menu on right click
+    const handleContextMenu = (e) => {
+        e.preventDefault();
     };
 
     const resetView = () => {
         setZoom(1);
         setPan({ x: 0, y: 0 });
     };
+
+    // Keyboard controls for zoom and pan
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Only handle when canvas area is focused/active
+            if (!canvasRef.current) return;
+            
+            // Zoom controls with + and - keys
+            if (e.key === '=' || e.key === '+') {
+                e.preventDefault();
+                setZoom(prev => Math.min(prev * 1.2, 5));
+            } else if (e.key === '-') {
+                e.preventDefault();
+                setZoom(prev => Math.max(prev / 1.2, 0.1));
+            } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                resetView();
+            }
+            
+            // Pan controls with arrow keys
+            const panStep = 20;
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setPan(prev => ({ ...prev, y: prev.y + panStep }));
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setPan(prev => ({ ...prev, y: prev.y - panStep }));
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                setPan(prev => ({ ...prev, x: prev.x + panStep }));
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setPan(prev => ({ ...prev, x: prev.x - panStep }));
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Canvas rendering effect
     useEffect(() => {
@@ -1088,6 +1138,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         icon={<ZoomInOutlined />} 
                         onClick={() => setZoom(prev => Math.min(prev * 1.2, 5))}
                         size="small"
+                        title="Zoom in (+)"
                     >
                     </Button>
                     <Slider
@@ -1097,20 +1148,26 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         value={zoom}
                         onChange={setZoom}
                         style={{ width: 100 }}
+                        tooltip={{ formatter: (value) => `${Math.round(value * 100)}%` }}
                     />
                     <Button 
                         icon={<ZoomOutOutlined />} 
                         onClick={() => setZoom(prev => Math.max(prev / 1.2, 0.1))}
                         size="small"
+                        title="Zoom out (-)"
                     >
                     </Button>
                     <Button 
                         icon={<ExpandOutlined />} 
                         onClick={resetView}
                         size="small"
+                        title="Reset view (Ctrl+0)"
                     >
-                        Reset Zoom
+                        Reset
                     </Button>
+                    <Text style={{ fontSize: '11px', color: '#666', marginLeft: 8 }}>
+                        Drag to pan • +/- to zoom • Arrows to move
+                    </Text>
                 </Space>
             </div>
             
@@ -1124,7 +1181,12 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                        onContextMenu={handleContextMenu}
+                        style={{ 
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                            userSelect: 'none',
+                            touchAction: 'none'
+                        }}
                     />
                 </div>
 

@@ -15,6 +15,7 @@ const RecipesApp = React.lazy(() => import('./apps/recipes/RecipesApp'));
 const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern'));
 const KnittingDesignerApp = React.lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
 const ColorworkDesignerApp = React.lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
+const UnifiedDesignerApp = React.lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -130,6 +131,15 @@ function App() {
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
                   <ColorworkDesignerApp />
+                </Layout>
+              </Suspense>
+            } />
+            
+            {/* Unified Designer App Routes */}
+            <Route path="/crafts/unified-designer" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Layout>
+                  <UnifiedDesignerApp />
                 </Layout>
               </Suspense>
             } />

@@ -7,6 +7,7 @@ import AlbumList from './components/AlbumList';
 import SongDetail from './components/SongDetail';
 import GoogleSignInButton from './components/GoogleSignInButton';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
+import AddSongModal from '../../components/AddSongModal';
 import './styles/SongTabsApp.css';
 import { Switch, Spin } from 'antd';
 import { FaUnlock, FaLock } from 'react-icons/fa';
@@ -28,15 +29,13 @@ const SongTabsApp = () => {
   // New state variables for adding entries
   const [isAddingArtist, setIsAddingArtist] = useState(false);
   const [isAddingAlbum, setIsAddingAlbum] = useState(false);
-  const [isAddingSong, setIsAddingSong] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newArtistName, setNewArtistName] = useState('');
   const [newAlbumTitle, setNewAlbumTitle] = useState('');
-  const [newSongTitle, setNewSongTitle] = useState('');
 
   // Refs for input focus
   const newArtistInputRef = useRef(null);
   const newAlbumInputRef = useRef(null);
-  const newSongInputRef = useRef(null);
 
   const { artistName, albumTitle, songTitle } = useParams();
   const navigate = useNavigate();
@@ -322,9 +321,7 @@ const SongTabsApp = () => {
   };
 
   const startAddingSong = () => {
-    setIsAddingSong(true);
-    setNewSongTitle('');
-    // Focus will be set with useEffect
+    setIsAddModalOpen(true);
   };
 
   // Handle adding new artist
@@ -472,112 +469,167 @@ const SongTabsApp = () => {
     }
   };
 
-  // Handle adding new song
-  const handleAddSong = async () => {
-    if (newSongTitle.trim() && selectedArtist && selectedAlbum) {
-      const tempSong = {
-        title: newSongTitle.trim(),
-        chords: '',
-        lyrics: '',
-        notes: '',
-        isOptimistic: true
-      };
+  // Handle adding new song from modal
+  const handleAddSong = async (songData) => {
+    // Close modal first
+    setIsAddModalOpen(false);
+    
+    const { title, artist: artistName, album: albumTitle, lyrics } = songData;
+    
+    // Find or create artist and album
+    let targetArtist = library.artists.find(a => a.name === artistName);
+    let targetAlbum = null;
+    
+    if (targetArtist) {
+      targetAlbum = targetArtist.albums.find(a => a.title === albumTitle);
+    }
+    
+    const tempSong = {
+      title: title.trim(),
+      chords: '',
+      lyrics: lyrics || '',
+      notes: '',
+      isOptimistic: true
+    };
 
-      // Optimistic update
+    // Optimistic update - handle creating artist and/or album if needed
+    setLibrary(prevLibrary => {
+      const updatedLibrary = { ...prevLibrary };
+      let artistIndex = updatedLibrary.artists.findIndex(a => a.name === artistName);
+      
+      // Create artist if it doesn't exist
+      if (artistIndex === -1) {
+        updatedLibrary.artists.push({
+          name: artistName,
+          albums: [],
+          isOptimistic: true
+        });
+        artistIndex = updatedLibrary.artists.length - 1;
+      }
+      
+      let albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === albumTitle);
+      
+      // Create album if it doesn't exist
+      if (albumIndex === -1) {
+        updatedLibrary.artists[artistIndex].albums.push({
+          title: albumTitle,
+          songs: [],
+          isOptimistic: true
+        });
+        albumIndex = updatedLibrary.artists[artistIndex].albums.length - 1;
+      }
+      
+      // Add song to album
+      updatedLibrary.artists[artistIndex].albums[albumIndex] = {
+        ...updatedLibrary.artists[artistIndex].albums[albumIndex],
+        songs: [...updatedLibrary.artists[artistIndex].albums[albumIndex].songs, tempSong]
+      };
+      
+      return updatedLibrary;
+    });
+
+    try {
+      if (isGoogleDriveConnected) {
+        // Load current library first
+        const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
+        
+        // Find or create artist
+        let artist = currentLibrary.artists.find(a => a.name === artistName);
+        if (!artist) {
+          artist = { name: artistName, albums: [] };
+          currentLibrary.artists.push(artist);
+        }
+        
+        // Find or create album
+        let album = artist.albums.find(a => a.title === albumTitle);
+        if (!album) {
+          album = { title: albumTitle, songs: [] };
+          artist.albums.push(album);
+        }
+        
+        // Add song
+        const songDataForSave = {
+          name: title.trim(),
+          title: title.trim(), // Some parts of the code expect 'title'
+          chords: '',
+          lyrics: lyrics || '',
+          notes: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        album.songs.push(songDataForSave);
+        await GoogleDriveServiceModern.saveLibrary(currentLibrary);
+        
+        // Reload the library to get the updated data
+        const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
+        setLibrary(updatedLibrary);
+        
+        // Auto-select the new song
+        const newArtist = updatedLibrary.artists.find(a => a.name === artistName);
+        const newAlbum = newArtist?.albums.find(a => a.title === albumTitle);
+        const newSong = newAlbum?.songs.find(s => s.title === title.trim());
+        
+        if (newArtist && newAlbum && newSong) {
+          setSelectedArtist(newArtist);
+          setSelectedAlbum(newAlbum);
+          setSelectedSong(newSong);
+          navigate(`/crafts/tabs/artist/${encodeURIComponent(artistName)}/album/${encodeURIComponent(albumTitle)}/song/${encodeURIComponent(title.trim())}`);
+        }
+      } else {
+        // For mock library, remove optimistic flag
+        setLibrary(prevLibrary => {
+          const updatedLibrary = { ...prevLibrary };
+          const artistIndex = updatedLibrary.artists.findIndex(a => a.name === artistName);
+          if (artistIndex !== -1) {
+            const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === albumTitle);
+            if (albumIndex !== -1) {
+              updatedLibrary.artists[artistIndex].albums[albumIndex] = {
+                ...updatedLibrary.artists[artistIndex].albums[albumIndex],
+                songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.map(song => 
+                  song.isOptimistic && song.title === tempSong.title
+                    ? { 
+                        ...song, 
+                        isOptimistic: false,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                      }
+                    : song
+                )
+              };
+              
+              // Remove optimistic flags from artist and album if they were new
+              if (updatedLibrary.artists[artistIndex].isOptimistic) {
+                delete updatedLibrary.artists[artistIndex].isOptimistic;
+              }
+              if (updatedLibrary.artists[artistIndex].albums[albumIndex].isOptimistic) {
+                delete updatedLibrary.artists[artistIndex].albums[albumIndex].isOptimistic;
+              }
+            }
+          }
+          return updatedLibrary;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add song:', error);
+      // Revert optimistic update
       setLibrary(prevLibrary => {
         const updatedLibrary = { ...prevLibrary };
-        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
+        const artistIndex = updatedLibrary.artists.findIndex(a => a.name === artistName);
         if (artistIndex !== -1) {
-          const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
+          const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === albumTitle);
           if (albumIndex !== -1) {
             updatedLibrary.artists[artistIndex].albums[albumIndex] = {
               ...updatedLibrary.artists[artistIndex].albums[albumIndex],
-              songs: [...updatedLibrary.artists[artistIndex].albums[albumIndex].songs, tempSong]
+              songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.filter(song =>
+                !(song.isOptimistic && song.title === tempSong.title))
             };
           }
         }
         return updatedLibrary;
       });
-      setIsAddingSong(false);
-      setNewSongTitle('');
-
-      try {
-        if (isGoogleDriveConnected) {
-          // Load current library first
-          const currentLibrary = await GoogleDriveServiceModern.loadLibrary();
-          
-          // Add song using the modern service - find by names instead of IDs
-          const artist = currentLibrary.artists.find(a => a.name === selectedArtist.name);
-          const album = artist?.albums.find(a => a.title === selectedAlbum.title);
-          
-          if (artist && album) {
-            const songData = {
-              name: newSongTitle.trim(),
-              chords: '',
-              lyrics: '',
-              notes: '',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            };
-            
-            // Add song directly to the album
-            album.songs.push(songData);
-            await GoogleDriveServiceModern.saveLibrary(currentLibrary);
-          }
-          
-          // Reload the library to get the updated data
-          const updatedLibrary = await GoogleDriveServiceModern.loadLibrary();
-          setLibrary(updatedLibrary);
-        } else {
-          // For mock library, just keep the optimistic update without ID generation
-          setLibrary(prevLibrary => {
-            const updatedLibrary = { ...prevLibrary };
-            const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
-            if (artistIndex !== -1) {
-              const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
-              if (albumIndex !== -1) {
-                updatedLibrary.artists[artistIndex].albums[albumIndex] = {
-                  ...updatedLibrary.artists[artistIndex].albums[albumIndex],
-                  songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.map(song => 
-                    song.isOptimistic && song.title === tempSong.title
-                      ? { 
-                          ...song, 
-                          isOptimistic: true,
-                          createdAt: new Date().toISOString(),
-                          updatedAt: new Date().toISOString()
-                        }
-                      : song
-                  )
-                };
-              }
-            }
-            return updatedLibrary;
-          });
-        }
-      } catch (error) {
-        console.error('Failed to add song:', error);
-        // Revert optimistic update
-        setLibrary(prevLibrary => {
-          const updatedLibrary = { ...prevLibrary };
-          const artistIndex = updatedLibrary.artists.findIndex(a => a.name === selectedArtist.name);
-          if (artistIndex !== -1) {
-            const albumIndex = updatedLibrary.artists[artistIndex].albums.findIndex(a => a.title === selectedAlbum.title);
-            if (albumIndex !== -1) {
-              updatedLibrary.artists[artistIndex].albums[albumIndex] = {
-                ...updatedLibrary.artists[artistIndex].albums[albumIndex],
-                songs: updatedLibrary.artists[artistIndex].albums[albumIndex].songs.filter(song =>
-                  !(song.isOptimistic && song.title === tempSong.title))
-              };
-            }
-          }
-          return updatedLibrary;
-        });
-        // Show the input again for retry
-        setIsAddingSong(true);
-        setNewSongTitle(tempSong.title);
-      }
-    } else {
-      setIsAddingSong(false);
+      // Re-open modal with the data for retry
+      setIsAddModalOpen(true);
     }
   };
 
@@ -602,12 +654,6 @@ const SongTabsApp = () => {
       newAlbumInputRef.current.focus();
     }
   }, [isAddingAlbum]);
-
-  useEffect(() => {
-    if (isAddingSong && newSongInputRef.current) {
-      newSongInputRef.current.focus();
-    }
-  }, [isAddingSong]);
 
   // When a song is selected, if it has a transpose property, sync it to redux
   useEffect(() => {
@@ -648,6 +694,24 @@ const SongTabsApp = () => {
           </span>
         </div>
         <div className="header-controls">
+          {isGoogleDriveConnected && editingEnabled && (
+            <button 
+              className="add-song-header-button"
+              onClick={startAddingSong}
+              style={{
+                marginRight: '1rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              + Add Song
+            </button>
+          )}
           <div className="google-drive-section">
             {isGoogleDriveConnected ? (
               <GoogleSignInButton
@@ -744,28 +808,11 @@ const SongTabsApp = () => {
             <h2>
               Songs
               {isGoogleDriveConnected && editingEnabled && (
-                <button className="add-button" onClick={startAddingSong} disabled={isAddingSong}>
+                <button className="add-button" onClick={startAddingSong}>
                   +
                 </button>
               )}
             </h2>
-            {isAddingSong && (
-              <div className="add-item-container">
-                <input
-                  ref={newSongInputRef}
-                  type="text"
-                  value={newSongTitle}
-                  onChange={(e) => setNewSongTitle(e.target.value)}
-                  onKeyDown={(e) => handleKeyPress(e, handleAddSong, () => setIsAddingSong(false))}
-                  placeholder="Song name..."
-                  className="add-item-input"
-                />
-                <div className="add-item-controls">
-                  <button onClick={handleAddSong}>Save</button>
-                  <button onClick={() => setIsAddingSong(false)}>Cancel</button>
-                </div>
-              </div>
-            )}
             <ul className="song-list">
               {selectedAlbum.songs.map(song => {
                 const className = [
@@ -797,6 +844,51 @@ const SongTabsApp = () => {
             editingEnabled={!!editingEnabled}
           />
         </div>
+      )}
+      
+      {/* Add Song Modal */}
+      <AddSongModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleAddSong}
+        library={library}
+        selectedArtist={selectedArtist}
+        selectedAlbum={selectedAlbum}
+      />
+      
+      {/* Floating Add Song Button */}
+      {isGoogleDriveConnected && editingEnabled && (
+        <button
+          className="floating-add-button"
+          onClick={startAddingSong}
+          title="Add New Song"
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#45a049';
+            e.target.style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#4CAF50';
+            e.target.style.transform = 'scale(1)';
+          }}
+        >
+          +
+        </button>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 // Simplified SongTabsApp.js using TreeSelect and modal for adding songs with Redux state management
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { pinChord, loadChordFingerings } from '../../store/chordsSlice';
 import { 
@@ -8,18 +8,22 @@ import {
   setSelectedSong, 
   setGoogleDriveConnection,
   setUserInfo,
-  setEditingEnabled,
   clearError,
-  loadMockLibrary
+  loadMockLibrary,
+  addSong,
+  addArtist,
+  addAlbum
 } from '../../store/songsSlice';
 import SongDetail from './components/SongDetail';
+import AlbumArt from './components/AlbumArt';
+import SongEditor from './components/SongEditor';
+// import React from 'react';
 import SongListTest from './components/SongListTest';
 import GoogleSignInButton from './components/GoogleSignInButton';
 import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Switch, Button, Spin, App } from 'antd';
-import { FaUnlock, FaLock } from 'react-icons/fa';
+import { Button, Spin, App } from 'antd';
 
 const SongTabsApp = () => {
   const { message } = App.useApp();
@@ -37,12 +41,12 @@ const SongTabsApp = () => {
     isGoogleDriveConnected,
     userInfo,
     isLoading,
-    editingEnabled,
     error
   } = useSelector(state => state.songs);
   
   // Local component state for UI interactions only
-  // Note: Modal removed - using inline editing with RichTreeView
+  const [isEditingSong, setIsEditingSong] = useState(false);
+  const [isCreatingNewSong, setIsCreatingNewSong] = useState(false);
 
   // Helper function to count total songs in library
   const getTotalSongsCount = useCallback(() => {
@@ -66,13 +70,45 @@ const SongTabsApp = () => {
     } catch (error) {
       console.error('Failed to load library from Google Drive:', error);
       
+      // Detailed error analysis
+      let errorMessage = 'Failed to load library from Google Drive';
+      
+      if (typeof error === 'string') {
+        if (error.includes('User not signed in')) {
+          errorMessage = 'Please sign in to Google Drive to access your music library';
+        } else if (error.includes('JSON')) {
+          errorMessage = 'Invalid JSON format in Google Drive library file';
+        } else if (error.includes('401')) {
+          errorMessage = 'Google Drive authentication expired - please sign in again';
+        } else if (error.includes('403')) {
+          errorMessage = 'Access denied to Google Drive - check permissions';
+        } else if (error.includes('404')) {
+          errorMessage = 'Library file not found in Google Drive - will create new one';
+        } else if (error.includes('500')) {
+          errorMessage = 'Google Drive server error - try again later';
+        } else if (error.includes('Network Error') || error.includes('Failed to fetch')) {
+          errorMessage = 'Network error - check your internet connection';
+        } else {
+          errorMessage = `Google Drive error: ${error}`;
+        }
+      } else if (error?.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      console.error('Detailed error info:', {
+        errorType: typeof error,
+        errorMessage: error?.message || error,
+        errorStack: error?.stack,
+        timestamp: new Date().toISOString()
+      });
+      
       // Check if this is an authentication error
-      if (isAuthError(error)) {
-        message.error('Your Google Drive session has expired. Please sign in again.');
+      if (isAuthError(error) || errorMessage.includes('sign in') || errorMessage.includes('authentication')) {
+        message.error(errorMessage);
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
       } else {
-        message.error('Failed to load library from Google Drive');
+        message.error(errorMessage);
       }
       
       // Fall back to mock library
@@ -98,6 +134,45 @@ const SongTabsApp = () => {
       })).unwrap();
       
       message.success('Song updated successfully');
+    } catch (error) {
+      console.error('Failed to update song:', error);
+      
+      // Check if this is an authentication error
+      if (isAuthError(error)) {
+        // Update UI state to reflect that user is no longer authenticated
+        dispatch(setGoogleDriveConnection(false));
+        dispatch(setUserInfo(null));
+        
+        message.error('Your Google Drive session has expired. Please sign in again to save changes.');
+      } else {
+        message.error('Failed to save song changes. Please try again.');
+      }
+    }
+  };
+
+  // Handler for song updates from the editor (exits editing mode on success)
+  const handleSongEditorSave = async (updatedSongData, newMetadata = null) => {
+    if (!selectedSong) return;
+    
+    try {
+      // Use original metadata unless new metadata is provided
+      const artistName = newMetadata?.artist || selectedSong.artist.name;
+      const albumTitle = newMetadata?.album || selectedSong.album.title;
+      const songTitle = updatedSongData.title || selectedSong.title;
+      
+      await dispatch(updateSong({
+        artistName: selectedSong.artist.name, // Original location for deletion
+        albumTitle: selectedSong.album.title, // Original location for deletion
+        songTitle: selectedSong.title, // Original song title for deletion
+        updatedSongData,
+        newArtistName: artistName, // New location if different
+        newAlbumTitle: albumTitle, // New location if different
+        newSongTitle: songTitle, // New song title if different
+        isGoogleDriveConnected
+      })).unwrap();
+      
+      message.success('Song updated successfully');
+      setIsEditingSong(false); // Exit editing mode after successful save
     } catch (error) {
       console.error('Failed to update song:', error);
       
@@ -184,8 +259,11 @@ const SongTabsApp = () => {
     }
   };
 
+  // Ref for lyrics section in SongEditor
+  const lyricsSectionRef = React.useRef(null);
+
   // Handle song selection from SongList
-  const handleSongSelect = useCallback((songData, artistName, albumTitle) => {
+  const handleSongSelect = React.useCallback((songData, artistName, albumTitle) => {
     if (songData && artistName && albumTitle) {
       // Create normalized song object for Redux
       const normalizedSong = {
@@ -195,7 +273,16 @@ const SongTabsApp = () => {
         album: { title: albumTitle }
       };
       dispatch(setSelectedSong(normalizedSong));
-      
+
+      // Scroll to lyrics section after selecting song
+      setTimeout(() => {
+        if (lyricsSectionRef.current) {
+          lyricsSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
+
       // Load chord fingerings if they exist in the song data
       if (songData.chordFingerings) {
         dispatch(loadChordFingerings(songData.chordFingerings));
@@ -233,89 +320,277 @@ const SongTabsApp = () => {
     dispatch(pinChord(chord));
   };
 
-  // Handle editing toggle
-  const handleEditingToggle = (enabled) => {
-    dispatch(setEditingEnabled(enabled));
+  // Open new song editor
+  const openNewSongEditor = () => {
+    setIsCreatingNewSong(true);
+  };
+
+  // Handle new song creation using SongEditor
+  const handleCreateNewSong = async (newSongData) => {
+    try {
+      const { title, artist, album, lyrics } = newSongData;
+      
+      // First ensure the artist exists
+      const existingArtist = library.artists?.find(a => a.name === artist);
+      
+      if (!existingArtist) {
+        await dispatch(addArtist({
+          artistName: artist,
+          isGoogleDriveConnected
+        })).unwrap();
+      }
+      
+      // Then ensure the album exists
+      const artistAfterAdd = library.artists?.find(a => a.name === artist) || existingArtist;
+      const existingAlbum = artistAfterAdd?.albums?.find(a => a.title === album);
+      
+      if (!existingAlbum) {
+        await dispatch(addAlbum({
+          artistName: artist,
+          albumTitle: album,
+          isGoogleDriveConnected
+        })).unwrap();
+      }
+      
+      // Finally, add the song
+      await dispatch(addSong({
+        artistName: artist,
+        albumTitle: album,
+        songData: {
+          title: title,
+          lyrics: lyrics || '',
+          notes: '',
+          chords: ''
+        },
+        isGoogleDriveConnected
+      })).unwrap();
+      
+      // Reload library to get updated data
+      const finalLibrary = await dispatch(loadLibraryFromDrive()).unwrap();
+      
+      // Auto-select the new song
+      const newArtist = finalLibrary.artists?.find(a => a.name === artist);
+      const newAlbum = newArtist?.albums?.find(a => a.title === album);
+      const newSong = newAlbum?.songs?.find(s => s.title === title);
+      
+      if (newSong) {
+        handleSongSelect(newSong, artist, album);
+      }
+      
+      // Close the new song editor
+      setIsCreatingNewSong(false);
+      
+      message.success('Song created successfully!');
+    } catch (error) {
+      console.error('Failed to create song:', error);
+      message.error('Failed to create song. Please try again.');
+    }
   };
 
   return (
     <div className="song-tabs-app">
-      {/* Header with Edit Toggle, Library Count, and Sign-in Button */}
-      <div className="header-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        {/* Edit Mode Toggle - Left side */}
-        <div className="edit-controls">
-          <label className="edit-toggle">
-            <Switch
-              checked={editingEnabled}
-              onChange={handleEditingToggle}
-              checkedChildren={<FaUnlock />}
-              unCheckedChildren={<FaLock />}
-            />
-            <span className="edit-label">
-              {editingEnabled ? 'Editing Enabled' : 'Read Only'}
-            </span>
-          </label>
-        </div>
-
-        {/* Library Count - Center */}
-        <div className="library-status-header">
-          {isLoading ? (
-            <div className="loading-indicator-header">
-              <Spin size="small" />
-              <span className="loading-text-header">Loading songs...</span>
-            </div>
-          ) : (
-            <span className="library-count-header">
-              {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
-            </span>
-          )}
-        </div>
-
-        {/* Google Drive Sign-in - Right side */}
-        <div className="google-drive-section">
-          {isGoogleDriveConnected ? (
-            <GoogleSignInButton
-              isSignedIn={true}
-              onSignOut={handleGoogleSignOut}
-              disabled={isLoading}
-              userInfo={userInfo}
-            />
-          ) : (
-            <GoogleSignInButton
-              onSuccess={handleGoogleSignInSuccess}
-              onError={handleGoogleSignInError}
-              disabled={isLoading}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Main Content - 2 Column Layout */}
-      <div className="songs-content">
-        <SongListTest 
-          library={library}
-          onSelectSong={handleSongSelect}
-          selectedSong={selectedSong}
-          editingEnabled={editingEnabled}
-        />
-
-        {selectedSong ? (
-          <SongDetail
-            song={selectedSong}
-            artist={selectedSong.artist}
-            album={selectedSong.album}
-            editingEnabled={editingEnabled}
-            onUpdateSong={handleSongUpdate}
-            onPinChord={handlePinChord}
-          />
-        ) : (
-          <div className="empty-state">
-            <p>Select a song to see its chord chart, or toggle the edit lock to add and edit songs in your Google Drive library.</p>
-            {!isGoogleDriveConnected && (
-              <p style={{ color: '#666', fontSize: '0.9em' }}>
-                Sign in to Google Drive to access your saved songs, or use the mock library to get started.
-              </p>
+      {/* Main Content - Vertical Stack Layout */}
+      <div className="songs-content-vertical" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        padding: '1rem',
+        margin: (isEditingSong || isCreatingNewSong) ? '0' : '0 auto',
+        width: (isEditingSong || isCreatingNewSong) ? '100%' : 'auto',
+        maxWidth: (isEditingSong || isCreatingNewSong) ? 'none' : '1200px'
+      }}>
+        {/* Selected Song Content - Show First When Song is Selected */}
+        {selectedSong && (
+          <div className="selected-song-section" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            padding: '1.5rem',
+            width: '100%',
+            minHeight: 'fit-content'
+          }}>
+            {isEditingSong ? (
+              <SongEditor
+                song={selectedSong}
+                artist={selectedSong.artist}
+                album={selectedSong.album}
+                onSave={handleSongEditorSave}
+                onCancel={() => setIsEditingSong(false)}
+                isGoogleDriveConnected={isGoogleDriveConnected}
+                lyricsRef={lyricsSectionRef}
+              />
+            ) : (
+              <div style={{ width: '100%' }}>
+                {/* Song View Header with Google Drive, Edit, and Add Buttons */}
+                <div className="song-view-header" style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'flex-start',
+                  marginBottom: '1rem',
+                  gap: '1rem'
+                }}>
+                  <div>
+                    <h2 style={{ margin: 0 }}>{selectedSong.title}</h2>
+                    <p style={{ margin: '0.25rem 0 0 0', color: '#666' }}>
+                      {selectedSong.artist?.name} - {selectedSong.album?.title}
+                    </p>
+                  </div>
+                  
+                  <AlbumArt artist={selectedSong.artist?.name} album={selectedSong.album?.title} />
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    {/* Go to Library Button */}
+                    <Button
+                      onClick={() => {
+                        const librarySection = document.querySelector('.song-library-section');
+                        if (librarySection) {
+                          librarySection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      style={{
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#d9d9d9',
+                        color: '#333'
+                      }}
+                    >
+                      📚 Go to Library
+                    </Button>
+                    
+                    {/* Action Buttons */}
+                    {isGoogleDriveConnected && (
+                      <Button
+                        type="primary"
+                        onClick={() => setIsEditingSong(true)}
+                        style={{
+                          backgroundColor: '#1890ff',
+                          borderColor: '#1890ff'
+                        }}
+                      >
+                        ✏️ Edit Song
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                <div style={{ width: '100%', minHeight: 'fit-content' }}>
+                  <SongDetail
+                    song={selectedSong}
+                    artist={selectedSong.artist}
+                    album={selectedSong.album}
+                    editingEnabled={false}
+                    onUpdateSong={handleSongUpdate}
+                    onPinChord={handlePinChord}
+                  />
+                </div>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* New Song Creation Section */}
+        {isCreatingNewSong && (
+          <div className="new-song-section" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            padding: '1.5rem',
+            width: '100%',
+            minHeight: 'fit-content'
+          }}>
+            <SongEditor
+              song={{ lyrics: '' }}
+              artist={{ name: '' }}
+              album={{ title: '' }}
+              onSave={handleCreateNewSong}
+              onCancel={() => setIsCreatingNewSong(false)}
+              isGoogleDriveConnected={isGoogleDriveConnected}
+              isNewSong={true}
+              library={library}
+            />
+          </div>
+        )}
+
+        {/* Song Library - Show Only When Not Editing and Not Creating */}
+        {!isEditingSong && !isCreatingNewSong && (
+          <div className="song-library-section" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            padding: '1rem',
+            minHeight: selectedSong ? '300px' : '500px'
+          }}>
+              {/* Library Header with Count and Google Drive Button */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: '1rem' 
+              }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Song Library</h3>
+                  {isLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <Spin size="small" />
+                      <span style={{ color: '#666', fontSize: '0.9rem' }}>Loading songs...</span>
+                    </div>
+                  ) : (
+                    <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
+                      {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
+                    </p>
+                  )}
+                </div>
+                
+                {/* Always show Google Drive button and Add Song button */}
+                <div className="google-drive-section">
+                  {isGoogleDriveConnected ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                      <GoogleSignInButton
+                        isSignedIn={true}
+                        onSignOut={handleGoogleSignOut}
+                        disabled={isLoading}
+                        userInfo={userInfo}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={openNewSongEditor}
+                        style={{
+                          backgroundColor: '#4CAF50',
+                          borderColor: '#4CAF50'
+                        }}
+                      >
+                        + Add New Song
+                      </Button>
+                    </div>
+                  ) : (
+                    <GoogleSignInButton
+                      onSuccess={handleGoogleSignInSuccess}
+                      onError={handleGoogleSignInError}
+                      disabled={isLoading}
+                    />
+                  )}
+                </div>
+            </div>
+            
+            <SongListTest 
+              library={library}
+              onSelectSong={handleSongSelect}
+              selectedSong={selectedSong}
+              editingEnabled={isGoogleDriveConnected}
+            />
+          </div>
+        )}
+
+        {/* Empty State - Only Show When No Song Selected and Not Creating New Song */}
+        {!selectedSong && !isCreatingNewSong && (
+          <div className="empty-state" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            padding: '2rem',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            <p>Select a song from your library above to see its chord chart and lyrics.</p>
           </div>
         )}
       </div>

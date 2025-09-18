@@ -1,0 +1,9 @@
+name = "recipe-ai-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-01-15"
+
+# Environment variables (set these via wrangler secret put)
+# GROK_API_KEY = "your-grok-api-key"
+# MISTRAL_API_KEY = "your-mistral-api-key"
+# OPENAI_API_KEY = "your-openai-api-key"
+# ALLOWED_ORIGINS = "https://wademauger.github.io,http://localhost:3000"

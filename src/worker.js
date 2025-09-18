@@ -1,6 +1,7 @@
 /**
- * Cloudflare Worker for Recipe AI Chat Proxy
- * Proxies chat requests to various AI providers (Grok, Mistral, OpenAI)
+ * Cloudflare Worker for Recipe AI Chat Proxy and Spotify API
+ * - Proxies chat requests to various AI providers (Grok, Mistral, OpenAI)
+ * - Provides Spotify Web API search functionality for album artwork and data
  */
 
 // AI Provider configurations
@@ -31,12 +32,135 @@ const AI_PROVIDERS = {
   }
 };
 
+// Spotify API configuration
+const SPOTIFY_CONFIG = {
+  tokenUrl: 'https://accounts.spotify.com/api/token',
+  searchUrl: 'https://api.spotify.com/v1/search',
+  tokenCache: null,
+  tokenExpiry: 0
+};
+
 // CORS headers
 const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   'Access-Control-Max-Age': '86400',
 };
+
+// Spotify API Functions
+async function getSpotifyToken(env) {
+  const clientId = env.SPOTIFY_CLIENT_ID;
+  const clientSecret = env.SPOTIFY_CLIENT_SECRET;
+  
+  if (!clientId || !clientSecret) {
+    throw new Error('Spotify credentials not configured');
+  }
+  
+  // Check if we have a valid cached token
+  if (SPOTIFY_CONFIG.tokenCache && Date.now() < SPOTIFY_CONFIG.tokenExpiry) {
+    return SPOTIFY_CONFIG.tokenCache;
+  }
+  
+  const response = await fetch(SPOTIFY_CONFIG.tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials'
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Spotify token request failed: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  // Cache the token with expiry buffer
+  SPOTIFY_CONFIG.tokenCache = data.access_token;
+  SPOTIFY_CONFIG.tokenExpiry = Date.now() + (data.expires_in - 60) * 1000; // 60 second buffer
+  
+  return data.access_token;
+}
+
+async function searchSpotify(query, type, env) {
+  const token = await getSpotifyToken(env);
+  
+  const searchParams = new URLSearchParams({
+    q: query,
+    type: type,
+    limit: '20',
+    market: 'US'
+  });
+  
+  const response = await fetch(`${SPOTIFY_CONFIG.searchUrl}?${searchParams}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Spotify search failed: ${response.status}`);
+  }
+  
+  return await response.json();
+}
+
+async function handleSpotifySearch(request, env) {
+  try {
+    const { artist, album, track, searchType } = await request.json();
+    
+    if (!artist) {
+      return new Response(JSON.stringify({ error: 'Artist name is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
+      });
+    }
+    
+    let query;
+    let type;
+    
+    switch (searchType) {
+      case 'artist-albums':
+        query = `artist:"${artist}"`;
+        type = 'album';
+        break;
+      case 'album':
+        if (album) {
+          query = `artist:"${artist}" album:"${album}"`;
+          type = 'album,track';
+        } else {
+          query = `artist:"${artist}"`;
+          type = 'album';
+        }
+        break;
+      default:
+        // Default search for tracks
+        query = `artist:"${artist}"`;
+        if (track) query += ` track:"${track}"`;
+        if (album) query += ` album:"${album}"`;
+        type = 'track,album';
+    }
+    
+    const data = await searchSpotify(query, type, env);
+    
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
+    });
+    
+  } catch (error) {
+    console.error('Spotify search error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Spotify search failed',
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
+    });
+  }
+}
 
 function getCorsHeaders(request, env) {
   const origin = request.headers.get('Origin');
@@ -383,7 +507,14 @@ export default {
       });
     }
     
-    // Handle the main request
-    return handleRequest(request, env);
+    // Route requests based on URL path
+    const url = new URL(request.url);
+    
+    if (url.pathname === '/api/spotify-search') {
+      return handleSpotifySearch(request, env);
+    } else {
+      // Default to AI chat handler
+      return handleRequest(request, env);
+    }
   }
 };

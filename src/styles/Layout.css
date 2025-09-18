@@ -33,7 +33,6 @@ body {
 .content-container.crafts-content {
   flex: 1 0 auto;
   padding: 1.5rem;
-  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
 }

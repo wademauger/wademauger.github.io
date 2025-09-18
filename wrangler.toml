@@ -1,9 +1,10 @@
-name = "recipe-ai-proxy"
-main = "src/worker.js"
-compatibility_date = "2024-01-15"
+name = "songs-spotify-api"
+main = "cloudflare-worker.js"
+compatibility_date = "2023-10-30"
 
-# Environment variables (set these via wrangler secret put)
-# GROK_API_KEY = "your-grok-api-key"
-# MISTRAL_API_KEY = "your-mistral-api-key"
-# OPENAI_API_KEY = "your-openai-api-key"
-# ALLOWED_ORIGINS = "https://wademauger.github.io,http://localhost:3000"
+[vars]
+ENVIRONMENT = "production"
+
+# Secrets to set via: wrangler secret put SPOTIFY_CLIENT_ID
+# SPOTIFY_CLIENT_ID = "your-spotify-client-id"
+# SPOTIFY_CLIENT_SECRET = "your-spotify-client-secret"

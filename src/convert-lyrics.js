@@ -59,12 +59,27 @@ function convertLyrics(input) {
         while (j < lines.length && !lines[j].trim()) {
           j++;
         }
+        
+        // Check if the next line exists and is a lyric line (not another chord line or section header)
         if (j < lines.length) {
-          // Combine the chord with the next line
-          convertedLines.push(`[${singleChordMatch[0]}]${lines[j].trim()}`);
-          i = j + 1;
-          continue;
+          const nextLine = lines[j].trim();
+          const nextLineChordMatches = nextLine.match(actualChordPattern) || [];
+          const nextLineWithoutChords = nextLine.replace(actualChordPattern, '').trim();
+          const nextLineIsChordLine = nextLineChordMatches.length > 0 && (nextLineWithoutChords === '' || /^\s*$/.test(nextLineWithoutChords));
+          const nextLineIsSectionHeader = /^\[.*?(?::.+)?\]$/.test(nextLine);
+          
+          // If next line is lyrics (not chords or section header), combine them
+          if (!nextLineIsChordLine && !nextLineIsSectionHeader) {
+            convertedLines.push(`[${singleChordMatch[0]}]${nextLine}`);
+            i = j + 1;
+            continue;
+          }
         }
+        
+        // If no lyrics follow, output the chord as a standalone progression
+        convertedLines.push(`[${singleChordMatch[0]}]`);
+        i++;
+        continue;
       }
       
       // Multiple chords on one line - use original line to preserve spacing
@@ -82,30 +97,63 @@ function convertLyrics(input) {
       }
 
       if (j < lines.length) {
-        const lyricLine = lines[j].trim();
-        const chars = lyricLine.split('');
-        const insertions = [];
+        const nextLine = lines[j].trim();
+        const nextLineChordMatches = nextLine.match(actualChordPattern) || [];
+        const nextLineWithoutChords = nextLine.replace(actualChordPattern, '').trim();
+        const nextLineIsChordLine = nextLineChordMatches.length > 0 && (nextLineWithoutChords === '' || /^\s*$/.test(nextLineWithoutChords));
+        const nextLineIsSectionHeader = /^\[.*?(?::.+)?\]$/.test(nextLine);
         
-        chordPositions.forEach(({chord, position}) => {
-          let insertPos = position;
-          while (insertPos < lyricLine.length && /\s/.test(lyricLine[insertPos])) {
-            insertPos++;
-          }
-          insertions.push({
-            pos: insertPos,
-            text: `[${chord}]`
+        // If next line is lyrics (not chords or section header), merge chords with lyrics
+        if (!nextLineIsChordLine && !nextLineIsSectionHeader) {
+          const lyricLine = nextLine;
+          const chars = lyricLine.split('');
+          const insertions = [];
+          
+          chordPositions.forEach(({chord, position}) => {
+            let insertPos = position;
+            while (insertPos < lyricLine.length && /\s/.test(lyricLine[insertPos])) {
+              insertPos++;
+            }
+            insertions.push({
+              pos: insertPos,
+              text: `[${chord}]`
+            });
           });
-        });
 
-        insertions.sort((a, b) => b.pos - a.pos);
-        insertions.forEach(({pos, text}) => {
-          chars.splice(pos, 0, text);
-        });
-        convertedLines.push(chars.join(''));
-        i = j + 1;
+          insertions.sort((a, b) => b.pos - a.pos);
+          insertions.forEach(({pos, text}) => {
+            chars.splice(pos, 0, text);
+          });
+          convertedLines.push(chars.join(''));
+          i = j + 1;
+        } else {
+          // Next line is chords or section header, so this is a standalone chord progression
+          // Add proper spacing: each chord followed by (chord length + 1) spaces
+          let chordProgression = '';
+          chordPositions.forEach(({chord}, index) => {
+            chordProgression += `[${chord}]`;
+            // Add spacing after each chord except the last one
+            if (index < chordPositions.length - 1) {
+              const spacesToAdd = chord.length + 1;
+              chordProgression += ' '.repeat(spacesToAdd);
+            }
+          });
+          convertedLines.push(chordProgression);
+          i++;
+        }
       } else {
-        // No lyrics line found, just output the chord
-        convertedLines.push(`[${line.trim()}]`);
+        // No more lines, output as standalone chord progression
+        // Add proper spacing: each chord followed by (chord length + 1) spaces
+        let chordProgression = '';
+        chordPositions.forEach(({chord}, index) => {
+          chordProgression += `[${chord}]`;
+          // Add spacing after each chord except the last one
+          if (index < chordPositions.length - 1) {
+            const spacesToAdd = chord.length + 1;
+            chordProgression += ' '.repeat(spacesToAdd);
+          }
+        });
+        convertedLines.push(chordProgression);
         i++;
       }
     } else {

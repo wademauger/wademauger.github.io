@@ -6,6 +6,7 @@ import { setInstrument, transposeSongUp, transposeSongDown } from '../../../stor
 import { deleteSong, clearSelectedSong, setGoogleDriveConnection, setUserInfo } from '../../../store/songsSlice';
 import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
+import AlbumArt from './AlbumArt';
 import { Spin, App, Popconfirm } from 'antd';
 import { CircularProgress, Box } from '@mui/material';
 import {
@@ -303,9 +304,54 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     return CHROMATIC[newIdx] + suffix;
   }
 
+  // Helper function to convert complex lyrics format to simple array format
+  const convertLyricsToArray = (lyrics) => {
+    if (!lyrics) return [];
+    
+    // If it's already an array of strings, return as-is
+    if (Array.isArray(lyrics) && lyrics.length > 0 && typeof lyrics[0] === 'string') {
+      return lyrics;
+    }
+    
+    // If it's a string, split by newlines
+    if (typeof lyrics === 'string') {
+      return lyrics ? lyrics.split('\n') : [];
+    }
+    
+    // If it's the complex nested format from tabs.js
+    if (Array.isArray(lyrics) && lyrics.length > 0 && Array.isArray(lyrics[0])) {
+      const converted = [];
+      
+      lyrics.forEach((verse, verseIndex) => {
+        if (verseIndex > 0) {
+          converted.push(''); // Add blank line between verses
+        }
+        
+        verse.forEach((lineObj) => {
+          if (lineObj && lineObj.text) {
+            let line = lineObj.text;
+            
+            // Add chords inline if they exist
+            if (lineObj.chords && lineObj.chords.length > 0) {
+              // For now, just add the first chord at the beginning of the line
+              // This is a simple conversion - could be made more sophisticated
+              line = `[${lineObj.chords[0]}]${line}`;
+            }
+            
+            converted.push(line);
+          }
+        });
+      });
+      
+      return converted;
+    }
+    
+    // Fallback: return empty array
+    return [];
+  };
+
   // Ensure lyrics is always an array
-  const lyricsArray = Array.isArray(song.lyrics) ? song.lyrics : 
-    (typeof song.lyrics === 'string' ? (song.lyrics ? song.lyrics.split('\n') : []) : []);
+  const lyricsArray = convertLyricsToArray(song.lyrics);
 
   const chords = (song.chords || extractChords(lyricsArray)).map(chord =>
     localTranspose !== 0 ? transposeChord(chord, localTranspose) : chord
@@ -771,14 +817,10 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   return (
-    <div className="song-detail">      
+    <div className="song-detail" style={{ width: '100%', minHeight: 'fit-content' }}>      
       {/* Chord section */}
       <div className="chords-section">
         <div className="chords-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
-            <h3 style={{ margin: 0 }}>{song.title}</h3>
-            <i style={{ margin: 0 }}>{artist.name}</i>
-          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, justifyContent: 'center' }}>
             <button
               className="transpose-btn"
@@ -800,11 +842,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
             <button
               className="save-transpose-btn"
               onClick={handleSaveTranspose}
-              disabled={!dirty || !editingEnabled || isSavingTranspose}
+                disabled={localTranspose === 0 || isSavingTranspose}
               style={{ 
                 marginLeft: '1em', 
                 padding: '0.2em 0.8em', 
-                opacity: dirty && editingEnabled && !isSavingTranspose ? 1 : 0.5,
+                  opacity: localTranspose !== 0 && editingEnabled && !isSavingTranspose ? 1 : 0.5,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5em'
@@ -846,91 +888,33 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       {/* Lyrics section */}
       <div className="lyrics-section">
         <div className="lyrics-container">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
-              <h3 style={{ margin: 0 }}>{song.title}</h3>
-              <i style={{ margin: 0 }}>{artist.name}</i>
+          {/* Song metadata */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0 }}>{song.title}</h3>
+                <i style={{ margin: 0 }}>{artist.name}</i>
+                {song.album && song.album.title && (
+                  <span style={{ margin: 0, color: '#666', fontSize: '0.9em' }}>
+                    • {song.album.title}
+                  </span>
+                )}
+              </div>
             </div>
-            {editingEnabled && !isEditingWholeSong && (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  className="edit-whole-song-btn"
-                  onClick={handleEditWholeSong}
-                  style={{ 
-                    padding: '0.5em 1em', 
-                    fontSize: '0.9em',
-                    backgroundColor: '#4285f4',
-                    color: 'white',
-                    border: '1px solid #3367d6',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5em',
-                    transition: 'background-color 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#3367d6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#4285f4'}
-                >
-                  <FaEdit /> Edit Whole Song
-                </button>
-                <Popconfirm
-                  title={renderDeletePopconfirmTitle()}
-                  description={renderDeletePopconfirmContent()}
-                  onConfirm={handleDeleteConfirm}
-                  onOpenChange={handlePopconfirmOpen}
-                  okText={
-                    deleteCountdown > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
-                        <Box style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                          <CircularProgress
-                            variant="determinate"
-                            value={((3.0 - deleteCountdown) / 3.0) * 100}
-                            size={20}
-                            thickness={8}
-                            style={{ color: '#dc3545' }}
-                          />
-                          <Box
-                            style={{
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              color: '#dc3545',
-                              fontWeight: 'bold',
-                              fontSize: '10px'
-                            }}
-                          >
-                            {(deleteCountdown+1).toFixed()}
-                          </Box>
-                        </Box>
-                        Please wait...
-                      </div>
-                    ) : isDeletingSong ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Spin size="small" />
-                        Deleting...
-                      </div>
-                    ) : (
-                      "Delete"
-                    )
-                  }
-                  cancelText={isDeletingSong ? null : "Cancel"}
-                  okType="danger"
-                  showCancel={!isDeletingSong}
-                  okButtonProps={{
-                    disabled: deleteCountdown > 0 || isDeletingSong
-                  }}
-                  placement="bottomRight"
-                >
+            
+            {/* Edit buttons */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignSelf: 'flex-start' }}>
+              {editingEnabled && !isEditingWholeSong && (
+                <>
                   <button 
-                    className="delete-song-btn"
+                    className="edit-whole-song-btn"
+                    onClick={handleEditWholeSong}
                     style={{ 
                       padding: '0.5em 1em', 
                       fontSize: '0.9em',
-                      backgroundColor: '#dc3545',
+                      backgroundColor: '#4285f4',
                       color: 'white',
-                      border: '1px solid #c82333',
+                      border: '1px solid #3367d6',
                       borderRadius: '4px',
                       cursor: 'pointer',
                       display: 'flex',
@@ -938,176 +922,206 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                       gap: '0.5em',
                       transition: 'background-color 0.2s ease'
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#3367d6'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#4285f4'}
                   >
-                    <FaTrash /> Delete Song
+                    <FaEdit /> Edit Whole Song
                   </button>
-                </Popconfirm>
-              </div>
-            )}
-            {isEditingWholeSong && (
-              <button 
-                onClick={() => {
-                  try {
-                    const converted = convertLyrics(wholeSongText);
-                    setWholeSongText(converted);
-                    message.success('Lyrics converted successfully!');
-                  } catch (error) {
-                    console.error('Error converting lyrics:', error);
-                    message.error('Failed to convert lyrics format. Please check your input.');
-                  }
-                }}
-                style={{ 
-                  padding: '0.5em 1em', 
-                  fontSize: '0.9em',
-                  backgroundColor: '#5C6BC0',
-                  color: 'white',
-                  border: '1px solid #3F51B5',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5em',
-                  marginLeft: '10px',
-                  transition: 'background-color 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#3F51B5'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#5C6BC0'}
-              >
-                <FaClipboard /> Convert from Clipboard Format
-              </button>
-            )}
-          </div>
-          
-          {isEditingWholeSong ? (
-            <div className="whole-song-editor" style={{ marginTop: '1rem' }}>
-              <textarea
-                value={wholeSongText}
-                onChange={(e) => setWholeSongText(e.target.value)}
-                rows={15}
-                style={{
-                  width: '100%',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  padding: '10px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-                placeholder="Enter lyrics with [Chord] notation..."
-              />
-              <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                <button 
-                  onClick={handleSaveWholeSong}
-                  disabled={isSavingWholeSong}
-                  style={{ 
-                    padding: '0.5em 1em',
-                    backgroundColor: isSavingWholeSong ? '#ccc' : '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: isSavingWholeSong ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5em'
-                  }}
-                >
-                  {isSavingWholeSong && <Spin size="small" />}
-                  {isSavingWholeSong ? 'Saving...' : 'Save'}
-                </button>
-                <button 
-                  onClick={handleCancelWholeSong}
-                  style={{ 
-                    padding: '0.5em 1em',
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
+                  <Popconfirm
+                    title={renderDeletePopconfirmTitle()}
+                    description={renderDeletePopconfirmContent()}
+                    onConfirm={handleDeleteConfirm}
+                    onOpenChange={handlePopconfirmOpen}
+                    okText={
+                      deleteCountdown > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                          <Box style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                            <CircularProgress
+                              variant="determinate"
+                              value={((3.0 - deleteCountdown) / 3.0) * 100}
+                              size={20}
+                              thickness={8}
+                              style={{ color: '#dc3545' }}
+                            />
+                            <Box
+                              style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                color: '#dc3545',
+                                fontWeight: 'bold',
+                                fontSize: '10px'
+                              }}
+                            >
+                              {(deleteCountdown+1).toFixed()}
+                            </Box>
+                          </Box>
+                          Please wait...
+                        </div>
+                      ) : isDeletingSong ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Spin size="small" />
+                          Deleting...
+                        </div>
+                      ) : (
+                        "Delete"
+                      )
+                    }
+                    cancelText={isDeletingSong ? null : "Cancel"}
+                    okType="danger"
+                    showCancel={!isDeletingSong}
+                    okButtonProps={{
+                      disabled: deleteCountdown > 0 || isDeletingSong
+                    }}
+                    placement="bottomRight"
+                  >
+                    <button 
+                      className="delete-song-btn"
+                      style={{ 
+                        padding: '0.5em 1em', 
+                        fontSize: '0.9em',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: '1px solid #c82333',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5em',
+                        transition: 'background-color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    >
+                      <FaTrash /> Delete Song
+                    </button>
+                  </Popconfirm>
+                </>
+              )}
+              {isEditingWholeSong && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    className="save-whole-song-btn"
+                    onClick={handleSaveWholeSong}
+                    disabled={isSavingWholeSong}
+                    style={{ 
+                      padding: '0.5em 1em', 
+                      fontSize: '0.9em',
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      border: '1px solid #218838',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5em'
+                    }}
+                  >
+                    {isSavingWholeSong ? <Spin size="small" /> : <FaClipboard />}
+                    Save
+                  </button>
+                  <button 
+                    className="cancel-whole-song-btn"
+                    onClick={handleCancelWholeSong}
+                    style={{ 
+                      padding: '0.5em 1em', 
+                      fontSize: '0.9em',
+                      backgroundColor: '#6c757d',
+                      color: 'white',
+                      border: '1px solid #5a6268',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
+
+          {isEditingWholeSong ? (
+            <textarea
+              value={wholeSongText}
+              onChange={(e) => setWholeSongText(e.target.value)}
+              style={{
+                width: '100%',
+                height: '60vh',
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px'
+              }}
+            />
           ) : (
-            <DndContext 
+            <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext 
+              <SortableContext
                 items={(optimisticLyrics || lyricsArray).map((_, index) => index.toString())}
                 strategy={verticalListSortingStrategy}
               >
-                {(optimisticLyrics || lyricsArray) && (optimisticLyrics || lyricsArray).map((line, index) => (
-                  <div key={index}>
-                    <SortableLyricLine
-                      id={index.toString()}
-                      line={line}
-                      index={index}
-                      editingLineIndex={editingLineIndex}
-                      editingEnabled={editingEnabled}
-                      hoveredLineIndex={hoveredLineIndex}
-                      setHoveredLineIndex={setHoveredLineIndex}
-                      handleEditLine={handleEditLine}
-                      handleInsertAfter={handleInsertAfter}
-                      handleDeleteLine={handleDeleteLine}
-                      handleSaveLine={handleSaveLine}
-                      handleCancelEdit={handleCancelEdit}
-                      renderLyricLine={renderLyricLine}
-                      isThisLinePending={pendingLineIndex === index}
-                      isDragDisabled={pendingDragOperation !== null || pendingDeleteLines.has(index) || pendingSaves.has(index)}
-                      isPendingDelete={pendingDeleteLines.has(index)}
-                      isPendingSave={pendingSaves.has(index)}
-                      isAddingLine={isAddingLine}
-                    />
-                    {/* Show line editor when inserting after this line */}
-                    {isAddingLine && insertAfterIndex === index && editingEnabled && (
-                      <LyricLineEditor
-                        line=""
-                        onSave={(newLine) => handleSaveLine(newLine, index + 1)}
-                        onCancel={handleCancelEdit}
-                      />
-                    )}
-                  </div>
+                {(optimisticLyrics || lyricsArray).map((line, index) => (
+                  <SortableLyricLine
+                    key={index}
+                    id={index.toString()}
+                    index={index}
+                    line={line}
+                    editingLineIndex={editingLineIndex}
+                    editingEnabled={editingEnabled}
+                    hoveredLineIndex={hoveredLineIndex}
+                    setHoveredLineIndex={setHoveredLineIndex}
+                    handleEditLine={handleEditLine}
+                    handleInsertAfter={handleInsertAfter}
+                    handleDeleteLine={handleDeleteLine}
+                    handleSaveLine={handleSaveLine}
+                    handleCancelEdit={handleCancelEdit}
+                    renderLyricLine={renderLyricLine}
+                    isThisLinePending={pendingLineIndex === index}
+                    isDragDisabled={isPendingAnyOperation || pendingDeleteLines.size > 0}
+                    isPendingDelete={pendingDeleteLines.has(index)}
+                    isAddingLine={isAddingLine && editingLineIndex === index}
+                    isPendingSave={pendingSaves.has(index)}
+                  />
                 ))}
+                {isAddingLine && editingLineIndex === (optimisticLyrics || lyricsArray).length && (
+                  <LyricLineEditor
+                    line=""
+                    onSave={(newLine) => handleSaveLine(newLine, (optimisticLyrics || lyricsArray).length)}
+                    onCancel={handleCancelEdit}
+                    isAdding
+                  />
+                )}
               </SortableContext>
-              
-              {/* Add a button to add line at the end when the song is empty */}
-              {editingEnabled && lyricsArray.length === 0 && !isAddingLine && (
-                <button 
-                  className="add-lyric-button" 
-                  onClick={() => handleInsertAfter(-1)}
-                  style={{
-                    padding: '10px 20px',
-                    border: '2px dashed #ccc',
-                    backgroundColor: 'transparent',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    color: '#666',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    margin: '20px 0',
-                    width: '100%',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <FaPlus /> Add First Line
-                </button>
-              )}
-              
-              {/* Add line editor for empty song case */}
-              {isAddingLine && insertAfterIndex === -1 && editingEnabled && (
-                <LyricLineEditor
-                  line=""
-                  onSave={(newLine) => handleSaveLine(newLine, 0)}
-                  onCancel={handleCancelEdit}
-                />
-              )}
             </DndContext>
+          )}
+          
+          {editingEnabled && !isEditingWholeSong && (
+            <div style={{ marginTop: '1rem' }}>
+              <button 
+                className="add-line-btn"
+                onClick={() => handleInsertAfter((optimisticLyrics || lyricsArray).length - 1)}
+                disabled={isPendingAnyOperation || pendingDeleteLines.size > 0}
+                style={{
+                  padding: '0.5em 1em',
+                  fontSize: '0.9em',
+                  backgroundColor: '#17a2b8',
+                  color: 'white',
+                  border: '1px solid #138496',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5em'
+                }}
+              >
+                <FaPlus /> Add Line
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1115,11 +1129,4 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   );
 };
 
-// Wrap component with App provider for message API
-const SongDetailWithProvider = (props) => (
-  <App>
-    <SongDetail {...props} />
-  </App>
-);
-
-export default SongDetailWithProvider;
+export default SongDetail;

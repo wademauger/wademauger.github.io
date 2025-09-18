@@ -666,7 +666,7 @@ class GoogleDriveServiceModern {
       return library;
     } catch (error) {
       console.error('Error loading library:', error);
-      throw new Error('Failed to load library from Google Drive');
+      throw new Error('Failed to load library from Google Drive', error);
     }
   }
 
