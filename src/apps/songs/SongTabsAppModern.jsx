@@ -15,7 +15,7 @@ import {
   addAlbum,
   deleteSong
 } from '../../store/songsSlice';
-import SongDetail from './components/SongDetail';
+import SongDetail from './components/SongDetail.jsx';
 import AlbumArt from './components/AlbumArt';
 import SongEditor from './components/SongEditor';
 import SongListTest from './components/SongListTest';
@@ -425,7 +425,6 @@ const SongTabsApp = () => {
             backgroundColor: 'white',
             borderRadius: '8px',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            padding: '1.5rem',
             width: '100%',
             minHeight: 'fit-content'
           }}>

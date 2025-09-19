@@ -18,11 +18,11 @@ const ColorworkDesignerApp = React.lazy(() => import('./apps/colorwork-designer/
 const UnifiedDesignerApp = React.lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
-function App() {
+const App: React.FC = () => {
   const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
   
   // Loading component for suspense fallback
-  const LoadingSpinner = () => (
+  const LoadingSpinner: React.FC = () => (
     <div style={{ 
       display: 'flex', 
       justifyContent: 'center', 
@@ -157,6 +157,6 @@ function App() {
       </Provider>
     </GoogleOAuthProvider>
   );
-}
+};
 
 export default App;

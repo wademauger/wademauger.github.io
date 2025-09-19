@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Card, Button, InputNumber, Space, Row, Col, Typography, List, Divider } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
-import { PanelDiagram } from '../../components/PanelDiagram.js';
+import { PanelDiagram } from '@/components/PanelDiagram.jsx';
 
 const { Title, Text } = Typography;
 

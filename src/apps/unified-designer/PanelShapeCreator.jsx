@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Card, Button, Space, message } from 'antd';
 import { CheckOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import BasePanelShapeCreator from '../../apps/colorwork-designer/PanelShapeCreator.js';
+import BasePanelShapeCreator from '../../apps/colorwork-designer/PanelShapeCreator.jsx';
 
 /**
  * Enhanced Panel Shape Creator with callback support

@@ -45,7 +45,7 @@ jest.mock('./services/GoogleDriveServiceModern', () => ({
 }));
 
 // Mock environment variables
-process.env.REACT_APP_GOOGLE_CLIENT_ID = 'test-client-id';
+import.meta.env.VITE_GOOGLE_CLIENT_ID = 'test-client-id';
 
 // Create a test store
 const createTestStore = () => configureStore({

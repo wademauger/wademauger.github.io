@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import ColorworkPanelEditor from '@/components/ColorworkPanelEditor.jsx';
+import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx'; React, { useState, useRef } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
 import { PlusOutlined, HistoryOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
@@ -8,7 +9,7 @@ import { Trapezoid } from '../../models/Trapezoid.js';
 import { Panel } from '../../models/Panel.js'; 
 import { Gauge } from '../../models/Gauge.js';
 import { ColorworkPattern } from '../../models/ColorworkPattern.js';
-import PanelShapeCreator from './PanelShapeCreator.js';
+import PanelShapeCreator from './PanelShapeCreator.jsx';
 import { garments, colorworkCharts, visualMotifs } from '../../data/garments.js';
 
 const { Title, Text } = Typography;

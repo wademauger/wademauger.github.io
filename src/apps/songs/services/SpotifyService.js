@@ -3,7 +3,7 @@
 class SpotifyService {
   constructor() {
     // Backend API endpoint for Spotify searches - using your deployed Cloudflare worker
-    this.apiEndpoint = process.env.REACT_APP_SPOTIFY_API_ENDPOINT || 'https://songs-spotify-api.ai-recipe-notepad.workers.dev/api/spotify-search';
+    this.apiEndpoint = import.meta.env.VITE_SPOTIFY_API_ENDPOINT || 'https://songs-spotify-api.ai-recipe-notepad.workers.dev/api/spotify-search';
     // Cache for artist albums to avoid repeated API calls
     this.albumCache = new Map();
     this.cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours in milliseconds

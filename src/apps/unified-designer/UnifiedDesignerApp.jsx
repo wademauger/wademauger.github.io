@@ -1,4 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import import ColorworkPanelEditor from '@/components/ColorworkPanelEditor.jsx';
+import GarmentComposer from '@/components/GarmentComposer.js';
+import PanelShapeCreator from './PanelShapeCreator.jsx';
+import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';t, { useState, useRef, useCallback } from 'react';
 import { Layout, Typography, Space, Segmented, Card, message } from 'antd';
 import { 
     ToolOutlined, 

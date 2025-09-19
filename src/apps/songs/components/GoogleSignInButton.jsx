@@ -14,9 +14,15 @@ const GoogleSignInButton = ({
   userInfo = null // { name, picture, email }
 }) => {
   const [isLoading, setIsLoading] = useState(loading);
+  
+  // Check if we have a valid Google Client ID
+  const hasValidClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID && 
+                          import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'development-fallback';
 
   // Configure popup window size for Google OAuth
   useEffect(() => {
+    if (!hasValidClientId) return;
+    
     const originalOpen = window.open;
     
     window.open = function(...args) {
@@ -63,9 +69,9 @@ const GoogleSignInButton = ({
     return () => {
       window.open = originalOpen;
     };
-  }, []);
+  }, [hasValidClientId]);
 
-  const login = useGoogleLogin({
+  const login = hasValidClientId ? useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google login successful:', tokenResponse);
       setIsLoading(false);
@@ -86,12 +92,20 @@ const GoogleSignInButton = ({
     ux_mode: 'popup',
     width: 600,
     height: 700
-  });
+  }) : null;
 
   const handleClick = () => {
+    if (!hasValidClientId) {
+      console.warn('Google Client ID not configured - Google authentication is disabled');
+      if (onError) {
+        onError(new Error('Google Client ID not configured'));
+      }
+      return;
+    }
+    
     if (isSignedIn && onSignOut) {
       onSignOut();
-    } else {
+    } else if (login) {
       setIsLoading(true);
       console.log('About to trigger Google login...');
       login();
@@ -131,7 +145,7 @@ const GoogleSignInButton = ({
           isSignedIn ? 'google-signout-button' : ''
         } ${disabled ? 'disabled' : ''} ${isLoading ? 'google-signin-loading' : ''}`}
         onClick={handleClick}
-        disabled={disabled || isLoading}
+        disabled={disabled || isLoading || !hasValidClientId}
       >
         {isSignedIn && userInfo ? (
           <>
@@ -165,9 +179,11 @@ const GoogleSignInButton = ({
           <>
             <GoogleIcon />
             <span className="google-signin-text">
-              {isLoading 
-                ? 'Signing in' 
-                : 'Sign in with Google'
+              {!hasValidClientId 
+                ? 'Google OAuth not configured'
+                : isLoading 
+                  ? 'Signing in' 
+                  : 'Sign in with Google'
               }
             </span>
           </>

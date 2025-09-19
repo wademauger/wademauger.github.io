@@ -70,7 +70,7 @@ const RecipesApp = ({ view = 'standard' }) => {
     const initializeGoogleDrive = async () => {
       try {
         // Use the recipes-specific Google Client ID
-        const CLIENT_ID = process.env.REACT_APP_GOOGLE_RECIPES_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
+        const CLIENT_ID = import.meta.env.VITE_GOOGLE_RECIPES_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
         if (!CLIENT_ID || CLIENT_ID === 'your-recipes-oauth-client-id-here') {
           console.warn('Google Recipes Client ID not configured. Please set REACT_APP_GOOGLE_RECIPES_CLIENT_ID in .env file');
           return;

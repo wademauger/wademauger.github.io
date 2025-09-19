@@ -11,7 +11,7 @@ class RecipeAIService {
     this.preferredProvider = 'grok'; // Default to Grok
     
     // Cloudflare Worker endpoint
-    this.workerUrl = process.env.REACT_APP_AI_WORKER_URL || 'https://recipe-ai-proxy.ai-recipe-notepad.workers.dev';
+    this.workerUrl = import.meta.env.VITE_AI_WORKER_URL || 'https://recipe-ai-proxy.ai-recipe-notepad.workers.dev';
     console.log('🚀 RecipeAIService initialized with workerUrl:', this.workerUrl);
     
     // Available AI providers through our proxy
@@ -149,7 +149,7 @@ NOT like:
   // No need for local model initialization with cloud service
   async _validateConnection() {
     console.log('🔍 Checking worker URL:', this.workerUrl);
-    console.log('🔍 Environment variable:', process.env.REACT_APP_AI_WORKER_URL);
+    console.log('🔍 Environment variable:', import.meta.env.VITE_AI_WORKER_URL);
     
     if (!this.workerUrl || this.workerUrl.includes('your-username')) {
       console.warn('AI Worker URL not properly configured. Please set REACT_APP_AI_WORKER_URL in .env file');
