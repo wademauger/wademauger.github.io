@@ -8,7 +8,6 @@ import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
 import AlbumArt from './AlbumArt';
 import { Spin, App } from 'antd';
-import { CircularProgress, Box } from '@mui/material';
 import {
   DndContext,
   closestCenter,

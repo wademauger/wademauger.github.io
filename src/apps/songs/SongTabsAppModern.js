@@ -18,7 +18,6 @@ import {
 import SongDetail from './components/SongDetail';
 import AlbumArt from './components/AlbumArt';
 import SongEditor from './components/SongEditor';
-// import React from 'react';
 import SongListTest from './components/SongListTest';
 import GoogleSignInButton from './components/GoogleSignInButton';
 import SessionTestingTools from './components/SessionTestingTools';
