@@ -7,7 +7,7 @@ import { deleteSong, clearSelectedSong, setGoogleDriveConnection, setUserInfo } 
 import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
 import AlbumArt from './AlbumArt';
-import { Spin, App, Popconfirm } from 'antd';
+import { Spin, App } from 'antd';
 import { CircularProgress, Box } from '@mui/material';
 import {
   DndContext,
@@ -927,76 +927,31 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                   >
                     <FaEdit /> Edit Whole Song
                   </button>
-                  <Popconfirm
-                    title={renderDeletePopconfirmTitle()}
-                    description={renderDeletePopconfirmContent()}
-                    onConfirm={handleDeleteConfirm}
-                    onOpenChange={handlePopconfirmOpen}
-                    okText={
-                      deleteCountdown > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
-                          <Box style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                            <CircularProgress
-                              variant="determinate"
-                              value={((3.0 - deleteCountdown) / 3.0) * 100}
-                              size={20}
-                              thickness={8}
-                              style={{ color: '#dc3545' }}
-                            />
-                            <Box
-                              style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                color: '#dc3545',
-                                fontWeight: 'bold',
-                                fontSize: '10px'
-                              }}
-                            >
-                              {(deleteCountdown+1).toFixed()}
-                            </Box>
-                          </Box>
-                          Please wait...
-                        </div>
-                      ) : isDeletingSong ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Spin size="small" />
-                          Deleting...
-                        </div>
-                      ) : (
-                        "Delete"
-                      )
-                    }
-                    cancelText={isDeletingSong ? null : "Cancel"}
-                    okType="danger"
-                    showCancel={!isDeletingSong}
-                    okButtonProps={{
-                      disabled: deleteCountdown > 0 || isDeletingSong
+                  <button 
+                    className="delete-song-btn"
+                    style={{ 
+                      padding: '0.5em 1em', 
+                      fontSize: '0.9em',
+                      backgroundColor: '#dc3545',
+                      color: 'white',
+                      border: '1px solid #c82333',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5em',
+                      transition: 'background-color 0.2s ease'
                     }}
-                    placement="bottomRight"
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete "${song.title}" by ${artist?.name || 'Unknown Artist'}?`)) {
+                        handleDeleteConfirm();
+                      }
+                    }}
                   >
-                    <button 
-                      className="delete-song-btn"
-                      style={{ 
-                        padding: '0.5em 1em', 
-                        fontSize: '0.9em',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: '1px solid #c82333',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5em',
-                        transition: 'background-color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
-                    >
-                      <FaTrash /> Delete Song
-                    </button>
-                  </Popconfirm>
+                    <FaTrash /> Delete Song
+                  </button>
                 </>
               )}
               {isEditingWholeSong && (

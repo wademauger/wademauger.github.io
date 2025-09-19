@@ -751,19 +751,6 @@ const SongEditor = ({
           {isNewSong ? 'Create Song' : 'Save Changes'}
         </Button>
         <Button
-          className="save-transpose-btn"
-          type="default"
-          onClick={handleSave}
-          disabled={
-            !editedLyrics.trim() ||
-            (song?.lyrics && !chordsChanged(song.lyrics, editedLyrics))
-          }
-          style={{ marginLeft: '0.5rem' }}
-          size="large"
-        >
-          Save Transposed Lyrics
-        </Button>
-        <Button
           icon={<FaTimes />}
           onClick={handleCancel}
           style={{ marginLeft: '0.5rem' }}

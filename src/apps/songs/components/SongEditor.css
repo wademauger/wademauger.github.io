@@ -360,6 +360,10 @@
   color: #666;
 }
 
+.chords-section {
+  padding: 1.5rem;
+}
+
 .lyrics-preview {
   width: 100%;
   padding: 1rem;

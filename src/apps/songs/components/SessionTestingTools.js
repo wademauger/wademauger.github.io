@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Alert, Collapse, Tag } from 'antd';
-import { ClockCircleOutlined, ExperimentOutlined, WarningOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { Panel } = Collapse;
 
 const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
@@ -237,7 +236,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
     <Card 
       title={
         <Space>
-          <ExperimentOutlined />
+          <span>🧪</span>
           <span>Session Testing Tools</span>
           <Tag color="orange">DEV ONLY</Tag>
         </Space>
@@ -285,7 +284,6 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
                     message={`Session expires in ${countdown} seconds!`}
                     type="warning"
                     showIcon
-                    icon={<ClockCircleOutlined />}
                   />
                 )}
               </Space>
@@ -297,17 +295,15 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
                 <Button 
                   type="primary" 
                   danger
-                  icon={<ClockCircleOutlined />}
                   onClick={expireSessionNow}
                 >
-                  Expire Now
+                  ⏰ Expire Now
                 </Button>
                 <Button 
                   type="default"
-                  icon={<WarningOutlined />}
                   onClick={expireSessionIn5Seconds}
                 >
-                  Expire in 5s
+                  ⚠️ Expire in 5s
                 </Button>
                 <Button 
                   type="default"
@@ -329,10 +325,9 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
               <Space wrap>
                 <Button 
                   type="default"
-                  icon={<InfoCircleOutlined />}
                   onClick={testTokenValidity}
                 >
-                  Test Token
+                  ℹ️ Test Token
                 </Button>
                 <Button 
                   type="default"

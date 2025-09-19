@@ -2,17 +2,18 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { pinChord, loadChordFingerings } from '../../store/chordsSlice';
-import { 
-  loadLibraryFromDrive, 
-  updateSong, 
-  setSelectedSong, 
+import {
+  loadLibraryFromDrive,
+  updateSong,
+  setSelectedSong,
   setGoogleDriveConnection,
   setUserInfo,
   clearError,
   loadMockLibrary,
   addSong,
   addArtist,
-  addAlbum
+  addAlbum,
+  deleteSong
 } from '../../store/songsSlice';
 import SongDetail from './components/SongDetail';
 import AlbumArt from './components/AlbumArt';
@@ -23,16 +24,16 @@ import GoogleSignInButton from './components/GoogleSignInButton';
 import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Button, Spin, App } from 'antd';
+import { Button, Spin, App, Popconfirm } from 'antd';
 
 const SongTabsApp = () => {
   const { message } = App.useApp();
-  
+
   // Developer flag to enable session testing tools
   // Set this to true when you need to test session expiry scenarios
   // The testing tools will only appear in development mode when this flag is true
   const ENABLE_SESSION_TESTING = false; // Change to true to enable testing tools
-  
+
   // Redux state
   const dispatch = useDispatch();
   const {
@@ -43,7 +44,7 @@ const SongTabsApp = () => {
     isLoading,
     error
   } = useSelector(state => state.songs);
-  
+
   // Local component state for UI interactions only
   const [isEditingSong, setIsEditingSong] = useState(false);
   const [isCreatingNewSong, setIsCreatingNewSong] = useState(false);
@@ -69,10 +70,10 @@ const SongTabsApp = () => {
       console.log('Library loaded from Google Drive');
     } catch (error) {
       console.error('Failed to load library from Google Drive:', error);
-      
+
       // Detailed error analysis
       let errorMessage = 'Failed to load library from Google Drive';
-      
+
       if (typeof error === 'string') {
         if (error.includes('User not signed in')) {
           errorMessage = 'Please sign in to Google Drive to access your music library';
@@ -94,14 +95,14 @@ const SongTabsApp = () => {
       } else if (error?.message) {
         errorMessage = `Error: ${error.message}`;
       }
-      
+
       console.error('Detailed error info:', {
         errorType: typeof error,
         errorMessage: error?.message || error,
         errorStack: error?.stack,
         timestamp: new Date().toISOString()
       });
-      
+
       // Check if this is an authentication error
       if (isAuthError(error) || errorMessage.includes('sign in') || errorMessage.includes('authentication')) {
         message.error(errorMessage);
@@ -110,7 +111,7 @@ const SongTabsApp = () => {
       } else {
         message.error(errorMessage);
       }
-      
+
       // Fall back to mock library
       dispatch(loadMockLibrary());
     }
@@ -119,12 +120,12 @@ const SongTabsApp = () => {
   // Simplified song update handler using Redux
   const handleSongUpdate = async (updatedSongData) => {
     if (!selectedSong) return;
-    
+
     try {
       const artistName = selectedSong.artist.name;
       const albumTitle = selectedSong.album.title; // Use consistent property name
       const songTitle = selectedSong.title;
-      
+
       await dispatch(updateSong({
         artistName,
         albumTitle,
@@ -132,17 +133,17 @@ const SongTabsApp = () => {
         updatedSongData,
         isGoogleDriveConnected
       })).unwrap();
-      
+
       message.success('Song updated successfully');
     } catch (error) {
       console.error('Failed to update song:', error);
-      
+
       // Check if this is an authentication error
       if (isAuthError(error)) {
         // Update UI state to reflect that user is no longer authenticated
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
-        
+
         message.error('Your Google Drive session has expired. Please sign in again to save changes.');
       } else {
         message.error('Failed to save song changes. Please try again.');
@@ -153,13 +154,13 @@ const SongTabsApp = () => {
   // Handler for song updates from the editor (exits editing mode on success)
   const handleSongEditorSave = async (updatedSongData, newMetadata = null) => {
     if (!selectedSong) return;
-    
+
     try {
       // Use original metadata unless new metadata is provided
       const artistName = newMetadata?.artist || selectedSong.artist.name;
       const albumTitle = newMetadata?.album || selectedSong.album.title;
       const songTitle = updatedSongData.title || selectedSong.title;
-      
+
       await dispatch(updateSong({
         artistName: selectedSong.artist.name, // Original location for deletion
         albumTitle: selectedSong.album.title, // Original location for deletion
@@ -170,18 +171,18 @@ const SongTabsApp = () => {
         newSongTitle: songTitle, // New song title if different
         isGoogleDriveConnected
       })).unwrap();
-      
+
       message.success('Song updated successfully');
       setIsEditingSong(false); // Exit editing mode after successful save
     } catch (error) {
       console.error('Failed to update song:', error);
-      
+
       // Check if this is an authentication error
       if (isAuthError(error)) {
         // Update UI state to reflect that user is no longer authenticated
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
-        
+
         message.error('Your Google Drive session has expired. Please sign in again to save changes.');
       } else {
         message.error('Failed to save song changes. Please try again.');
@@ -200,7 +201,7 @@ const SongTabsApp = () => {
 
         await GoogleDriveServiceModern.initialize(CLIENT_ID);
         const signInStatus = GoogleDriveServiceModern.getSignInStatus();
-        
+
         if (signInStatus.isSignedIn) {
           dispatch(setGoogleDriveConnection(true));
           dispatch(setUserInfo({
@@ -228,14 +229,14 @@ const SongTabsApp = () => {
     try {
       await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
       const signInStatus = GoogleDriveServiceModern.getSignInStatus();
-      
+
       dispatch(setGoogleDriveConnection(true));
       dispatch(setUserInfo({
         email: signInStatus.userEmail,
         name: signInStatus.userName,
         picture: signInStatus.userPicture
       }));
-      
+
       await handleLoadLibraryFromDrive();
     } catch (error) {
       console.error('Google Sign-In failed:', error);
@@ -310,7 +311,7 @@ const SongTabsApp = () => {
       'token_expired',
       'Request had invalid authentication credentials'
     ];
-    return authErrorPatterns.some(pattern => 
+    return authErrorPatterns.some(pattern =>
       message.toLowerCase().includes(pattern.toLowerCase())
     );
   };
@@ -329,21 +330,21 @@ const SongTabsApp = () => {
   const handleCreateNewSong = async (newSongData) => {
     try {
       const { title, artist, album, lyrics } = newSongData;
-      
+
       // First ensure the artist exists
       const existingArtist = library.artists?.find(a => a.name === artist);
-      
+
       if (!existingArtist) {
         await dispatch(addArtist({
           artistName: artist,
           isGoogleDriveConnected
         })).unwrap();
       }
-      
+
       // Then ensure the album exists
       const artistAfterAdd = library.artists?.find(a => a.name === artist) || existingArtist;
       const existingAlbum = artistAfterAdd?.albums?.find(a => a.title === album);
-      
+
       if (!existingAlbum) {
         await dispatch(addAlbum({
           artistName: artist,
@@ -351,7 +352,7 @@ const SongTabsApp = () => {
           isGoogleDriveConnected
         })).unwrap();
       }
-      
+
       // Finally, add the song
       await dispatch(addSong({
         artistName: artist,
@@ -364,26 +365,46 @@ const SongTabsApp = () => {
         },
         isGoogleDriveConnected
       })).unwrap();
-      
+
       // Reload library to get updated data
       const finalLibrary = await dispatch(loadLibraryFromDrive()).unwrap();
-      
+
       // Auto-select the new song
       const newArtist = finalLibrary.artists?.find(a => a.name === artist);
       const newAlbum = newArtist?.albums?.find(a => a.title === album);
       const newSong = newAlbum?.songs?.find(s => s.title === title);
-      
+
       if (newSong) {
         handleSongSelect(newSong, artist, album);
       }
-      
+
       // Close the new song editor
       setIsCreatingNewSong(false);
-      
+
       message.success('Song created successfully!');
     } catch (error) {
       console.error('Failed to create song:', error);
       message.error('Failed to create song. Please try again.');
+    }
+  };
+
+  // Handle song deletion
+  const handleDeleteSong = async () => {
+    try {
+      await dispatch(deleteSong({
+        artistName: selectedSong.artist?.name,
+        albumTitle: selectedSong.album?.title,
+        songTitle: selectedSong.title,
+        isGoogleDriveConnected
+      })).unwrap();
+
+      // Clear selected song since it was deleted
+      dispatch(setSelectedSong(null));
+      
+      message.success('Song deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete song:', error);
+      message.error('Failed to delete song. Please try again.');
     }
   };
 
@@ -422,22 +443,70 @@ const SongTabsApp = () => {
             ) : (
               <div style={{ width: '100%' }}>
                 {/* Song View Header with Google Drive, Edit, and Add Buttons */}
-                <div className="song-view-header" style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                <div className="song-view-header" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   marginBottom: '1rem',
                   gap: '1rem'
                 }}>
+                  <AlbumArt artist={selectedSong.artist?.name} album={selectedSong.album?.title} />
+
                   <div>
-                    <h2 style={{ margin: 0 }}>{selectedSong.title}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h2 style={{ margin: 0 }}>{selectedSong.title}</h2>
+                      {isGoogleDriveConnected && (
+                        <>
+                          <Button
+                            type="text"
+                            size="small"
+                            onClick={() => setIsEditingSong(true)}
+                            style={{
+                              color: '#666',
+                              padding: '4px',
+                              minWidth: 'auto',
+                              height: 'auto',
+                              fontSize: '16px'
+                            }}
+                            onMouseEnter={(e) => e.target.style.color = '#1890ff'}
+                            onMouseLeave={(e) => e.target.style.color = '#666'}
+                            title="Edit Song"
+                          >
+                            ✏️
+                          </Button>
+                          <Popconfirm
+                            title="Delete Song"
+                            description={`Are you sure you want to delete "${selectedSong.title}"? This action cannot be undone.`}
+                            onConfirm={handleDeleteSong}
+                            okText="Yes, Delete"
+                            cancelText="Cancel"
+                            okType="danger"
+                          >
+                            <Button
+                              type="text"
+                              size="small"
+                              style={{
+                                color: '#666',
+                                padding: '4px',
+                                minWidth: 'auto',
+                                height: 'auto',
+                                fontSize: '16px'
+                              }}
+                              onMouseEnter={(e) => e.target.style.color = '#ff4d4f'}
+                              onMouseLeave={(e) => e.target.style.color = '#666'}
+                              title="Delete Song"
+                            >
+                              🗑️
+                            </Button>
+                          </Popconfirm>
+                        </>
+                      )}
+                    </div>
                     <p style={{ margin: '0.25rem 0 0 0', color: '#666' }}>
                       {selectedSong.artist?.name} - {selectedSong.album?.title}
                     </p>
                   </div>
-                  
-                  <AlbumArt artist={selectedSong.artist?.name} album={selectedSong.album?.title} />
-                  
+
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     {/* Go to Library Button */}
                     <Button
@@ -453,25 +522,11 @@ const SongTabsApp = () => {
                         color: '#333'
                       }}
                     >
-                      📚 Go to Library
+                      📚 Scroll to Song Library
                     </Button>
-                    
-                    {/* Action Buttons */}
-                    {isGoogleDriveConnected && (
-                      <Button
-                        type="primary"
-                        onClick={() => setIsEditingSong(true)}
-                        style={{
-                          backgroundColor: '#1890ff',
-                          borderColor: '#1890ff'
-                        }}
-                      >
-                        ✏️ Edit Song
-                      </Button>
-                    )}
                   </div>
                 </div>
-                
+
                 <div style={{ width: '100%', minHeight: 'fit-content' }}>
                   <SongDetail
                     song={selectedSong}
@@ -519,59 +574,59 @@ const SongTabsApp = () => {
             padding: '1rem',
             minHeight: selectedSong ? '300px' : '500px'
           }}>
-              {/* Library Header with Count and Google Drive Button */}
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '1rem' 
-              }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>Song Library</h3>
-                  {isLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                      <Spin size="small" />
-                      <span style={{ color: '#666', fontSize: '0.9rem' }}>Loading songs...</span>
-                    </div>
-                  ) : (
-                    <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                      {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
-                    </p>
-                  )}
-                </div>
-                
-                {/* Always show Google Drive button and Add Song button */}
-                <div className="google-drive-section">
-                  {isGoogleDriveConnected ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                      <GoogleSignInButton
-                        isSignedIn={true}
-                        onSignOut={handleGoogleSignOut}
-                        disabled={isLoading}
-                        userInfo={userInfo}
-                      />
-                      <Button
-                        type="primary"
-                        onClick={openNewSongEditor}
-                        style={{
-                          backgroundColor: '#4CAF50',
-                          borderColor: '#4CAF50'
-                        }}
-                      >
-                        + Add New Song
-                      </Button>
-                    </div>
-                  ) : (
+            {/* Library Header with Count and Google Drive Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Song Library</h3>
+                {isLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <Spin size="small" />
+                    <span style={{ color: '#666', fontSize: '0.9rem' }}>Loading songs...</span>
+                  </div>
+                ) : (
+                  <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
+                    {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
+                  </p>
+                )}
+              </div>
+
+              {/* Always show Google Drive button and Add Song button */}
+              <div className="google-drive-section">
+                {isGoogleDriveConnected ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     <GoogleSignInButton
-                      onSuccess={handleGoogleSignInSuccess}
-                      onError={handleGoogleSignInError}
+                      isSignedIn={true}
+                      onSignOut={handleGoogleSignOut}
                       disabled={isLoading}
+                      userInfo={userInfo}
                     />
-                  )}
-                </div>
+                    <Button
+                      type="primary"
+                      onClick={openNewSongEditor}
+                      style={{
+                        backgroundColor: '#4CAF50',
+                        borderColor: '#4CAF50'
+                      }}
+                    >
+                      + Add New Song
+                    </Button>
+                  </div>
+                ) : (
+                  <GoogleSignInButton
+                    onSuccess={handleGoogleSignInSuccess}
+                    onError={handleGoogleSignInError}
+                    disabled={isLoading}
+                  />
+                )}
+              </div>
             </div>
-            
-            <SongListTest 
+
+            <SongListTest
               library={library}
               onSelectSong={handleSongSelect}
               selectedSong={selectedSong}
@@ -597,6 +652,7 @@ const SongTabsApp = () => {
 
       {/* Session Testing Tools - Development Only 
           To enable: Set ENABLE_SESSION_TESTING to true at the top of this component */}
+      {/* Temporarily disabled SessionTestingTools due to Ant Design/MUI conflicts
       {process.env.NODE_ENV === 'development' && (
         <div style={{ marginTop: '2rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
           <SessionTestingTools 
@@ -605,13 +661,14 @@ const SongTabsApp = () => {
           />
         </div>
       )}
+      */}
 
       {/* Display Redux errors */}
       {error && (
         <div style={{ color: 'red', marginTop: '1rem' }}>
           Error: {error}
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             onClick={() => dispatch(clearError())}
             style={{ marginLeft: '0.5rem' }}
           >
