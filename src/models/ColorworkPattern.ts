@@ -3,7 +3,11 @@
  * Reuses the existing colorwork grid structure from knitting-designer
  */
 export class ColorworkPattern {
-    constructor(width = 0, height = 0, grid = null, colors = {}, metadata = {}, fillColor = 'MC') {
+    grid: any[][];
+    colors: any;
+    metadata: any;
+
+    constructor(width = 0, height = 0, grid: any[][] | null = null, colors: any = {}, metadata: any = {}, fillColor = 'MC') {
         if (grid) {
             this.grid = grid; // 2D array of color IDs
         } else {
@@ -17,7 +21,7 @@ export class ColorworkPattern {
         this.metadata = metadata; // Pattern name, description, etc.
     }
 
-    static fromJSON(json) {
+    static fromJSON(json: any) {
         return new ColorworkPattern(
             0, 0,
             json.grid || [],
@@ -35,7 +39,7 @@ export class ColorworkPattern {
     }
 
     // Set a color definition
-    setColor(colorId, hexColor, label) {
+    setColor(colorId: any, hexColor: any, label: any) {
         this.colors[colorId] = {
             id: colorId,
             color: hexColor,
@@ -44,7 +48,7 @@ export class ColorworkPattern {
     }
 
     // Set a stitch color
-    setStitch(row, col, colorId) {
+    setStitch(row: any, col: any, colorId: any) {
         if (row >= 0 && row < this.grid.length && col >= 0 && col < this.grid[row].length) {
             this.grid[row][col] = colorId;
         }
@@ -69,7 +73,7 @@ export class ColorworkPattern {
     }
 
     // Get the color instructions for a specific row
-    getRowInstructions(rowIndex) {
+    getRowInstructions(rowIndex: any) {
         if (rowIndex < 0 || rowIndex >= this.grid.length) return [];
         
         const row = this.grid[rowIndex];

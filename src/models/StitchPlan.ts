@@ -7,12 +7,12 @@ class StitchPlan {
         this.colorworkMapping = null; // New: Store colorwork data
     }
 
-    addRow(row) {
+    addRow(row: any) {
         this.rows.push(row);
     }
 
     // New: Add colorwork mapping from PanelColorworkComposer
-    setColorworkMapping(mappedRows, colorworkPattern) {
+    setColorworkMapping(mappedRows: any, colorworkPattern: any) {
         this.colorworkMapping = {
             mappedRows,
             colorworkPattern
@@ -37,7 +37,7 @@ class StitchPlan {
     }
 
     // New: Convert colorwork array to sequence format
-    generateRowColorworkSequence(colorworkRow) {
+    generateRowColorworkSequence(colorworkRow: any) {
         const sequence = [];
         let currentColor = null;
         let stitchCount = 0;

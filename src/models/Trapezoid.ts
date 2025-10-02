@@ -2,11 +2,20 @@ import { StitchPlan } from './StitchPlan';
 import { defaultGauge } from './Gauge';
 
 class Trapezoid {
+    height: number;
+    baseA: number;
+    baseB: number;
+    baseBHorizontalOffset: number;
+    successors: Trapezoid[];
+    modificationScale: number;
+    finishingSteps: any[];
+    label: string | null;
+
     /**
      * Represents a trapezoidal section of the knitting panel.
      * Responsible for increases and decreases in instructions.
      */
-    constructor(height, baseA, baseB, baseBHorizontalOffset = 0, successors = [], finishingSteps = [], sizeModifier = 1, label = null) {
+    constructor(height: number, baseA: number, baseB: number, baseBHorizontalOffset = 0, successors: Trapezoid[] = [], finishingSteps: any[] = [], sizeModifier = 1, label: string | null = null) {
         this.height = height;
         this.baseA = baseA;
         this.baseB = baseB;
