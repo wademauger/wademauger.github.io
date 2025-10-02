@@ -191,8 +191,77 @@ describe('Trapezoid Model', () => {
     describe('getStitchPlan', () => {
         it('should generate a stitch plan', () => {
             const gauge = new Gauge(10, 10);
-            const stitchPlan = trapezoid.getStitchPlan(gauge, 1, 1);
-            assert.ok(stitchPlan instanceof StitchPlan);
+            const plan = trapezoid.getStitchPlan(gauge, 1, 1);
+            assert.ok(plan instanceof StitchPlan);
+        });
+    });
+
+    describe('toJSON', () => {
+        it('should serialize Trapezoid to JSON', () => {
+            const json = trapezoid.toJSON();
+            assert.strictEqual(json.height, 10);
+            assert.strictEqual(json.baseA, 20);
+            assert.strictEqual(json.baseB, 30);
+            assert.strictEqual(json.baseBHorizontalOffset, 5);
+        });
+
+        it('should serialize successors with toJSON method', () => {
+            const successor = new Trapezoid(5, 10, 15);
+            trapezoid.successors = [successor];
+            const json = trapezoid.toJSON();
+            assert.ok(Array.isArray(json.successors));
+            assert.strictEqual(json.successors.length, 1);
+            assert.strictEqual(json.successors[0].height, 5);
+        });
+
+        it('should serialize successors without toJSON method', () => {
+            trapezoid.successors = [{ height: 5, baseA: 10 }];
+            const json = trapezoid.toJSON();
+            assert.ok(Array.isArray(json.successors));
+            assert.strictEqual(json.successors[0].height, 5);
+        });
+
+        it('should handle null successors', () => {
+            trapezoid.successors = null;
+            const json = trapezoid.toJSON();
+            assert.deepStrictEqual(json.successors, []);
+        });
+
+        it('should handle null finishingSteps', () => {
+            trapezoid.finishingSteps = null;
+            const json = trapezoid.toJSON();
+            assert.deepStrictEqual(json.finishingSteps, []);
+        });
+
+        it('should handle null modificationScale', () => {
+            trapezoid.modificationScale = null;
+            const json = trapezoid.toJSON();
+            assert.strictEqual(json.sizeModifier, 1);
+        });
+
+        it('should handle null label', () => {
+            trapezoid.label = null;
+            const json = trapezoid.toJSON();
+            assert.strictEqual(json.label, null);
+        });
+
+        it('should serialize isHem flag', () => {
+            trapezoid.isHem = true;
+            const json = trapezoid.toJSON();
+            assert.strictEqual(json.isHem, true);
+        });
+
+        it('should serialize shortRows', () => {
+            trapezoid.shortRows = [{ row: 1, stitches: 10 }];
+            const json = trapezoid.toJSON();
+            assert.strictEqual(json.shortRows.length, 1);
+            assert.strictEqual(json.shortRows[0].row, 1);
+        });
+
+        it('should handle non-array shortRows', () => {
+            trapezoid.shortRows = null;
+            const json = trapezoid.toJSON();
+            assert.deepStrictEqual(json.shortRows, []);
         });
     });
 
