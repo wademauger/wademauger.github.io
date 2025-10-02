@@ -102,7 +102,7 @@ const RecipeCard = ({ recipe, onOpenRecipe, isCompact = false }) => {
               <Text type="secondary" style={{ fontSize: '11px', fontWeight: 'bold' }}>
                 Ingredients:
               </Text>
-              {ingredientInfo.displayItems.map((ing, index) => (
+              {ingredientInfo.displayItems.map((ing, index: number) => (
                 <div key={index} style={{ fontSize: '11px', color: '#666', marginLeft: 8 }}>
                   • {ing}
                 </div>
@@ -207,7 +207,7 @@ const MessageContent = ({ message, onOpenRecipe, editingEnabled, onApplyChanges 
       )}
       
       {/* Render recipe cards for full recipes */}
-      {recipes.map((recipe, index) => (
+      {recipes.map((recipe, index: number) => (
         <RecipeCard 
           key={`recipe-${index}`} 
           recipe={recipe} 
@@ -216,7 +216,7 @@ const MessageContent = ({ message, onOpenRecipe, editingEnabled, onApplyChanges 
       ))}
       
       {/* Render compact cards for recipe suggestions */}
-      {recipeSuggestions.map((suggestion, index) => (
+      {recipeSuggestions.map((suggestion, index: number) => (
         <RecipeCard 
           key={`suggestion-${index}`} 
           recipe={suggestion} 

@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
   // Build breadcrumb for crafts and deeper routes
   if (pathSnippets.length > 0) {
     let accumulated = '';
-    pathSnippets.forEach((_, idx) => {
+    pathSnippets.forEach((_, idx: number) => {
       accumulated += `/${pathSnippets[idx]}`;
       const name = breadcrumbNameMap[accumulated] || pathSnippets[idx];
       breadcrumbItems.push({ path: accumulated, breadcrumbName: name });
@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
             <div className="header-content">
               <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
                 <Breadcrumb style={{ margin: 0 }}>
-                  {breadcrumbItems.map((item, idx) => (
+                  {breadcrumbItems.map((item, idx: number) => (
                     <Breadcrumb.Item key={item.path}>
                       <Link to={item.path} style={{ color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center' }}>
                         {idx === 0 ? <HomeOutlined style={{ fontSize: '20px' }} /> : null}

@@ -744,11 +744,11 @@ const RecipeDetail = ({
   };
 
   // Ingredient handlers
-  const handleEditIngredient = (index) => {
+  const handleEditIngredient = (index: number) => {
     setEditingIngredientIndex(index);
   };
 
-  const handleSaveIngredient = async (newIngredient, index) => {
+  const handleSaveIngredient = async (newIngredient, index: number) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients];
     
@@ -764,7 +764,7 @@ const RecipeDetail = ({
     setEditingIngredientIndex(null);
   };
 
-  const handleInsertIngredientAfter = async (index) => {
+  const handleInsertIngredientAfter = async (index: number) => {
     const newIngredient = { quantity: 0, unit: '', name: '' };
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients];
@@ -775,9 +775,9 @@ const RecipeDetail = ({
     setEditingIngredientIndex(index + 1);
   };
 
-  const handleDeleteIngredient = async (index) => {
+  const handleDeleteIngredient = async (index: number) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-    const updatedIngredients = ingredients.filter((_, i) => i !== index);
+    const updatedIngredients = ingredients.filter((_, i: number) => i !== index);
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -787,11 +787,11 @@ const RecipeDetail = ({
   };
 
   // Step handlers
-  const handleEditStep = (index) => {
+  const handleEditStep = (index: number) => {
     setEditingStepIndex(index);
   };
 
-  const handleSaveStep = async (newStep, index) => {
+  const handleSaveStep = async (newStep, index: number) => {
     const updatedSteps = [...recipe.steps];
     updatedSteps[index] = newStep;
     const updatedRecipe = { ...recipe, steps: updatedSteps };
@@ -799,7 +799,7 @@ const RecipeDetail = ({
     setEditingStepIndex(null);
   };
 
-  const handleInsertStepAfter = async (index) => {
+  const handleInsertStepAfter = async (index: number) => {
     const updatedSteps = [...recipe.steps];
     updatedSteps.splice(index + 1, 0, '');
     const updatedRecipe = { ...recipe, steps: updatedSteps };
@@ -808,8 +808,8 @@ const RecipeDetail = ({
     setEditingStepIndex(index + 1);
   };
 
-  const handleDeleteStep = async (index) => {
-    const updatedSteps = recipe.steps.filter((_, i) => i !== index);
+  const handleDeleteStep = async (index: number) => {
+    const updatedSteps = recipe.steps.filter((_, i: number) => i !== index);
     const updatedRecipe = { ...recipe, steps: updatedSteps };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -819,11 +819,11 @@ const RecipeDetail = ({
   };
 
   // Note handlers
-  const handleEditNote = (index) => {
+  const handleEditNote = (index: number) => {
     setEditingNoteIndex(index);
   };
 
-  const handleSaveNote = async (newNote, index) => {
+  const handleSaveNote = async (newNote, index: number) => {
     const updatedNotes = [...recipe.notes];
     updatedNotes[index] = newNote;
     const updatedRecipe = { ...recipe, notes: updatedNotes };
@@ -831,7 +831,7 @@ const RecipeDetail = ({
     setEditingNoteIndex(null);
   };
 
-  const handleInsertNoteAfter = async (index) => {
+  const handleInsertNoteAfter = async (index: number) => {
     const updatedNotes = [...(recipe.notes || [])];
     updatedNotes.splice(index + 1, 0, '');
     const updatedRecipe = { ...recipe, notes: updatedNotes };
@@ -840,8 +840,8 @@ const RecipeDetail = ({
     setEditingNoteIndex(index + 1);
   };
 
-  const handleDeleteNote = async (index) => {
-    const updatedNotes = recipe.notes.filter((_, i) => i !== index);
+  const handleDeleteNote = async (index: number) => {
+    const updatedNotes = recipe.notes.filter((_, i: number) => i !== index);
     const updatedRecipe = { ...recipe, notes: updatedNotes };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -856,8 +856,8 @@ const RecipeDetail = ({
     
     if (active.id !== over.id) {
       const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-      const oldIndex = ingredients.findIndex((_, index) => `ingredient-${index}` === active.id);
-      const newIndex = ingredients.findIndex((_, index) => `ingredient-${index}` === over.id);
+      const oldIndex = ingredients.findIndex((_, index: number) => `ingredient-${index}` === active.id);
+      const newIndex = ingredients.findIndex((_, index: number) => `ingredient-${index}` === over.id);
       
       const updatedIngredients = arrayMove(ingredients, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
@@ -869,8 +869,8 @@ const RecipeDetail = ({
     const { active, over } = event;
     
     if (active.id !== over.id) {
-      const oldIndex = recipe.steps.findIndex((_, index) => `step-${index}` === active.id);
-      const newIndex = recipe.steps.findIndex((_, index) => `step-${index}` === over.id);
+      const oldIndex = recipe.steps.findIndex((_, index: number) => `step-${index}` === active.id);
+      const newIndex = recipe.steps.findIndex((_, index: number) => `step-${index}` === over.id);
       
       const updatedSteps = arrayMove(recipe.steps, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, steps: updatedSteps };
@@ -882,8 +882,8 @@ const RecipeDetail = ({
     const { active, over } = event;
     
     if (active.id !== over.id) {
-      const oldIndex = recipe.notes.findIndex((_, index) => `note-${index}` === active.id);
-      const newIndex = recipe.notes.findIndex((_, index) => `note-${index}` === over.id);
+      const oldIndex = recipe.notes.findIndex((_, index: number) => `note-${index}` === active.id);
+      const newIndex = recipe.notes.findIndex((_, index: number) => `note-${index}` === over.id);
       
       const updatedNotes = arrayMove(recipe.notes, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, notes: updatedNotes };
@@ -939,7 +939,7 @@ const RecipeDetail = ({
     setEditingIngredientIndex(updatedIngredients.length - 1);
   };
 
-  const handleInsertDividerAfter = async (index) => {
+  const handleInsertDividerAfter = async (index: number) => {
     if (isDraft) {
       message.warning('Cannot add dividers to draft recipes. Please save the recipe first.');
       return;
@@ -1021,7 +1021,7 @@ const RecipeDetail = ({
   };
 
   // Enhanced step save handler that can handle multi-line text
-  const handleSaveStepWithMultiline = async (newStepText, index) => {
+  const handleSaveStepWithMultiline = async (newStepText, index: number) => {
     const parsedSteps = parseMultilineInstructions(newStepText);
     
     if (parsedSteps.length === 1) {
@@ -1220,14 +1220,14 @@ const RecipeDetail = ({
                 </thead>
                 <tbody>
                   <SortableContext 
-                    items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index) => `ingredient-${index}`) : []}
+                    items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index: number) => `ingredient-${index}`) : []}
                     strategy={verticalListSortingStrategy}
                   >
                     {(() => {
                     // Handle both flat array and grouped object ingredients
                       if (Array.isArray(recipe.ingredients)) {
                       // Flat array format - render as before with full editing support
-                        return recipe.ingredients.map((ingredient, index) => {
+                        return recipe.ingredients.map((ingredient, index: number) => {
                         // Check if this is a divider
                           if (ingredient.isDivider) {
                             return (
@@ -1368,10 +1368,10 @@ const RecipeDetail = ({
               onDragEnd={handleStepDragEnd}
             >
               <SortableContext 
-                items={recipe.steps.map((_, index) => `step-${index}`)}
+                items={recipe.steps.map((_, index: number) => `step-${index}`)}
                 strategy={verticalListSortingStrategy}
               >
-                {recipe.steps.map((step, index) => (
+                {recipe.steps.map((step, index: number) => (
                   <SortableStep
                     key={`step-${index}`}
                     id={`step-${index}`}
@@ -1416,10 +1416,10 @@ const RecipeDetail = ({
                   onDragEnd={handleNoteDragEnd}
                 >
                   <SortableContext 
-                    items={recipe.notes.map((_, index) => `note-${index}`)}
+                    items={recipe.notes.map((_, index: number) => `note-${index}`)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {recipe.notes.map((note, index) => (
+                    {recipe.notes.map((note, index: number) => (
                       <SortableNote
                         key={`note-${index}`}
                         id={`note-${index}`}

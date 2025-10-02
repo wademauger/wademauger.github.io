@@ -73,7 +73,7 @@ const AppNavigation = ({
             )}
 
             {/* Additional Action Buttons */}
-            {actions.map((action, index) => (
+            {actions.map((action, index: number) => (
               <Button
                 key={index}
                 type={action.type || 'default'}
@@ -88,7 +88,7 @@ const AppNavigation = ({
             ))}
 
             {/* Toggle Switches */}
-            {toggles.map((toggle, index) => (
+            {toggles.map((toggle, index: number) => (
               <div key={index} className="toggle-controls">
                 <Space>
                   <span className="toggle-label">{toggle.label}:</span>

@@ -124,7 +124,7 @@ const InteractiveKnittingView = ({
                                             <Text strong>Colorwork:</Text>
                                             <div style={{ marginTop: 8 }}>
                                                 <Space wrap>
-                                                    {currentRowInstructions.getColorworkInstructions().map((segment, index) => (
+                                                    {currentRowInstructions.getColorworkInstructions().map((segment, index: number) => (
                                                         <Tag 
                                                             key={index}
                                                             style={{ 
@@ -264,7 +264,7 @@ const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
     const barHeight = 20;
 
     let currentPosition = 0;
-    const segments = colorworkInstructions.map((segment, index) => {
+    const segments = colorworkInstructions.map((segment, index: number) => {
         const segmentWidth = segment.stitchCount * stitchWidth;
         const rect = (
             <rect
@@ -314,7 +314,7 @@ const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
         <div style={{ maxWidth: '400px', margin: '0 auto' }}>
             <Text strong style={{ fontSize: '12px' }}>Panel Shape (Row {currentRow + 1} highlighted)</Text>
             <div style={{ marginTop: 8 }}>
-                {rows.map((row, index) => {
+                {rows.map((row, index: number) => {
                     const totalStitches = row.leftStitchesInWork + row.rightStitchesInWork;
                     const widthPercent = (totalStitches / maxStitches) * 100;
                     

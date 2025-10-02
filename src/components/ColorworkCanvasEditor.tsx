@@ -112,7 +112,7 @@ const ColorworkCanvasEditor = ({
         ctx.beginPath();
         
         // Draw each trapezoid as part of the unified path
-        allCoordinates.forEach((coord, index) => {
+        allCoordinates.forEach((coord, index: number) => {
             if (index === 0) {
                 ctx.moveTo(coord.topLeft.x, coord.topLeft.y);
             } else {
@@ -1283,7 +1283,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                             </Button>
                             
                             <div className="layers-list">
-                                {patternLayers.map((layer, index) => (
+                                {patternLayers.map((layer, index: number) => (
                                     <DraggableLayerItem 
                                         key={layer.id} 
                                         layer={layer} 
@@ -1411,7 +1411,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     </Text>
                                                     {(() => {
                                                         const zeroRowIndices = layer.patternConfig.colors
-                                                            .map((c, i) => c.rows === 0 ? i : -1)
+                                                            .map((c, i: number) => c.rows === 0 ? i : -1)
                                                             .filter((i: any) => i !== -1);
                                                         const invalidZeroRows = zeroRowIndices.filter((i: any) => 
                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
@@ -1428,7 +1428,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                         return null;
                                                     })()}
                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                                                        {layer.patternConfig.colors.map((colorConfig, index) => (
+                                                        {layer.patternConfig.colors.map((colorConfig, index: number) => (
                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                 <InputNumber
                                                                     value={colorConfig.rows}
@@ -1445,7 +1445,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                                 <Text>{colorConfig.rows === 0 ? 'rows (fill)' : 'rows'}</Text>
                                                                 {layer.patternConfig.colors.length > 1 && (
                                                                     <Button size="small" danger onClick={() => {
-                                                                        const newColors = layer.patternConfig.colors.filter((_, i) => i !== index);
+                                                                        const newColors = layer.patternConfig.colors.filter((_, i: number) => i !== index);
                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                     }}>Remove</Button>
                                                                 )}
@@ -1467,7 +1467,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     </Text>
                                                     {(() => {
                                                         const zeroColumnIndices = layer.patternConfig.colors
-                                                            .map((c, i) => c.columns === 0 ? i : -1)
+                                                            .map((c, i: number) => c.columns === 0 ? i : -1)
                                                             .filter((i: any) => i !== -1);
                                                         const invalidZeroColumns = zeroColumnIndices.filter((i: any) => 
                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
@@ -1484,7 +1484,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                         return null;
                                                     })()}
                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                                                        {layer.patternConfig.colors.map((colorConfig, index) => (
+                                                        {layer.patternConfig.colors.map((colorConfig, index: number) => (
                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                 <InputNumber
                                                                     value={colorConfig.columns}
@@ -1501,7 +1501,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                                 <Text>{colorConfig.columns === 0 ? 'cols (fill)' : 'cols'}</Text>
                                                                 {layer.patternConfig.colors.length > 1 && (
                                                                     <Button size="small" danger onClick={() => {
-                                                                        const newColors = layer.patternConfig.colors.filter((_, i) => i !== index);
+                                                                        const newColors = layer.patternConfig.colors.filter((_, i: number) => i !== index);
                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                     }}>Remove</Button>
                                                                 )}
@@ -1623,7 +1623,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 // Helper pattern creation functions
 function createSolidPattern(colors = [{ color: '#ffffff' }]) {
     const colorMap = {};
-    colors.forEach((colorConfig, index) => {
+    colors.forEach((colorConfig, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
     
@@ -1659,7 +1659,7 @@ function createCheckerboardPattern(cellSize = 2, colors = [{ color: '#ffffff' },
     }
     
     const colorMap = {};
-    colors.forEach((colorConfig, index) => {
+    colors.forEach((colorConfig, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
     
@@ -1674,7 +1674,7 @@ function createCheckerboardPattern(cellSize = 2, colors = [{ color: '#ffffff' },
 
 function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }]) {
     const colorMap = {};
-    colors.forEach((colorConfig, index) => {
+    colors.forEach((colorConfig, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
     
@@ -1726,7 +1726,7 @@ function generatePattern(type, config, targetDimension = null) {
             const rowsPerEndColor = Math.floor(remainingRows / 2);
             const extraRow = remainingRows % 2;
             
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 if (index === 0) {
                     // First color gets half of remaining rows (plus extra if odd)
                     const rowsToAdd = rowsPerEndColor + extraRow;
@@ -1750,7 +1750,7 @@ function generatePattern(type, config, targetDimension = null) {
             // If all colors have 0 rows, split area evenly
             const rowsPerColor = Math.floor(patternHeight / colors.length);
             let extra = patternHeight - rowsPerColor * colors.length;
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 let thisRows = rowsPerColor + (index < extra ? 1 : 0);
                 for (let i = 0; i < thisRows; i++) {
                     grid.push(new Array(width).fill(index));
@@ -1759,7 +1759,7 @@ function generatePattern(type, config, targetDimension = null) {
         } else {
             // Calculate remaining rows for zero-row colors
             const remainingRowsAfterDefined = Math.max(0, patternHeight - definedRowsTotal);
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 if (colorConfig.rows === 0) {
                     // For zero-row colors, behavior depends on position
                     if (index === 0) {
@@ -1805,7 +1805,7 @@ function generatePattern(type, config, targetDimension = null) {
         }
         
         const colorMap = {};
-        colors.forEach((colorConfig, index) => {
+        colors.forEach((colorConfig, index: number) => {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
     return new ColorworkPattern(0, 0, grid, colorMap, { width, height: patternHeight });
@@ -1841,7 +1841,7 @@ function generatePattern(type, config, targetDimension = null) {
             const colsPerEndColor = Math.floor(remainingColumns / 2);
             const extraCol = remainingColumns % 2;
             
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 if (index === 0) {
                     // First color gets half of remaining columns (plus extra if odd)
                     const colsToAdd = colsPerEndColor + extraCol;
@@ -1871,7 +1871,7 @@ function generatePattern(type, config, targetDimension = null) {
             // If all colors have 0 columns, split area evenly
             const colsPerColor = Math.floor(patternWidth / colors.length);
             let extra = patternWidth - colsPerColor * colors.length;
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 let thisCols = colsPerColor + (index < extra ? 1 : 0);
                 for (let i = 0; i < thisCols; i++) {
                     for (let row = 0; row < height; row++) {
@@ -1880,7 +1880,7 @@ function generatePattern(type, config, targetDimension = null) {
                 }
             });
         } else {
-            colors.forEach((colorConfig, index) => {
+            colors.forEach((colorConfig, index: number) => {
                 if (colorConfig.columns === 0) {
                     // For zero-column colors, behavior depends on position
                     if (index === 0) {
@@ -1936,7 +1936,7 @@ function generatePattern(type, config, targetDimension = null) {
         }
         
         const colorMap = {};
-        colors.forEach((colorConfig, index) => {
+        colors.forEach((colorConfig, index: number) => {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
     return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });

@@ -32,9 +32,9 @@ const RecipeEditor = ({ recipe }) => {
     updateRecipe({ ingredients: updatedIngredients });
   };
 
-  const removeIngredient = (index) => {
+  const removeIngredient = (index: number) => {
     const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
-    const updatedIngredients = ingredients.filter((_, i) => i !== index);
+    const updatedIngredients = ingredients.filter((_, i: number) => i !== index);
     updateRecipe({ ingredients: updatedIngredients });
   };
 
@@ -155,7 +155,7 @@ const RecipeEditor = ({ recipe }) => {
           </div>
 
           <div className="ingredients-list">
-            {localRecipe.ingredients?.map((ingredient, index) => (
+            {localRecipe.ingredients?.map((ingredient, index: number) => (
               <div key={index} className="ingredient-row">
                 <div className="ingredient-inputs">
                   <input

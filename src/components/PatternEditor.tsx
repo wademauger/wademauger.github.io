@@ -63,9 +63,9 @@ const PatternEditor = ({
     onColorsChange(newColors);
   };
 
-  const removeColor = (index) => {
+  const removeColor = (index: number) => {
     if (colors.length > 1) {
-      const newColors = colors.filter((_, i) => i !== index);
+      const newColors = colors.filter((_, i: number) => i !== index);
       onColorsChange(newColors);
       if (activeColorIndex >= newColors.length) {
         setActiveColorIndex(Math.max(0, newColors.length - 1));
@@ -180,7 +180,7 @@ const PatternEditor = ({
           </div>
           
           <Row gutter={[8, 8]}>
-            {colors.map((color, index) => (
+            {colors.map((color, index: number) => (
               <Col key={index}>
                 <div style={{ 
                   border: activeColorIndex === index ? '3px solid #1890ff' : '2px solid #ddd',

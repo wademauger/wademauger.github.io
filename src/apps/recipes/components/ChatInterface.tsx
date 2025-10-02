@@ -45,7 +45,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
     // Simple markdown-like formatting for code blocks
     return content
       .split('```json')
-      .map((part, index) => {
+      .map((part, index: number) => {
         if (index === 0) return part;
         const [code, ...rest] = part.split('```');
         return (
@@ -86,7 +86,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
             </div>
           </div>
         ) : (
-          messages.map((message, index) => (
+          messages.map((message, index: number) => (
             <div key={index} className={`message ${message.role}`}>
               <div className="message-avatar">
                 {message.role === 'user' ? '👤' : '🤖'}

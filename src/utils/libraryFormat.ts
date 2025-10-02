@@ -3,7 +3,7 @@ export function countNamespaces(libraryObj) {
   if (!libraryObj || typeof libraryObj !== 'object') return {};
   const ns = libraryObj.namespaces || libraryObj;
   const counts = {};
-  Object.keys(ns).forEach((k) => {
+  Object.keys(ns).forEach((k: number) => {
     const arr = ns[k];
     // Special-case for songs namespace which may be structured as artists -> albums -> songs
     if (k === 'songs' && arr && typeof arr === 'object') {

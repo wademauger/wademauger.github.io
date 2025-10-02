@@ -196,7 +196,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     return (
       <svg width={size.width} height={size.height} className="fretboard">
         {/* Fret lines */}
-        {Array.from({ length: frets + 1 }, (_, i) => (
+        {Array.from({ length: frets + 1 }, (_, i: number) => (
           <line
             key={`fret-${i}`}
             x1={stringSpacing}
@@ -209,7 +209,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         ))}
 
         {/* Fret number labels - show only marked frets (3, 5, 7, 9, 12, 15, etc.) */}
-        {Array.from({ length: frets }, (_, i) => {
+        {Array.from({ length: frets }, (_, i: number) => {
           const fretNumber = startFret + i;
           const isMarkedFret = fretNumber === 3 || fretNumber === 5 || fretNumber === 7 || 
                               fretNumber === 9 || fretNumber === 12 || fretNumber === 15 || 
@@ -234,7 +234,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         })}
         
         {/* String lines */}
-        {Array.from({ length: strings }, (_, i) => (
+        {Array.from({ length: strings }, (_, i: number) => (
           <line
             key={`string-${i}`}
             x1={stringSpacing * (i + 1)}
@@ -413,7 +413,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     return (
       <svg width={size.width} height={pianoHeight} className="piano">
         {/* White keys */}
-        {whiteKeys.map((key, index) => (
+        {whiteKeys.map((key, index: number) => (
           <rect
             key={`white-${key}`}
             x={index * whiteKeyWidth}
@@ -427,7 +427,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         ))}
 
         {/* Black keys - positioned between specific white keys */}
-        {blackKeys.map((key, index) => {
+        {blackKeys.map((key, index: number) => {
           // Black keys are positioned between: C-D, D-E, F-G, G-A, A-B
           // This corresponds to white key positions: 0-1, 1-2, 3-4, 4-5, 5-6
           const whiteKeyPositions = [0, 1, 3, 4, 5]; // Between these white key indices
@@ -448,7 +448,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         })}
 
         {/* Key labels */}
-        {whiteKeys.map((key, index) => (
+        {whiteKeys.map((key, index: number) => (
           <text
             key={`label-${key}`}
             x={index * whiteKeyWidth + whiteKeyWidth / 2}

@@ -132,7 +132,7 @@ const ColorworkPanelEditor = forwardRef(({
         try {
             // Convert patternColors array to colors object format
             const colorsObject = {};
-            patternColors.forEach((color, index) => {
+            patternColors.forEach((color, index: number) => {
                 colorsObject[index] = {
                     id: index,
                     label: `Color ${index + 1}`,

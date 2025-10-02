@@ -336,7 +336,7 @@ const SongEditor = ({
     const lines = lyricsText.split('\n');
     return (
       <div className="lyrics-preview">
-        {lines.map((line, index) => {
+        {lines.map((line, index: number) => {
           if (!line.trim()) {
             return <div key={index} className="preview-line empty-line">&nbsp;</div>;
           }
@@ -360,7 +360,7 @@ const SongEditor = ({
           plainText = plainText.replace(/\[(.*?)\]/g, '');
 
           // Calculate positions for chord labels
-          const adjustedChordPositions = chordPositions.map((item, index) => {
+          const adjustedChordPositions = chordPositions.map((item, index: number) => {
             let adjustment = 0;
             for (let i = 0; i < index; i++) {
               adjustment += chordPositions[i].length;
@@ -374,7 +374,7 @@ const SongEditor = ({
           return (
             <div key={index} className="lyric-line-with-chords">
               <div className="chord-labels">
-                {adjustedChordPositions.map((item, idx) => (
+                {adjustedChordPositions.map((item, idx: number) => (
                   <span
                     key={`chord-${idx}`}
                     className="chord-label"
@@ -526,14 +526,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingArtists ? 'Searching...' : 'No artists found'}
                 >
                   {/* Existing artists from library */}
-                  {filteredLibraryArtists.map((artistName, index) => (
+                  {filteredLibraryArtists.map((artistName, index: number) => (
                     <Option key={`library-artist-${index}-${artistName}`} value={artistName}>
                       📚 {artistName}
                     </Option>
                   ))}
                   
                   {/* Spotify artist suggestions */}
-                  {filteredArtists.map((artistName, index) => (
+                  {filteredArtists.map((artistName, index: number) => (
                     <Option key={`spotify-artist-${index}-${artistName}`} value={artistName}>
                       <img 
                         src={SpotifyIcon} 
@@ -563,14 +563,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingAlbums ? 'Loading albums...' : 'No albums found'}
                 >
                   {/* Existing albums from library */}
-                  {filteredLibraryAlbums.map((albumTitle, index) => (
+                  {filteredLibraryAlbums.map((albumTitle, index: number) => (
                     <Option key={`library-album-${index}-${albumTitle}`} value={albumTitle}>
                       📚 {albumTitle}
                     </Option>
                   ))}
                   
                   {/* Spotify album suggestions */}
-                  {filteredAlbums.map((albumTitle, index) => (
+                  {filteredAlbums.map((albumTitle, index: number) => (
                     <Option key={`spotify-album-${index}-${albumTitle}`} value={albumTitle}>
                       <img 
                         src={SpotifyIcon} 
@@ -600,14 +600,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingTracks ? 'Loading tracks...' : 'No tracks found'}
                 >
                   {/* Existing songs from library */}
-                  {filteredLibrarySongs.map((title, index) => (
+                  {filteredLibrarySongs.map((title, index: number) => (
                     <Option key={`library-${index}-${title}`} value={title}>
                       📚 {title}
                     </Option>
                   ))}
                   
                   {/* Spotify track suggestions from selected album (deduplicated) */}
-                  {filteredSpotifyTracks.map((trackTitle, index) => (
+                  {filteredSpotifyTracks.map((trackTitle, index: number) => (
                     <Option key={`spotify-${index}-${trackTitle}`} value={trackTitle}>
                       <img 
                         src={SpotifyIcon} 
@@ -682,7 +682,7 @@ const SongEditor = ({
             <div className="chord-palette-ribbon">
               <h4>Chord Palette (click to insert or use Ctrl+1-9, Ctrl+0):</h4>
               <div className="chord-buttons">
-                {chordPalette.map((chord, index) => (
+                {chordPalette.map((chord, index: number) => (
                   <button
                     key={index}
                     className="chord-button"

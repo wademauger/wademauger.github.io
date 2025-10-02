@@ -3,7 +3,7 @@ import { Flex } from 'antd';
 
 const LineWithChords = ({ line, togglePinChord }) => (
   <Flex style={{ fontFamily: 'monospace', whiteSpace: 'pre' }} align="end" wrap="wrap">
-    {line.map((section, idx) => (
+    {line.map((section, idx: number) => (
       <div key={idx} style={{ float: 'left' }}>
         {section.chords.map((chord, chordIdx) => (
           <strong

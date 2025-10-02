@@ -695,7 +695,7 @@ export default function PanelShapeCreator() {
               dataSource={children}
               rowKey={(item) => `${item.id}-${item.label || 'none'}`} // Include label in key to force re-render
               locale={{ emptyText: 'No children' }}
-              renderItem={(item, index) => (
+              renderItem={(item, index: number) => (
                 <List.Item
                   style={{ cursor: 'pointer', background: item.id === selectedId ? '#f0f7ff' : 'transparent' }}
                   onClick={() => setSelectedId(item.id)}
@@ -727,7 +727,7 @@ export default function PanelShapeCreator() {
               dataSource={shortRows}
               rowKey={(item) => `${item.id}-${item.label || 'none'}`}
               locale={{ emptyText: 'No short rows' }}
-              renderItem={(item, index) => (
+              renderItem={(item, index: number) => (
                 <List.Item
                   style={{ cursor: 'pointer', background: item.id === selectedShortRowId ? '#f0f7ff' : 'transparent' }}
                   onClick={() => setSelectedShortRowId(item.id)}

@@ -335,7 +335,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     localTranspose !== 0 ? transposeChord(chord, localTranspose) : chord
   );
 
-  const handleEditLine = (index) => {
+  const handleEditLine = (index: number) => {
     setEditingLineIndex(index);
     setIsAddingLine(false);
   };
@@ -358,7 +358,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     }
   };
 
-  const handleSaveLine = async (newLine, index) => {
+  const handleSaveLine = async (newLine, index: number) => {
     const updatedLyrics = [...lyricsArray];
     
     if (isAddingLine) {
@@ -457,7 +457,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   // Handle deleting a line with optimistic updates
-  const handleDeleteLine = async (index) => {
+  const handleDeleteLine = async (index: number) => {
     // Block if there are pending operations
     if (isPendingAnyOperation || pendingDeleteLines.has(index)) {
       message.warning('Please wait for current operation to complete before deleting this line.');
@@ -511,8 +511,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       // Set pending reorder state
       setIsPendingAnyOperation(true);
       
-      const oldIndex = lyricsArray.findIndex((_, index) => index.toString() === active.id);
-      const newIndex = lyricsArray.findIndex((_, index) => index.toString() === over.id);
+      const oldIndex = lyricsArray.findIndex((_, index: number) => index.toString() === active.id);
+      const newIndex = lyricsArray.findIndex((_, index: number) => index.toString() === over.id);
       
       // Optimistic update - immediately show the new order
       const newLyrics = arrayMove(lyricsArray, oldIndex, newIndex);
@@ -648,7 +648,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     plainText = plainText.replace(/\[(.*?)\]/g, '');
     
     // Calculate positions for chord labels
-    const adjustedChordPositions = chordPositions.map((item, index) => {
+    const adjustedChordPositions = chordPositions.map((item, index: number) => {
       let adjustment = 0;
       for (let i = 0; i < index; i++) {
         adjustment += chordPositions[i].length;
@@ -665,7 +665,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     return (
       <div className="lyric-line-with-chords">
         <div className="chord-labels">
-          {adjustedChordPositions.map((item, idx) => (
+          {adjustedChordPositions.map((item, idx: number) => (
             <span 
               key={`chord-${idx}`} 
               className="chord-label"
@@ -935,10 +935,10 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={(optimisticLyrics || lyricsArray).map((_, index) => index.toString())}
+                items={(optimisticLyrics || lyricsArray).map((_, index: number) => index.toString())}
                 strategy={verticalListSortingStrategy}
               >
-                {(optimisticLyrics || lyricsArray).map((line, index) => (
+                {(optimisticLyrics || lyricsArray).map((line, index: number) => (
                   <SortableLyricLine
                     key={index}
                     id={index.toString()}

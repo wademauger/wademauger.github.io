@@ -305,7 +305,7 @@ const CombinedView = ({
                 onChange={setCurrentStep}
                 className="instruction-steps"
             >
-                {instructions.map((instruction, index) => (
+                {instructions.map((instruction, index: number) => (
                     <Step
                         key={index}
                         title={instruction.row ? `Row ${instruction.row}` : 'Setup/Finishing'}
@@ -318,7 +318,7 @@ const CombinedView = ({
                                 {instruction.hasColorwork() && (
                                     <div className="colorwork-detail">
                                         <div className="colorwork-sequence">
-                                            {instruction.colorwork.colorSequence.map((segment, i) => (
+                                            {instruction.colorwork.colorSequence.map((segment, i: number) => (
                                                 <Tag key={i} color="blue">
                                                     {segment.stitchCount} {segment.colorId}
                                                 </Tag>
@@ -345,7 +345,7 @@ const CombinedView = ({
     const renderCompactInstructions = () => (
         <div className="compact-instructions">
             <ol className="instruction-list">
-                {instructions.map((instruction, index) => (
+                {instructions.map((instruction, index: number) => (
                     <li key={index} className={`instruction-item ${index === currentStep ? 'current' : ''}`}>
                         <span className="instruction-number">
                             {instruction.row || index + 1}.
@@ -497,7 +497,7 @@ const CombinedView = ({
     };
 
     const downloadCSV = () => {
-        const csv = instructions.map((instruction, index) => {
+        const csv = instructions.map((instruction, index: number) => {
             return [
                 index + 1,
                 instruction.row || '',

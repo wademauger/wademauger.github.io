@@ -185,7 +185,7 @@ function convertLyrics(input) {
           // Next line is chords or section header, so this is a standalone chord progression
           // Add proper spacing: each chord followed by (chord length + 1) spaces
           let chordProgression = '';
-          chordPositions.forEach(({ chord }, index) => {
+          chordPositions.forEach(({ chord }, index: number) => {
             chordProgression += `[${chord}]`;
             // Add spacing after each chord except the last one
             if (index < chordPositions.length - 1) {
@@ -200,7 +200,7 @@ function convertLyrics(input) {
         // No more lines, output as standalone chord progression
         // Add proper spacing: each chord followed by (chord length + 1) spaces
         let chordProgression = '';
-        chordPositions.forEach(({ chord }, index) => {
+        chordPositions.forEach(({ chord }, index: number) => {
           chordProgression += `[${chord}]`;
           // Add spacing after each chord except the last one
           if (index < chordPositions.length - 1) {

@@ -16,7 +16,7 @@ const convertToVexChordsFormat = (frets) => {
   // VexChords uses: string 4=G, 3=C, 2=E, 1=A (bottom to top)
   const result = [];
   
-  frets.forEach((fret, index) => {
+  frets.forEach((fret, index: number) => {
     if (fret >= 0) { // Only include non-muted strings
       const stringNumber = 4 - index; // Convert array index to string number
       result.push([stringNumber, fret]);

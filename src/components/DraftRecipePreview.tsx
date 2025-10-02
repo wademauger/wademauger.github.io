@@ -124,7 +124,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
           <div className="ingredients-section">
             <h4>Ingredients:</h4>
             <ul className="ingredients-list">
-              {(Array.isArray(draftRecipe.ingredients) ? draftRecipe.ingredients : []).map((ingredient, index) => (
+              {(Array.isArray(draftRecipe.ingredients) ? draftRecipe.ingredients : []).map((ingredient, index: number) => (
                 <li key={index}>
                   {typeof ingredient === 'object' && ingredient !== null ? (
                     `${ingredient.quantity || ''} ${ingredient.unit || ingredient.units || ''} ${ingredient.name || ingredient.ingredient || ''}`.trim()
@@ -141,7 +141,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
           <div className="steps-section">
             <h4>Steps:</h4>
             <ol className="steps-list">
-              {draftRecipe.steps?.map((step, index) => (
+              {draftRecipe.steps?.map((step, index: number) => (
                 <li key={index}>{step}</li>
               ))}
             </ol>
@@ -153,7 +153,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
               <div className="notes-section">
                 <h4>Notes:</h4>
                 <ul className="notes-list">
-                  {draftRecipe.notes.map((note, index) => (
+                  {draftRecipe.notes.map((note, index: number) => (
                     <li key={index}>{note}</li>
                   ))}
                 </ul>

@@ -98,7 +98,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
                 >
                     {getKnittingControls()}
                     <Steps size="small" current={currentStep} direction="vertical">
-                        {instructions.map((step, index) => (
+                        {instructions.map((step, index: number) => (
                             <Step key={index} title={step} ref={index === currentStep ? currentStepRef : null} />
                         ))}
                     </Steps>

@@ -20,7 +20,7 @@ const RowByRowInstructions = ({ stitchPlan, currentRow = 0 }) => {
 
     return (
         <div className="row-by-row-instructions">
-            {instructions.map((instruction, index) => {
+            {instructions.map((instruction, index: number) => {
                 const isCurrentRow = index === currentRow;
                 const isCompleted = index < currentRow;
                 const stitchPlanRow = stitchPlan.rows[index];
@@ -186,7 +186,7 @@ const ColorworkRowChart = ({ colorworkInstructions, totalStitches }) => {
     const chartHeight = 20;
 
     let currentPosition = 0;
-    const rectangles = colorworkInstructions.map((segment, index) => {
+    const rectangles = colorworkInstructions.map((segment, index: number) => {
         const segmentWidth = segment.stitchCount * stitchWidth;
         const rect = (
             <rect

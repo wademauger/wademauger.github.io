@@ -28,7 +28,7 @@ class StitchPlan {
     generateColorworkInstructions() {
         if (!this.colorworkMapping) return [];
         
-        return this.colorworkMapping.mappedRows.map((mappedRow, index) => ({
+        return this.colorworkMapping.mappedRows.map((mappedRow, index: number) => ({
             row: index + 1,
             machineRow: this.rows[index]?.rowNumber || index + 1,
             colorwork: this.generateRowColorworkSequence(mappedRow.colorwork),

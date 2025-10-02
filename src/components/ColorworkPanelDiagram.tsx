@@ -24,7 +24,7 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
     ctx.beginPath();
     
     // Draw each trapezoid as part of the unified path
-    allCoordinates.forEach((coord, index) => {
+    allCoordinates.forEach((coord, index: number) => {
         if (index === 0) {
             ctx.moveTo(coord.topLeft.x, coord.topLeft.y);
         } else {

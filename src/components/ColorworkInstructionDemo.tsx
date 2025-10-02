@@ -184,7 +184,7 @@ const ColorworkDetail = ({ colorworkInstructions }) => {
 
     return (
         <Space direction="vertical" style={{ width: '100%' }}>
-            {colorworkInstructions.map((segment, index) => (
+            {colorworkInstructions.map((segment, index: number) => (
                 <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div 
                         style={{

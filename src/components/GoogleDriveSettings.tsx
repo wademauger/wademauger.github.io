@@ -144,7 +144,7 @@ const GoogleDriveSettings = ({
             <div>
               <Text strong>Potentially problematic files:</Text>
               <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-                {cleanupResults.problematicFiles.map((file, index) => (
+                {cleanupResults.problematicFiles.map((file, index: number) => (
                   <li key={index}>
                     <Text code>{file.name}</Text> - {file.reason} (Size: {file.size} bytes)
                     <br />

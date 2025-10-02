@@ -144,7 +144,7 @@ const KnitSwatch = ({
           gap: '8px',
           flexWrap: 'wrap'
         }}>
-          {colors.map((color, index) => (
+          {colors.map((color, index: number) => (
             <div key={index} style={{ 
               display: 'flex', 
               alignItems: 'center', 

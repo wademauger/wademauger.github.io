@@ -105,7 +105,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
         >
           {getKnittingControls()}
           <Steps size="small" current={currentStep} direction="vertical">
-            {instructions.map((step, index) => (
+            {instructions.map((step, index: number) => (
               <Step key={index} title={step} ref={index === currentStep ? currentStepRef : null} />
             ))}
           </Steps>
@@ -251,13 +251,13 @@ function KnittingPatterns() {
               </Col>
               <Col xs={24} sm={24} md={24} lg={14} xl={14}>
                 <div className='diagrams'>
-                  {Object.keys(pattern.shapes).map((shape, index) =>
+                  {Object.keys(pattern.shapes).map((shape, index: number) =>
                     <PanelDiagram key={index} shape={pattern.shapes[shape]} label={shape} sizeModifier={sizeModifier} />
                   )}
                 </div>
               </Col>
             </Row>
-            {patternInstructions.map((instructions, index) => (
+            {patternInstructions.map((instructions, index: number) => (
               <PatternInstructions
                 key={index}
                 patternId={patternId}
@@ -272,7 +272,7 @@ function KnittingPatterns() {
               <>
                 <h1 className='text-2xl text-left'><b>Finishing Steps:</b></h1>
                 <ul className='text-left steps-list'>
-                  {pattern.finishingSteps.map((step, index) => <li key={index}>{step}</li>)}
+                  {pattern.finishingSteps.map((step, index: number) => <li key={index}>{step}</li>)}
                 </ul>
               </>
             )}

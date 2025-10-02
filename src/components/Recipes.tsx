@@ -26,7 +26,7 @@ const RecipeIndex = ({ onAIClick }) => {
           ✨ Add with AI
         </Button>
       </div>
-      {Object.keys(recipes).map((category, index) => {
+      {Object.keys(recipes).map((category, index: number) => {
         return (
           <div key={index}>
             <h2 className="text-2xl font-semibold">{category}</h2>
@@ -149,13 +149,13 @@ function Recipes() {
             <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
             <h1 className='text-2xl text-left'><b>Steps:</b></h1>
             <ul className='text-left steps-list'>
-              {recipe.steps.map((step, index) => <li key={index}>{step}</li>)}
+              {recipe.steps.map((step, index: number) => <li key={index}>{step}</li>)}
             </ul>
             {recipe.notes.length > 0 ? (
               <>
                 <h1 className='text-2xl text-left'><b>Notes:</b></h1>
                 <ul className='text-left steps-list'>
-                  {recipe.notes.map((note, index) => <li key={index}>{note}</li>)}
+                  {recipe.notes.map((note, index: number) => <li key={index}>{note}</li>)}
                 </ul>
               </>
             ) : null}

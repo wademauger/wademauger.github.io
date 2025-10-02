@@ -304,7 +304,7 @@ Create recipes that are clear, detailed, and easy to follow. Make your commentar
       
       // Format ingredients with full details (ensure recipe.ingredients is an array)
       const ingredientsList = recipe?.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 
-        ? recipe.ingredients.map((ing, index) => {
+        ? recipe.ingredients.map((ing, index: number) => {
             if (typeof ing === 'object' && ing !== null) {
               return `${index + 1}. ${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
             } else {
@@ -315,7 +315,7 @@ Create recipes that are clear, detailed, and easy to follow. Make your commentar
       
       // Format instructions with full details
       const instructionsList = recipe?.steps?.length > 0
-        ? recipe.steps.map((step, index) => `${index + 1}. ${step}`).join('\n')
+        ? recipe.steps.map((step, index: number) => `${index + 1}. ${step}`).join('\n')
         : 'No instructions listed yet';
       
       // Format notes

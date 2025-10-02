@@ -281,7 +281,7 @@ const ColorworkGrid = ({
     // Selection overlays (viewport-relative) - memoized
     const selectionOverlays = useMemo(() => {
         if (!selection) return null;
-        return (Array.isArray(selection) ? selection : [selection]).map((sel, index) => {
+        return (Array.isArray(selection) ? selection : [selection]).map((sel, index: number) => {
             const x = (sel.startCol - offsetCol) * 20;
             const y = (sel.startRow - offsetRow) * 20;
             const w = (sel.endCol - sel.startCol + 1) * 20;

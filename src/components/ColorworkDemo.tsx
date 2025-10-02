@@ -177,7 +177,7 @@ const ColorworkDemo = () => {
                 <Card style={{ marginBottom: '24px' }}>
                     <Title level={3}>Select Example</Title>
                     <Space wrap>
-                        {examples.map((example, index) => (
+                        {examples.map((example, index: number) => (
                             <Button
                                 key={index}
                                 type={currentExample === index ? 'primary' : 'default'}

@@ -36,7 +36,7 @@ export class PanelColorworkComposer {
         stitchPlan.setColorworkMapping(mappedPattern, colorworkPattern);
         
         // Also add colorwork to individual rows
-        mappedPattern.forEach((mappedRow, index) => {
+        mappedPattern.forEach((mappedRow, index: number) => {
             if (stitchPlan.rows[index]) {
                 stitchPlan.rows[index].setColorwork(mappedRow.colorwork, colorworkPattern);
             }

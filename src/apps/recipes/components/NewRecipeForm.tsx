@@ -1362,7 +1362,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                                     marginBottom: 12
                                   }}>
                                     <tbody>
-                                      {Array.isArray(groupIngredients) && groupIngredients.map((ingredient, idx) => (
+                                      {Array.isArray(groupIngredients) && groupIngredients.map((ingredient, idx: number) => (
                                         <tr key={idx} style={{ 
                                           borderBottom: '1px solid #f0f0f0',
                                           verticalAlign: 'top'
@@ -1423,7 +1423,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                               marginBottom: 0,
                               lineHeight: 1.6
                             }}>
-                              {currentRecipePreview.ingredients.map((ingredient, idx) => (
+                              {currentRecipePreview.ingredients.map((ingredient, idx: number) => (
                                 <li key={idx} style={{ marginBottom: 4 }}>
                                   {typeof ingredient === 'object' ? (
                                     // Handle ingredient objects
@@ -1476,7 +1476,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                       marginBottom: 0,
                       lineHeight: 1.6
                     }}>
-                      {currentRecipePreview.steps.map((step, idx) => (
+                      {currentRecipePreview.steps.map((step, idx: number) => (
                         <li key={idx} style={{ marginBottom: 8 }}>
                           {step}
                         </li>
@@ -1501,7 +1501,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                       marginBottom: 0,
                       lineHeight: 1.6
                     }}>
-                      {currentRecipePreview.notes.map((note, idx) => (
+                      {currentRecipePreview.notes.map((note, idx: number) => (
                         <li key={idx} style={{ marginBottom: 4 }}>
                           {note}
                         </li>
@@ -1518,7 +1518,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                       gap: 4, 
                       flexWrap: 'wrap' 
                     }}>
-                      {currentRecipePreview.tags.map((tag, idx) => (
+                      {currentRecipePreview.tags.map((tag, idx: number) => (
                         <span
                           key={idx}
                           style={{
@@ -1679,7 +1679,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                             <div style={{ marginBottom: 12, fontWeight: 500 }}>
                               🍽️ Here are some recipe suggestions:
                             </div>
-                            {parseRecipeSuggestions(message.text).map((suggestion, idx) => (
+                            {parseRecipeSuggestions(message.text).map((suggestion, idx: number) => (
                               <div key={idx} style={{ 
                                 marginBottom: 8, 
                                 padding: '8px 12px', 

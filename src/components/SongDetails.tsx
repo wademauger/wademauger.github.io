@@ -20,7 +20,7 @@ const SongDetails = ({ song, keyShift, transposeSong, allChords, handlePinChord,
     {/* Display all the charts for the chords in the current song */}
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
       <Flex justify="center" gap="small" wrap="wrap">
-        {allChords.map((chord, index) => (
+        {allChords.map((chord, index: number) => (
           <div key={index} onClick={() => handlePinChord(chord)} style={{ cursor: 'pointer' }}>
             <UkuleleChordChart chord={chord} />
           </div>

@@ -205,7 +205,7 @@ export class InstructionGenerator {
         const shapingByRow = {};
         
         // Simple parsing - this could be enhanced to parse more complex instruction formats
-        shapingInstructions.forEach((instruction, index) => {
+        shapingInstructions.forEach((instruction, index: number) => {
             if (typeof instruction === 'string') {
                 // Extract row numbers if mentioned in the instruction
                 const rowMatch = instruction.match(/(?:Row|RC[=:]?)\s*(\d+)/i);
@@ -276,7 +276,7 @@ export class InstructionGenerator {
      */
     addRemainingShapingInstructions(synchronized, shapingInstructions) {
         // Add cast on, bind off, and finishing instructions
-        shapingInstructions.forEach((instruction, index) => {
+        shapingInstructions.forEach((instruction, index: number) => {
             const isGeneral = typeof instruction === 'string' && 
                              (instruction.toLowerCase().includes('cast on') ||
                               instruction.toLowerCase().includes('bind off') ||
