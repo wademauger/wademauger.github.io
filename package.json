@@ -63,9 +63,12 @@
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@vitejs/plugin-react-swc": "^4.1.0",
     "autoprefixer": "^10.4.21",
     "chai": "^5.2.0",
+    "chokidar-cli": "^3.0.0",
     "eslint": "^9.36.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.32.0",
@@ -73,10 +76,8 @@
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-  "@typescript-eslint/parser": "^8.0.0",
-  "@typescript-eslint/eslint-plugin": "^8.0.0",
-  "chokidar-cli": "^3.0.0",
     "gh-pages": "^6.3.0",
+    "glob": "^11.0.3",
     "jest-environment-jsdom": "^29.7.0",
     "mocha": "^11.1.0",
     "postcss": "^8.5.6",
@@ -102,9 +103,9 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "migrate-file": "node scripts/migrate-to-ts.js",
-  "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-  "lint:watch": "npx -p chokidar-cli chokidar \"src/**/*.{js,jsx,ts,tsx}\" -i -c \"eslint --ext .js,.jsx,.ts,.tsx src || true\"",
-  "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:watch": "npx -p chokidar-cli chokidar \"src/**/*.{js,jsx,ts,tsx}\" -i -c \"eslint --ext .js,.jsx,.ts,.tsx src || true\"",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "browserslist": {
     "production": [

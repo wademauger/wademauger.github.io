@@ -5,26 +5,16 @@ import SpotifyService from '../services/SpotifyService';
 const CACHE_KEY_PREFIX = 'albumArt_';
 const CACHE_EXPIRY_HOURS = 24; // Cache for 24 hours
 
-interface CachedData {
-  data: any;
-  timestamp: number;
-}
-
-interface AlbumData {
-  albumArt: string;
-  albumName: string;
-}
-
-const getCacheKey = (artist: string, album?: string): string => {
+const getCacheKey = (artist, album) => {
   // Cache by artist and album only (not track)
   return `${CACHE_KEY_PREFIX}${artist}_${album || 'unknown'}`.replace(/[^a-zA-Z0-9_]/g, '_');
 };
 
-const getCachedData = (cacheKey: string): any => {
+const getCachedData = (cacheKey) => {
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      const { data, timestamp }: CachedData = JSON.parse(cached);
+      const { data, timestamp } = JSON.parse(cached);
       const now = Date.now();
       const expiryTime = timestamp + (CACHE_EXPIRY_HOURS * 60 * 60 * 1000);
       
@@ -41,9 +31,9 @@ const getCachedData = (cacheKey: string): any => {
   return null;
 };
 
-const setCachedData = (cacheKey: string, data: any): void => {
+const setCachedData = (cacheKey, data) => {
   try {
-    const cacheObject: CachedData = {
+    const cacheObject = {
       data,
       timestamp: Date.now()
     };
@@ -53,17 +43,10 @@ const setCachedData = (cacheKey: string, data: any): void => {
   }
 };
 
-interface AlbumArtProps {
-  artist: string;
-  track?: string;
-  album?: string;
-  size?: number;
-}
-
-const AlbumArt: React.FC<AlbumArtProps> = ({ artist, track, album, size = 150 }) => {
-  const [albumData, setAlbumData] = useState<AlbumData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const AlbumArt = ({ artist, album, size = 150 }) => {
+  const [albumData, setAlbumData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchAlbumArt = async () => {
@@ -84,7 +67,7 @@ const AlbumArt: React.FC<AlbumArtProps> = ({ artist, track, album, size = 150 })
       
       try {
         console.log('🌐 API call for:', artist, album ? `- ${album}` : '(searching artist albums)');
-        const data = await SpotifyService.searchAlbumArt(artist, album as any);
+        const data = await SpotifyService.searchAlbumArt(artist, album);
         setAlbumData(data);
         
         // Cache the result
@@ -93,30 +76,29 @@ const AlbumArt: React.FC<AlbumArtProps> = ({ artist, track, album, size = 150 })
         }
       } catch (err) {
         // Detailed error handling
-        const error = err as Error;
         let errorMessage = 'Failed to load album art';
         
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
           errorMessage = 'Network error: Cannot reach Spotify API service';
-        } else if (error.message.includes('JSON')) {
-          errorMessage = `JSON Parse Error: ${error.message}`;
-        } else if (error.message.includes('404')) {
+        } else if (err.message.includes('JSON')) {
+          errorMessage = `JSON Parse Error: ${err.message}`;
+        } else if (err.message.includes('404')) {
           errorMessage = 'API endpoint not found (404)';
-        } else if (error.message.includes('401')) {
+        } else if (err.message.includes('401')) {
           errorMessage = 'Authentication failed (401) - Check Spotify credentials';
-        } else if (error.message.includes('403')) {
+        } else if (err.message.includes('403')) {
           errorMessage = 'Access forbidden (403) - API quota exceeded?';
-        } else if (error.message.includes('500')) {
+        } else if (err.message.includes('500')) {
           errorMessage = 'Server error (500) - Spotify API or Worker issue';
-        } else if (error.message) {
-          errorMessage = `Error: ${error.message}`;
+        } else if (err.message) {
+          errorMessage = `Error: ${err.message}`;
         }
         
         setError(errorMessage);
         console.error('Album art fetch error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
           artist,
           album
         });
@@ -190,7 +172,7 @@ const AlbumArt: React.FC<AlbumArtProps> = ({ artist, track, album, size = 150 })
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}
         onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
+          e.target.style.display = 'none';
           setError('Image failed to load');
         }}
       />

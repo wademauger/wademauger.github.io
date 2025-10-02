@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface MinimalLayoutProps {
-  children: React.ReactNode;
-}
-
-const MinimalLayout: React.FC<MinimalLayoutProps> = ({ children }) => {
+const MinimalLayout = ({ children }) => {
   return (
     <div>
       {children}

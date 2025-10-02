@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-interface LyricLineEditorProps {
-  line: string;
-  onSave: (line: string) => void;
-  onCancel: () => void;
-}
-
-const LyricLineEditor: React.FC<LyricLineEditorProps> = ({ line, onSave, onCancel }) => {
-  const [editedLine, setEditedLine] = useState<string>(line || '');
-  const inputRef = useRef<HTMLInputElement>(null);
+const LyricLineEditor = ({ line, onSave, onCancel }) => {
+  const [editedLine, setEditedLine] = useState(line || '');
+  const inputRef = useRef(null);
 
   useEffect(() => {
     // Focus the input when the editor opens
@@ -17,11 +11,11 @@ const LyricLineEditor: React.FC<LyricLineEditorProps> = ({ line, onSave, onCance
     }
   }, []);
 
-  const handleSave = (): void => {
+  const handleSave = () => {
     onSave(editedLine);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
