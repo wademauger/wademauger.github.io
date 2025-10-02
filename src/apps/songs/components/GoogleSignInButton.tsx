@@ -12,7 +12,7 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled = false, isSignedIn =
       const userKey = `googleDriveSettings_${userInfo?.email || 'default'}`;
       const saved = localStorage.getItem(userKey);
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return {};
     }

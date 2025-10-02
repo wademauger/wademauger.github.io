@@ -116,7 +116,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       // Fall back to markdown parsing
       console.log('⚠️ JSON parsing failed, falling back to markdown parsing');
       return parseMarkdownRecipe(text);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error parsing recipe:', error);
       // Return a safe fallback structure
       return {
@@ -267,7 +267,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       }
       
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.log('JSON parsing failed:', error.message);
       return null;
     }
@@ -800,7 +800,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       await onSave(recipeData);
       message.success(`Recipe "${finalTitle}" saved successfully!`);
       resetForm();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving AI recipe:', error);
       message.error('Failed to save recipe. Please try again.');
     }
@@ -896,7 +896,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
 
       await onSave(recipeData);
       resetForm();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Form validation failed:', error);
     }
   };
@@ -1007,7 +1007,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           setCurrentRecipePreview(parsedRecipe);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('AI service error:', error);
       const errorMessage = {
         id: Date.now() + 1,
@@ -1096,7 +1096,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           setCurrentRecipePreview(parsedRecipe);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('AI service error:', error);
       const errorMessage = {
         id: Date.now() + 1,

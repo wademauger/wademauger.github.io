@@ -75,7 +75,7 @@ const SongLibraryModal = ({
       const suggestions = await GoogleDriveServiceModern.getFolderSuggestions();
       console.log('🔍 SongLibraryModal: Received folder suggestions:', suggestions);
       setFolderOptions(suggestions);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('🚨 SongLibraryModal: Error loading folder suggestions:', error);
       
       // Check if it's a scope/permission error
@@ -122,7 +122,7 @@ const SongLibraryModal = ({
         error: result.error
       });
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       setFileStatus({
         found: false,
@@ -153,7 +153,7 @@ const SongLibraryModal = ({
       
       message.success('Song library loaded successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading library:', error);
       message.error('Failed to load song library. Please try again.');
     } finally {
@@ -174,7 +174,7 @@ const SongLibraryModal = ({
       
       message.success('New song library created successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new library:', error);
       message.error('Failed to create new song library. Please try again.');
     } finally {
@@ -201,7 +201,7 @@ const SongLibraryModal = ({
       
       message.success('Song library moved successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error moving library:', error);
       message.error('Failed to move song library. Please try again.');
     } finally {

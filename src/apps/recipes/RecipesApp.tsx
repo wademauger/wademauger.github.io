@@ -97,7 +97,7 @@ const RecipesApp = () => {
           // Load recipes from Google Drive
           await loadRecipesFromDrive();
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to initialize Google Drive service:', error);
       }
     };
@@ -111,7 +111,7 @@ const RecipesApp = () => {
       const library = await driveService.loadRecipeLibrary();
       dispatch(setDriveRecipes(library.recipes || []));
       message.success(`Recipes loaded from Google Drive - Found ${library.recipes?.length || 0} recipes`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load recipes from Google Drive:', error);
       
       if (error.message === 'NO_LIBRARY_FOUND') {
@@ -158,7 +158,7 @@ const RecipesApp = () => {
       await loadRecipesFromDrive();
       
       message.success('Successfully signed in to Google Drive');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Google sign in failed:', error);
       dispatch(setError('Failed to sign in to Google Drive'));
       message.error('Failed to sign in to Google Drive. Please try again.');
@@ -175,7 +175,7 @@ const RecipesApp = () => {
       dispatch(setDriveRecipes([]));
       
       message.success('Signed out successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Sign out failed:', error);
       message.error('Failed to sign out of Google Drive');
     }
@@ -191,7 +191,7 @@ const RecipesApp = () => {
       if (isGoogleDriveConnected) {
         await loadRecipesFromDrive();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to update settings:', error);
       message.error('Failed to update Google Drive settings');
     }
@@ -205,7 +205,7 @@ const RecipesApp = () => {
         if (!d) return;
         if (d.app && d.app !== 'recipes') return;
         handleGoogleSignIn(d.tokenResponse || null);
-      } catch (e) { /* swallow */ }
+      } catch (e: unknown) { /* swallow */ }
     };
     const onSigninError = (ev) => {
       try {
@@ -214,7 +214,7 @@ const RecipesApp = () => {
         if (d.app && d.app !== 'recipes') return;
         // Report the error via existing handler
         handleGoogleSignInError && handleGoogleSignInError(d.error);
-      } catch (e) { /* swallow */ }
+      } catch (e: unknown) { /* swallow */ }
     };
     const onSignout = (ev) => {
       try {
@@ -222,7 +222,7 @@ const RecipesApp = () => {
         if (!d) return;
         if (d.app && d.app !== 'recipes') return;
         handleGoogleSignOut();
-      } catch (e) { /* swallow */ }
+      } catch (e: unknown) { /* swallow */ }
     };
 
     window.addEventListener('app:google-signin-success', onSigninSuccess);
@@ -292,7 +292,7 @@ const RecipesApp = () => {
       navigate('/crafts/recipes');
       
       message.success(`Recipe "${activeRecipe.title}" deleted successfully`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to delete recipe:', error);
       message.error('Failed to delete recipe. Please try again.');
     } finally {
@@ -324,7 +324,7 @@ const RecipesApp = () => {
       navigate(targetUrl);
       
       message.success('New recipe created! Start editing to customize it.');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create recipe:', error);
       message.error('Failed to create new recipe. Please try again.');
     } finally {
@@ -340,7 +340,7 @@ const RecipesApp = () => {
       dispatch(setDriveRecipes(library.recipes || []));
       message.success(`Selected library "${file.name}" with ${library.recipes?.length || 0} recipes`);
       setShowLibrarySelector(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to select library file:', error);
       message.error('Failed to select library file');
     } finally {

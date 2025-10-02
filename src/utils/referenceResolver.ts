@@ -44,7 +44,7 @@ async function resolveAllRefs(entry, options = {}) {
       const res = await resolveEntryReference({ fileId, namespace, entryId, loader, cache });
       if (!resolved[namespace]) resolved[namespace] = [];
       resolved[namespace].push(res.entry);
-    } catch (err) {
+    } catch (err: unknown) {
       // attach placeholder error entry
       if (!resolved[r.namespace]) resolved[r.namespace] = [];
       resolved[r.namespace].push({ id: r.entryId, __missing: true, __error: err.message });

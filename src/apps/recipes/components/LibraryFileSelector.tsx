@@ -29,7 +29,7 @@ const LibraryFileSelector = ({
     try {
       const files = await driveService.searchForLibraryFiles();
       setLibraryFiles(files);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load library files:', error);
       setError('Failed to load library files. Please try again.');
     } finally {

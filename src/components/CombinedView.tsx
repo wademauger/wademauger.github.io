@@ -222,7 +222,7 @@ const CombinedView = ({
                     </text>
                 </svg>
             );
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error rendering panel with colorwork:', error);
             return (
                 <div style={{ textAlign: 'center', padding: '20px' }}>

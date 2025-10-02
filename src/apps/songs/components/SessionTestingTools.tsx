@@ -152,7 +152,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
       } else {
         addLog(`Token test failed: ${result.error}`, 'error');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       addLog(`Token test failed: ${error.message}`, 'error');
       
       // Check for specific 401 error (expired token)
@@ -202,7 +202,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
       } else {
         addLog(`Library loading failed: ${result.error}`, 'error');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       addLog(`Library loading failed: ${error.message}`, 'error');
       
       if (error.message.includes('401') || error.message.includes('UNAUTHENTICATED')) {

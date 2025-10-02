@@ -28,11 +28,11 @@ export const DriveAuthProvider = ({ children }) => {
         if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
           window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: !!GoogleDriveServiceModern.isSignedIn, userInfo: ui } }));
         }
-      } catch (e) {
+      } catch (e: unknown) {
         // non-fatal
         console.warn('DriveAuthProvider: failed to dispatch drive:auth-changed', e);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('DriveAuthProvider: token handling failed', err);
       throw err;
     }
@@ -48,7 +48,7 @@ export const DriveAuthProvider = ({ children }) => {
         if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
           window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: false, userInfo: null } }));
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.warn('DriveAuthProvider: failed to dispatch drive:auth-changed on signOut', e);
       }
     }

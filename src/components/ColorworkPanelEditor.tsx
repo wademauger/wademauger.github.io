@@ -160,7 +160,7 @@ const ColorworkPanelEditor = forwardRef(({
 
             setCombinedPattern(combined);
             setInstructions(generatedInstructions);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error generating combined pattern:', error);
         }
     };

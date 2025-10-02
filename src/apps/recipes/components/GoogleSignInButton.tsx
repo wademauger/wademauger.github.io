@@ -13,7 +13,7 @@ const GoogleSignInButton = ({ onSuccess, onError, onSignOut, disabled = false, i
       const saved = localStorage.getItem(userKey);
       const settings = saved ? JSON.parse(saved) : {};
       return { ...settings, showDemoRecipes, onDemoRecipesToggle };
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return { showDemoRecipes, onDemoRecipesToggle };
     }

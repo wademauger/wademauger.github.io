@@ -94,7 +94,7 @@ class Trapezoid {
                 if (!Trapezoid._nextId) Trapezoid._nextId = 1;
                 trap.id = `trap-${Trapezoid._nextId++}`;
             }
-        } catch (e) {
+        } catch (e: unknown) {
             trap.id = json && (json.id || json._id) ? (json.id || json._id) : (`trap-${Date.now()}`);
         }
 

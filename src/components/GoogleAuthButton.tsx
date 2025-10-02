@@ -54,7 +54,7 @@ const GoogleAuthButton = ({
           const customFeatures = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`;
           return originalOpen.call(this, url, name || 'google_oauth', customFeatures);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         // fallthrough
       }
       return originalOpen.apply(this, args);
@@ -74,7 +74,7 @@ const GoogleAuthButton = ({
           await onSuccess(tokenResponse);
           setSignedNow(true);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (onError) onError(err);
       }
     },
@@ -91,7 +91,7 @@ const GoogleAuthButton = ({
     setIsLoading(true);
     try {
       googleLogin();
-    } catch (err) {
+    } catch (err: unknown) {
       if (onError) onError(err);
     } finally {
       setIsLoading(false);

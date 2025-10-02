@@ -21,7 +21,7 @@ const ExampleRecipesAppIntegration = () => {
         if (signInStatus.isSignedIn) {
           loadRecipes();
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to initialize Google Drive service:', error);
         message.error('Failed to initialize Google Drive service');
       }
@@ -34,7 +34,7 @@ const ExampleRecipesAppIntegration = () => {
     try {
       const library = await googleDriveService.loadRecipeLibrary();
       setRecipes(library.recipes || []);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load recipes:', error);
       message.error('Failed to load recipes');
     }

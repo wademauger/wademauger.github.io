@@ -150,7 +150,7 @@ async function handleSpotifySearch(request, env) {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
     });
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Spotify search error:', error);
     return new Response(JSON.stringify({ 
       error: 'Spotify search failed',
@@ -448,7 +448,7 @@ async function handleRequest(request, env) {
         response = await callAIProvider(provider, messages, env, isFullRecipeRequest);
         usedProvider = provider;
         break;
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`Provider ${provider} failed:`, error.message);
         lastError = error;
         continue;
@@ -479,7 +479,7 @@ async function handleRequest(request, env) {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
     });
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Request handling error:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',

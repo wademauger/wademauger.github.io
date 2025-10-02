@@ -59,7 +59,7 @@ class SpotifyService {
       }
 
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Spotify album search failed:', error);
       return null;
     }
@@ -95,7 +95,7 @@ class SpotifyService {
       }
 
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Spotify search failed:', error);
       return null;
     }
@@ -161,7 +161,7 @@ class SpotifyService {
       });
 
       return albums;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to get artist albums:', error);
       // Cache empty result to avoid repeated failed searches
       this.albumCache.set(cacheKey, {
@@ -227,7 +227,7 @@ class SpotifyService {
       });
 
       return artists;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to search artists:', error);
       // Cache empty result to avoid repeated failed searches
       this.albumCache.set(cacheKey, {
@@ -313,7 +313,7 @@ class SpotifyService {
       });
 
       return tracks;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to get album tracks:', error);
       // Cache empty result to avoid repeated failed searches
       this.albumCache.set(cacheKey, {
@@ -380,7 +380,7 @@ class SpotifyService {
       });
 
       return tracks;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to search tracks:', error);
       // Cache empty result to avoid repeated failed searches
       this.albumCache.set(cacheKey, {

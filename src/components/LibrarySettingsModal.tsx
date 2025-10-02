@@ -140,7 +140,7 @@ const LibrarySettingsModal = () => {
       const suggestions = await service.getFolderSuggestions();
       console.log(`🔍 LibrarySettingsModal (${appContext}): Received folder suggestions:`, suggestions);
       setFolderOptions(suggestions);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading folder suggestions:', error);
       // Return at least the root folder option if there's an error
       setFolderOptions([
@@ -176,7 +176,7 @@ const LibrarySettingsModal = () => {
       
       setFileStatus(result);
       setLastSearchSettings(searchSettings);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       setFileStatus({
         found: false,
@@ -263,7 +263,7 @@ const LibrarySettingsModal = () => {
           } else {
             message.error('No callback configured to receive panel library');
           }
-        } catch (cbErr) {
+        } catch (cbErr: unknown) {
           console.error('Error invoking panel callback:', cbErr);
           message.error('Failed to hand panel data to caller');
         }
@@ -280,7 +280,7 @@ const LibrarySettingsModal = () => {
       
       message.success(`${appContext === 'songs' ? 'Song' : 'Recipe'} library loaded successfully`);
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading existing library:', error);
       message.error(`Failed to load ${appContext === 'songs' ? 'song' : 'recipe'} library: ${error.message}`);
     } finally {
@@ -302,7 +302,7 @@ const LibrarySettingsModal = () => {
       
       // Refresh search to show the new file
       await searchForFile();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new library:', error);
       message.error(`Failed to create new ${appContext === 'songs' ? 'song' : 'recipe'} library: ${error.message}`);
     } finally {
@@ -334,7 +334,7 @@ const LibrarySettingsModal = () => {
       }
       
       message.success('Settings saved successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving settings:', error);
       message.error('Failed to save settings');
     }
@@ -384,7 +384,7 @@ const LibrarySettingsModal = () => {
         if (service.findLibraryFile) {
           saved = await service.findLibraryFile();
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.warn('findLibraryFile failed after createNewLibrary', e);
       }
 
@@ -398,7 +398,7 @@ const LibrarySettingsModal = () => {
         // Fallback to loading via generic method
         try {
           libraryData = await service.loadLibraryData();
-        } catch (e) {
+        } catch (e: unknown) {
           console.warn('Could not load library data after create', e);
         }
       }
@@ -420,7 +420,7 @@ const LibrarySettingsModal = () => {
       }
 
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving here:', error);
       message.error(`Failed to save: ${String(error)}`);
     } finally {

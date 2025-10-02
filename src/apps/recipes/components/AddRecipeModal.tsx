@@ -99,7 +99,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
       if (onRecipeAdded) {
         onRecipeAdded(newRecipe);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       message.error(error.message || 'Failed to create recipe');
     } finally {
       setIsLoading(false);

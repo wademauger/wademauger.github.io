@@ -129,8 +129,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                     if (w.GoogleDriveServiceModern && w.GoogleDriveServiceModern.signOut) {
                       await w.GoogleDriveServiceModern.signOut();
                     }
-                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e) { /* swallow */ }
-                  } catch (err) {
+                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e: unknown) { /* swallow */ }
+                  } catch (err: unknown) {
                     // swallow
                   }
                 };
@@ -138,12 +138,12 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                 const emitSignInSuccess = (tokenResponse: any, appName: string) => {
                   try {
                     window.dispatchEvent(new CustomEvent('app:google-signin-success', { detail: { app: appName, tokenResponse } }));
-                  } catch (e) { /* swallow */ }
+                  } catch (e: unknown) { /* swallow */ }
                 };
                 const emitSignInError = (error: any, appName: string) => {
                   try {
                     window.dispatchEvent(new CustomEvent('app:google-signin-error', { detail: { app: appName, error } }));
-                  } catch (e) { /* swallow */ }
+                  } catch (e: unknown) { /* swallow */ }
                 };
 
                 const appNameFromPath = (path: string) => {
@@ -163,10 +163,10 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                 }
                 if (location.pathname.startsWith('/crafts/colorwork-designer') || location.pathname.startsWith('/crafts/unified-designer') || location.pathname.startsWith('/crafts/knitting')) {
                   const openHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e) { /* swallow */ }
+                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e: unknown) { /* swallow */ }
                   };
                   const saveAsHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e) { /* swallow */ }
+                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e: unknown) { /* swallow */ }
                   };
                   const app = 'colorwork';
                   return <ColorworkGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} onOpen={openHandler} onSaveAs={saveAsHandler} />;

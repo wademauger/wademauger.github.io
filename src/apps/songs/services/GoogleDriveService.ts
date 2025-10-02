@@ -149,7 +149,7 @@ class GoogleDriveService {
           this.restoreSession();
 
           resolve();
-        } catch (error) {
+        } catch (error: unknown) {
           reject(error);
         }
       });
@@ -213,7 +213,7 @@ class GoogleDriveService {
       const userInfo = await response.json();
       this.userEmail = userInfo.email;
       localStorage.setItem('gdrive_user_email', this.userEmail);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load user profile:', error);
       this.handleAuthError(error);
     }
@@ -234,7 +234,7 @@ class GoogleDriveService {
         spaces: 'drive'
       });
       return response.result.files.length > 0 ? response.result.files[0] : null;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -271,7 +271,7 @@ class GoogleDriveService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -301,10 +301,10 @@ class GoogleDriveService {
 
       try {
         return JSON.parse(response.body);
-      } catch (jsonError) {
+      } catch (jsonError: unknown) {
         throw new Error(`Invalid JSON in library file: ${jsonError.message}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Enhanced error handling with specific messages
       if (error.message?.includes('JSON')) {
         throw error; // Re-throw JSON parsing errors as-is
@@ -351,7 +351,7 @@ class GoogleDriveService {
         
         return await response.json();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -383,7 +383,7 @@ class GoogleDriveService {
       await this.saveLibrary(library);
       
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -421,7 +421,7 @@ class GoogleDriveService {
       await this.saveLibrary(library);
       
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -467,7 +467,7 @@ class GoogleDriveService {
       await this.saveLibrary(library);
       
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -506,7 +506,7 @@ class GoogleDriveService {
       await this.saveLibrary(library);
       
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
     }
@@ -598,7 +598,7 @@ class GoogleDriveService {
         window.gapi?.client?.setToken(null);
         return false;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Token validation failed, clear the session quietly
       console.debug('Token validation error, clearing session:', error);
       this.clearSession();

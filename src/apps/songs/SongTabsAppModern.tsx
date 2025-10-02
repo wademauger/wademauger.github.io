@@ -61,7 +61,7 @@ const SongTabsApp = () => {
     try {
       await dispatch(loadLibraryFromDrive()).unwrap();
       console.log('Library loaded from Google Drive');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load library from Google Drive:', error);
 
       // Detailed error analysis
@@ -128,7 +128,7 @@ const SongTabsApp = () => {
       })).unwrap();
 
       message.success('Song updated successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to update song:', error);
 
       // Check if this is an authentication error
@@ -167,7 +167,7 @@ const SongTabsApp = () => {
 
       message.success('Song updated successfully');
       setIsEditingSong(false); // Exit editing mode after successful save
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to update song:', error);
 
       // Check if this is an authentication error
@@ -208,7 +208,7 @@ const SongTabsApp = () => {
           console.debug('No valid session found, using mock library');
           handleLoadMockLibrary();
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to initialize Google Drive:', error);
         handleLoadMockLibrary();
       }
@@ -231,7 +231,7 @@ const SongTabsApp = () => {
       }));
 
       await handleLoadLibraryFromDrive();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Google Sign-In failed:', error);
       message.error('Failed to connect to Google Drive. Please try again.');
     }
@@ -248,7 +248,7 @@ const SongTabsApp = () => {
       dispatch(setGoogleDriveConnection(false));
       dispatch(setUserInfo(null));
       handleLoadMockLibrary();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to sign out:', error);
     }
   };
@@ -263,7 +263,7 @@ const SongTabsApp = () => {
       if (isGoogleDriveConnected) {
         await handleLoadLibraryFromDrive();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to update settings:', error);
       message.error('Failed to update Google Drive settings');
     }
@@ -391,7 +391,7 @@ const SongTabsApp = () => {
       setIsCreatingNewSong(false);
 
       message.success('Song created successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create song:', error);
       message.error('Failed to create song. Please try again.');
     }
@@ -411,7 +411,7 @@ const SongTabsApp = () => {
       dispatch(setSelectedSong(null));
       
       message.success('Song deleted successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to delete song:', error);
       message.error('Failed to delete song. Please try again.');
     }

@@ -200,7 +200,7 @@ export const importPattern = (jsonData) => {
       colors: data.colors,
       gridSize: data.gridSize || { width: data.pattern[0].length, height: data.pattern.length }
     };
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to import pattern: ${error.message}`);
   }
 };

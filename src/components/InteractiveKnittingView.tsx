@@ -34,7 +34,7 @@ const InteractiveKnittingView = ({
                 try {
                     const enhanced = service.createColorworkStitchPlan(panel, colorworkPattern);
                     setEnhancedStitchPlan(enhanced);
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error('Error creating enhanced stitch plan:', error);
                 }
             }

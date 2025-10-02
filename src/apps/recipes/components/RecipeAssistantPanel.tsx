@@ -25,7 +25,7 @@ const RecipeAssistantPanel = () => {
         }
       }
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.log('Failed to parse recipe from response:', error);
       return null;
     }

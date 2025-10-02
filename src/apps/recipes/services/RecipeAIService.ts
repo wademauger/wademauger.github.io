@@ -141,7 +141,7 @@ NOT like:
         providerName: this.availableProviders[data.provider]?.name || data.provider
       };
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error calling AI worker:', error);
       return this._getFallbackResponse(userMessage, recipeContext);
     }
@@ -615,7 +615,7 @@ Choose the most appropriate format based on what the user is asking for.`;
       }
       
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.log('❌ Failed to convert markdown to JSON:', error.message);
       return null;
     }
@@ -917,7 +917,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       }
       
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.log('JSON parsing failed:', error.message);
       return null;
     }
@@ -1161,7 +1161,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
         notes: notes || ''
       };
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to parse ingredient string:', ingredientStr, error);
       // Fallback: return as unstructured
       return {

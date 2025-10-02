@@ -93,7 +93,7 @@ class GoogleDriveServiceModern {
         recipesFolder: '/'
       };
       return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return {
         songsLibraryFile: 'song-tabs-library.json',
@@ -121,7 +121,7 @@ class GoogleDriveServiceModern {
       
       console.log('Google Drive settings updated:', updatedSettings);
       return updatedSettings;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save Google Drive settings:', error);
       throw error;
     }
@@ -148,7 +148,7 @@ class GoogleDriveServiceModern {
         console.log('Loaded user preferences:', preferences);
         return preferences;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load user preferences:', error);
     }
     
@@ -175,7 +175,7 @@ class GoogleDriveServiceModern {
       localStorage.setItem(userKey, JSON.stringify(preferencesToSave));
       console.log('Saved user preferences:', preferencesToSave);
       return preferencesToSave;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save user preferences:', error);
       throw error;
     }
@@ -197,7 +197,7 @@ class GoogleDriveServiceModern {
     try {
       localStorage.removeItem(userKey);
       console.log('Cleared user preferences for:', this.userEmail);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to clear user preferences:', error);
     }
   }
@@ -257,7 +257,7 @@ class GoogleDriveServiceModern {
         }
       }
       return parentId;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error resolving/creating folder path:', folderPath, error);
       return 'root';
     }
@@ -312,7 +312,7 @@ class GoogleDriveServiceModern {
         duplicatesFound: duplicates.length,
         problematicFiles: filesToCheck
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error checking for duplicate files:', error);
       throw new Error('Failed to check for duplicate files');
     }
@@ -347,7 +347,7 @@ class GoogleDriveServiceModern {
 
       console.log('Google Drive service initialized successfully');
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to initialize Google Drive service:', error);
       throw error;
     }
@@ -379,7 +379,7 @@ class GoogleDriveServiceModern {
             });
             this.gapiInited = true;
             resolve();
-          } catch (error) {
+          } catch (error: unknown) {
             reject(error);
           }
         },
@@ -485,7 +485,7 @@ class GoogleDriveServiceModern {
 
         // Request access token
         this.tokenClient.requestAccessToken({ prompt: 'consent' });
-      } catch (error) {
+      } catch (error: unknown) {
         reject(error);
       }
     });
@@ -499,7 +499,7 @@ class GoogleDriveServiceModern {
     try {
       await this.requestAccessToken();
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Sign in failed:', error);
       throw error;
     }
@@ -553,7 +553,7 @@ class GoogleDriveServiceModern {
       
       console.log('✅ Re-authentication completed with broader permissions');
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Re-authentication failed:', error);
       throw new Error(`Re-authentication failed: ${error.message}`);
     }
@@ -611,7 +611,7 @@ class GoogleDriveServiceModern {
       } else {
         console.warn('✗ Failed to load user profile:', response.status, response.statusText);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('✗ Error loading user profile:', error);
     }
     
@@ -678,7 +678,7 @@ class GoogleDriveServiceModern {
       } else {
         console.warn('validateToken: Unexpected response status:', response.status);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('validateToken: Token validation failed with error:', error);
       console.error('validateToken: Error details:', {
         message: error.message,
@@ -775,7 +775,7 @@ class GoogleDriveServiceModern {
 
       // Fallback: empty panels
       return { panels: {}, lastUpdated: new Date().toISOString() };
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('Failed to normalize library payload, falling back to empty panels:', err);
       return { panels: {}, lastUpdated: new Date().toISOString() };
     }
@@ -822,7 +822,7 @@ class GoogleDriveServiceModern {
           this.clearSession();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to restore session:', error);
       this.clearSession();
     }
@@ -928,7 +928,7 @@ class GoogleDriveServiceModern {
           details: response.statusText || 'Unknown error'
         };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Check for specific authentication errors
       if (error.status === 401) {
         return {
@@ -962,7 +962,7 @@ class GoogleDriveServiceModern {
         try {
           await this.loadGoogleAPIs();
           await this.initializeGapi();
-        } catch (err) {
+        } catch (err: unknown) {
           console.error('GAPI client initialization failed:', err);
           throw new Error('Google APIs client not initialized');
         }
@@ -1006,7 +1006,7 @@ class GoogleDriveServiceModern {
       }
       
       return file;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error finding library file:', error);
       GoogleDriveErrorHandler.handleFileError(
         error,
@@ -1069,7 +1069,7 @@ class GoogleDriveServiceModern {
       console.log('Library file created:', response.result.id);
       GoogleDriveErrorHandler.showSuccess('create', `Created ${libraryFilename}`);
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating library file:', error);
       GoogleDriveErrorHandler.handleFileError(
         error,
@@ -1119,7 +1119,7 @@ class GoogleDriveServiceModern {
       const library = JSON.parse(response.body);
       console.log('Library loaded successfully');
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading library:', error);
       throw new Error('Failed to load library from Google Drive', error);
     }
@@ -1160,7 +1160,7 @@ class GoogleDriveServiceModern {
           lastUpdated: normalized.lastUpdated
         };
         console.log('GoogleDriveServiceModern: normalized payload preview for save:', previewObj);
-      } catch (pvErr) {
+      } catch (pvErr: unknown) {
         console.warn('GoogleDriveServiceModern: failed to build payload preview', pvErr);
       }
       console.log('GoogleDriveServiceModern: saving library to fileId=', fileId, 'size=', bodyStr.length);
@@ -1185,7 +1185,7 @@ class GoogleDriveServiceModern {
           const uploadText = await uploadResp.text();
           console.log('GoogleDriveServiceModern: HTTP upload fallback response for', fileId, 'status=', uploadResp.status, 'len=', uploadText.length);
           try { console.log('GoogleDriveServiceModern: HTTP upload fallback parsed response=', JSON.parse(uploadText || '{}')); } catch  { /* ignore parse errors */ }
-        } catch (uErr) {
+        } catch (uErr: unknown) {
           console.warn('GoogleDriveServiceModern: HTTP upload fallback failed', uErr);
         }
       } else {
@@ -1204,14 +1204,14 @@ class GoogleDriveServiceModern {
           const parsedColorwork = parsed && parsed.colorworkPatterns ? (Array.isArray(parsed.colorworkPatterns) ? parsed.colorworkPatterns.map(p => p.name || p.id).slice(0,10) : []) : [];
           console.log('GoogleDriveServiceModern: verification parsed panels keys count=', parsedPanels.length, 'keysPreview=', parsedPanels.slice(0,10));
           console.log('GoogleDriveServiceModern: verification parsed colorwork count=', parsedColorwork.length, 'previewNames=', parsedColorwork);
-        } catch (pvErr) {
+        } catch (pvErr: unknown) {
           console.warn('GoogleDriveServiceModern: failed to parse verification body', pvErr);
         }
         // Log a small preview of the returned content to confirm what's actually stored
         try {
           const preview = typeof body === 'string' ? body.slice(0, 2000) : JSON.stringify(body).slice(0, 2000);
           console.log('GoogleDriveServiceModern: verification fetch succeeded for', fileId, 'len=', len, 'preview=', preview);
-        } catch (pErr) {
+        } catch (pErr: unknown) {
           console.log('GoogleDriveServiceModern: verification fetch succeeded for', fileId, 'len=', len, '(preview unavailable)', pErr);
         }
 
@@ -1238,15 +1238,15 @@ class GoogleDriveServiceModern {
               // Return parsed result if present
               try { return JSON.parse(txt || '{}'); } catch { return txt; }
             }
-          } catch (fbErr) {
+          } catch (fbErr: unknown) {
             console.error('GoogleDriveServiceModern: upload fallback (after empty verify) error for', fileId, fbErr);
           }
         }
-      } catch (vErr) {
+      } catch (vErr: unknown) {
         console.warn('GoogleDriveServiceModern: verification fetch failed for', fileId, vErr);
       }
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('GoogleDriveServiceModern: Error saving library to fileId:', fileId, error);
       // Try upload fallback endpoint if update failed
       try {
@@ -1268,7 +1268,7 @@ class GoogleDriveServiceModern {
         const txt = await resp.text();
         console.log('GoogleDriveServiceModern: upload fallback succeeded for', fileId, 'respLen=', txt.length);
         return JSON.parse(txt || '{}');
-      } catch (uploadErr) {
+      } catch (uploadErr: unknown) {
         console.error('GoogleDriveServiceModern: upload fallback error for', fileId, uploadErr);
       }
       throw new Error('Failed to save library to specified Drive file');
@@ -1282,7 +1282,7 @@ class GoogleDriveServiceModern {
         try {
           await this.loadGoogleAPIs();
           await this.initializeGapi();
-        } catch (err) {
+        } catch (err: unknown) {
           console.error('GAPI client initialization failed (save):', err);
           throw new Error('Google APIs client not initialized');
         }
@@ -1333,7 +1333,7 @@ class GoogleDriveServiceModern {
       console.log('GoogleDriveServiceModern: updated library file id=', response.result && response.result.id);
       console.log('Library saved successfully');
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving library:', error);
       throw new Error('Failed to save library to Google Drive');
     }
@@ -1405,7 +1405,7 @@ class GoogleDriveServiceModern {
       }
 
       return results;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error listing files with counts:', error);
       GoogleDriveErrorHandler.handleFileError(error, 'listFilesInFolderWithCounts', 'list', { email: this.userEmail, name: this.userName });
       throw new Error('Failed to list files');
@@ -1484,7 +1484,7 @@ class GoogleDriveServiceModern {
           try {
             const updateResp = await gapi.client.drive.files.update({ fileId: createdId, media: { mimeType: 'application/json', body: bodyStr } });
             return { fileId: createdId, result: updateResp.result };
-          } catch (updateErr) {
+          } catch (updateErr: unknown) {
             console.warn('Failed to upload content after create in createOrUpdate flow, returning created resource', updateErr);
             return { fileId: createdId, result: createResp.result };
           }
@@ -1492,7 +1492,7 @@ class GoogleDriveServiceModern {
 
         throw new Error('Failed to create Drive file resource');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating/updating library file:', error);
       throw new Error('Failed to create or update library file');
     }
@@ -1775,7 +1775,7 @@ class GoogleDriveServiceModern {
       } else {
         throw new Error('No access token received from OAuth response');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to handle OAuth token:', error);
       throw error;
     }
@@ -1835,14 +1835,14 @@ class GoogleDriveServiceModern {
           try {
             const subfolders = await this._listFoldersInternal(folder.id, fullPath);
             allFolders = allFolders.concat(subfolders);
-          } catch (error) {
+          } catch (error: unknown) {
             console.warn(`Failed to load subfolders for ${folder.name}:`, error);
           }
         }
       }
 
       return allFolders;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error listing folders:', error);
       throw new Error(`Failed to list folders: ${error.message}`);
     }
@@ -1894,7 +1894,7 @@ class GoogleDriveServiceModern {
 
       console.log('🔍 GoogleDriveServiceModern: Final folder options:', options);
       return options;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting folder suggestions:', error);
       // Return at least the root folder option if there's an error
       return [
@@ -1996,7 +1996,7 @@ class GoogleDriveServiceModern {
         differentLocation: true
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       return {
         found: false,
@@ -2038,7 +2038,7 @@ class GoogleDriveServiceModern {
       const grandParentPath = await this._getFileLocation(parent);
       return grandParentPath === '/' ? `/${parent.name}` : `${grandParentPath}/${parent.name}`;
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting file location:', error);
       return '/'; // Fallback to root
     }
@@ -2103,7 +2103,7 @@ class GoogleDriveServiceModern {
           GoogleDriveErrorHandler.showSuccess('create', `Created ${fileName}`);
           // Return a consistent object with id and name
           return { id: createdId, name: createdName || fileName, result: updateResp.result || createResp.result };
-        } catch (updateErr) {
+        } catch (updateErr: unknown) {
           // If update fails, still return the created resource so caller can attempt to recover
           console.warn('Failed to upload initial content after create - returning created resource', updateErr);
           GoogleDriveErrorHandler.showSuccess('create', `Created ${fileName} (content upload failed)`);
@@ -2113,7 +2113,7 @@ class GoogleDriveServiceModern {
 
       // If no id returned from create, throw
       throw new Error('Failed to create Drive file resource');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new library:', error);
       throw new Error(`Failed to create new library: ${error.message}`);
     }
@@ -2152,7 +2152,7 @@ class GoogleDriveServiceModern {
 
       console.log('File moved successfully:', response.result);
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error moving file:', error);
       throw new Error(`Failed to move file: ${error.message}`);
     }
@@ -2221,7 +2221,7 @@ class GoogleDriveServiceModern {
       console.log('Library loaded successfully from file ID:', fileId);
       
       return libraryData;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading library by ID:', error);
       
       if (error.status === 404) {
@@ -2280,7 +2280,7 @@ class GoogleDriveServiceModern {
       
       console.log(`✅ Operation completed successfully: ${operationName}`);
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.log(`❌ Operation failed: ${operationName}`, error.message);
       
       // Check for various authentication error patterns
@@ -2315,7 +2315,7 @@ class GoogleDriveServiceModern {
             
             console.log(`✅ Retry successful for ${operationName}`);
             return result;
-          } catch (authError) {
+          } catch (authError: unknown) {
             console.error(`❌ Re-authentication failed for ${operationName}:`, authError);
             // Clear retry counter on auth failure
             this.authRetryAttempts.delete(retryKey);

@@ -25,7 +25,7 @@ const getCachedData = (cacheKey) => {
         localStorage.removeItem(cacheKey);
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Cache read error:', error);
   }
   return null;
@@ -38,7 +38,7 @@ const setCachedData = (cacheKey, data) => {
       timestamp: Date.now()
     };
     localStorage.setItem(cacheKey, JSON.stringify(cacheObject));
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Cache write error:', error);
   }
 };
@@ -74,7 +74,7 @@ const AlbumArt = ({ artist, album, size = 150 }) => {
         if (data) {
           setCachedData(cacheKey, data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         // Detailed error handling
         let errorMessage = 'Failed to load album art';
         

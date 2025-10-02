@@ -70,7 +70,7 @@ const RecipeLibraryModal = ({
       // Use the singleton instance instead of creating a new one
       const suggestions = await GoogleDriveRecipeService.getFolderSuggestions();
       setFolderOptions(suggestions);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading folder suggestions:', error);
       
       // Check if it's a scope/permission error
@@ -117,7 +117,7 @@ const RecipeLibraryModal = ({
         error: result.error
       });
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       setFileStatus({
         found: false,
@@ -148,7 +148,7 @@ const RecipeLibraryModal = ({
       
       message.success('Recipe library loaded successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading library:', error);
       message.error('Failed to load recipe library. Please try again.');
     } finally {
@@ -169,7 +169,7 @@ const RecipeLibraryModal = ({
       
       message.success('New recipe library created successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new library:', error);
       message.error('Failed to create new recipe library. Please try again.');
     } finally {
@@ -196,7 +196,7 @@ const RecipeLibraryModal = ({
       
       message.success('Recipe library moved successfully!');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error moving library:', error);
       message.error('Failed to move recipe library. Please try again.');
     } finally {

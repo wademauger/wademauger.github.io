@@ -77,7 +77,7 @@ class GoogleDriveRecipeService {
         recipesFolder: '/'
       };
       return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return {
         songsLibraryFile: 'song-tabs-library.json',
@@ -105,7 +105,7 @@ class GoogleDriveRecipeService {
       
       console.log('Google Drive settings updated:', updatedSettings);
       return updatedSettings;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save Google Drive settings:', error);
       throw error;
     }
@@ -132,7 +132,7 @@ class GoogleDriveRecipeService {
         console.log('Loaded recipe user preferences:', preferences);
         return preferences;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load recipe user preferences:', error);
     }
     
@@ -159,7 +159,7 @@ class GoogleDriveRecipeService {
       localStorage.setItem(userKey, JSON.stringify(preferencesToSave));
       console.log('Saved recipe user preferences:', preferencesToSave);
       return preferencesToSave;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save recipe user preferences:', error);
       throw error;
     }
@@ -181,7 +181,7 @@ class GoogleDriveRecipeService {
     try {
       localStorage.removeItem(userKey);
       console.log('Cleared recipe user preferences for:', this.userEmail);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to clear recipe user preferences:', error);
     }
   }
@@ -223,7 +223,7 @@ class GoogleDriveRecipeService {
 
       console.log('Google Drive recipe service initialized successfully');
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to initialize Google Drive recipe service:', error);
       throw error;
     }
@@ -255,7 +255,7 @@ class GoogleDriveRecipeService {
             });
             this.gapiInited = true;
             resolve();
-          } catch (error) {
+          } catch (error: unknown) {
             reject(error);
           }
         },
@@ -361,7 +361,7 @@ class GoogleDriveRecipeService {
 
         // Request access token
         this.tokenClient.requestAccessToken({ prompt: 'consent' });
-      } catch (error) {
+      } catch (error: unknown) {
         reject(error);
       }
     });
@@ -375,7 +375,7 @@ class GoogleDriveRecipeService {
     try {
       await this.requestAccessToken();
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Recipe sign in failed:', error);
       throw error;
     }
@@ -429,7 +429,7 @@ class GoogleDriveRecipeService {
       
       console.log('✅ Recipe re-authentication completed with broader permissions');
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Recipe re-authentication failed:', error);
       throw new Error(`Recipe re-authentication failed: ${error.message}`);
     }
@@ -467,7 +467,7 @@ class GoogleDriveRecipeService {
       } else {
         console.warn('✗ Failed to load recipe user profile:', response.status, response.statusText);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('✗ Error loading recipe user profile:', error);
     }
     
@@ -495,7 +495,7 @@ class GoogleDriveRecipeService {
         this.isSignedIn = false;
         return false;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.log('Token validation error:', error);
       this.isSignedIn = false;
       return false;
@@ -517,7 +517,7 @@ class GoogleDriveRecipeService {
         
         console.log('Recipe session saved to localStorage for user:', this.userEmail);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to save recipe session:', error);
     }
   }
@@ -547,7 +547,7 @@ class GoogleDriveRecipeService {
           this.clearSession();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to restore recipe session:', error);
       this.clearSession();
     }
@@ -602,7 +602,7 @@ class GoogleDriveRecipeService {
       } else {
         throw new Error('No access token received from OAuth response');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to handle recipe OAuth token:', error);
       throw error;
     }
@@ -622,7 +622,7 @@ class GoogleDriveRecipeService {
           });
           console.log('✅ User-selected recipe library file found:', response.result);
           return response.result;
-        } catch (error) {
+        } catch (error: unknown) {
           console.warn('⚠️ Previously selected file not found, falling back to search:', error);
           // Clear the invalid file ID from preferences
           this.saveUserPreferences({
@@ -662,7 +662,7 @@ class GoogleDriveRecipeService {
       console.log('⚠️ Multiple recipe library files found:', files.length, '- user selection required');
       return null;
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error finding recipe library file:', error);
       throw new Error('Failed to find recipe library file');
     }
@@ -732,7 +732,7 @@ class GoogleDriveRecipeService {
       );
       
       return filesWithDetails;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for library files:', error);
       throw new Error('Failed to search for library files');
     }
@@ -775,7 +775,7 @@ class GoogleDriveRecipeService {
 
       console.log('Recipe library file created:', response.result.id);
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating recipe library file:', error);
       throw new Error('Failed to create recipe library file');
     }
@@ -809,7 +809,7 @@ class GoogleDriveRecipeService {
       const library = JSON.parse(response.body);
       console.log('Recipe library loaded successfully');
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading recipe library:', error);
       
       // Pass through specific errors for UI handling
@@ -847,7 +847,7 @@ class GoogleDriveRecipeService {
 
       console.log('Recipe library saved successfully');
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving recipe library:', error);
       throw new Error('Failed to save recipe library to Google Drive');
     }
@@ -906,7 +906,7 @@ class GoogleDriveRecipeService {
       
       console.log('Recipe added successfully:', newRecipe.title);
       return newRecipe;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error adding recipe:', error);
       throw error; // Re-throw the original error to preserve the specific error message
     }
@@ -952,7 +952,7 @@ class GoogleDriveRecipeService {
       
       console.log('Recipe updated successfully:', updatedRecipe.title);
       return updatedRecipe;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating recipe:', error);
       throw new Error('Failed to update recipe in Google Drive');
     }
@@ -980,7 +980,7 @@ class GoogleDriveRecipeService {
       
       console.log('Recipe deleted successfully');
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error deleting recipe:', error);
       throw new Error('Failed to delete recipe from Google Drive');
     }
@@ -996,7 +996,7 @@ class GoogleDriveRecipeService {
       const library = await this.loadRecipeLibrary();
       const existingPermalinks = new Set(library.recipes.map(r => r.permalink));
       return !existingPermalinks.has(permalink);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error checking permalink availability:', error);
       throw new Error('Failed to check permalink availability');
     }
@@ -1049,14 +1049,14 @@ class GoogleDriveRecipeService {
           try {
             const subfolders = await this.listFolders(folder.id, fullPath);
             allFolders = allFolders.concat(subfolders);
-          } catch (error) {
+          } catch (error: unknown) {
             console.warn(`Failed to load subfolders for ${folder.name}:`, error);
           }
         }
       }
 
       return allFolders;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error listing folders:', error);
       throw new Error(`Failed to list folders: ${error.message}`);
     }
@@ -1101,7 +1101,7 @@ class GoogleDriveRecipeService {
       });
 
       return options;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting folder suggestions:', error);
       // Return at least the root folder option if there's an error
       return [
@@ -1199,7 +1199,7 @@ class GoogleDriveRecipeService {
         differentLocation: true
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       return {
         found: false,
@@ -1241,7 +1241,7 @@ class GoogleDriveRecipeService {
       const grandParentPath = await this._getFileLocation(parent);
       return grandParentPath === '/' ? `/${parent.name}` : `${grandParentPath}/${parent.name}`;
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting file location:', error);
       return '/'; // Fallback to root
     }
@@ -1287,7 +1287,7 @@ class GoogleDriveRecipeService {
 
       console.log('New recipe library created successfully:', response.result);
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new recipe library:', error);
       throw new Error(`Failed to create new recipe library: ${error.message}`);
     }
@@ -1322,7 +1322,7 @@ class GoogleDriveRecipeService {
 
       console.log('Recipe file moved successfully:', response.result);
       return response.result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error moving recipe file:', error);
       throw new Error(`Failed to move recipe file: ${error.message}`);
     }
@@ -1368,7 +1368,7 @@ class GoogleDriveRecipeService {
 
       // Load the library data
       return await this.loadLibraryById(fileId);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error selecting library file:', error);
       throw new Error(`Failed to select library file: ${error.message}`);
     }
@@ -1401,7 +1401,7 @@ class GoogleDriveRecipeService {
       console.log('Recipe library loaded successfully from file ID:', fileId);
       
       return libraryData;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading recipe library by ID:', error);
       
       if (error.status === 404) {

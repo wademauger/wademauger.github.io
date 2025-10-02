@@ -27,7 +27,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
 
     try {
       await onSendMessage(message);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error sending message:', error);
     } finally {
       setIsLoading(false);

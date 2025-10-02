@@ -149,7 +149,7 @@ const ColorworkDemo = () => {
             const combinedInstructions = instructionGenerator.generateCombinedInstructions(combined);
             setInstructions(combinedInstructions);
 
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error generating example:', error);
         } finally {
             setIsLoading(false);

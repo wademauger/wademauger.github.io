@@ -639,7 +639,7 @@ const KnittingDesignerApp = () => {
                 // still receives the same export they saw before Drive integration.
                 try {
                     handleExportPattern();
-                } catch (ex) {
+                } catch (ex: unknown) {
                     console.warn('Local export failed while starting Drive save', ex);
                 }
                 // Register a callback that the Library modal will call with { libraryData, fileStatus, panelName, selectedSettings }
@@ -665,7 +665,7 @@ const KnittingDesignerApp = () => {
                             if (svc && svc.loadLibraryById && fileStatus && fileStatus.fileId) {
                                 currentLib = await svc.loadLibraryById(fileStatus.fileId);
                             }
-                        } catch (ldErr) {
+                        } catch (ldErr: unknown) {
                             console.warn('Failed to load library by id before merge, falling back to modal-provided libraryData', ldErr);
                             currentLib = libraryData && typeof libraryData === 'object' ? { ...libraryData } : null;
                         }
@@ -679,7 +679,7 @@ const KnittingDesignerApp = () => {
                                 await svc.saveLibraryToFile(fileStatus.fileId, libToSave);
                                 message.success(`Saved to Google Drive: ${fileStatus.fileName || 'library'}`);
                                 return;
-                            } catch (err) {
+                            } catch (err: unknown) {
                                 console.warn('saveLibraryToFile failed, falling back to saveLibrary', err);
                             }
                         }
@@ -699,7 +699,7 @@ const KnittingDesignerApp = () => {
                             URL.revokeObjectURL(url);
                             message.warning('Saved locally as JSON (Drive service not available)');
                         }
-                    } catch (err) {
+                    } catch (err: unknown) {
                         console.error('Callback: failed to save colorwork pattern', err);
                         message.error('Failed to save colorwork pattern: ' + String(err));
                     }
@@ -715,7 +715,7 @@ const KnittingDesignerApp = () => {
                         onSelectFileCallbackId: cbId
                     }
                 }));
-            } catch (err) {
+            } catch (err: unknown) {
                 console.error('colorwork:save-as handler failed', err);
                 message.error('Failed to start save flow: ' + String(err));
             }
@@ -758,7 +758,7 @@ const KnittingDesignerApp = () => {
                         setHistoryIndex(0);
 
                         message.success('Loaded colorwork pattern: ' + (chosen.name || 'Unnamed'));
-                    } catch (err) {
+                    } catch (err: unknown) {
                         console.error('Callback: failed to open colorwork pattern', err);
                         message.error('Failed to open pattern: ' + String(err));
                     }
@@ -774,7 +774,7 @@ const KnittingDesignerApp = () => {
                         intent: 'open'
                     }
                 }));
-            } catch (err) {
+            } catch (err: unknown) {
                 console.error('colorwork:open handler failed', err);
                 message.error('Failed to start open flow: ' + String(err));
             }

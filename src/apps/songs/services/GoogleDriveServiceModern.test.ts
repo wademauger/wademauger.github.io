@@ -110,7 +110,7 @@ class MockGoogleDriveServiceModern {
     try {
       this.authRetryAttempts.delete(retryKey);
       return await operation.apply(this, args);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error.message === 'User not signed in to Google Drive') {
         const retryCount = this.authRetryAttempts.get(retryKey) || 0;
         
@@ -122,7 +122,7 @@ class MockGoogleDriveServiceModern {
             const result = await operation.apply(this, args);
             this.authRetryAttempts.delete(retryKey);
             return result;
-          } catch (authError) {
+          } catch (authError: unknown) {
             this.authRetryAttempts.delete(retryKey);
             throw new Error(`Authentication failed: ${authError.message}`);
           }

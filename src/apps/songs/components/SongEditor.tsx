@@ -60,7 +60,7 @@ const SongEditor = ({
         try {
           const albums = await SpotifyService.getAlbumsForArtist(songArtist);
           setSpotifyAlbums(albums);
-        } catch (error) {
+        } catch (error: unknown) {
           console.log('Spotify album suggestions unavailable:', error.message);
           setSpotifyAlbums([]);
         } finally {
@@ -85,7 +85,7 @@ const SongEditor = ({
         try {
           const artists = await SpotifyService.searchArtists(songArtist);
           setSpotifyArtists(artists);
-        } catch (error) {
+        } catch (error: unknown) {
           console.log('Spotify artist suggestions unavailable:', error.message);
           setSpotifyArtists([]);
         } finally {
@@ -110,7 +110,7 @@ const SongEditor = ({
         try {
           const tracks = await SpotifyService.getTracksFromAlbum(songArtist, songAlbum);
           setSpotifyTracks(tracks);
-        } catch (error) {
+        } catch (error: unknown) {
           console.log('Spotify track suggestions unavailable:', error.message);
           setSpotifyTracks([]);
         } finally {
@@ -413,7 +413,7 @@ const SongEditor = ({
     try {
       await navigator.clipboard.writeText(chordText);
       message.success(`${chordText} copied to clipboard`);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to copy to clipboard:', err);
       message.info(`${chordText} inserted`);
     }
@@ -476,7 +476,7 @@ const SongEditor = ({
       }
       
       message.success(isNewSong ? 'Song created successfully!' : 'Song saved successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save song:', error);
       message.error(`Failed to ${isNewSong ? 'create' : 'save'} song. Please try again.`);
     } finally {

@@ -1256,7 +1256,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                             </div>
                                         </div>
                                     );
-                                } catch (error) {
+                                } catch (error: unknown) {
                                     console.warn('Error calculating panel dimensions:', error);
                                     return (
                                         <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f5f5f5', borderRadius: 4 }}>

@@ -8,7 +8,7 @@ export const loadLibraryFromDrive = createAsyncThunk(
     try {
       const library = await googleDriveService.loadLibrary();
       return library;
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -99,7 +99,7 @@ export const updateSong = createAsyncThunk(
           isLocal: true
         };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -123,7 +123,7 @@ export const addSong = createAsyncThunk(
         // For local updates, we'll handle this in the reducer
         return { songData, artistName, albumTitle, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -147,7 +147,7 @@ export const addArtist = createAsyncThunk(
         // For local updates, we'll handle this in the reducer
         return { artistName, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -171,7 +171,7 @@ export const addAlbum = createAsyncThunk(
         // For local updates, we'll handle this in the reducer
         return { artistName, albumTitle, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -195,7 +195,7 @@ export const deleteSong = createAsyncThunk(
         // For local updates, we'll handle this in the reducer
         return { artistName, albumTitle, songTitle, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -216,7 +216,7 @@ export const updateArtist = createAsyncThunk(
       } else {
         return { oldArtistName, newArtistName, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -237,7 +237,7 @@ export const updateAlbum = createAsyncThunk(
       } else {
         return { artistName, oldAlbumTitle, newAlbumTitle, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -258,7 +258,7 @@ export const deleteArtist = createAsyncThunk(
       } else {
         return { artistName, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }
@@ -279,7 +279,7 @@ export const deleteAlbum = createAsyncThunk(
       } else {
         return { artistName, albumTitle, isLocal: true };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return rejectWithValue(error.message);
     }
   }

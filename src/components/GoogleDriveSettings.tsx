@@ -56,7 +56,7 @@ const GoogleDriveSettings = ({
         // For now, we'll simulate different scenarios
         await new Promise(resolve => setTimeout(resolve, 1000));
         results.access = { valid: true, error: null };
-      } catch (error) {
+      } catch (error: unknown) {
         results.access = { valid: false, error: `Unable to access Google Drive. Please check your permissions. (${error.message})` };
       }
 
@@ -69,7 +69,7 @@ const GoogleDriveSettings = ({
           found: fileExists, 
           error: fileExists ? null : `File "${testSettings.songsLibraryFile}" not found in folder "${testSettings.songsFolder}"`
         };
-      } catch (error) {
+      } catch (error: unknown) {
         results.songsFile = { found: false, error: `Error accessing songs file: ${error.message}` };
       }
 
@@ -82,12 +82,12 @@ const GoogleDriveSettings = ({
           found: fileExists, 
           error: fileExists ? null : `File "${testSettings.recipesLibraryFile}" not found in folder "${testSettings.recipesFolder}"`
         };
-      } catch (error) {
+      } catch (error: unknown) {
         results.recipesFile = { found: false, error: `Error accessing recipes file: ${error.message}` };
       }
 
       setConnectionStatus(results);
-    } catch (error) {
+    } catch (error: unknown) {
       setConnectionStatus({
         access: { valid: false, error: `Connection test failed: ${error.message}` },
         songsFile: { found: false, error: 'Could not test file access' },
@@ -116,7 +116,7 @@ const GoogleDriveSettings = ({
       } else {
         message.success(results.message || 'No issues found with your Google Drive files');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Cleanup failed:', error);
       message.error('Failed to check Google Drive files. Please try again.');
     } finally {
@@ -191,7 +191,7 @@ const GoogleDriveSettings = ({
 
       message.success('Google Drive settings saved successfully');
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save settings:', error);
       message.error('Failed to save settings. Please try again.');
     } finally {

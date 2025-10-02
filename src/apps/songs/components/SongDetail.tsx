@@ -488,7 +488,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
         newSet.delete(index);
         return newSet;
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to delete line:', error);
       message.error('Failed to delete line. Please try again.');
       
@@ -558,7 +558,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       });
       setIsEditingWholeSong(false);
       message.success('Song lyrics saved successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save whole song:', error);
       message.error('Failed to save song. Please try again.');
     } finally {
@@ -609,7 +609,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       // Clear selected song to navigate away
       dispatch(clearSelectedSong());
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to delete song:', error);
       
       // Check if this is an authentication error
@@ -722,7 +722,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
 
       // Show success message
       message.success('Transposed lyrics saved successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save transposed lyrics:', error);
       message.error('Failed to save transposed lyrics. Please try again.');
     } finally {

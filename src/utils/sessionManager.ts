@@ -24,7 +24,7 @@ class SessionManager {
           };
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Failed to load session from storage:', error);
     }
     return null;
@@ -47,7 +47,7 @@ class SessionManager {
       }
       
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save session:', error);
       return false;
     }
@@ -58,7 +58,7 @@ class SessionManager {
     try {
       sessionStorage.removeItem(SESSION_STORAGE_KEY);
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to clear session:', error);
       return false;
     }
@@ -131,7 +131,7 @@ class SessionManager {
       } else {
         throw new Error('Invalid session file format');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to import session:', error);
       throw error;
     }

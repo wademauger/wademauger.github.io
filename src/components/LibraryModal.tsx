@@ -195,7 +195,7 @@ const LibraryModal = () => {
       } else {
         setFolderOptions(suggestions);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading folder suggestions:', error);
       setFolderOptions([
         { value: '/', label: '/ (Root folder)', key: 'root' }
@@ -244,7 +244,7 @@ const LibraryModal = () => {
         }
       }
       return candidates;
-    } catch (e) {
+    } catch (e: unknown) {
       console.warn('Error listing JSON files in folder', e);
       return [];
     }
@@ -279,7 +279,7 @@ const LibraryModal = () => {
   const result = await service.findFile(fileName, folderPath);
   setFileStatus(result);
       setLastSearchSettings({ ...resolveFileAndFolder(settings) });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error searching for file:', error);
       setFileStatus({
         found: false,
@@ -300,7 +300,7 @@ const LibraryModal = () => {
       if (status.fileId) {
         try {
           libraryData = await service.loadLibraryById(status.fileId);
-        } catch (e) {
+        } catch (e: unknown) {
           // Some Drive files are not downloadable (e.g. Docs editors) and API returns a 403
           // with reason 'fileNotDownloadable'. Normalize this into a user-friendly error.
           console.warn('loadLibraryDataForFile: loadLibraryById failed', e);
@@ -328,7 +328,7 @@ const LibraryModal = () => {
       const wrapped = { __data: libraryData, __count: c };
       setSelectedLibraryData(wrapped);
       return libraryData;
-    } catch (e) {
+    } catch (e: unknown) {
       console.warn('Failed to load library data for fileStatus', e);
       setSelectedLibraryData(null);
       // Surface a friendly message when load fails
@@ -433,7 +433,7 @@ const LibraryModal = () => {
         // Load by file ID and update settings to match this file's location
         try {
           libraryData = await service.loadLibraryById(fileStatus.fileId);
-        } catch (loadErr) {
+        } catch (loadErr: unknown) {
           console.warn('handleLoadExisting: loadLibraryById failed', loadErr);
           message.error('Cannot load the selected file. It may not be a downloadable JSON file or you lack permission.');
           setLoading(false);
@@ -491,7 +491,7 @@ const LibraryModal = () => {
             console.warn('LibraryModal: No callback configured to receive panel library');
             message.error('No callback configured to receive panel library');
           }
-        } catch (cbErr) {
+        } catch (cbErr: unknown) {
           console.error('Error invoking panel callback:', cbErr);
           message.error('Failed to hand panel data to caller');
         }
@@ -508,7 +508,7 @@ const LibraryModal = () => {
       
       message.success(`${appContext === 'songs' ? 'Song' : 'Recipe'} library loaded successfully`);
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading existing library:', error);
       message.error(`Failed to load ${appContext === 'songs' ? 'song' : 'recipe'} library: ${error.message}`);
     } finally {
@@ -530,7 +530,7 @@ const LibraryModal = () => {
       
       // Refresh search to show the new file
       await searchForFile();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating new library:', error);
       message.error(`Failed to create new ${appContext === 'songs' ? 'song' : 'recipe'} library: ${error.message}`);
     } finally {
@@ -562,7 +562,7 @@ const LibraryModal = () => {
       }
       
       message.success('Settings saved successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving settings:', error);
       message.error('Failed to save settings');
     }
@@ -582,7 +582,7 @@ const LibraryModal = () => {
         let libraryData = null;
         try {
           libraryData = await service.loadLibraryById(fileStatus.fileId);
-        } catch (loadErr) {
+        } catch (loadErr: unknown) {
           console.warn('handleSaveHere: loadLibraryById failed', loadErr);
           message.error('Cannot load the selected file. It may not be a downloadable JSON file or you lack permission.');
           setLoading(false);
@@ -647,7 +647,7 @@ const LibraryModal = () => {
             setLoading(false);
             return;
           }
-        } catch (probeErr) {
+        } catch (probeErr: unknown) {
           console.warn('LibraryModal: probe for existing file failed', probeErr);
           // fall through to create path below
         }
@@ -666,7 +666,7 @@ const LibraryModal = () => {
         if (createdId) {
           try {
             libraryData = await service.loadLibraryById(createdId);
-          } catch (loadErr) {
+          } catch (loadErr: unknown) {
             console.warn('LibraryModal: Could not load newly created library immediately; proceeding with fileId only', loadErr);
             libraryData = null;
           }
@@ -677,7 +677,7 @@ const LibraryModal = () => {
           try {
             if (service.findFile) saved = await service.findFile(fileName, folderPath);
             else if (service.findLibraryFile) saved = await service.findLibraryFile();
-          } catch (e) {
+          } catch (e: unknown) {
             console.warn('finding newly created library failed', e);
           }
           if (saved && (saved.id || saved.fileId)) {
@@ -687,18 +687,18 @@ const LibraryModal = () => {
           } else {
             try {
               libraryData = await service.loadLibraryData();
-            } catch (e) {
+            } catch (e: unknown) {
               console.warn('Could not load library data after create', e);
             }
           }
         }
-      } catch (createErr) {
+      } catch (createErr: unknown) {
         console.error('Error creating new library file:', createErr);
         // Attempt fallback find
         let saved = null;
         try {
           if (service.findFile) saved = await service.findFile(fileName, folderPath);
-        } catch (e) {
+        } catch (e: unknown) {
           console.warn('finding newly created library failed', e);
         }
         if (saved && (saved.id || saved.fileId)) {
@@ -708,7 +708,7 @@ const LibraryModal = () => {
         } else {
           try {
             libraryData = await service.loadLibraryData();
-          } catch (e) {
+          } catch (e: unknown) {
             console.warn('Could not load library data after create fallback', e);
           }
         }
@@ -732,7 +732,7 @@ const LibraryModal = () => {
       }
 
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving here:', error);
       message.error(`Failed to save: ${String(error)}`);
     } finally {
@@ -754,7 +754,7 @@ const LibraryModal = () => {
         // Try to load generically
         try {
           libraryData = await service.loadLibraryData();
-        } catch (e) {
+        } catch (e: unknown) {
           console.warn('Could not load library data for replace', e);
         }
       }
@@ -777,7 +777,7 @@ const LibraryModal = () => {
       }
 
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error replacing existing panel:', error);
       message.error('Failed to replace existing panel');
     } finally {
@@ -1031,7 +1031,7 @@ const LibraryModal = () => {
                                 try {
                                   if (fileStatus && fileStatus.fileId) lib = await svc.loadLibraryById(fileStatus.fileId);
                                   else lib = selectedLibraryData.__data;
-                                } catch (e) {
+                                } catch (e: unknown) {
                                   lib = selectedLibraryData.__data;
                                 }
                                 // mimic handleLoadExisting behavior for panels: no redux action, just show message
@@ -1039,7 +1039,7 @@ const LibraryModal = () => {
                               }
                             }
                             handleClose();
-                          } catch (err) {
+                          } catch (err: unknown) {
                             console.error('Error selecting panel from modal', err);
                             message.error('Failed to select panel: ' + String(err));
                           }

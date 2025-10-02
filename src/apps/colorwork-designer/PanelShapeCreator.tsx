@@ -279,7 +279,7 @@ export default function PanelShapeCreator() {
                   if (svc.loadLibraryById) {
                     currentLib = await svc.loadLibraryById(fileStatus.fileId);
                   }
-                } catch (ldErr) {
+                } catch (ldErr: unknown) {
                   console.warn('PanelShapeCreator: failed to load library by id before merge, falling back to modal-provided libraryData', ldErr);
                   currentLib = libraryData && typeof libraryData === 'object' ? { ...libraryData } : null;
                 }
@@ -294,7 +294,7 @@ export default function PanelShapeCreator() {
                 try {
                   const res = await svc.saveLibraryToFile(fileStatus.fileId, libToSave);
                   console.log('PanelShapeCreator: saveLibraryToFile result', res);
-                } catch (err) {
+                } catch (err: unknown) {
                   console.warn('PanelShapeCreator: saveLibraryToFile failed with merged payload, falling back to shorthand savePayload', err);
                   // Fallback to original shorthand in case the service expects that format
                   const res = await svc.saveLibraryToFile(fileStatus.fileId, savePayload);
@@ -415,7 +415,7 @@ export default function PanelShapeCreator() {
                       found = probe;
                       break;
                     }
-                  } catch (e) {
+                  } catch (e: unknown) {
                     // ignore and continue trying other candidates
                     console.warn('PanelShapeCreator: findFile candidate probe failed', c, e);
                   }
@@ -448,7 +448,7 @@ export default function PanelShapeCreator() {
                   message.success(`Saved to Google Drive: ${found.fileName} (id: ${found.fileId})`);
                   return;
                 }
-              } catch (probeErr) {
+              } catch (probeErr: unknown) {
                 console.warn('PanelShapeCreator: error probing for existing library file', probeErr);
               }
 
@@ -491,12 +491,12 @@ export default function PanelShapeCreator() {
                     message.success('Saved to Google Drive (file created/updated)');
                   }
                 }
-              } catch (createErr) {
+              } catch (createErr: unknown) {
                 console.error('PanelShapeCreator: error creating new library file', createErr);
                 message.error('Failed to create library file: ' + String(createErr));
               }
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error('PanelShapeCreator: Failed to save panel via modal callback', err);
           message.error('Failed to save panel: ' + String(err));
         }
@@ -518,7 +518,7 @@ export default function PanelShapeCreator() {
       }));
 
   
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Save failed', error);
   message.error('Save failed: ' + String(error));
     }
@@ -555,7 +555,7 @@ export default function PanelShapeCreator() {
           setRoot(assignLabelsToTrapezoids(p.shape));
           setSelectedId(p.shape.id);
           message.success('Loaded panel: ' + chosenName);
-        } catch (cbErr) {
+        } catch (cbErr: unknown) {
           console.error('PanelShapeCreator: callback error loading panel', cbErr);
           message.error('Failed to load panel: ' + String(cbErr));
         }
@@ -575,7 +575,7 @@ export default function PanelShapeCreator() {
           intent: 'open'
         }
       }));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Open failed', err);
       message.error('Open failed: ' + String(err));
     }

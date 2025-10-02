@@ -171,11 +171,11 @@ const parseRecipesFromMessage = (messageContent) => {
         else if (jsonData.suggestions && Array.isArray(jsonData.suggestions)) {
           recipeSuggestions.push(...jsonData.suggestions);
         }
-      } catch (parseError) {
+      } catch (parseError: unknown) {
         console.warn('Failed to parse JSON block:', parseError);
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Error parsing recipes from message:', error);
   }
   
@@ -300,7 +300,7 @@ const saveChatHistory = (recipeId, messages) => {
     } else {
       localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, JSON.stringify(existingHistories));
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Failed to save chat history:', error);
   }
 };
@@ -321,7 +321,7 @@ const loadChatHistory = (recipeId) => {
     }
     
     return [];
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Failed to load chat history:', error);
     return [];
   }
@@ -334,7 +334,7 @@ const clearChatHistory = (recipeId) => {
     const existingHistories = JSON.parse(localStorage.getItem(CHAT_HISTORY_STORAGE_KEY) || '{}');
     delete existingHistories[recipeId];
     localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, JSON.stringify(existingHistories));
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Failed to clear chat history:', error);
   }
 };
@@ -398,7 +398,7 @@ const RecipeAIChat = ({
           await recipeAIService.initialize();
           setModelStatus(recipeAIService.getModelStatus());
           setSelectedModel(recipeAIService.getCurrentModel());
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Failed to initialize AI model:', error);
           antMessage.warning('AI model failed to load. Using fallback responses.');
         }
@@ -518,7 +518,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
       
       antMessage.success({ content: `Successfully switched to ${availableModels[newModelName]?.name}`, key: 'modelSwitch' });
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to switch model:', error);
       antMessage.error({ content: `Failed to switch to ${availableModels[newModelName]?.name}. Using current model.`, key: 'modelSwitch' });
       
@@ -572,7 +572,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
       if (isMinimized) {
         setHasUnreadMessages(true);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error generating AI response:', error);
       
       // Fallback response if AI fails
@@ -716,7 +716,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
         });
       }
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error applying AI changes:', error);
       antMessage.error({ content: 'Failed to apply changes. Please try again.', key: 'applyChanges' });
     }

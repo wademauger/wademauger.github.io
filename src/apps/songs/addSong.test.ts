@@ -58,7 +58,7 @@ describe('GoogleDriveServiceModern addSong', () => {
       
       // Check that saveLibrary was called
       expect(mockService.saveLibrary).toHaveBeenCalledWith(libraryData);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Test failed with error:', error);
       throw error;
     }
