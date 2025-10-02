@@ -9,6 +9,24 @@
   min-width: 800px;
 }
 
+/* Custom styles for AppNavigation in Recipes app */
+.recipes-navigation .app-header {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.recipes-navigation .header-controls {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.recipes-navigation .library-status-section {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
 .recipe-folder-tree h2 {
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;

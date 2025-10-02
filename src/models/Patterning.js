@@ -9,13 +9,13 @@ const Alignment = {
 class Pattern {
     constructor() {
         if (new.target === Pattern) {
-            throw new Error("Abstract classes can't be instantiated.");
+            throw new Error('Abstract classes can\'t be instantiated.');
         }
     }
 
     // Abstract method to get the stitch pattern for a given row and stitch
-    getStitchPatterning(rowNumber, stitchIndex) {
-        throw new Error("Method 'getStitchPatterning(rowNumber, stitchIndex)' must be implemented.");
+    getStitchPatterning() {
+        throw new Error('Method \'getStitchPatterning(rowNumber, stitchIndex)\' must be implemented.');
     }
 }
 

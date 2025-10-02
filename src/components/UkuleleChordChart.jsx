@@ -43,14 +43,14 @@ const UkuleleChordChart = ({ chord }) => {
       defaultColor: '#000',
       bgColor: '#FFF',
       fretWidth: 1,
-      stringWidth: 1,
+      stringWidth: 1
     });    // Get chord data from ukuleleChords and convert to VexChords format
     const chordData = ukuleleChords[chord];
     const chordFrets = chordData ? chordData.frets : null;
     
     chordBox.draw({
       chord: convertToVexChordsFormat(chordFrets),
-      tuning: ['G', 'C', 'E', 'A'],
+      tuning: ['G', 'C', 'E', 'A']
     });
   }, [chord]);
 

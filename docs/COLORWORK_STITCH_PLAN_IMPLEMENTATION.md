@@ -60,7 +60,7 @@ Updated to work with the enhanced StitchPlan:
 
 ### 5. UI Components
 
-#### RowByRowInstructions Component (`src/components/RowByRowInstructions.js`)
+#### RowByRowInstructions Component (`src/components/RowByRowInstructions.jsx`)
 
 Displays comprehensive row-by-row instructions:
 

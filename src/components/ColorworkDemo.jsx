@@ -5,8 +5,8 @@ import { ColorworkPattern } from '../models/ColorworkPattern.js';
 import { PanelColorworkComposer } from '../models/PanelColorworkComposer.js';
 import { InstructionGenerator } from '../models/InstructionGenerator.js';
 import { Trapezoid, Panel, Gauge } from '../knitting.ai.js';
-import { PanelDiagram } from './PanelDiagram.js';
-import CombinedView from './CombinedView.js';
+import { PanelDiagram } from './PanelDiagram.jsx';
+import CombinedView from './CombinedView.jsx';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -21,8 +21,8 @@ const ColorworkDemo = () => {
 
     const examples = [
         {
-            name: "Simple Striped Sweater Front",
-            description: "A basic sweater front panel with horizontal stripes",
+            name: 'Simple Striped Sweater Front',
+            description: 'A basic sweater front panel with horizontal stripes',
             panel: {
                 shape: new Trapezoid(20, 25, 25, 0, [
                     new Trapezoid(8, 25, 15, 0, [], [])
@@ -51,8 +51,8 @@ const ColorworkDemo = () => {
             settings: { stretchMode: 'repeat', alignmentMode: 'center' }
         },
         {
-            name: "Fair Isle Hat Crown",
-            description: "A traditional Fair Isle pattern on a hat crown with decreases",
+            name: 'Fair Isle Hat Crown',
+            description: 'A traditional Fair Isle pattern on a hat crown with decreases',
             panel: {
                 shape: new Trapezoid(6, 22, 22, 0, [
                     new Trapezoid(4, 22, 11, 0, [
@@ -81,8 +81,8 @@ const ColorworkDemo = () => {
             settings: { stretchMode: 'repeat', alignmentMode: 'center' }
         },
         {
-            name: "Intarsia Vest Panel",
-            description: "A geometric intarsia design on a shaped vest panel",
+            name: 'Intarsia Vest Panel',
+            description: 'A geometric intarsia design on a shaped vest panel',
             panel: {
                 shape: new Trapezoid(15, 20, 20, 0, [
                     new Trapezoid(10, 20, 24, 0, [
@@ -159,6 +159,12 @@ const ColorworkDemo = () => {
     return (
         <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div id="editor-toolbar" style={{ position: 'sticky', top: 0, zIndex: 1000, background: '#ffffff', padding: '8px', borderBottom: '1px solid #d9d9d9' }}>
+                        <strong>Editor Toolbar</strong>
+                    </div>
+                    <div id="ribbon-ui" style={{ position: 'sticky', top: '48px', zIndex: 999, background: '#f0f0f0', padding: '8px', borderBottom: '1px solid #d9d9d9' }}>
+                        <strong>Ribbon UI</strong>
+                    </div>
                 <Title level={1}>Colorwork Panel Design System Demo</Title>
                 <Paragraph>
                     This demo showcases the colorwork panel design system that combines 

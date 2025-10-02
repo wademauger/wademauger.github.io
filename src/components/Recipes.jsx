@@ -7,8 +7,6 @@ import '../App.css';
 import recipes from '../data/recipes/index';
 import { useSelector, useDispatch } from 'react-redux';
 import { setIsPrintMode, setFontSize } from '../reducers/recipes.reducer';
-import FloatingRecipeChat from './FloatingRecipeChat';
-import DraftRecipePreview from './DraftRecipePreview';
 
 const RecipeIndex = ({ onAIClick }) => {
   console.log('RecipeIndex rendered, onAIClick:', typeof onAIClick);
@@ -89,7 +87,7 @@ function Recipes() {
       const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
       return {
         ...ingredient,
-        quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity,
+        quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity
       };
     } else {
       // For string ingredients or objects without quantity, return as-is
@@ -164,14 +162,6 @@ function Recipes() {
           </Flex>
         ) : <RecipeIndex onAIClick={handleAIClick} />}
       </main>
-      
-      {/* Show floating chat and draft preview only on recipe index page */}
-      {!recipe && (
-        <>
-          <FloatingRecipeChat isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
-          <DraftRecipePreview />
-        </>
-      )}
     </div>
   );
 }

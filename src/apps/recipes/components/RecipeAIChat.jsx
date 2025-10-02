@@ -1,6 +1,7 @@
+/* eslint-disable no-useless-escape */
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input, Card, Space, Typography, Badge, Tooltip, message as antMessage, Select, Spin, Avatar, Tag } from 'antd';
-import { CloseOutlined, SendOutlined, RobotOutlined, UserOutlined, MessageOutlined, MinusOutlined, ExclamationCircleOutlined, ClearOutlined, StarOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { CloseOutlined, SendOutlined, RobotOutlined, UserOutlined, MessageOutlined, MinusOutlined, ExclamationCircleOutlined, ClearOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import recipeAIService from '../services/RecipeAIService';
 import './RecipeAIChat.css';
 
@@ -20,7 +21,7 @@ const renderIngredientsList = (ingredients, maxItems = 3) => {
     flatIngredients = ingredients;
   } else if (typeof ingredients === 'object' && ingredients !== null) {
     // Grouped object format: { "For the Cake": [...], "For the Frosting": [...] }
-    Object.entries(ingredients).forEach(([groupName, groupIngredients]) => {
+    Object.entries(ingredients).forEach(([, groupIngredients]) => {
       if (Array.isArray(groupIngredients)) {
         flatIngredients.push(...groupIngredients);
       }
@@ -28,7 +29,7 @@ const renderIngredientsList = (ingredients, maxItems = 3) => {
   }
   
   // Convert to display strings
-  const ingredientStrings = flatIngredients.slice(0, maxItems).map((ing, index) => {
+  const ingredientStrings = flatIngredients.slice(0, maxItems).map((ing) => {
     if (typeof ing === 'object' && ing !== null) {
       // Convert structured ingredient to readable string
       const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.toString().trim()).join(' ');
@@ -232,7 +233,7 @@ const MessageContent = ({ message, onOpenRecipe, editingEnabled, onApplyChanges 
             size="small"
             onClick={() => onApplyChanges(message.id)}
             disabled={!editingEnabled}
-            title={!editingEnabled ? "Enable editing to apply changes" : ""}
+            title={!editingEnabled ? 'Enable editing to apply changes' : ''}
           >
             Apply Changes to Recipe
           </Button>
@@ -358,7 +359,7 @@ const RecipeAIChat = ({
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -435,21 +436,21 @@ const RecipeAIChat = ({
         
         let recipeStatus = '';
         if (hasIngredients || hasSteps || hasNotes) {
-          recipeStatus = `\n\n**Current Recipe Status:**\n`;
+          recipeStatus = '\n\n**Current Recipe Status:**\n';
           if (hasIngredients) {
             recipeStatus += `✅ ${ingredients.length} ingredient${ingredients.length > 1 ? 's' : ''}\n`;
           } else {
-            recipeStatus += `❌ No ingredients yet\n`;
+            recipeStatus += '❌ No ingredients yet\n';
           }
           if (hasSteps) {
             recipeStatus += `✅ ${recipe.steps.length} instruction step${recipe.steps.length > 1 ? 's' : ''}\n`;
           } else {
-            recipeStatus += `❌ No instructions yet\n`;
+            recipeStatus += '❌ No instructions yet\n';
           }
           if (hasNotes) {
             recipeStatus += `✅ ${recipe.notes.length} note${recipe.notes.length > 1 ? 's' : ''}\n`;
           } else {
-            recipeStatus += `❌ No notes yet\n`;
+            recipeStatus += '❌ No notes yet\n';
           }
         }
         
@@ -578,7 +579,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
       const fallbackResponse = {
         id: Date.now() + 1,
         type: 'ai',
-        content: `I'm having trouble processing that request right now. However, I can still help you with:\n\n• Ingredient modifications\n• Cooking instruction improvements\n• Recipe formatting\n• General cooking tips\n\nPlease try rephrasing your request, or let me know what specific part of the recipe you'd like to work on.`,
+        content: 'I\'m having trouble processing that request right now. However, I can still help you with:\n\n• Ingredient modifications\n• Cooking instruction improvements\n• Recipe formatting\n• General cooking tips\n\nPlease try rephrasing your request, or let me know what specific part of the recipe you\'d like to work on.',
         timestamp: new Date(),
         isError: true
       };
@@ -651,7 +652,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
         else if (suggestedChanges.groupedIngredients && typeof suggestedChanges.groupedIngredients === 'object') {
           // Convert grouped ingredients to flat array
           const flatIngredients = [];
-          Object.entries(suggestedChanges.groupedIngredients).forEach(([groupName, groupIngredients]) => {
+          Object.entries(suggestedChanges.groupedIngredients).forEach(([, groupIngredients]) => {
             if (Array.isArray(groupIngredients)) {
               flatIngredients.push(...groupIngredients);
             }
@@ -757,21 +758,21 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
       
       let recipeStatus = '';
       if (hasIngredients || hasSteps || hasNotes) {
-        recipeStatus = `\n\n**Current Recipe Status:**\n`;
+        recipeStatus = '\n\n**Current Recipe Status:**\n';
         if (hasIngredients) {
           recipeStatus += `✅ ${ingredients.length} ingredient${ingredients.length > 1 ? 's' : ''}\n`;
         } else {
-          recipeStatus += `❌ No ingredients yet\n`;
+          recipeStatus += '❌ No ingredients yet\n';
         }
         if (hasSteps) {
           recipeStatus += `✅ ${recipe.steps.length} instruction step${recipe.steps.length > 1 ? 's' : ''}\n`;
         } else {
-          recipeStatus += `❌ No instructions yet\n`;
+          recipeStatus += '❌ No instructions yet\n';
         }
         if (hasNotes) {
           recipeStatus += `✅ ${recipe.notes.length} note${recipe.notes.length > 1 ? 's' : ''}\n`;
         } else {
-          recipeStatus += `❌ No notes yet\n`;
+          recipeStatus += '❌ No notes yet\n';
         }
       }
       
@@ -989,10 +990,10 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
                 onKeyPress={handleKeyPress}
                 placeholder={
                   isSwitchingModel 
-                    ? "Switching models, please wait..."
+                    ? 'Switching models, please wait...'
                     : modelStatus.isInitialized 
-                      ? "Try: 'Create a recipe for pasta carbonara' or 'Add more herbs to this recipe'" 
-                      : "AI is loading, please wait..."
+                      ? 'Try: \'Create a recipe for pasta carbonara\' or \'Add more herbs to this recipe\'' 
+                      : 'AI is loading, please wait...'
                 }
                 autoSize={{ minRows: 1, maxRows: 2 }}
                 disabled={isLoading || !modelStatus.isInitialized || isSwitchingModel}
@@ -1007,10 +1008,10 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
                 size="small"
                 title={
                   isSwitchingModel 
-                    ? "Switching models..." 
+                    ? 'Switching models...' 
                     : !modelStatus.isInitialized 
-                      ? "AI model is loading..." 
-                      : ""
+                      ? 'AI model is loading...' 
+                      : ''
                 }
               />
             </Space.Compact>

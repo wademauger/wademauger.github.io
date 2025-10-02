@@ -1,5 +1,3 @@
-import { ColorworkPattern } from './ColorworkPattern';
-
 /**
  * ColorworkVisualizer - Transforms colorwork patterns into visual charts and instructions
  */

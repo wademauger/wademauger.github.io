@@ -7,8 +7,7 @@ import {
   UndoOutlined, 
   RedoOutlined, 
   DownloadOutlined,
-  ExpandOutlined,
-  CompressOutlined
+  ExpandOutlined
 } from '@ant-design/icons';
 import '../styles/GridControls.css';
 

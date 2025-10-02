@@ -5,7 +5,7 @@ import { Trapezoid } from '../models/Trapezoid';
 import { Panel } from '../models/Panel';
 import { Gauge } from '../models/Gauge';
 import { PanelDiagram } from './PanelDiagram';
-import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps } from "antd";
+import { Select, Collapse, Card, Button, Radio, Row, Col, InputNumber, Steps, Modal } from 'antd';
 import '../App.css';
 
 const { Panel: AntPanel } = Collapse;
@@ -144,10 +144,16 @@ function KnittingPatterns() {
 
   const setIsKnitting = (panelId, resetCurrentStep) => {
     if (currentKnittingPanel && currentKnittingPanel !== panelId) {
-      if (window.confirm("A panel is currently in progress. Do you want to cancel it?")) {
-        setCurrentKnittingPanel(panelId);
-        resetCurrentStep(0); // Reset current step to 0
-      }
+      Modal.confirm({
+        title: 'Cancel current panel?',
+        content: 'A panel is currently in progress. Do you want to cancel it?',
+        okText: 'Yes',
+        cancelText: 'No',
+        onOk: () => {
+          setCurrentKnittingPanel(panelId);
+          resetCurrentStep(0);
+        }
+      });
     } else {
       setCurrentKnittingPanel(panelId);
       resetCurrentStep(0); // Reset current step to 0
@@ -155,7 +161,15 @@ function KnittingPatterns() {
   };
 
   const handleCancel = (skipConfirm) => {
-    if (!skipConfirm && !window.confirm("Are you sure you want to cancel?")) {
+    if (!skipConfirm) {
+      // Use modal confirm synchronously by returning early unless user confirms via callback
+      Modal.confirm({
+        title: 'Are you sure?',
+        content: 'Are you sure you want to cancel?',
+        okText: 'Yes',
+        cancelText: 'No',
+        onOk: () => { setCurrentKnittingPanel(null); }
+      });
       return;
     }
     setCurrentKnittingPanel(null);
@@ -163,11 +177,17 @@ function KnittingPatterns() {
 
   const handleSizeChange = (event) => {
     const newSizeModifier = parseFloat(event?.target?.value || event);
-    if (currentKnittingPanel) {
-      if (window.confirm("Changing the size will discard your current progress. Do you want to continue?")) {
-        setSizeModifier(newSizeModifier);
-        setCurrentKnittingPanel(null); // Reset current knitting panel
-      }
+      if (currentKnittingPanel) {
+      Modal.confirm({
+        title: 'Change size?',
+        content: 'Changing the size will discard your current progress. Do you want to continue?',
+        okText: 'Yes',
+        cancelText: 'No',
+        onOk: () => {
+          setSizeModifier(newSizeModifier);
+          setCurrentKnittingPanel(null);
+        }
+      });
     } else {
       setSizeModifier(newSizeModifier);
     }

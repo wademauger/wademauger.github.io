@@ -33,11 +33,11 @@ export const validatePattern = (pattern) => {
   return pattern.every(row => Array.isArray(row) && row.length === width);
 };
 
-export const createEmptyPattern = (width, height, fillColor = 'MC') => {
+export const createEmptyPattern = (width, height, fillColor = 'CCX') => {
   return Array(height).fill(null).map(() => Array(width).fill(fillColor));
 };
 
-export const resizePattern = (pattern, newWidth, newHeight, fillColor = 'MC') => {
+export const resizePattern = (pattern, newWidth, newHeight, fillColor = 'CCX') => {
   const newPattern = Array(newHeight).fill(null).map((_, row) => 
     Array(newWidth).fill(null).map((_, col) => {
       if (row < pattern.length && col < pattern[0].length) {

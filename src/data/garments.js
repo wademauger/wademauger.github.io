@@ -31,138 +31,138 @@ const standardGarmentSizes = generateGarmentSizes();
 
 const garments = [
     {
-        "permalink": "cozy-raglan-sweater",
-        "title": "Cozy Raglan V-Neck Sweater",
-        "description": "A simple sweater with Raglan sleeves",
-        "sizes": standardGarmentSizes,
-        "shapes": {
-            "Front":
+        'permalink': 'cozy-raglan-sweater',
+        'title': 'Cozy Raglan V-Neck Sweater',
+        'description': 'A simple sweater with Raglan sleeves',
+        'sizes': standardGarmentSizes,
+        'shapes': {
+            'Front':
             {
-                "height": 4,
-                "baseA": 25,
-                "baseB": 25,
-                "finishingSteps": ["Hang hem."],
-                "successors": [{
-                    "height": 20,
-                    "baseA": 25,
-                    "baseB": 25,
-                    "successors": [
-                        { "height": 0, "baseA": 1, "baseB": 1 },
-                        { "height": 8, "baseA": 10, "baseB": 3 },
-                        { "height": 0, "baseA": 2, "baseB": 2 },
-                        { "height": 8, "baseA": 10, "baseB": 3 },
-                        { "height": 0, "baseA": 1, "baseB": 1 },
+                'height': 4,
+                'baseA': 25,
+                'baseB': 25,
+                'finishingSteps': ['Hang hem.'],
+                'successors': [{
+                    'height': 20,
+                    'baseA': 25,
+                    'baseB': 25,
+                    'successors': [
+                        { 'height': 0, 'baseA': 1, 'baseB': 1 },
+                        { 'height': 8, 'baseA': 10, 'baseB': 3 },
+                        { 'height': 0, 'baseA': 2, 'baseB': 2 },
+                        { 'height': 8, 'baseA': 10, 'baseB': 3 },
+                        { 'height': 0, 'baseA': 1, 'baseB': 1 }
                     ]
-                }],
+                }]
             },
-            "Back": {
-                "height": 4,
-                "baseA": 25,
-                "baseB": 25,
-                "finishingSteps": ["Hang hem."],
-                "successors": [{
-                    "height": 20,
-                    "baseA": 25,
-                    "baseB": 25,
-                    "successors": [
-                        { "height": 0, "baseA": 1, "baseB": 1 },
-                        { "height": 8, "baseA": 23, "baseB": 15 },
-                        { "height": 0, "baseA": 1, "baseB": 1 },
-                    ],
-                }],
+            'Back': {
+                'height': 4,
+                'baseA': 25,
+                'baseB': 25,
+                'finishingSteps': ['Hang hem.'],
+                'successors': [{
+                    'height': 20,
+                    'baseA': 25,
+                    'baseB': 25,
+                    'successors': [
+                        { 'height': 0, 'baseA': 1, 'baseB': 1 },
+                        { 'height': 8, 'baseA': 23, 'baseB': 15 },
+                        { 'height': 0, 'baseA': 1, 'baseB': 1 }
+                    ]
+                }]
             },
-            "Sleeves (make 2)": {
-                "height": 4,
-                "baseA": 10,
-                "baseB": 10,
-                "successors": [
+            'Sleeves (make 2)': {
+                'height': 4,
+                'baseA': 10,
+                'baseB': 10,
+                'successors': [
                     {
-                        "height": 14, "baseA": 10, "baseB": 20, "successors": [
-                            { "height": 7, "baseA": 20, "baseB": 3 }
-                        ]
-                    },
-                ]
-            }
-        },
-        "finishingSteps": [
-            "Lay out the panels and sleeves, right sides together, and knit the collar in whatever style you prefer.",
-            "Sew up the side seams and sleeve seams.",
-            "Weave in all ends.",
-        ]
-    }, {
-        "permalink": "seam-top-hat",
-        "title": "Seam-Top Hat",
-        "description": "A simple hat with an elegant construction",
-        "sizes": {
-            "One Size": 1,
-        },
-        "shapes": {
-            "Hat": {
-                "height": 4,
-                "baseA": 22,
-                "baseB": 22,
-                "finishingSteps": ["Hang hem."],
-                "successors": [
-                    {
-                        "height": 10,
-                        "baseA": 22,
-                        "baseB": 22,
-                        "successors": [
-                            { "height": 4, "baseA": 5.5, "baseB": 0.2 },
-                            { "height": 4, "baseA": 5.5, "baseB": 0.2 },
-                            { "height": 4, "baseA": 5.5, "baseB": 0.2 },
-                            { "height": 4, "baseA": 5.5, "baseB": 0.2 },
+                        'height': 14, 'baseA': 10, 'baseB': 20, 'successors': [
+                            { 'height': 7, 'baseA': 20, 'baseB': 3 }
                         ]
                     }
                 ]
             }
         },
-        "finishingSteps": ["Either use sew-as-you-go to join the top panels on the machine, or sew with a tapestry needle after binding off.", "Sew up the back seam.", "Add braided ear strings if desired."],
+        'finishingSteps': [
+            'Lay out the panels and sleeves, right sides together, and knit the collar in whatever style you prefer.',
+            'Sew up the side seams and sleeve seams.',
+            'Weave in all ends.'
+        ]
     }, {
-        "permalink": "drop-shoulder-crew-neck-sweater",
-        "title": "Drop-Shoulder Crew Neck Sweater",
-        "description": "A cozy drop-shoulder sweater with a classic crew neck",
-        "sizes": standardGarmentSizes,
-        "shapes": { // TODO: Shape the neckline/shoulders for this sweater
-            "Front": {
-                "height": 5,
-                "baseA": 5,
-                "baseB": 5,
-                "successors": [{
-                    "height": 5,
-                    "baseA": 5,
-                    "baseB": 5,
-                    "successors": [{
-                        "height": 5,
-                        "baseA": 5,
-                        "baseB": 5,
+        'permalink': 'seam-top-hat',
+        'title': 'Seam-Top Hat',
+        'description': 'A simple hat with an elegant construction',
+        'sizes': {
+            'One Size': 1
+        },
+        'shapes': {
+            'Hat': {
+                'height': 4,
+                'baseA': 22,
+                'baseB': 22,
+                'finishingSteps': ['Hang hem.'],
+                'successors': [
+                    {
+                        'height': 10,
+                        'baseA': 22,
+                        'baseB': 22,
+                        'successors': [
+                            { 'height': 4, 'baseA': 5.5, 'baseB': 0.2 },
+                            { 'height': 4, 'baseA': 5.5, 'baseB': 0.2 },
+                            { 'height': 4, 'baseA': 5.5, 'baseB': 0.2 },
+                            { 'height': 4, 'baseA': 5.5, 'baseB': 0.2 }
+                        ]
+                    }
+                ]
+            }
+        },
+        'finishingSteps': ['Either use sew-as-you-go to join the top panels on the machine, or sew with a tapestry needle after binding off.', 'Sew up the back seam.', 'Add braided ear strings if desired.']
+    }, {
+        'permalink': 'drop-shoulder-crew-neck-sweater',
+        'title': 'Drop-Shoulder Crew Neck Sweater',
+        'description': 'A cozy drop-shoulder sweater with a classic crew neck',
+        'sizes': standardGarmentSizes,
+        'shapes': { // TODO: Shape the neckline/shoulders for this sweater
+            'Front': {
+                'height': 5,
+                'baseA': 5,
+                'baseB': 5,
+                'successors': [{
+                    'height': 5,
+                    'baseA': 5,
+                    'baseB': 5,
+                    'successors': [{
+                        'height': 5,
+                        'baseA': 5,
+                        'baseB': 5
                     }]
-                }],
+                }]
             },
-            "Back": {
-                "height": 5,
-                "baseA": 30,
-                "baseB": 30,
-                "finishingSteps": ["Hang hem."],
-                "successors": [{
-                    "height": 20,
-                    "baseA": 30,
-                    "baseB": 30,
-                    "successors": [
-                        { "height": 0, "baseA": 3, "baseB": 3 },
-                        { "height": 10, "baseA": 10, "baseB": 10 },
-                        { "height": 0, "baseA": 4, "baseB": 4 },
-                        { "height": 10, "baseA": 10, "baseB": 10 },
-                        { "height": 0, "baseA": 3, "baseB": 3 },
-                    ],
-                }],
+            'Back': {
+                'height': 5,
+                'baseA': 30,
+                'baseB': 30,
+                'finishingSteps': ['Hang hem.'],
+                'successors': [{
+                    'height': 20,
+                    'baseA': 30,
+                    'baseB': 30,
+                    'successors': [
+                        { 'height': 0, 'baseA': 3, 'baseB': 3 },
+                        { 'height': 10, 'baseA': 10, 'baseB': 10 },
+                        { 'height': 0, 'baseA': 4, 'baseB': 4 },
+                        { 'height': 10, 'baseA': 10, 'baseB': 10 },
+                        { 'height': 0, 'baseA': 3, 'baseB': 3 }
+                    ]
+                }]
             },
-            "Sleeves (make 2)": {
-                "height": 4,
-                "baseA": 10,
-                "baseB": 10,
-                "successors": [
-                    { "height": 20, "baseA": 10, "baseB": 21 },
+            'Sleeves (make 2)': {
+                'height': 4,
+                'baseA': 10,
+                'baseB': 10,
+                'successors': [
+                    { 'height': 20, 'baseA': 10, 'baseB': 21 }
                 ]
             }
         }
@@ -170,21 +170,21 @@ const garments = [
 ];
 
 const colorworkCharts = {
-    "Solid": [[0]],
-    "Stripes_2x2": [[0, 0, 1, 1]],
-    "Stripes_4x2": [[0, 0, 0, 0, 1, 1]],
-    "Stripes_4x4": [[0, 0, 0, 0, 1, 1, 1, 1]],
-    "Checkerboard": [
+    'Solid': [[0]],
+    'Stripes_2x2': [[0, 0, 1, 1]],
+    'Stripes_4x2': [[0, 0, 0, 0, 1, 1]],
+    'Stripes_4x4': [[0, 0, 0, 0, 1, 1, 1, 1]],
+    'Checkerboard': [
         [0, 1],
-        [1, 0],
+        [1, 0]
     ],
-    "Checkerboard_4x4": [
+    'Checkerboard_4x4': [
         [0, 0, 1, 1],
         [0, 0, 1, 1],
         [1, 1, 0, 0],
-        [1, 1, 0, 0],
+        [1, 1, 0, 0]
     ],
-    "Arguyle": [
+    'Arguyle': [
         [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -216,8 +216,8 @@ const colorworkCharts = {
         [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]
 };
 
 const visualMotifs = {
@@ -243,7 +243,7 @@ const visualMotifs = {
             type: 'SOLID',
             defaultColors: ['#ffffff'],
             height: 2
-        },
+        }
     }),
     redAndWhiteStripes: new VisualMotif({
         type: 'SOLID',
@@ -255,25 +255,25 @@ const visualMotifs = {
             defaultColors: ['#ffffff'],
             verticalRepeat: 10,
             height: 4
-        },
+        }
     }),
     checkerboard: new VisualMotif({
         type: 'STRANDED',
         defaultColors: ['#ffffff', '#000000'],
         primaryMotif: 'Checkerboard',
-        verticalRepeat: 4,
+        verticalRepeat: 4
     }),
     argyle: new VisualMotif({
         type: 'INTARSIA',
         defaultColors: ['#ffffff', '#000000'],
-        primaryMotif: 'Argyle',
+        primaryMotif: 'Argyle'
     }),
     solidWhite: new VisualMotif({
         type: 'SOLID',
         defaultColors: ['#ffffff'],
         verticalRepeat: 10,
-        height: 4,
-    }),
+        height: 4
+    })
 
 };
 

@@ -1,4 +1,4 @@
-export default function Table({titles, elements}) {
+export default function Table({ titles, elements }) {
     return (<table class="table-auto ingredient-table"> 
         <thead>
             <tr>
@@ -7,7 +7,7 @@ export default function Table({titles, elements}) {
         </thead>
         <tbody>
             {elements.map(row => {
-                return <tr>{Object.values(row).map(cell => <td>{cell}</td>)}</tr>
+                return <tr>{Object.values(row).map(cell => <td>{cell}</td>)}</tr>;
             })}
         </tbody>
     </table>);

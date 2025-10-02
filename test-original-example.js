@@ -43,8 +43,8 @@ This goodbye is no surprise
 
 This goodbye won't make me cry`;
 
-console.log('=== ORIGINAL ULTIMATE GUITAR EXAMPLE ===');
-console.log(originalExample);
-console.log('\n=== CONVERTED OUTPUT ===');
+// console.log('=== ORIGINAL ULTIMATE GUITAR EXAMPLE ===');
+// console.log(originalExample);
+// console.log('\n=== CONVERTED OUTPUT ===');
 const result = convertLyrics(originalExample);
-console.log(result);
+// console.log(result);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Space, Typography, Progress, Tag, Divider } from 'antd';
 import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
-import RowByRowInstructions from './RowByRowInstructions.js';
+import RowByRowInstructions from './RowByRowInstructions.jsx';
 import { ColorworkStitchPlanService } from '../models/ColorworkStitchPlanService.js';
 
 const { Title, Text } = Typography;

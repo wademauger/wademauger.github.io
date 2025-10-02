@@ -15,23 +15,17 @@ import {
   addAlbum,
   deleteSong
 } from '../../store/songsSlice';
-import SongDetail from './components/SongDetail.jsx';
+import AppNavigation from '../../components/AppNavigation';
+import SongDetail from './components/SongDetail';
 import AlbumArt from './components/AlbumArt';
 import SongEditor from './components/SongEditor';
 import SongListTest from './components/SongListTest';
-import GoogleSignInButton from './components/GoogleSignInButton';
-import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Button, Spin, App, Popconfirm } from 'antd';
+import { Button, App, Popconfirm } from 'antd';
 
 const SongTabsApp = () => {
   const { message } = App.useApp();
-
-  // Developer flag to enable session testing tools
-  // Set this to true when you need to test session expiry scenarios
-  // The testing tools will only appear in development mode when this flag is true
-  const ENABLE_SESSION_TESTING = false; // Change to true to enable testing tools
 
   // Redux state
   const dispatch = useDispatch();
@@ -256,6 +250,22 @@ const SongTabsApp = () => {
       handleLoadMockLibrary();
     } catch (error) {
       console.error('Failed to sign out:', error);
+    }
+  };
+
+  // Handle Google Drive settings changes
+  const handleSettingsChange = async (settings) => {
+    try {
+      GoogleDriveServiceModern.updateSettings(settings);
+      message.success('Google Drive settings updated successfully');
+      
+      // Optionally reload the library with new settings
+      if (isGoogleDriveConnected) {
+        await handleLoadLibraryFromDrive();
+      }
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      message.error('Failed to update Google Drive settings');
     }
   };
 
@@ -573,56 +583,38 @@ const SongTabsApp = () => {
             minHeight: selectedSong ? '300px' : '500px'
           }}>
             {/* Library Header with Count and Google Drive Button */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem'
-            }}>
-              <div>
-                <h3 style={{ margin: 0 }}>Song Library</h3>
-                {isLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                    <Spin size="small" />
-                    <span style={{ color: '#666', fontSize: '0.9rem' }}>Loading songs...</span>
-                  </div>
-                ) : (
-                  <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                    {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
-                  </p>
-                )}
-              </div>
-
-              {/* Always show Google Drive button and Add Song button */}
-              <div className="google-drive-section">
-                {isGoogleDriveConnected ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <GoogleSignInButton
-                      isSignedIn={true}
-                      onSignOut={handleGoogleSignOut}
-                      disabled={isLoading}
-                      userInfo={userInfo}
-                    />
-                    <Button
-                      type="primary"
-                      onClick={openNewSongEditor}
-                      style={{
-                        backgroundColor: '#4CAF50',
-                        borderColor: '#4CAF50'
-                      }}
-                    >
-                      + Add New Song
-                    </Button>
-                  </div>
-                ) : (
-                  <GoogleSignInButton
-                    onSuccess={handleGoogleSignInSuccess}
-                    onError={handleGoogleSignInError}
-                    disabled={isLoading}
-                  />
-                )}
-              </div>
-            </div>
+            <AppNavigation
+              appName="Songs"
+              isGoogleDriveConnected={isGoogleDriveConnected}
+              userInfo={userInfo}
+              onSignIn={handleGoogleSignInSuccess}
+              onSignOut={handleGoogleSignOut}
+              onSettingsChange={handleSettingsChange}
+              primaryAction={isGoogleDriveConnected ? {
+                label: '+ Add New Song',
+                onClick: openNewSongEditor,
+                style: {
+                  backgroundColor: '#4CAF50',
+                  borderColor: '#4CAF50'
+                }
+              } : null}
+              libraryInfo={{
+                title: 'Songs',
+                emoji: '🎵',
+                count: getTotalSongsCount(),
+                isLoading: isLoading
+              }}
+              googleSignInProps={{
+                onError: handleGoogleSignInError,
+                disabled: isLoading
+              }}
+              style={{
+                background: 'transparent',
+                padding: 0,
+                margin: 0
+              }}
+              className="songs-navigation"
+            />
 
             <SongListTest
               library={library}
@@ -647,19 +639,6 @@ const SongTabsApp = () => {
           </div>
         )}
       </div>
-
-      {/* Session Testing Tools - Development Only 
-          To enable: Set ENABLE_SESSION_TESTING to true at the top of this component */}
-      {/* Temporarily disabled SessionTestingTools due to Ant Design/MUI conflicts
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ marginTop: '2rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
-          <SessionTestingTools 
-            googleDriveService={GoogleDriveServiceModern}
-            enabled={ENABLE_SESSION_TESTING}
-          />
-        </div>
-      )}
-      */}
 
       {/* Display Redux errors */}
       {error && (

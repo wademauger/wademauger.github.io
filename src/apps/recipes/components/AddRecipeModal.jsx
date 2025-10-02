@@ -1,44 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Input, Form, Button, message, Alert } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Input, Form, Button, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import recipeAIService from '../services/RecipeAIService';
 
 const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) => {
   const [isModalVisible, setIsModalVisible] = useState(open || false);
   const [isLoading, setIsLoading] = useState(false);
   const [permalinkManuallyEdited, setPermalinkManuallyEdited] = useState(false);
   const [form] = Form.useForm();
-  const [showManualMode, setShowManualMode] = useState(false); // Start with AI mode by default
-  const [aiMessages, setAiMessages] = useState([]);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [currentRecipePreview, setCurrentRecipePreview] = useState(null);
-  const messagesEndRef = useRef(null);
 
   // Update modal visibility when open prop changes
   useEffect(() => {
     setIsModalVisible(open || false);
-    // Reset to AI mode when modal opens
     if (open) {
-      console.log('🔧 AddRecipeModal opened - defaulting to AI mode');
       setPermalinkManuallyEdited(false);
-      setShowManualMode(false); // Always start in AI mode
-      setAiMessages([]);
-      setAiLoading(false);
-      setChatInput('');
-      setCurrentRecipePreview(null);
-      console.log('🔧 After reset - showManualMode should be false');
-    } else {
-      console.log('🔧 AddRecipeModal closed');
     }
   }, [open]);
 
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [aiMessages]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -48,78 +25,11 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
     setIsModalVisible(false);
     form.resetFields();
     setPermalinkManuallyEdited(false);
-    setShowManualMode(false); // Reset to AI mode
-    setAiMessages([]);
-    setAiLoading(false);
-    setChatInput('');
-    setCurrentRecipePreview(null);
     if (onCancel) {
       onCancel();
     }
   };
-  // Handle AI chat submission
-  const handleChatSubmit = async (userInput) => {
-    if (!userInput.trim() || aiLoading) return;
 
-    // Add user message
-    const userMessage = {
-      id: Date.now(),
-      text: userInput,
-      isUser: true,
-      timestamp: new Date().toLocaleTimeString()
-    };
-
-    setAiMessages(prev => [...prev, userMessage]);
-    setAiLoading(true);
-
-    try {
-      // Convert messages to conversation history format for AI service
-      const conversationHistory = aiMessages.map(msg => ({
-        type: msg.isUser ? 'user' : 'ai',
-        content: msg.text
-      }));
-
-      // Get AI response using the real service
-      const aiResponse = await recipeAIService.generateResponse(
-        userInput,
-        null, // No existing recipe context
-        conversationHistory
-      );
-
-      // Handle both old string format and new structured format
-      const responseText = typeof aiResponse === 'string' ? aiResponse : aiResponse.text;
-      const providerInfo = typeof aiResponse === 'object' ? aiResponse : null;
-
-      const aiMessage = {
-        id: Date.now() + 1,
-        text: responseText,
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString(),
-        provider: providerInfo?.provider,
-        providerName: providerInfo?.providerName,
-        model: providerInfo?.model
-      };
-      
-      setAiMessages(prev => [...prev, aiMessage]);
-      
-      // Check if this is a complete recipe and update preview
-      // Note: You may want to add recipe parsing functions here similar to NewRecipeForm
-      // For now, we'll just show the response
-      
-    } catch (error) {
-      console.error('AI service error:', error);
-      const errorMessage = {
-        id: Date.now() + 1,
-        text: `I'm having trouble connecting to the AI service right now. Could you try rephrasing your question? I'm here to help you create a great recipe!`,
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString(),
-        isError: true
-      };
-      setAiMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   // Generate slug from title
   const generateSlugFromTitle = (title) => {
@@ -163,7 +73,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
       if (!isAvailable) {
         return Promise.reject(new Error('This permalink is already taken'));
       }
-    } catch (error) {
+    } catch {
       return Promise.reject(new Error('Unable to check permalink availability'));
     }
 
@@ -233,18 +143,14 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
         </Button>
       )}
       <Modal
-        title={showManualMode ? 'Create New Recipe' : 'Create Recipe with Sous Chef AI'}
+        title="Create New Recipe"
         open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
         onOk={null}
-        width={showManualMode ? 500 : 1200}
+        width={500}
       >
-        {(() => {
-          console.log('🎨 Rendering AddRecipeModal content:', { showManualMode, open: isModalVisible });
-        })()}
-        {showManualMode ? (
-          <Form
+        <Form
             form={form}
             layout="vertical"
             requiredMark={false}
@@ -314,159 +220,8 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
               </ul>
             </div>
           </Form>
-        ) : (
-          <>           
-            <div style={{ display: 'flex', height: 500, gap: 20 }}>
-              {/* Left Column - Recipe Preview */}
-              <div style={{ 
-                flex: 1, 
-                borderRight: '1px solid #f0f0f0', 
-                paddingRight: 20,
-                overflowY: 'auto'
-              }}>
-                <div style={{ 
-                  color: '#666', 
-                  fontStyle: 'italic',
-                  textAlign: 'center',
-                  padding: '60px 20px',
-                  fontSize: 16
-                }}>
-                  🍽️ Recipe preview will appear here once the AI generates a complete recipe
-                </div>
-              </div>
-              
-              {/* Right Column - AI Chat Interface */}
-              <div style={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                height: '100%'
-              }}>
-                <div style={{ 
-                  fontWeight: 600, 
-                  marginBottom: 12,
-                  fontSize: 16,
-                  color: '#333'
-                }}>
-                  💬 Chat with Sous Chef AI
-                </div>
-                
-                <div style={{
-                  background: '#f8fafc',
-                  borderRadius: 8,
-                  padding: 16,
-                  flex: 1,
-                  overflowY: 'auto',
-                  marginBottom: 12,
-                  border: '1px solid #e2e8f0'
-                }}>
-                  {aiMessages.length === 0 ? (
-                    <div style={{ 
-                      color: '#64748b', 
-                      fontStyle: 'italic',
-                      textAlign: 'center',
-                      padding: '40px 20px',
-                      fontSize: 15
-                    }}>
-                      👋 Hi! I'm your Sous Chef AI. What would you like to cook today?
-                      <br /><br />
-                      Try asking me for:
-                      <br />• "A pasta recipe with mushrooms"
-                      <br />• "Quick vegetarian dinner ideas"
-                      <br />• "Chocolate dessert for beginners"
-                    </div>
-                  ) : (
-                    aiMessages.map((msg, idx) => (
-                      <div key={idx} style={{
-                        marginBottom: 12,
-                        textAlign: msg.isUser ? 'right' : 'left'
-                      }}>
-                        <span style={{
-                          display: 'inline-block',
-                          background: msg.isUser ? '#3b82f6' : (msg.isError ? '#ef4444' : '#10b981'),
-                          color: '#fff',
-                          borderRadius: 16,
-                          padding: '10px 16px',
-                          maxWidth: '85%',
-                          fontSize: 14,
-                          lineHeight: 1.4,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}>
-                          {msg.text}
-                        </span>
-                        {msg.provider && (
-                          <div style={{
-                            fontSize: 10,
-                            color: '#666',
-                            textAlign: msg.isUser ? 'right' : 'left',
-                            marginTop: 4
-                          }}>
-                            {msg.providerName} • {msg.timestamp}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                  {aiLoading && (
-                    <div style={{ 
-                      color: '#64748b', 
-                      fontStyle: 'italic',
-                      textAlign: 'center',
-                      padding: '10px'
-                    }}>
-                      🤔 Thinking of the perfect recipe...
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  gap: 8,
-                  alignItems: 'center'
-                }}>
-                  <Input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask for a recipe or cooking advice..."
-                    style={{ 
-                      borderRadius: 20,
-                      paddingLeft: 16,
-                      paddingRight: 16
-                    }}
-                    onPressEnter={(e) => {
-                      e.preventDefault();
-                      if (chatInput.trim() && !aiLoading) {
-                        handleChatSubmit(chatInput);
-                        setChatInput('');
-                      }
-                    }}
-                  />
-                  <Button
-                    type="primary"
-                    style={{
-                      borderRadius: 20,
-                      background: '#10b981',
-                      borderColor: '#10b981',
-                      minWidth: 40,
-                      height: 40
-                    }}
-                    loading={aiLoading}
-                    onClick={() => {
-                      if (chatInput.trim() && !aiLoading) {
-                        handleChatSubmit(chatInput);
-                        setChatInput('');
-                      }
-                    }}
-                  >
-                    {aiLoading ? '' : '→'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        {/* Buttons always visible at bottom */}
+        
+        {/* Manual Form Buttons */}
         <div style={{ 
           marginTop: 20, 
           padding: '16px 0', 
@@ -475,38 +230,12 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
           gap: 8, 
           justifyContent: 'flex-end' 
         }}>
-          {!showManualMode ? [
-            <Button 
-              key="manual-mode" 
-              onClick={() => {
-                console.log('🔄 Switching to manual mode');
-                setShowManualMode(true);
-              }}
-              style={{ marginRight: 'auto' }}
-            >
-              📝 Switch to Manual Entry
-            </Button>,
-            <Button key="cancel" onClick={handleCancel}>
-              Close
-            </Button>
-          ] : [
-            <Button 
-              key="ai-mode" 
-              onClick={() => {
-                console.log('🔄 Switching to AI mode');
-                setShowManualMode(false);
-              }}
-              style={{ marginRight: 'auto' }}
-            >
-              🤖 Switch to AI Mode
-            </Button>,
-            <Button key="cancel" onClick={handleCancel}>
-              Cancel
-            </Button>,
-            <Button key="create" type="primary" loading={isLoading} onClick={handleOk}>
-              Create Recipe
-            </Button>
-          ]}
+          <Button key="cancel" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button key="create" type="primary" loading={isLoading} onClick={handleOk}>
+            Create Recipe
+          </Button>
         </div>
       </Modal>
     </>

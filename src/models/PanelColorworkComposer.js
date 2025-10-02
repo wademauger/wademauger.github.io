@@ -20,8 +20,7 @@ export class PanelColorworkComposer {
     combinePatterns(panel, colorworkPattern, options = {}) {
         const {
             stretchMode = this.defaultStretchMode,
-            alignmentMode = this.defaultAlignmentMode,
-            startRow = 1
+            alignmentMode = this.defaultAlignmentMode
         } = options;
 
         // Generate the stitch plan for the panel
@@ -71,7 +70,6 @@ export class PanelColorworkComposer {
         }
 
         const patternHeight = colorworkPattern.getRowCount();
-        const patternWidth = colorworkPattern.getStitchCount();
 
         for (let i = 0; i < stitchPlan.rows.length; i++) {
             const stitchRow = stitchPlan.rows[i];
@@ -118,13 +116,14 @@ export class PanelColorworkComposer {
                 // Repeat the colorwork pattern
                 return panelRowIndex % colorworkRows;
             
-            case 'center':
+            case 'center': {
                 // Center the colorwork in the panel
                 const startOffset = Math.floor((totalPanelRows - colorworkRows) / 2);
                 if (panelRowIndex < startOffset || panelRowIndex >= startOffset + colorworkRows) {
                     return -1; // No colorwork for this row
                 }
                 return panelRowIndex - startOffset;
+            }
             
             default:
                 return panelRowIndex % colorworkRows;
@@ -135,7 +134,7 @@ export class PanelColorworkComposer {
      * Map stitches for a single row
      */
     mapRowStitches(colorworkPattern, colorworkRowIndex, totalStitches, leftStitches, options = {}) {
-        const { stretchMode, alignmentMode } = options;
+        const { stretchMode } = options;
         
         if (colorworkRowIndex < 0 || colorworkRowIndex >= colorworkPattern.getRowCount()) {
             // Return main color for rows without colorwork
@@ -160,7 +159,7 @@ export class PanelColorworkComposer {
                     patternStitchIndex = stitchIndex % patternWidth;
                     break;
                 
-                case 'center':
+                case 'center': {
                     // Center the pattern in the row
                     const startOffset = Math.floor((totalStitches - patternWidth) / 2);
                     if (stitchIndex < startOffset || stitchIndex >= startOffset + patternWidth) {
@@ -169,6 +168,7 @@ export class PanelColorworkComposer {
                     }
                     patternStitchIndex = stitchIndex - startOffset;
                     break;
+                }
                 
                 default:
                     patternStitchIndex = stitchIndex % patternWidth;
@@ -184,7 +184,7 @@ export class PanelColorworkComposer {
     /**
      * Handle edge cases in colorwork mapping
      */
-    handleShapingEdgeCases(mappedPattern, panel) {
+    handleShapingEdgeCases(mappedPattern) {
         // For future enhancement: Handle cases where shaping affects colorwork alignment
         // - Increases/decreases at pattern boundaries
         // - Maintaining pattern continuity across shaping

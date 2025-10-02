@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
       width: '100%',
       backgroundColor: 'rgba(240, 240, 240, 0.7)',
       textAlign: 'center',
-      height: '150px',
+      height: '150px'
     }}>
       <div className="ant-flex css-ra95ns ant-flex-wrap-wrap ant-flex-justify-center ant-flex-gap-small">
         {pinnedChords.map(chord => (

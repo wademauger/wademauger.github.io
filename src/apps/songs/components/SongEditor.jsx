@@ -1,30 +1,11 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Button, message, Input, Select } from 'antd';
-import { FaPlay, FaStop, FaSave, FaTimes, FaCopy } from 'react-icons/fa';
+import { Button, message, Select, Modal } from 'antd';
+import { FaSave, FaTimes } from 'react-icons/fa';
 import SpotifyService from '../services/SpotifyService';
 import { convertLyrics } from '../../../convert-lyrics';
 import SpotifyIcon from '../../../img/spotify-icon.svg';
 import './SongEditor.css';
-
-// Helper to extract chords from lyrics
-function extractChords(lyrics) {
-  if (!lyrics) return [];
-  const chordPattern = /\[([^\]]+)\]/g;
-  const chords = [];
-  let match;
-  while ((match = chordPattern.exec(lyrics)) !== null) {
-    chords.push(match[1]);
-  }
-  return chords;
-}
-
-// Helper to compare chord sets
-function chordsChanged(original, edited) {
-  const origChords = extractChords(original).sort().join(',');
-  const editChords = extractChords(edited).sort().join(',');
-  return origChords !== editChords;
-}
 
 const { Option } = Select;
 
@@ -37,7 +18,7 @@ const SongEditor = ({
   isGoogleDriveConnected,
   isNewSong = false, // New prop to indicate if we're creating a new song
   library = null, // Library passed for existing artists/albums when creating new songs
-  lyricsRef,
+  lyricsRef
 }) => {
   // Song metadata state (for new songs)
   const [songTitle, setSongTitle] = useState(() => song?.title || '');
@@ -510,9 +491,13 @@ const SongEditor = ({
       : (editedLyrics !== (song?.lyrics || ''));
       
     if (hasChanges) {
-      if (window.confirm('You have unsaved changes. Are you sure you want to cancel?')) {
-        onCancel();
-      }
+      Modal.confirm({
+        title: 'Unsaved changes',
+        content: 'You have unsaved changes. Are you sure you want to cancel?',
+        okText: 'Yes',
+        cancelText: 'No',
+        onOk: () => onCancel()
+      });
     } else {
       onCancel();
     }

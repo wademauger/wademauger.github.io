@@ -6,7 +6,7 @@ const initialState = {
   transposeBy: {}, // song.title -> semitone offset
   // New state for alternative chord fingerings: 
   // { "C": 0, "Am": 1 } means C uses fingering 0 (default), Am uses fingering 1 (first alternative)
-  chordFingerings: {},
+  chordFingerings: {}
 };
 
 const chordsSlice = createSlice({
@@ -60,8 +60,8 @@ const chordsSlice = createSlice({
     // New action to load fingerings from Google Drive save data
     loadChordFingerings: (state, action) => {
       state.chordFingerings = action.payload || {};
-    },
-  },
+    }
+  }
 });
 
 export const { 
@@ -74,6 +74,6 @@ export const {
   setTranspose,
   cycleChordFingering,
   setChordFingering,
-  loadChordFingerings,
+  loadChordFingerings
 } = chordsSlice.actions;
 export default chordsSlice.reducer;

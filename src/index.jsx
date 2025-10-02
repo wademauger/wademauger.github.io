@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 // First import any framework CSS
 import './styles/index.css';
 // Then import App to let any component-specific CSS be imported through components
-import App from './App';
+import App from './App.tsx';
 // Finally, import our custom overrides stylesheet that will take precedence
 import './styles/typography.css';
 import { ConfigProvider, App as AntApp } from 'antd';

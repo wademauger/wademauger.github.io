@@ -1,5 +1,5 @@
 class VisualMotif {
-    constructor(type, primaryMotif, secondaryMotifs = [], mainColor = "", contrastColors = [], successor = null, truncatedBy = 0, horizontalRepeat = 0, verticalRepeat = 0, height = 0) {
+    constructor(type, primaryMotif, secondaryMotifs = [], mainColor = '', contrastColors = [], successor = null, truncatedBy = 0, horizontalRepeat = 0, verticalRepeat = 0, height = 0) {
         this.type = type;
         this.primaryMotif = primaryMotif;
         this.secondaryMotifs = secondaryMotifs;

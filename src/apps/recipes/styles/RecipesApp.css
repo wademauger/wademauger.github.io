@@ -70,6 +70,32 @@
   gap: 2rem;
 }
 
+/* New vertical layout styles */
+.recipes-content-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 0 auto;
+  width: auto;
+  max-width: 1200px;
+}
+
+.selected-recipe-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  min-height: fit-content;
+}
+
+.recipe-library-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
 .recipe-list {
   background: white;
   border-radius: 8px;
@@ -301,10 +327,27 @@
 }
 
 /* Recipe detail sections */
+.recipe-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ingredients-column {
+  flex: 0 0 auto;
+}
+
+.instructions-notes-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .ingredients-section,
 .instructions-section,
 .notes-section {
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 .recipe-section-header {
@@ -320,70 +363,25 @@
   font-weight: 600;
 }
 
-/* Reader View Styles */
-.reader-view {
+/* Recipe title action buttons */
+.recipe-header .ant-btn {
+  transition: all 0.2s ease;
+}
+
+.recipe-header .ant-btn:hover {
+  color: #1890ff !important;
+  transform: translateY(-1px);
+}
+
+.recipe-header .ant-btn[title*="Delete"]:hover {
+  color: #ff4d4f !important;
+}
+
+/* Recipe detail sections */
+.recipe-content {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 12rem);
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.reader-header {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.reader-title h3 {
-  margin: 0;
-  color: #2c3e50;
-}
-
-/* Legacy reader controls - now handled by unified controls */
-.reader-controls {
-  display: none;
-  /* Hide old reader controls since they're now in unified controls */
-}
-
-.reader-split-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  /* Prevent content from flowing out */
-}
-
-.reader-ingredients {
-  padding: 1rem;
-  border-bottom: 2px dashed #ddd;
-  flex: 0 0 auto;
-  /* Don't grow but keep its size */
-  max-height: 40%;
-  overflow-y: auto;
-}
-
-/* Reader view ingredients table styles */
-.reader-ingredients .ingredients-table {
-  margin-top: 0.5rem;
-  font-size: 0.95em;
-}
-
-.reader-ingredients .ingredients-table th {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8em;
-}
-
-.reader-ingredients .ingredients-table td {
-  padding: 0.5rem 0.75rem;
-}
-
-.reader-instructions {
-  padding: 1rem;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  /* Critical for flexbox overflow to work properly */
+  gap: 1.5rem;
 }
 
 .notes-section {
@@ -431,22 +429,6 @@
   font-weight: 500;
   color: #2c3e50;
   margin-right: 0.25rem;
-}
-
-/* View Toggle Button */
-.view-toggle-button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.view-toggle-button:hover {
-  background: #0056b3;
 }
 
 /* Font Controls */
@@ -592,18 +574,30 @@
 }
 
 /* Media Queries */
+@media (min-width: 1024px) {
+  .recipe-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+  
+  .ingredients-column {
+    flex: 0 0 350px;
+    max-width: 350px;
+    padding-right: 1.5rem;
+    border-right: 1px solid #e9ecef;
+  }
+  
+  .instructions-notes-column {
+    flex: 1;
+    min-width: 0; /* Prevents flex items from growing too large */
+    padding-left: 0.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .recipe-content {
-    grid-template-columns: 1fr;
-  }
-
-  .reader-split-view {
     flex-direction: column;
-  }
-
-  .reader-ingredients {
-    flex: 0 0 auto;
-    max-height: 40vh;
   }
 
   .controls-row {
@@ -614,10 +608,5 @@
 
   .control-group {
     justify-content: center;
-  }
-
-  .view-toggle-button {
-    width: 100%;
-    text-align: center;
   }
 }

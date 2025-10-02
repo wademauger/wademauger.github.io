@@ -97,7 +97,7 @@ export function generateGuitarChord(chordSymbol) {
   }
   
   // Generate basic fingering (could be improved with more sophisticated logic)
-  const fingers = frets.map((fret, index) => {
+  const fingers = frets.map((fret) => {
     if (fret === -1 || fret === 0) return 0;
     return Math.min(fret, 4); // Simple finger assignment
   });
@@ -133,7 +133,7 @@ export function generateUkuleleChord(chordSymbol) {
     }
   }
   
-  const fingers = frets.map((fret, index) => {
+  const fingers = frets.map((fret) => {
     if (fret === -1 || fret === 0) return 0;
     return Math.min(fret, 4);
   });
@@ -169,7 +169,7 @@ export function generateBassGuitarChord(chordSymbol) {
     }
   }
   
-  const fingers = frets.map((fret, index) => {
+  const fingers = frets.map((fret) => {
     if (fret === -1 || fret === 0) return 0;
     return Math.min(fret, 4);
   });

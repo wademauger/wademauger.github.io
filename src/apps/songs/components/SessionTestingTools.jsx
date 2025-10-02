@@ -198,7 +198,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
       addLog('Testing library loading...', 'info');
       const result = await googleDriveService.loadLibrary();
       if (result.success) {
-        addLog(`✓ Library loaded successfully`, 'success');
+        addLog('✓ Library loaded successfully', 'success');
       } else {
         addLog(`Library loading failed: ${result.error}`, 'error');
       }

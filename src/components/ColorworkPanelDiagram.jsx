@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { theme } from 'antd';
-import { Button, Card } from 'antd';
 
 /**
  * ColorworkPanelDiagram - Canvas-based panel diagram with high performance rendering
@@ -321,7 +320,7 @@ const ColorworkPanelDiagram = ({
     shape, 
     patternLayers = [], // Array of pattern layer objects
     gauge = null,
-    label = "", 
+    label = '', 
     size = 200, 
     padding = 10,
     showPatterns = true 
@@ -329,7 +328,6 @@ const ColorworkPanelDiagram = ({
     const { token } = theme.useToken();
     const fillColor = token.colorPrimary;
     const canvasRef = useRef(null);
-    const [canvasDimensions, setCanvasDimensions] = useState({ width: size, height: size });
 
     useEffect(() => {
         const canvas = canvasRef.current;

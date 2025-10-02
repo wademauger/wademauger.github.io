@@ -59,13 +59,13 @@ All you touch and all you see
 
 Is all your life will ever be.`;
 
-console.log('Testing Pink Floyd input...');
+// console.log('Testing Pink Floyd input...');
 try {
   const result = convertLyrics(pinkFloydInput);
-  console.log('SUCCESS: Conversion completed');
-  console.log('Result:');
-  console.log(result);
+  // console.log('SUCCESS: Conversion completed');
+  // console.log('Result:');
+  // console.log(result);
 } catch (error) {
-  console.error('ERROR:', error.message);
-  console.error('Stack:', error.stack);
+  // console.error('ERROR:', error.message);
+  // console.error('Stack:', error.stack);
 }

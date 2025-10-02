@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Space, message } from 'antd';
+import { Switch } from 'antd';
 import { CheckOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons';
 import { SketchPicker } from 'react-color';
 import './ColorPicker.css';
@@ -16,10 +17,12 @@ const ColorPicker = ({
 }) => {
   const [color, setColor] = useState(initialColor);
   const [label, setLabel] = useState(initialLabel);
+  const [isTransparent, setIsTransparent] = useState(initialColor === 'transparent');
 
   useEffect(() => {
     setColor(initialColor);
     setLabel(initialLabel);
+    setIsTransparent(initialColor === 'transparent');
   }, [initialColor, initialLabel, visible]);
 
   const handleSave = () => {
@@ -27,9 +30,10 @@ const ColorPicker = ({
       message.error('Please enter a label for the color');
       return;
     }
-    
+    const value = isTransparent ? 'transparent' : color;
+
     onSave({
-      color: color,
+      color: value,
       label: label.trim()
     });
     onClose();
@@ -96,22 +100,38 @@ const ColorPicker = ({
         <div className="color-picker-main">
           <label htmlFor="color-picker">Choose Color:</label>
           <div style={{ marginTop: 4 }}>
-            <SketchPicker
-              color={color}
-              onChange={(color) => setColor(color.hex)}
-              disableAlpha={true}
-              width="100%"
-              styles={{
-                default: {
-                  picker: {
-                    width: '100%',
-                    boxShadow: 'none',
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '4px'
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12 }}>Transparent (No Color)</span>
+                <Switch checked={isTransparent} onChange={(v) => setIsTransparent(v)} />
+              </div>
+              <div className="transparent-preview" style={{ width: 28, height: 20, border: '1px solid #d9d9d9', borderRadius: 2 }}>
+                {isTransparent ? (
+                  <div style={{ width: '100%', height: '100%', backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', backgroundColor: color, borderRadius: 2 }} />
+                )}
+              </div>
+            </div>
+
+            {!isTransparent && (
+              <SketchPicker
+                color={color}
+                onChange={(color) => setColor(color.hex)}
+                disableAlpha={true}
+                width="100%"
+                styles={{
+                  default: {
+                    picker: {
+                      width: '100%',
+                      boxShadow: 'none',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '4px'
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

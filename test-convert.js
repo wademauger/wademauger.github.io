@@ -77,9 +77,9 @@ I'm dancin' until I'm dead (Dead)
 
 I'll dance until I'm dead (Dead, dead, dead, dead)`;
 
-console.log("=== ORIGINAL LYRICS ===");
-console.log(testLyrics);
+// console.log("=== ORIGINAL LYRICS ===");
+// console.log(testLyrics);
 
-console.log("\n\n=== CONVERTED LYRICS ===");
+// console.log("\n\n=== CONVERTED LYRICS ===");
 const converted = convertLyrics(testLyrics);
-console.log(converted);
+// console.log(converted);

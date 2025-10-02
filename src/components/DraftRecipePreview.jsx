@@ -3,13 +3,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Card, Button, Divider, Space, message } from 'antd';
 import { SaveOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { clearDraftRecipe } from '../reducers/recipes.reducer';
-import { useNavigate } from 'react-router-dom';
 import './DraftRecipePreview.css';
 
 const DraftRecipePreview = ({ showEmpty = false }) => {
   const draftRecipe = useSelector(state => state.recipes.draftRecipe);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   // Show empty template if requested and no draft recipe exists
   if (!draftRecipe && showEmpty) {

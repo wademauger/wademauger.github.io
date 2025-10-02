@@ -5,8 +5,6 @@ import { fixedFontStyle } from '../styles/fontStyles';
 import '../styles/RecipeControls.css';
 
 const RecipeControls = ({ 
-  currentView, 
-  onToggleView, 
   fontSize, 
   onFontSizeChange, 
   scale, 
@@ -16,13 +14,6 @@ const RecipeControls = ({
   return (
     <div className="unified-recipe-controls">
       <div className="controls-row">
-        {/* View Toggle Button */}
-        <div className="control-group">
-          <button onClick={onToggleView} className="view-toggle-button">
-            {currentView === 'reader' ? 'Standard View' : 'Reader View'}
-          </button>
-        </div>
-
         {/* Font Controls */}
         <div className="control-group font-controls">
           <button 

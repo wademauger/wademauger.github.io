@@ -3,14 +3,14 @@
  * Reuses the existing colorwork grid structure from knitting-designer
  */
 export class ColorworkPattern {
-    constructor(width = 0, height = 0, grid = null, colors = {}, metadata = {}) {
+    constructor(width = 0, height = 0, grid = null, colors = {}, metadata = {}, fillColor = 'MC') {
         if (grid) {
             this.grid = grid; // 2D array of color IDs
         } else {
             // Initialize empty grid
             this.grid = [];
             for (let row = 0; row < height; row++) {
-                this.grid.push(new Array(width).fill('MC'));
+                this.grid.push(new Array(width).fill(fillColor));
             }
         }
         this.colors = colors; // Map of colorId -> { id, label, color }
@@ -107,7 +107,7 @@ export class ColorworkPattern {
     }
 
     // Resize pattern to fit specific dimensions
-    resizeToFit(targetStitches, targetRows) {
+    resizeToFit(targetStitches, targetRows, fillColor = 'MC') {
         const currentStitches = this.getStitchCount();
         const currentRows = this.getRowCount();
 
@@ -118,9 +118,9 @@ export class ColorworkPattern {
             const newRow = [];
             const sourceRow = Math.floor((row * currentRows) / targetRows);
             
-            for (let col = 0; col < targetStitches; col++) {
+                for (let col = 0; col < targetStitches; col++) {
                 const sourceCol = Math.floor((col * currentStitches) / targetStitches);
-                newRow.push(this.grid[sourceRow] ? this.grid[sourceRow][sourceCol] : 'MC');
+                newRow.push(this.grid[sourceRow] ? this.grid[sourceRow][sourceCol] : fillColor);
             }
             newGrid.push(newRow);
         }

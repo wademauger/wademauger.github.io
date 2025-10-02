@@ -18,6 +18,24 @@
   min-height: fit-content; /* Allow natural content sizing */
 }
 
+/* Custom styles for AppNavigation in Songs app */
+.songs-navigation .app-header {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.songs-navigation .header-controls {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.songs-navigation .library-status-section {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
 .song-library-section {
   background: white;
   border-radius: 8px;
@@ -45,7 +63,6 @@
   flex-direction: column;
   min-height: fit-content; /* Allow content to determine height */
   width: 100%;
-  padding: 0;
 }
 
 .song-view-header {

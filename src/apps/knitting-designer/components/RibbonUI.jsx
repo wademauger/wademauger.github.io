@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Space, Select, InputNumber, Divider, Tooltip, Popover, Input, Switch, message } from 'antd';
+import { Button, Space, InputNumber, Divider, Tooltip, Switch, message } from 'antd';
 import { 
   EditOutlined, 
   BorderOutlined, 
@@ -7,31 +7,33 @@ import {
   FileImageOutlined, 
   ClearOutlined, 
   BgColorsOutlined,
+  RotateLeftOutlined,
   UndoOutlined,
   RedoOutlined,
   DownloadOutlined,
   PlusOutlined,
-  MinusOutlined,
-  ExpandOutlined,
   SwapOutlined,
   SyncOutlined,
   ColumnWidthOutlined,
   ColumnHeightOutlined,
-  BlockOutlined,
   RotateRightOutlined,
-  VerticalAlignMiddleOutlined,
-  VerticalAlignTopOutlined,
-  VerticalAlignBottomOutlined
+  VerticalAlignMiddleOutlined
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   selectColors, 
-  selectActiveColorId, 
   addColor, 
   updateColor, 
   removeColor, 
-  setActiveColor,
   selectColorsCount
+} from '../store/colorworkGridSlice';
+import {
+  setForegroundColor,
+  setBackgroundColor,
+  selectForegroundColorId,
+  selectBackgroundColorId,
+  selectForegroundColor,
+  selectBackgroundColor
 } from '../store/colorworkGridSlice';
 import ColorPicker from './ColorPicker';
 import '../styles/RibbonUI.css';
@@ -49,14 +51,14 @@ const RibbonUI = ({
   hasSelection,
   
   // Selection tools props
-  onDuplicateSelection,
+  // onDuplicateSelection - removed unused
   onRotateSelection,
   onReflectSelection,
   
   // Grid props
   gridSize,
   onGridResize,
-  onClearPattern,
+  // onClearPattern - removed unused
   onUndo,
   onRedo,
   canUndo,
@@ -69,21 +71,45 @@ const RibbonUI = ({
 }) => {
   const dispatch = useDispatch();
   const colors = useSelector(selectColors);
-  const activeColorId = useSelector(selectActiveColorId);
+  const foregroundColorId = useSelector(selectForegroundColorId);
+  const backgroundColorId = useSelector(selectBackgroundColorId);
+  const foregroundColor = useSelector(selectForegroundColor);
+  const backgroundColor = useSelector(selectBackgroundColor);
   const colorsCount = useSelector(selectColorsCount);
   
   const [colorPickerVisible, setColorPickerVisible] = useState(false);
   const [editingColor, setEditingColor] = useState(null);
+  // Which swatch is selected for edits: 'foreground' | 'background'
+  const [selectedSwatch, setSelectedSwatch] = useState('foreground');
   
-  // Handle color selection
+  // Handle color selection: left-click sets the currently selected swatch (FG/BG), right-click sets background
   const handleColorSelect = (colorId) => {
-    if (activeColorId === colorId) {
-      // If clicking the active color, open color picker
+    if (selectedSwatch === 'foreground') {
+      if (foregroundColorId === colorId) {
+        setEditingColor(colors[colorId]);
+        setColorPickerVisible(true);
+      } else {
+        dispatch(setForegroundColor(colorId));
+      }
+    } else {
+      if (backgroundColorId === colorId) {
+        setEditingColor(colors[colorId]);
+        setColorPickerVisible(true);
+      } else {
+        dispatch(setBackgroundColor(colorId));
+      }
+    }
+  };
+
+  const handleColorContextMenu = (e, colorId) => {
+    e.preventDefault();
+    // Right-click always sets/edits the background swatch
+    setSelectedSwatch('background');
+    if (backgroundColorId === colorId) {
       setEditingColor(colors[colorId]);
       setColorPickerVisible(true);
     } else {
-      // Otherwise, just select the color
-      dispatch(setActiveColor(colorId));
+      dispatch(setBackgroundColor(colorId));
     }
   };
   
@@ -117,15 +143,7 @@ const RibbonUI = ({
     setEditingColor(null);
     setColorPickerVisible(false);
   };
-  // Quick resize functions
-  const handleQuickResize = (widthChange, heightChange) => {
-    const newSize = {
-      width: Math.max(1, Math.min(100, gridSize.width + widthChange)),
-      height: Math.max(1, Math.min(100, gridSize.height + heightChange))
-    };
-    onGridResize(newSize);
-  };
-  
+
   return (
     <div className="ribbon-ui">
       {/* Tools Section */}
@@ -198,19 +216,19 @@ const RibbonUI = ({
           </div>
           
           <div className="selection-tools-row">
-            <Tooltip title="Duplicate Selection">
-              <Button
-                icon={<BlockOutlined />}
-                onClick={onDuplicateSelection}
-                size="small"
-                disabled={!hasSelection}
-              />
-            </Tooltip>
+              <Tooltip title="Rotate Left">
+                <Button
+                  icon={<RotateLeftOutlined />}
+                  onClick={() => onRotateSelection(true)}
+                  size="small"
+                  disabled={!hasSelection}
+                />
+              </Tooltip>
             
-            <Tooltip title="Rotate Selection">
-              <Button
+            <Tooltip title="Rotate Right">
+                <Button
                 icon={<RotateRightOutlined />}
-                onClick={onRotateSelection}
+                onClick={() => onRotateSelection(false)}
                 size="small"
                 disabled={!hasSelection}
               />
@@ -242,6 +260,37 @@ const RibbonUI = ({
       {/* Colors Section */}
       <div className="ribbon-group">
         <div className="ribbon-group-title">Colors</div>
+          <div className="fg-bg-container" style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+            <div className="fg-bg-swatches" style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
+              <div
+                className={`fg-swatch ${selectedSwatch === 'foreground' ? 'swatch-selected' : ''}`}
+                onClick={() => setSelectedSwatch('foreground')}
+                title={`Foreground: ${foregroundColor?.label || ''} (${foregroundColor?.color || ''}) - left click a palette color to set`}
+              >
+                <div
+                  className="fg-inner"
+                  style={foregroundColor?.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: foregroundColor?.color || '#000' }}
+                />
+              </div>
+              <div
+                className={`bg-swatch ${selectedSwatch === 'background' ? 'swatch-selected' : ''}`}
+                onClick={() => setSelectedSwatch('background')}
+                title={`Background: ${backgroundColor?.label || ''} (${backgroundColor?.color || ''}) - right click a palette color to set`}
+              >
+                <div
+                  className="bg-inner"
+                  style={backgroundColor?.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: backgroundColor?.color || '#fff' }}
+                />
+              </div>
+            </div>
+            <Button size="small" className="swap-btn" onClick={() => {
+              // swap foreground and background
+              dispatch(setForegroundColor(backgroundColorId));
+              dispatch(setBackgroundColor(foregroundColorId));
+            }} title="Swap Foreground/Background">
+              <SwapOutlined />
+            </Button>
+          </div>
         <div className={`ribbon-color-palette ${colorsCount >= 5 ? 'two-row' : ''}`}>
           {colorsCount >= 5 ? (
             // Two-row layout for 5+ colors
@@ -250,12 +299,14 @@ const RibbonUI = ({
                 {Object.values(colors).slice(0, Math.ceil(colorsCount / 2)).map((color) => (
                   <div key={color.id} className="ribbon-color-item">
                     <div
-                      className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
-                      style={{ backgroundColor: color.color }}
+                      className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
+                      style={color.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: color.color }}
                       onClick={() => handleColorSelect(color.id)}
-                      title={`${color.label} (${color.color})`}
+                      onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                      title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                     >
-                      {activeColorId === color.id && <div className="active-dot">●</div>}
+                      {foregroundColorId === color.id && <div className="active-dot">●</div>}
+                      {backgroundColorId === color.id && <div className="bg-dot">◦</div>}
                     </div>
                   </div>
                 ))}
@@ -265,12 +316,14 @@ const RibbonUI = ({
                 {Object.values(colors).slice(Math.ceil(colorsCount / 2)).map((color) => (
                   <div key={color.id} className="ribbon-color-item">
                     <div
-                      className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
-                      style={{ backgroundColor: color.color }}
+                      className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
+                      style={color.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: color.color }}
                       onClick={() => handleColorSelect(color.id)}
-                      title={`${color.label} (${color.color})`}
+                      onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                      title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                     >
-                      {activeColorId === color.id && <div className="active-dot">●</div>}
+                      {foregroundColorId === color.id && <div className="active-dot">●</div>}
+                      {backgroundColorId === color.id && <div className="bg-dot">◦</div>}
                     </div>
                   </div>
                 ))}
@@ -280,7 +333,7 @@ const RibbonUI = ({
                   <Tooltip title="Add New Color">
                     <Button
                       size="small"
-                      style={{height: '18px', width: '18px', fontSize: '8px'  }}
+                      style={{ height: '18px', width: '18px', fontSize: '8px'  }}
                       icon={<PlusOutlined />}
                       className="add-color-btn"
                       onClick={handleAddColor}
@@ -295,12 +348,14 @@ const RibbonUI = ({
               {Object.values(colors).map((color) => (
                 <div key={color.id} className="ribbon-color-item">
                   <div
-                    className={`ribbon-color-swatch ${activeColorId === color.id ? 'active' : ''}`}
+                    className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
                     style={{ backgroundColor: color.color }}
                     onClick={() => handleColorSelect(color.id)}
-                    title={`${color.label} (${color.color})`}
+                    onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                    title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                   >
-                    {activeColorId === color.id && <div className="active-dot">●</div>}
+                    {foregroundColorId === color.id && <div className="active-dot">●</div>}
+                    {backgroundColorId === color.id && <div className="bg-dot">◦</div>}
                   </div>
                 </div>
               ))}
@@ -309,7 +364,7 @@ const RibbonUI = ({
                 <Tooltip title="Add New Color">
                   <Button
                     size="small"
-                    style={{height: '18px', width: '18px', fontSize: '8px'  }}
+                    style={{ height: '18px', width: '18px', fontSize: '8px'  }}
                     icon={<PlusOutlined />}
                     className="add-color-btn"
                     onClick={handleAddColor}

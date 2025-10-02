@@ -11,8 +11,8 @@ export const store = configureStore({
     songs: songsReducer,
     knittingDesign: knittingDesignReducer,
     colorworkGrid: colorworkGridReducer,
-    recipes: recipesReducer,
-  },
+    recipes: recipesReducer
+  }
 });
 
 export default store;

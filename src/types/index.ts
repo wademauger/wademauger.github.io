@@ -99,13 +99,6 @@ export interface Ingredient {
   notes?: string;
 }
 
-// Redux store types
-export interface RootState {
-  songs: SongsState;
-  chords: ChordsState;
-  recipes: RecipesState;
-}
-
 export interface UserInfo {
   email: string;
   name: string;

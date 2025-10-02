@@ -94,7 +94,7 @@ export default {
         });
 
       } catch (error) {
-        console.error('Spotify API error:', error);
+        // console.error('Spotify API error:', error);
         return new Response(JSON.stringify({ error: 'Failed to search Spotify' }), {
           status: 500,
           headers: {

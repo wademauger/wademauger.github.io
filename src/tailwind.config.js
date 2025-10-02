@@ -1,7 +1,8 @@
+/* eslint-env node */
 module.exports = {
     content: [
       './src/**/*.{html,jsx,tsx}',
-      './node_modules/@rewind-ui/core/dist/theme/styles/*.js',
+      './node_modules/@rewind-ui/core/dist/theme/styles/*.js'
     ],
     plugins: [
       require('@tailwindcss/typography'),
@@ -9,5 +10,5 @@ module.exports = {
       require('@tailwindcss/forms')({
         strategy: 'class' // only generate classes
       })
-    ],
+    ]
   };

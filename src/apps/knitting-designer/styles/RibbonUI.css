@@ -9,6 +9,9 @@
   flex-wrap: wrap;
   width: 100%;
   margin-bottom: 20px;
+  position: sticky;
+  top: 48px; /* Adjust based on toolbar height */
+  z-index: 1000;
 }
 
 .ribbon-group {
@@ -31,6 +34,44 @@
   align-items: flex-start;
   flex-wrap: wrap;
   max-width: 400px;
+}
+
+/* Foreground/Background swatches container */
+.fg-bg-container {
+  display: flex;
+  align-items: center;
+}
+
+.fg-bg-swatches {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.fg-swatch, .bg-swatch {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.swatch-selected {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.15);
+  border-color: #1890ff;
+}
+
+.fg-inner, .bg-inner {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+}
+
+.swap-btn {
+  margin-left: 6px;
 }
 
 /* Two-row color palette layout */
@@ -66,6 +107,11 @@
   transition: all 0.2s ease;
   background-color: #ffffff;
   overflow: hidden;
+}
+
+.checkerboard {
+  background-image: linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%);
+  background-size: 12px 12px;
 }
 
 .ribbon-color-swatch:hover {
@@ -129,6 +175,18 @@
   font-size: 12px;
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.ribbon-color-swatch .bg-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  color: #333;
+  font-size: 10px;
+}
+
+.ribbon-color-swatch.bg-active {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08) inset;
 }
 
 .ribbon-color-picker {

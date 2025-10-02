@@ -92,14 +92,14 @@ class StitchPlan {
                 } else {
                     let instruction = '';
                     if (leftDiff > 0) {
-                        instruction += `Increase ${leftDiff} stitch${leftDiff > 1 ? `es` : ''} on the left. `;
+                        instruction += `Increase ${leftDiff} stitch${leftDiff > 1 ? 'es' : ''} on the left. `;
                     } else if (leftDiff < 0) {
-                        instruction += `Decrease ${-leftDiff} stitch${leftDiff < -1 ? `es` : ''} on the left. `;
+                        instruction += `Decrease ${-leftDiff} stitch${leftDiff < -1 ? 'es' : ''} on the left. `;
                     }
                     if (rightDiff > 0) {
-                        instruction += `Increase ${rightDiff} stitch${rightDiff > 1 ? `es` : ''} on the right. `;
+                        instruction += `Increase ${rightDiff} stitch${rightDiff > 1 ? 'es' : ''} on the right. `;
                     } else if (rightDiff < 0) {
-                        instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? `es` : ''} on the right. `;
+                        instruction += `Decrease ${-rightDiff} stitch${rightDiff < -1 ? 'es' : ''} on the right. `;
                     }
                     prevRow = row;
                     instruction = consecutiveRows > 1 ? `${instruction}Knit ${consecutiveRows} rows. ` : `${instruction}Knit 1 row. `;

@@ -1,15 +1,12 @@
 import * as React from 'react';
-import { useSelector } from 'react-redux';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import { selectIsGoogleDriveConnected } from '../../../store/songsSlice';
 import './SongTree.css';
 
 // Custom tree implementation replacing MUI TreeView to avoid recursion issues
 // This simple tree provides the same functionality without the complexity and bugs of MUI's TreeView
-function SongListTest_MuiTreeView({ library, selectedSong, editingEnabled, onSelectSong }) {
-  const isGoogleDriveConnected = useSelector(selectIsGoogleDriveConnected);
-  const [filterText, setFilterText] = React.useState("");
+function SongListTest_MuiTreeView({ library, onSelectSong }) {
+  const [filterText, setFilterText] = React.useState('');
   const [expandedArtists, setExpandedArtists] = React.useState(new Set());
   const [expandedAlbums, setExpandedAlbums] = React.useState(new Set());
   const [selectedSongId, setSelectedSongId] = React.useState(null);

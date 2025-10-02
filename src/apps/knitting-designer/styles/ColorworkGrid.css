@@ -9,6 +9,12 @@
   justify-content: center;
 }
 
+.svg-wrapper {
+  width: 100%;        /* or some fixed width, e.g. 1600px */
+  height: 100%;      /* control vertical space */
+  overflow-x: auto;   /* horizontal scroll when too wide */
+}
+
 .paste-mode {
   color: #52c41a;
   font-weight: bold;
@@ -21,7 +27,6 @@
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: auto;
 }
 
 .grid-svg {

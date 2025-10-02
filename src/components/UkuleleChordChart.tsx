@@ -49,7 +49,7 @@ const UkuleleChordChart: React.FC<UkuleleChordChartProps> = ({ chord }) => {
       defaultColor: '#000',
       bgColor: '#FFF',
       fretWidth: 1,
-      stringWidth: 1,
+      stringWidth: 1
     });
     
     // Get chord data from ukuleleChords and convert to VexChords format

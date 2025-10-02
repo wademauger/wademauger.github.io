@@ -1,8 +1,5 @@
-import import ColorworkPanelEditor from '@/components/ColorworkPanelEditor.jsx';
-import GarmentComposer from '@/components/GarmentComposer.js';
-import PanelShapeCreator from './PanelShapeCreator.jsx';
-import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';t, { useState, useRef, useCallback } from 'react';
-import { Layout, Typography, Space, Segmented, Card, message } from 'antd';
+import React, { useState, useCallback } from 'react';
+import { Layout, Typography, Segmented, message } from 'antd';
 import { 
     ToolOutlined, 
     BuildOutlined, 
@@ -10,8 +7,8 @@ import {
 } from '@ant-design/icons';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.js';
 import GarmentComposer from '../../components/GarmentComposer.js';
-import PanelShapeCreator from './PanelShapeCreator.js';
-import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.js';
+import PanelShapeCreator from './PanelShapeCreator.jsx';
+import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';
 import { Gauge } from '../../models/Gauge.js';
 import './UnifiedDesignerApp.css';
 
@@ -94,7 +91,6 @@ const UnifiedDesignerApp = () => {
             }
         }
     ]);
-    const [savedGarments, setSavedGarments] = useState([]);
     const [currentProject, setCurrentProject] = useState(null);
     const [defaultGauge] = useState(new Gauge(19, 30, 1.0));
 
@@ -153,14 +149,7 @@ const UnifiedDesignerApp = () => {
     }, []);
 
     // Handle garment creation completion
-    const handleGarmentSaved = useCallback((garment) => {
-        setSavedGarments(prev => [...prev, {
-            ...garment,
-            id: Date.now(),
-            saved: new Date().toISOString(),
-            type: 'garment'
-        }]);
-        
+    const handleGarmentSaved = useCallback(() => {
         message.success('Garment saved successfully!');
     }, []);
 

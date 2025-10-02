@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Modal, 
@@ -404,9 +405,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
         console.log('🔍 Parsed JSON recipe successfully');
         return parsed.ingredients.length > 0 && parsed.steps.length > 0;
       }
-    } catch (e) {
-      // Continue with markdown check
-    }
+    } catch {/**/}
     
     // PRIORITY 3: Only if JSON parsing fails, check markdown format
     // Before checking markdown patterns, eliminate obvious suggestion lists
@@ -485,7 +484,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     // First try to parse as pure JSON
     try {
       return JSON.parse(text.trim());
-    } catch (e) {
+    } catch {
       // Not pure JSON - look for JSON blocks in mixed text
       // Split by lines and try to find consecutive lines that form valid JSON
       const lines = text.split('\n');
@@ -506,7 +505,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                 if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
                   return parsed;
                 }
-              } catch (e2) {
+              } catch {
                 // Continue trying longer candidates
               }
             }
@@ -902,129 +901,6 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     }
   };
 
-  // Detect message format for display labels
-  const detectMessageFormat = (text) => {
-    // Check if it looks like JSON first (handle both plain JSON and markdown-wrapped JSON)
-    const trimmedText = text.trim();
-    
-    // Check for markdown-wrapped JSON (```json ... ```)
-    const hasJsonMarkdown = trimmedText.startsWith('```json') || trimmedText.includes('```json');
-    
-    // For direct JSON structure check
-    const startsWithBrace = trimmedText.startsWith('{');
-    const endsWithBrace = trimmedText.endsWith('}') || trimmedText.endsWith('```');
-    
-    // Check if it contains JSON recipe structure (even if wrapped in markdown)
-    const hasJsonRecipeContent = (text.includes('"title"') || text.includes('"ingredients"') || text.includes('"steps"')) &&
-                                 (text.includes('{') && text.includes('}'));
-    
-    const hasJsonStructure = (startsWithBrace && (endsWithBrace || text.includes('}'))) || 
-                            (hasJsonMarkdown && hasJsonRecipeContent);
-    
-    console.log('🔍 Format detection for text:', {
-      startsWithBrace,
-      endsWithBrace,
-      hasJsonMarkdown,
-      hasJsonRecipeContent,
-      hasJsonStructure,
-      textStart: text.substring(0, 50),
-      hasTitle: text.includes('"title"'),
-      hasIngredients: text.includes('"ingredients"'),
-      hasSteps: text.includes('"steps"')
-    });
-    
-    if (hasJsonStructure) {
-      // Try to parse it, but still label as JSON Recipe even if parsing fails
-      try {
-        const parsed = parseJsonRecipe(text);
-        if (parsed && (parsed.title || parsed.ingredients || parsed.steps)) {
-          console.log('✅ Valid JSON recipe detected');
-          return 'JSON Recipe';
-        }
-      } catch (e) {
-        // Still looks like JSON structure, even if malformed
-        console.log('JSON parsing failed but structure detected:', e.message);
-      }
-      // If it looks like JSON structure but parsing failed, still call it JSON
-      console.log('🔧 JSON structure detected (possibly markdown-wrapped), labeling as JSON Recipe');
-      return 'JSON Recipe';
-    }
-    
-    // Check if it's structured markdown recipe
-    const lowerText = text.toLowerCase();
-    const hasMarkdownHeaders = text.includes('##') || text.includes('###');
-    const hasMarkdownLists = text.includes('- ') || /^\d+\./m.test(text);
-    const isRecipeContent = lowerText.includes('ingredients') && lowerText.includes('instructions');
-    
-    if (hasMarkdownHeaders && hasMarkdownLists && isRecipeContent) {
-      return 'Markdown Recipe';
-    }
-    
-    // Check if it looks like a plain text recipe (more flexible detection)
-    if (isRecipeContent && (hasMarkdownLists || /\d+\.?\s+(?:oz|cup|tsp|tbsp|pound|lb|kg|gram|g)\b/i.test(text))) {
-      return 'Text Recipe';
-    }
-    
-    // Check if it's a conversational response
-    if (text.length > 50 && !isRecipeContent) {
-      return 'Chat Response';
-    }
-    
-    // Default to plain text
-    return 'Text';
-  };
-
-  // Get format label styling
-  const getFormatLabelStyle = (format) => {
-    const baseStyle = {
-      fontSize: 9,
-      padding: '2px 5px',
-      borderRadius: 3,
-      fontWeight: '600',
-      letterSpacing: '0.3px',
-      textTransform: 'uppercase',
-      opacity: 0.8
-    };
-    
-    switch (format) {
-      case 'JSON Recipe':
-        return {
-          ...baseStyle,
-          background: '#e6f7ff',
-          color: '#0050b3',
-          border: '1px solid #91d5ff'
-        };
-      case 'Markdown Recipe':
-        return {
-          ...baseStyle,
-          background: '#f6ffed',
-          color: '#389e0d',
-          border: '1px solid #b7eb8f'
-        };
-      case 'Text Recipe':
-        return {
-          ...baseStyle,
-          background: '#fff2e8',
-          color: '#d4380d',
-          border: '1px solid #ffbb96'
-        };
-      case 'Chat Response':
-        return {
-          ...baseStyle,
-          background: '#f9f0ff',
-          color: '#722ed1',
-          border: '1px solid #d3adf7'
-        };
-      default:
-        return {
-          ...baseStyle,
-          background: '#f5f5f5',
-          color: '#595959',
-          border: '1px solid #d9d9d9'
-        };
-    }
-  };
-
   // Get response type styling
   const getResponseTypeStyle = (responseType) => {
     const baseStyle = {
@@ -1135,7 +1011,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
       console.error('AI service error:', error);
       const errorMessage = {
         id: Date.now() + 1,
-        text: `I'm having trouble connecting to the AI service right now. Could you try rephrasing your question? I'm here to help you create a great recipe!`,
+        text: 'I\'m having trouble connecting to the AI service right now. Could you try rephrasing your question? I\'m here to help you create a great recipe!',
         isUser: false,
         timestamp: new Date().toLocaleTimeString()
       };
@@ -1235,12 +1111,17 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
   };
 
   return (
-    <Modal
-      key={visible ? 'modal-open' : 'modal-closed'} // Force re-render when opening
-      title={showManualMode ? 'Create New Recipe' : 'Create Recipe with Sous Chef AI'}
-      open={visible}
-      onCancel={handleCancel}
-      footer={
+    <>
+      {console.log('🎨 RENDER: NewRecipeForm rendering with visible:', visible, 'showManualMode:', showManualMode)}
+      <Modal
+        key={visible ? 'modal-open' : 'modal-closed'} // Force re-render when opening
+        title={showManualMode ? 'Create New Recipe' : 'Create Recipe with Sous Chef AI'}
+        open={visible}
+        onCancel={handleCancel}
+        destroyOnHidden={true}
+        maskClosable={false}
+        zIndex={3000}
+        footer={
         !showManualMode ? [
           <Button 
             key="manual-mode" 
@@ -1691,7 +1572,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
               padding: 16,
               overflowY: 'auto',
               marginBottom: 16,
-              minHeight: 350,
+              minHeight: 350
             }}>
               {aiMessages.length === 0 && (
                 <div style={{ 
@@ -1724,7 +1605,6 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
               )}
               
               {aiMessages.map(message => {
-                const messageFormat = message.isUser ? null : detectMessageFormat(message.text);
                 const responseType = !message.isUser ? getResponseType(message.text) : null;
                 
                 return (
@@ -1773,10 +1653,10 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                                   if (parsedRecipe && parsedRecipe.commentary) {
                                     return parsedRecipe.commentary;
                                   }
-                                } catch (e) {
+                                } catch {
                                   // Fall back to generic message
                                 }
-                                return "🍽️ I've created a complete recipe for you!";
+                                return '🍽️ I\'ve created a complete recipe for you!';
                               })()}
                             </div>
                             <Button
@@ -1921,6 +1801,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
         </>
       )}
     </Modal>
+    </>
   );
 };
 

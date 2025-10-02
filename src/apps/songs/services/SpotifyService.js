@@ -15,7 +15,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           artist, 
@@ -67,7 +67,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ artist, track, album })
       });
@@ -115,7 +115,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           artist: artistName,
@@ -186,7 +186,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           artist: searchTerm,
@@ -248,7 +248,7 @@ class SpotifyService {
   }
 
   // Get album artwork URL with fallback handling
-  getAlbumArtUrl(trackData, size = 'large') {
+  getAlbumArtUrl(trackData) {
     if (!trackData?.albumArt) return null;
     return trackData.albumArt;
   }
@@ -271,7 +271,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           artist: artistName,
@@ -338,7 +338,7 @@ class SpotifyService {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           track: searchTerm,

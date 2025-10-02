@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { App, Button, Switch, Space, Spin } from 'antd';
-import { PlusOutlined, FolderAddOutlined } from '@ant-design/icons';
+import { App } from 'antd';
 import RecipeList from './components/RecipeList';
 import RecipeDetail from './components/RecipeDetail';
-import ReaderView from './components/ReaderView';
-import GoogleSignInButton from './components/GoogleSignInButton';
 import NewRecipeForm from './components/NewRecipeForm';
+import LibraryModal from '../../components/LibraryModal';
 import GoogleDriveRecipeService from './services/GoogleDriveRecipeService';
 import {
   setEditingEnabled,
@@ -18,21 +16,37 @@ import {
   setError,
   addDriveRecipe
 } from '../../reducers/recipes.reducer';
+import { closeModal, openModal } from '../../reducers/modal.reducer';
 import recipeLibrary from '../../data/recipes';
+import LibraryFileSelector from './components/LibraryFileSelector';
 import './styles/RecipesApp.css';
 
-const RecipesApp = ({ view = 'standard' }) => {
+const RecipesApp = () => {
   const [recipes, setRecipes] = useState([]);
   const [activeRecipe, setActiveRecipe] = useState(null);
   const [fontSize, setFontSize] = useState(100); // Font size in percentage
-  const [showNewRecipeModal, setShowNewRecipeModal] = useState(false);
+  const [showDemoRecipes, setShowDemoRecipes] = useState(true); // Toggle for demo recipes
+  const [showLibrarySelector, setShowLibrarySelector] = useState(false); // Library file selector modal
+  
+  // Get Redux modal state
+  const currentModal = useSelector((state) => state.modal.currentModal);
+  // modalData unused for now but available in redux state.modal.modalData
+  const isNewRecipeModalOpen = currentModal === 'NEW_RECIPE';
+  const isLibrarySettingsModalOpen = currentModal === 'LIBRARY_SETTINGS';
   
   // Debug logging for modal state changes
   useEffect(() => {
-    console.log('🔍 RecipesApp - showNewRecipeModal changed to:', showNewRecipeModal);
-  }, [showNewRecipeModal]);
+    console.log('🔍 Redux modal state changed to:', currentModal);
+  }, [currentModal]);
+
+  // Check for Redux modal state that might be interfering
+  const reduxModalState = useSelector((state) => state.modal);
+  useEffect(() => {
+    console.log('🔧 Redux modal state:', reduxModalState);
+  }, [reduxModalState]);
   
-  const [driveService] = useState(() => new GoogleDriveRecipeService());
+  // Use the singleton instance instead of creating a new one
+  const [driveService] = useState(() => GoogleDriveRecipeService);
   const recipeDetailRef = useRef(null); // Ref for scrolling to recipe detail
   
   const urlPermalink = useParams().recipeId;
@@ -47,18 +61,10 @@ const RecipesApp = ({ view = 'standard' }) => {
     userInfo, 
     driveRecipes, 
     isLoading, 
-    error,
+    // error unused for now but available in redux state
     editingEnabled 
   } = useSelector(state => state.recipes);
 
-  // Helper function to count total recipes
-  const getTotalRecipesCount = () => {
-    const localCount = Object.values(recipes).reduce((total, sectionRecipes) => 
-      total + (Array.isArray(sectionRecipes) ? sectionRecipes.length : 0), 0
-    );
-    const driveCount = driveRecipes.length;
-    return localCount + driveCount;
-  };
 
   // Handle editing toggle
   const handleEditingToggle = (enabled) => {
@@ -107,17 +113,38 @@ const RecipesApp = ({ view = 'standard' }) => {
       message.success(`Recipes loaded from Google Drive - Found ${library.recipes?.length || 0} recipes`);
     } catch (error) {
       console.error('Failed to load recipes from Google Drive:', error);
-      dispatch(setError('Failed to load recipes from Google Drive'));
-      message.error('Failed to load recipes from Google Drive');
+      
+      if (error.message === 'NO_LIBRARY_FOUND') {
+        // No library file found - show friendly message without auto-creation
+        dispatch(setError('No recipe library found'));
+        message.info('No recipe library found. Use Library Settings to create or select one.');
+        dispatch(setDriveRecipes([])); // Set empty array instead of error state
+      } else if (error.message === 'MULTIPLE_LIBRARIES_FOUND') {
+        // Multiple libraries found - show selector
+        dispatch(setError('Multiple libraries found'));
+        setShowLibrarySelector(true);
+        message.info('Multiple recipe libraries found. Please select which one to use.');
+      } else {
+        // Other errors
+        dispatch(setError('Failed to load recipes from Google Drive'));
+        message.error('Failed to load recipes from Google Drive');
+      }
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (tokenResponse = null) => {
     try {
       dispatch(setLoading(true));
-      await driveService.signIn();
+      
+      if (tokenResponse) {
+        // Handle OAuth token response from @react-oauth/google
+        await driveService.handleOAuthToken(tokenResponse);
+      } else {
+        // Fallback to original signIn method
+        await driveService.signIn();
+      }
       
       const status = driveService.getSignInStatus();
       dispatch(setGoogleDriveConnection(true));
@@ -154,9 +181,26 @@ const RecipesApp = ({ view = 'standard' }) => {
     }
   };
 
+  // Handle Google Drive settings changes
+  const handleSettingsChange = async (settings) => {
+    try {
+      driveService.updateSettings(settings);
+      message.success('Google Drive settings updated successfully');
+      
+      // Optionally reload the library with new settings
+      if (isGoogleDriveConnected) {
+        await loadRecipesFromDrive();
+      }
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      message.error('Failed to update Google Drive settings');
+    }
+  };
+
   // Handle creating a new recipe
   const handleCreateNewRecipe = () => {
-    console.log('🔍 "New Recipe" button clicked');
+    console.log('� NEW RECIPE BUTTON CLICKED - handleCreateNewRecipe called');
+    console.log('�🔍 "New Recipe" button clicked');
     console.log('🔍 Google Drive connected:', isGoogleDriveConnected);
     
     if (!isGoogleDriveConnected) {
@@ -165,8 +209,57 @@ const RecipesApp = ({ view = 'standard' }) => {
       return;
     }
     
-    console.log('🔧 Opening New Recipe modal - setting showNewRecipeModal to true');
-    setShowNewRecipeModal(true);
+    // Use Redux modal system for consistency
+    console.log('🔧 Opening New Recipe modal via Redux');
+    dispatch(openModal({
+      modalType: 'NEW_RECIPE',
+      appContext: 'recipes',
+      data: {}
+    }));
+  };
+
+  // Handle editing a recipe
+  const handleEditRecipe = () => {
+    if (!activeRecipe) return;
+    
+    if (!isGoogleDriveConnected) {
+      message.warning('Please sign in to Google Drive to edit recipes');
+      return;
+    }
+    
+    // Toggle editing mode
+    dispatch(setEditingEnabled(!editingEnabled));
+    message.info(editingEnabled ? 'Editing mode disabled' : 'Editing mode enabled');
+  };
+
+  // Handle deleting a recipe
+  const handleDeleteRecipe = async () => {
+    if (!activeRecipe) return;
+    
+    if (!isGoogleDriveConnected) {
+      message.warning('Please sign in to Google Drive to delete recipes');
+      return;
+    }
+    
+    try {
+      dispatch(setLoading(true));
+      await driveService.deleteRecipe(activeRecipe.id);
+      
+      // Remove from local state
+      const updatedRecipes = driveRecipes.filter(r => r.id !== activeRecipe.id);
+      dispatch(setDriveRecipes(updatedRecipes));
+      
+      // Clear active recipe
+      setActiveRecipe(null);
+      navigate('/crafts/recipes');
+      
+      message.success(`Recipe "${activeRecipe.title}" deleted successfully`);
+    } catch (error) {
+      console.error('Failed to delete recipe:', error);
+      message.error('Failed to delete recipe. Please try again.');
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   // Handle saving a new recipe from the modal
@@ -185,7 +278,7 @@ const RecipesApp = ({ view = 'standard' }) => {
       setActiveRecipe(savedRecipe);
       
       // Close modal
-      setShowNewRecipeModal(false);
+      dispatch(closeModal());
       
       // Navigate to the new recipe
       const targetUrl = `/crafts/recipes/${savedRecipe.permalink}`;
@@ -201,67 +294,94 @@ const RecipesApp = ({ view = 'standard' }) => {
     }
   };
   
-  // Handle creating a new recipe group
-  const handleCreateNewGroup = async () => {
-    if (!isGoogleDriveConnected) {
-      message.warning('Please sign in to Google Drive to create recipe groups');
-      return;
-    }
-
+  // Handle library file selection
+  const handleLibraryFileSelect = async (file) => {
     try {
-      // For now, we'll create a simple group structure
-      // This could be extended to create actual folder structures in Google Drive
-      message.info('Recipe group creation coming soon! For now, you can organize recipes by editing their categories.');
+      dispatch(setLoading(true));
+      const library = await driveService.selectLibraryFile(file.id);
+      dispatch(setDriveRecipes(library.recipes || []));
+      message.success(`Selected library "${file.name}" with ${library.recipes?.length || 0} recipes`);
+      setShowLibrarySelector(false);
     } catch (error) {
-      console.error('Failed to create recipe group:', error);
-      message.error('Failed to create new recipe group. Please try again.');
+      console.error('Failed to select library file:', error);
+      message.error('Failed to select library file');
+    } finally {
+      dispatch(setLoading(false));
     }
   };
-  
+
+  // Create filtered recipes based on demo recipe toggle
+  const filteredRecipes = useMemo(() => {
+    if (showDemoRecipes) {
+      return recipeLibrary;
+    } else {
+      // Return same structure but with empty arrays when demo recipes are hidden
+      const emptyLibrary = {};
+      Object.keys(recipeLibrary).forEach(section => {
+        emptyLibrary[section] = [];
+      });
+      return emptyLibrary;
+    }
+  }, [showDemoRecipes, recipeLibrary]);
+
   useEffect(() => {
-    console.log('useEffect triggered with urlPermalink:', urlPermalink);
-    setRecipes(recipeLibrary);
+    console.log('🔍 useEffect triggered with urlPermalink:', urlPermalink);
+    console.log('🔍 driveRecipes state:', driveRecipes.length, driveRecipes.map(r => r.permalink));
+    setRecipes(filteredRecipes);
     
     // Find recipe across all sections when URL permalink changes
     if (urlPermalink) {
       // Helper function to find a recipe by permalink across all sections and driveRecipes
       const findRecipeByPermalink = (permalink) => {
-        console.log('Looking for permalink:', permalink);
+        console.log('🔍 Looking for permalink:', permalink);
         
         // First check driveRecipes
-        console.log('Checking driveRecipes:', driveRecipes.map(r => ({ title: r.title, permalink: r.permalink })));
+        console.log('🔍 Checking driveRecipes:', driveRecipes.map(r => ({ title: r.title, permalink: r.permalink })));
         const driveRecipe = driveRecipes.find(recipe => recipe.permalink === permalink);
         if (driveRecipe) {
-          console.log('Found recipe in driveRecipes:', driveRecipe.title);
+          console.log('✅ Found recipe in driveRecipes:', driveRecipe.title);
           return driveRecipe;
         }
         
-        // Then check local recipe library
-        console.log('Checking local recipeLibrary...');
-        for (const section in recipeLibrary) {
-          const foundRecipe = recipeLibrary[section].find(r => r.permalink === permalink);
+        // Then check filtered local recipe library for display (respects demo recipe toggle)
+        console.log('🔍 Checking filtered recipe library sections:', Object.keys(filteredRecipes));
+        for (const section in filteredRecipes) {
+          console.log(`🔍 Checking section "${section}":`, filteredRecipes[section].map(r => ({ title: r.title, permalink: r.permalink })));
+          const foundRecipe = filteredRecipes[section].find(r => r.permalink === permalink);
           if (foundRecipe) {
-            console.log('Found recipe in recipeLibrary:', foundRecipe.title);
+            console.log('✅ Found recipe in filtered recipe library:', foundRecipe.title);
             return foundRecipe;
           }
         }
         
-        console.log('Recipe not found anywhere');
+        // If not found in filtered recipes, check the full recipeLibrary to handle direct URLs
+        // This allows demo recipes to be accessed via URL even when toggle is off
+        console.log('🔍 Recipe not found in filtered library, checking full library for URL support');
+        for (const section in recipeLibrary) {
+          const foundRecipe = recipeLibrary[section].find(r => r.permalink === permalink);
+          if (foundRecipe) {
+            console.log('✅ Found recipe in full recipe library (URL access):', foundRecipe.title);
+            return foundRecipe;
+          }
+        }
+        
+        console.log('❌ Recipe not found anywhere');
         return null;
       };
       
       const recipe = findRecipeByPermalink(urlPermalink);
-      console.log('Found recipe:', recipe?.title || 'null');
+      console.log('🎯 Final found recipe:', recipe?.title || 'null');
       if (recipe) {
         setActiveRecipe(recipe);
+        console.log('✅ Set activeRecipe to:', recipe.title);
       } else {
         // Recipe not found, clear active recipe
-        console.log('Recipe not found, clearing activeRecipe');
+        console.log('❌ Recipe not found, clearing activeRecipe');
         setActiveRecipe(null);
       }
     } else if (!urlPermalink) {
       // No recipe in URL, clear active recipe
-      console.log('No urlPermalink, clearing active recipe');
+      console.log('🔄 No urlPermalink, clearing active recipe');
       setActiveRecipe(null);
     }
   }, [urlPermalink, driveRecipes]); // Added driveRecipes as dependency
@@ -285,16 +405,6 @@ const RecipesApp = ({ view = 'standard' }) => {
     }, 100);
   };
 
-  const toggleReaderView = () => {
-    if (activeRecipe) {
-      if (view === 'reader') {
-        navigate(`/crafts/recipes/${activeRecipe.permalink}`);
-      } else {
-        navigate(`/crafts/recipes/reader-view/${activeRecipe.permalink}`);
-      }
-    }
-  };
-
   // Determine which recipe to display - priority: activeRecipe > draftRecipe > none
   const displayRecipe = activeRecipe || draftRecipe;
   
@@ -305,123 +415,103 @@ const RecipesApp = ({ view = 'standard' }) => {
     urlPermalink
   });
 
-  // Render Reader view if specified
-  if (view === 'reader' && displayRecipe) {
-    return (
-      <ReaderView 
-        recipe={displayRecipe} 
-        fontSize={fontSize} 
-        onFontSizeChange={handleFontSizeChange}
-        onToggleView={toggleReaderView}
-      />
-    );
-  }
-
   return (
     <div className="recipes-app">
-      <div className="app-header">
-        <div className="header-controls">
-          <Space size="large" wrap>
-            {/* Recipe Creation Controls */}
-            {isGoogleDriveConnected && (
-              <Button 
-                type="primary"
-                style={{
-                  background: 'linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)',
-                  borderColor: 'transparent',
-                }}
-                icon={<PlusOutlined />}
-                onClick={handleCreateNewRecipe}
-                loading={isLoading}
-              >
-                🤖 New Recipe
-              </Button>
-            )}
+      {/* Main Content - Vertical Stack Layout */}
+      <div className="recipes-content-vertical" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        padding: '1rem',
+        margin: '0 auto',
+        width: 'auto',
+        maxWidth: '1200px'
+      }}>
+        {/* Selected Recipe Content - Show First When Recipe is Selected */}
+        {activeRecipe && (
+          <div className="selected-recipe-section" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            width: '100%',
+            minHeight: 'fit-content'
+          }}>
+            <RecipeDetail 
+              recipe={activeRecipe} 
+              fontSize={fontSize}
+              onFontSizeChange={handleFontSizeChange}
+              editingEnabled={editingEnabled}
+              onEditRecipe={handleEditRecipe}
+              onDeleteRecipe={handleDeleteRecipe}
+            />
+          </div>
+        )}
 
-            {/* Editing Toggle */}
-            <div className="edit-controls">
-              <Space>
-                <span className="edit-label">Edit Mode:</span>
-                <Switch
-                  checked={editingEnabled}
-                  onChange={handleEditingToggle}
-                  disabled={!isGoogleDriveConnected}
-                />
-              </Space>
+        {/* Recipe Library Section */}
+        <div className="recipe-library-section" style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          padding: '1rem',
+          minHeight: activeRecipe ? '300px' : '500px'
+        }}>
+          <RecipeList 
+            recipes={recipes} 
+            onSelectRecipe={handleRecipeSelect}
+            activeurlPermalink={activeRecipe?.permalink}
+            isGoogleDriveConnected={isGoogleDriveConnected}
+            userInfo={userInfo}
+            onSignIn={handleGoogleSignIn}
+            onSignOut={handleGoogleSignOut}
+            onSettingsChange={handleSettingsChange}
+            onCreateNewRecipe={handleCreateNewRecipe}
+            editingEnabled={editingEnabled}
+            onEditingToggle={handleEditingToggle}
+            showDemoRecipes={showDemoRecipes}
+            onDemoRecipesToggle={setShowDemoRecipes}
+            isLoading={isLoading}
+            message={message}
+          />
+          
+          {!activeRecipe && (
+            <div className="empty-state" style={{
+              textAlign: 'center',
+              padding: '2rem',
+              color: '#666'
+            }}>
+              <p>Select a recipe to view details</p>
+              {!isGoogleDriveConnected && (
+                <p>Sign in to Google Drive to create and edit recipes</p>
+              )}
             </div>
-
-            {/* Library Status */}
-            <div className="library-status-header">
-              <Space direction="vertical" size="small" align="center">
-                <span className="library-count-header">
-                  {getTotalRecipesCount()} recipes total
-                </span>
-                
-                {isLoading ? (
-                  <div className="loading-indicator-header">
-                    <Spin size="small" />
-                    <span className="loading-text-header">Loading...</span>
-                  </div>
-                ) : (isGoogleDriveConnected ? (
-                  <span className="sync-indicator connected">
-                    ✓ Google Drive Connected
-                  </span>
-                ) : (
-                  <span className="sync-indicator disconnected">
-                    ✗ Not Connected to Google Drive
-                  </span>
-                ))}
-              </Space>
-            </div>
-
-            {/* Google Drive Integration */}
-            <div className="google-drive-section">
-              <GoogleSignInButton
-                onSuccess={handleGoogleSignIn}
-                onError={(error) => message.error('Sign in failed')}
-                onSignOut={handleGoogleSignOut}
-                isSignedIn={isGoogleDriveConnected}
-                loading={isLoading}
-                userInfo={userInfo}
-              />
-            </div>
-          </Space>
+          )}
         </div>
       </div>
 
-      <div className="recipes-content">
-        <RecipeList 
-          recipes={recipes} 
-          onSelectRecipe={handleRecipeSelect}
-          activeurlPermalink={activeRecipe?.permalink}
-        />
-
-        {activeRecipe ? (
-          <RecipeDetail 
-            recipe={activeRecipe} 
-            fontSize={fontSize}
-            onFontSizeChange={handleFontSizeChange}
-            currentView={view}
-            onToggleView={toggleReaderView}
-            editingEnabled={editingEnabled}
-          />
-        ) : (
-          <div className="empty-state">
-            <p>Select a recipe to view details</p>
-            {!isGoogleDriveConnected && (
-              <p>Sign in to Google Drive to create and edit recipes</p>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* New Recipe Modal */}
+      {console.log('🎨 RENDER: About to render NewRecipeForm with visible:', isNewRecipeModalOpen)}
       <NewRecipeForm
-        visible={showNewRecipeModal}
-        onCancel={() => setShowNewRecipeModal(false)}
+        visible={isNewRecipeModalOpen}
+        onCancel={() => {
+          console.log('🔧 NewRecipeForm onCancel called - closing Redux modal');
+          dispatch(closeModal());
+        }}
         onSave={handleSaveNewRecipe}
         loading={isLoading}
       />
+
+      {/* Library File Selector Modal */}
+      <LibraryFileSelector
+        isVisible={showLibrarySelector}
+        onClose={() => setShowLibrarySelector(false)}
+        onSelectFile={handleLibraryFileSelect}
+        driveService={driveService}
+        isLoading={isLoading}
+      />
+
+      {/* Library Settings Modal */}
+  {console.log('🎨 RENDER: About to render LibraryModal with visible:', isLibrarySettingsModalOpen)}
+  <LibraryModal />
     </div>
   );
 };

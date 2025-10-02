@@ -274,7 +274,7 @@ export class InstructionGenerator {
     /**
      * Add remaining shaping instructions that don't have corresponding colorwork
      */
-    addRemainingShapingInstructions(synchronized, shapingInstructions, shapingByRow) {
+    addRemainingShapingInstructions(synchronized, shapingInstructions) {
         // Add cast on, bind off, and finishing instructions
         shapingInstructions.forEach((instruction, index) => {
             const isGeneral = typeof instruction === 'string' && 

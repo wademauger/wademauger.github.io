@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -7,15 +7,16 @@ import Layout from '@/components/Layout';
 import MinimalLayout from '@/components/MinimalLayout';
 import RoutePreloader from '@/components/RoutePreloader';
 import ProfessionalLanding from '@/components/ProfessionalLanding';
+import LibraryModal from '@/components/LibraryModal';
 
 // Lazy load apps for better performance
-const HomePage = React.lazy(() => import('./pages/HomePage'));
-const RecipesApp = React.lazy(() => import('./apps/recipes/RecipesApp'));
-const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern'));
-const KnittingDesignerApp = React.lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
-const ColorworkDesignerApp = React.lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
-const UnifiedDesignerApp = React.lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
-const NotFound = React.lazy(() => import('./pages/NotFound'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const RecipesApp = lazy(() => import('./apps/recipes/RecipesApp'));
+const SongTabsApp = lazy(() => import('./apps/songs/SongTabsAppModern.jsx'));
+const KnittingDesignerApp = lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
+const ColorworkDesignerApp = lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
+const UnifiedDesignerApp = lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'development-fallback';
@@ -57,13 +58,7 @@ function App() {
             } />
             
             {/* App Routes under /crafts */}
-            <Route path="/crafts/recipes/*" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <RecipesApp />
-                </Layout>
-              </Suspense>
-            } />
+
             
             <Route path="/crafts/tabs/*" element={
               <Suspense fallback={<LoadingSpinner />}>
@@ -105,7 +100,7 @@ function App() {
                 </Layout>
               </Suspense>
             } />
-            
+                       
             <Route path="/songs/*" element={
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
@@ -147,6 +142,9 @@ function App() {
               </Suspense>
             } />
           </Routes>
+          
+          {/* Global Modals - controlled by Redux */}
+          <LibraryModal />
         </Router>
       </Provider>
     </GoogleOAuthProvider>

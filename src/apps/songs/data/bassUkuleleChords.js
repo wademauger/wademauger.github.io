@@ -5,136 +5,136 @@ export const bassUkuleleChords = {
     frets: [3, 3, 2, 1], 
     fingers: [3, 4, 2, 1],
     inversions: [
-      { frets: [8, 10, 10, 8], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [0, 1, 3, 1], fingers: [0, 1, 3, 2], description: "Second inversion" }
+      { frets: [8, 10, 10, 8], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [0, 1, 3, 1], fingers: [0, 1, 3, 2], description: 'Second inversion' }
     ]
   },
   'C#': { 
     frets: [4, 4, 3, 2], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [9, 11, 11, 9], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [1, 2, 4, 2], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [9, 11, 11, 9], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [1, 2, 4, 2], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'Db': { 
     frets: [4, 4, 3, 2], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [9, 11, 11, 9], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [1, 2, 4, 2], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [9, 11, 11, 9], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [1, 2, 4, 2], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'D': { 
     frets: [5, 5, 4, 3], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [10, 0, 0, 10], fingers: [1, 0, 0, 2], description: "First inversion" },
-      { frets: [2, 3, 5, 3], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [10, 0, 0, 10], fingers: [1, 0, 0, 2], description: 'First inversion' },
+      { frets: [2, 3, 5, 3], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'D#': { 
     frets: [6, 6, 5, 4], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [11, 1, 1, 11], fingers: [1, 2, 3, 4], description: "First inversion" },
-      { frets: [3, 4, 6, 4], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [11, 1, 1, 11], fingers: [1, 2, 3, 4], description: 'First inversion' },
+      { frets: [3, 4, 6, 4], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'Eb': { 
     frets: [6, 6, 5, 4], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [11, 1, 1, 11], fingers: [1, 2, 3, 4], description: "First inversion" },
-      { frets: [3, 4, 6, 4], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [11, 1, 1, 11], fingers: [1, 2, 3, 4], description: 'First inversion' },
+      { frets: [3, 4, 6, 4], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'E': { 
     frets: [7, 7, 6, 5], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [0, 2, 2, 0], fingers: [0, 1, 2, 0], description: "First inversion" },
-      { frets: [4, 5, 7, 5], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [0, 2, 2, 0], fingers: [0, 1, 2, 0], description: 'First inversion' },
+      { frets: [4, 5, 7, 5], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'F': { 
     frets: [8, 8, 7, 6], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [1, 3, 3, 1], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [5, 6, 8, 6], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [1, 3, 3, 1], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [5, 6, 8, 6], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'F#': { 
     frets: [9, 9, 8, 7], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [2, 4, 4, 2], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [6, 7, 9, 7], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [2, 4, 4, 2], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [6, 7, 9, 7], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'Gb': { 
     frets: [9, 9, 8, 7], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [2, 4, 4, 2], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [6, 7, 9, 7], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [2, 4, 4, 2], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [6, 7, 9, 7], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'G': { 
     frets: [10, 10, 9, 8], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [3, 5, 5, 3], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [7, 8, 10, 8], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [3, 5, 5, 3], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [7, 8, 10, 8], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'G#': { 
     frets: [11, 11, 10, 9], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [4, 6, 6, 4], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [8, 9, 11, 9], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [4, 6, 6, 4], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [8, 9, 11, 9], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'Ab': { 
     frets: [11, 11, 10, 9], 
     fingers: [4, 4, 2, 1],
     inversions: [
-      { frets: [4, 6, 6, 4], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [8, 9, 11, 9], fingers: [1, 2, 4, 3], description: "Second inversion" }
+      { frets: [4, 6, 6, 4], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [8, 9, 11, 9], fingers: [1, 2, 4, 3], description: 'Second inversion' }
     ]
   },
   'A': { 
     frets: [0, 0, 2, 2], 
     fingers: [0, 0, 1, 2],
     inversions: [
-      { frets: [5, 7, 7, 5], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [9, 10, 0, 10], fingers: [2, 3, 0, 4], description: "Second inversion" }
+      { frets: [5, 7, 7, 5], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [9, 10, 0, 10], fingers: [2, 3, 0, 4], description: 'Second inversion' }
     ]
   },
   'A#': { 
     frets: [1, 1, 3, 3], 
     fingers: [1, 1, 3, 4],
     inversions: [
-      { frets: [6, 8, 8, 6], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [10, 11, 1, 11], fingers: [2, 3, 1, 4], description: "Second inversion" }
+      { frets: [6, 8, 8, 6], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [10, 11, 1, 11], fingers: [2, 3, 1, 4], description: 'Second inversion' }
     ]
   },
   'Bb': { 
     frets: [1, 1, 3, 3], 
     fingers: [1, 1, 3, 4],
     inversions: [
-      { frets: [6, 8, 8, 6], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [10, 11, 1, 11], fingers: [2, 3, 1, 4], description: "Second inversion" }
+      { frets: [6, 8, 8, 6], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [10, 11, 1, 11], fingers: [2, 3, 1, 4], description: 'Second inversion' }
     ]
   },
   'B': { 
     frets: [2, 2, 4, 4], 
     fingers: [1, 1, 3, 4],
     inversions: [
-      { frets: [7, 9, 9, 7], fingers: [1, 3, 4, 2], description: "First inversion" },
-      { frets: [11, 0, 2, 0], fingers: [3, 0, 1, 0], description: "Second inversion" }
+      { frets: [7, 9, 9, 7], fingers: [1, 3, 4, 2], description: 'First inversion' },
+      { frets: [11, 0, 2, 0], fingers: [3, 0, 1, 0], description: 'Second inversion' }
     ]
   },
   // Minor chords (triads, root position)

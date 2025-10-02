@@ -17,44 +17,44 @@ export const loadLibraryFromDrive = createAsyncThunk(
 // Async thunk for updating a song
 export const updateSong = createAsyncThunk(
   'songs/updateSong',
-  async ({ 
-    artistName, 
-    albumTitle, 
-    songTitle, 
-    updatedSongData, 
-    newArtistName, 
-    newAlbumTitle, 
+  async ({
+    artistName,
+    albumTitle,
+    songTitle,
+    updatedSongData,
+    newArtistName,
+    newAlbumTitle,
     newSongTitle,
-    isGoogleDriveConnected 
+    isGoogleDriveConnected
   }, { getState, rejectWithValue }) => {
     try {
       const state = getState();
       // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       // Check if metadata has changed (song is moving to different artist/album/title)
       const metadataChanged = (
         newArtistName && newArtistName !== artistName ||
         newAlbumTitle && newAlbumTitle !== albumTitle ||
         newSongTitle && newSongTitle !== songTitle
       );
-      
+
       if (isGoogleDriveConnected) {
         if (metadataChanged) {
           // Need to move the song - delete from old location and add to new location
           const targetArtist = newArtistName || artistName;
           const targetAlbum = newAlbumTitle || albumTitle;
           const targetTitle = newSongTitle || songTitle;
-          
+
           // First, get the current song data
           const artist = library.artists.find(a => a.name === artistName);
           const album = artist?.albums.find(a => a.title === albumTitle);
           const song = album?.songs.find(s => s.title === songTitle);
-          
+
           if (!song) {
             throw new Error('Original song not found');
           }
-          
+
           // Create the song data for the new location
           const songDataForNewLocation = {
             ...song,
@@ -62,20 +62,20 @@ export const updateSong = createAsyncThunk(
             title: targetTitle,
             updatedAt: new Date().toISOString()
           };
-          
+
           // Add song to new location
           await googleDriveService.addSong(library, targetArtist, targetAlbum, songDataForNewLocation);
-          
+
           // Delete from old location (reload library first to get the updated version)
           const updatedLibraryAfterAdd = await googleDriveService.loadLibrary();
           await googleDriveService.deleteSong(updatedLibraryAfterAdd, artistName, albumTitle, songTitle);
-          
+
           // Return the final updated library
           const finalLibrary = await googleDriveService.loadLibrary();
-          return { 
-            library: finalLibrary, 
-            artistName: targetArtist, 
-            albumTitle: targetAlbum, 
+          return {
+            library: finalLibrary,
+            artistName: targetArtist,
+            albumTitle: targetAlbum,
             songTitle: targetTitle,
             metadataChanged: true
           };
@@ -87,16 +87,16 @@ export const updateSong = createAsyncThunk(
         }
       } else {
         // For local updates, we'll handle this in the reducer
-        return { 
-          updatedSongData, 
-          artistName, 
-          albumTitle, 
+        return {
+          updatedSongData,
+          artistName,
+          albumTitle,
           songTitle,
           newArtistName,
           newAlbumTitle,
           newSongTitle,
           metadataChanged,
-          isLocal: true 
+          isLocal: true
         };
       }
     } catch (error) {
@@ -113,7 +113,7 @@ export const addSong = createAsyncThunk(
       const state = getState();
       // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.addSong(library, artistName, albumTitle, songData);
         // Return the updated library from Google Drive
@@ -137,7 +137,7 @@ export const addArtist = createAsyncThunk(
       const state = getState();
       // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.addArtist(library, artistName);
         // Return the updated library from Google Drive
@@ -161,7 +161,7 @@ export const addAlbum = createAsyncThunk(
       const state = getState();
       // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.addAlbum(library, artistName, albumTitle);
         // Return the updated library from Google Drive
@@ -185,7 +185,7 @@ export const deleteSong = createAsyncThunk(
       const state = getState();
       // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.deleteSong(library, artistName, albumTitle, songTitle);
         // Return the updated library from Google Drive
@@ -208,7 +208,7 @@ export const updateArtist = createAsyncThunk(
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.updateArtist(library, oldArtistName, newArtistName);
         const updatedLibrary = await googleDriveService.loadLibrary();
@@ -229,7 +229,7 @@ export const updateAlbum = createAsyncThunk(
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.updateAlbum(library, artistName, oldAlbumTitle, newAlbumTitle);
         const updatedLibrary = await googleDriveService.loadLibrary();
@@ -250,7 +250,7 @@ export const deleteArtist = createAsyncThunk(
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.deleteArtist(library, artistName);
         const updatedLibrary = await googleDriveService.loadLibrary();
@@ -271,7 +271,7 @@ export const deleteAlbum = createAsyncThunk(
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
-      
+
       if (isGoogleDriveConnected) {
         await googleDriveService.deleteAlbum(library, artistName, albumTitle);
         const updatedLibrary = await googleDriveService.loadLibrary();
@@ -292,7 +292,7 @@ const initialState = {
   error: null,
   isGoogleDriveConnected: false,
   userInfo: null,
-  editingEnabled: false,
+  editingEnabled: false
 };
 
 // Helper function to normalize album property names
@@ -303,7 +303,7 @@ const normalizeAlbum = (album) => {
   const { name, title, ...rest } = album;
   return {
     ...rest,
-    title: title || name,
+    title: title || name
   };
 };
 
@@ -313,7 +313,7 @@ const normalizeSong = (song) => {
   // Songs should only have 'title' property
   // Create a completely new object to avoid read-only property issues
   const { name, title, lyrics, ...rest } = song;
-  
+
   // Convert lyrics from array to string if needed
   let normalizedLyrics = lyrics;
   if (Array.isArray(lyrics)) {
@@ -321,11 +321,11 @@ const normalizeSong = (song) => {
   } else if (typeof lyrics !== 'string') {
     normalizedLyrics = '';
   }
-  
+
   return {
     ...rest,
     title: title || name,
-    lyrics: normalizedLyrics,
+    lyrics: normalizedLyrics
   };
 };
 
@@ -333,13 +333,13 @@ const normalizeSong = (song) => {
 const findSongWithArtistAlbum = (library, artistName, albumTitle, songTitle) => {
   const artist = library.artists.find(a => a.name === artistName);
   if (!artist) return null;
-  
+
   const album = artist.albums.find(a => a.title === albumTitle);
   if (!album) return null;
-  
+
   const song = album.songs.find(s => s.title === songTitle);
   if (!song) return null;
-  
+
   return {
     ...normalizeSong(song),
     artist: { name: artistName },
@@ -375,17 +375,115 @@ const songsSlice = createSlice({
       const mockLibrary = {
         artists: [
           {
-            name: 'Artist Test',
+            name: 'Demo Artist',
             albums: [
               {
-                title: 'Album Test',
+                title: 'Demo Album',
                 songs: [
                   {
-                    title: 'Song Test',
+                    title: 'Morning Light',
                     lyrics: [
-                      "1234567890 [Cmaj7]0987654321",
-                      "[Cm7]1234567890 [C7]0987654321",
-                      "[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890",
+                      '[C]Waking up to [G]morning skies',
+                      '[Am]Colors painting [F]both my eyes',
+                      '[C]Hope is rising, [G]soft and clear',
+                      '[Am]Every day I [F]find you near'
+                    ],
+                    notes: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Old River Blues',
+                    lyrics: [
+                      '[G]I went down to the [C]river,',
+                      '[G]sang a lonesome [D7]tune.',
+                      '[G]I went down to the [C]river,',
+                      '[G]sang a lonesome [D7]tune.',
+                      '[G]Water keeps on [C]rolling,',
+                      '[D7]Morning comes too [G]soon.'
+                    ],
+                    notes: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Wandering Home',
+                    lyrics: [
+                      '[Dm]Steps along the [G]empty street,',
+                      '[C]Dreams beneath my [Am]tired feet.',
+                      '[Dm]Shadows whisper, [G]soft and low,',
+                      '[C]Guiding me back [Am]home I go.'
+                    ],
+                    notes: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Highway Turning',
+                    lyrics: [
+                      '[G]Wheels keep rolling [D]down the line,',
+                      '[Em]Chasing hours I [C]left behind.',
+                      '[G]Every town I [D]pass on through,',
+                      '[Em]Holds a memory [C]left with you.',
+                      '',
+                      '[G]Skyline fading [D]into gray,',
+                      '[Em]Sunset pulls the [C]night my way.',
+                      '[G]Every mile the [D]engine sings,',
+                      '[Em]Hope is carried [C]on the strings.',
+                      '',
+                      '[Am]Will I find you [Em]waiting still?',
+                      '[F]Standing by the [C]window sill.',
+                      '[Am]Or has time pulled [Em]you away,',
+                      '[F]Like the night steals [C]light from day?'
+                    ],
+                    notes: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Cascadia Chords',
+                    lyrics: [
+                      '[C]  [Cmaj7]      [C7]   [F]  [Fm]   [C]  [A7]   [Dm]   [G7]',
+                      '[Em]   [A7]   [Dm7]    [G7]   [Cmaj7]      [F]  [Bm7b5]      [E7]   [Am]',
+                      '[D7]   [G7]   [Cmaj7]      [Fmaj7]      [Fm]   [C]  [G]  [C]'
+                    ],
+                    notes: 'Instrumental / chord progression only',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Midnight Café',
+                    lyrics: [
+                      '[Am7]Lonely tables [D9]under neon [Gmaj7]glow,',
+                      '[C#m7b5]Coffee cooling [F#7b9]while the night winds [Bm7]slow.',
+                      '[E7#9]Laughter lingers [Am7]from another [D13]booth,',
+                      '[Gmaj7]Every stranger [C9]speaks a bit of [F#7b13]truth.',
+                      '',
+                      '[Bm7]City breathing [E7alt]soft and low,',
+                      '[Am7]Midnight café [D9]where the dreamers [Gmaj7]go.'
+                    ],
+                    notes: 'Jazz-inspired with complex chords',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  },
+                  {
+                    title: 'Fire Escape',
+                    lyrics: [
+                      '[C]I was waiting on the [Am]fire escape,',
+                      '[G]Counting stars as the [F]night grew late.',
+                      '[C]Every shadow seemed to [Am]call my name,',
+                      '[G]But the world keeps [F]turning all the same.',
+                      '',
+                      '[Am]Hold on, [F]I’ll find a [C]way,',
+                      '[G]Through the dark into the [Am]day.',
+                      '[F]Every step I [C]take is true,',
+                      '[G]Every road comes [F]back to you.',
+                      '',
+                      'Bridge:',
+                      '[Dm]Voices in the [G]night,',
+                      '[C]Pulling me to [Am]fight.',
+                      '[Dm]But I won’t [G]lose my place,',
+                      '[F]Climbing back to [G]grace.'
                     ],
                     notes: '',
                     createdAt: new Date().toISOString(),
@@ -400,6 +498,7 @@ const songsSlice = createSlice({
         lastUpdated: new Date().toISOString()
       };
 
+
       // Apply normalization like setLibrary does
       const normalizedLibrary = {
         ...mockLibrary,
@@ -411,7 +510,7 @@ const songsSlice = createSlice({
           }))
         }))
       };
-      
+
       state.library = normalizedLibrary;
     },
     setGoogleDriveConnection: (state, action) => {
@@ -431,49 +530,49 @@ const songsSlice = createSlice({
     },
     // Local update for mock data
     updateSongLocal: (state, action) => {
-      const { 
-        artistName, 
-        albumTitle, 
-        songTitle, 
+      const {
+        artistName,
+        albumTitle,
+        songTitle,
         updatedSongData,
         newArtistName,
         newAlbumTitle,
         newSongTitle,
         metadataChanged
       } = action.payload;
-      
+
       // Find the original song
       const artist = state.library.artists.find(a => a.name === artistName);
       if (!artist) return;
-      
+
       const album = artist.albums.find(a => a.title === albumTitle);
       if (!album) return;
-      
+
       const songIndex = album.songs.findIndex(s => s.title === songTitle);
       if (songIndex === -1) return;
-      
+
       const currentSong = album.songs[songIndex];
-      
+
       if (metadataChanged) {
         // Moving song to new location - create in new location and delete from old
         const targetArtist = newArtistName || artistName;
         const targetAlbum = newAlbumTitle || albumTitle;
         const targetTitle = newSongTitle || songTitle;
-        
+
         // Find or create target artist
         let targetArtistObj = state.library.artists.find(a => a.name === targetArtist);
         if (!targetArtistObj) {
           targetArtistObj = { name: targetArtist, albums: [] };
           state.library.artists.push(targetArtistObj);
         }
-        
+
         // Find or create target album
         let targetAlbumObj = targetArtistObj.albums.find(a => a.title === targetAlbum);
         if (!targetAlbumObj) {
           targetAlbumObj = normalizeAlbum({ title: targetAlbum, songs: [] });
           targetArtistObj.albums.push(targetAlbumObj);
         }
-        
+
         // Create new song in target location
         const newSongData = {
           ...currentSong,
@@ -482,10 +581,10 @@ const songsSlice = createSlice({
           updatedAt: new Date().toISOString()
         };
         targetAlbumObj.songs.push(normalizeSong(newSongData));
-        
+
         // Remove from original location
         album.songs.splice(songIndex, 1);
-        
+
         // Clean up empty albums/artists
         if (album.songs.length === 0) {
           const albumIndex = artist.albums.findIndex(a => a.title === albumTitle);
@@ -499,12 +598,12 @@ const songsSlice = createSlice({
             state.library.artists.splice(artistIndex, 1);
           }
         }
-        
+
         // Update selected song if it's the same song
-        if (state.selectedSong && 
-            state.selectedSong.artist.name === artistName &&
-            state.selectedSong.album.title === albumTitle &&
-            state.selectedSong.title === songTitle) {
+        if (state.selectedSong &&
+          state.selectedSong.artist.name === artistName &&
+          state.selectedSong.album.title === albumTitle &&
+          state.selectedSong.title === songTitle) {
           state.selectedSong = {
             ...normalizeSong(newSongData),
             artist: { name: targetArtist },
@@ -518,15 +617,15 @@ const songsSlice = createSlice({
           ...updatedSongData,
           updatedAt: new Date().toISOString()
         };
-        
+
         // Update the song with normalized data
         album.songs[songIndex] = normalizeSong(newSongData);
-        
+
         // Update selected song if it's the same song
-        if (state.selectedSong && 
-            state.selectedSong.artist.name === artistName &&
-            state.selectedSong.album.title === albumTitle &&
-            state.selectedSong.title === songTitle) {
+        if (state.selectedSong &&
+          state.selectedSong.artist.name === artistName &&
+          state.selectedSong.album.title === albumTitle &&
+          state.selectedSong.title === songTitle) {
           state.selectedSong = {
             ...album.songs[songIndex],
             artist: { name: artistName },
@@ -538,24 +637,24 @@ const songsSlice = createSlice({
     // Local add for mock data
     addSongLocal: (state, action) => {
       const { artistName, albumTitle, songData } = action.payload;
-      
+
       // Find or create artist
       let artist = state.library.artists.find(a => a.name === artistName);
       if (!artist) {
         artist = { name: artistName, albums: [] };
         state.library.artists.push(artist);
       }
-      
+
       // Find or create album
       let album = artist.albums.find(a => a.title === albumTitle);
       if (!album) {
-        album = normalizeAlbum({ 
-          title: albumTitle, 
-          songs: [] 
+        album = normalizeAlbum({
+          title: albumTitle,
+          songs: []
         });
         artist.albums.push(album);
       }
-      
+
       // Add song
       const newSong = normalizeSong({
         ...songData,
@@ -563,7 +662,7 @@ const songsSlice = createSlice({
         updatedAt: new Date().toISOString()
       });
       album.songs.push(newSong);
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -602,9 +701,9 @@ const songsSlice = createSlice({
                     {
                       title: 'Song Test',
                       lyrics: [
-                        "1234567890 [Cmaj7]0987654321",
-                        "[Cm7]1234567890 [C7]0987654321",
-                        "[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890",
+                        '1234567890 [Cmaj7]0987654321',
+                        '[Cm7]1234567890 [C7]0987654321',
+                        '[C]12345 [Cmaj7]67890 [Cm7]12345 [C7]67890'
                       ],
                       notes: '',
                       createdAt: new Date().toISOString(),
@@ -626,26 +725,26 @@ const songsSlice = createSlice({
       })
       .addCase(updateSong.fulfilled, (state, action) => {
         state.isLoading = false;
-        const { 
-          library, 
-          artistName, 
-          albumTitle, 
-          songTitle, 
-          updatedSongData, 
+        const {
+          library,
+          artistName,
+          albumTitle,
+          songTitle,
+          updatedSongData,
           newArtistName,
           newAlbumTitle,
           newSongTitle,
           metadataChanged,
-          isLocal 
+          isLocal
         } = action.payload;
-        
+
         if (isLocal) {
           // Handle local update
           songsSlice.caseReducers.updateSongLocal(state, {
-            payload: { 
-              artistName, 
-              albumTitle, 
-              songTitle, 
+            payload: {
+              artistName,
+              albumTitle,
+              songTitle,
               updatedSongData,
               newArtistName,
               newAlbumTitle,
@@ -666,7 +765,7 @@ const songsSlice = createSlice({
             }))
           };
           state.library = normalizedLibrary;
-          
+
           // Update selected song - use new metadata if it changed
           const targetArtist = newArtistName || artistName;
           const targetAlbum = newAlbumTitle || albumTitle;
@@ -686,7 +785,7 @@ const songsSlice = createSlice({
       .addCase(addSong.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, songTitle, songData, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local add
           songsSlice.caseReducers.addSongLocal(state, {
@@ -706,7 +805,7 @@ const songsSlice = createSlice({
           };
           state.library = normalizedLibrary;
         }
-        
+
         // Auto-select the newly added song
         state.selectedSong = findSongWithArtistAlbum(state.library, artistName, albumTitle, songTitle);
       })
@@ -722,7 +821,7 @@ const songsSlice = createSlice({
       .addCase(deleteSong.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, songTitle, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local delete
           const artist = state.library.artists.find(a => a.name === artistName);
@@ -747,12 +846,12 @@ const songsSlice = createSlice({
           };
           state.library = normalizedLibrary;
         }
-        
+
         // Deselect song if it was the deleted song
-        if (state.selectedSong && 
-            state.selectedSong.artist.name === artistName &&
-            state.selectedSong.album.title === albumTitle &&
-            state.selectedSong.title === songTitle) {
+        if (state.selectedSong &&
+          state.selectedSong.artist.name === artistName &&
+          state.selectedSong.album.title === albumTitle &&
+          state.selectedSong.title === songTitle) {
           state.selectedSong = null;
         }
       })
@@ -768,7 +867,7 @@ const songsSlice = createSlice({
       .addCase(addArtist.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local add
           const existingArtist = state.library.artists.find(a => a.name === artistName);
@@ -802,7 +901,7 @@ const songsSlice = createSlice({
       .addCase(addAlbum.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local add
           let artist = state.library.artists.find(a => a.name === artistName);
@@ -810,7 +909,7 @@ const songsSlice = createSlice({
             artist = { name: artistName, albums: [] };
             state.library.artists.push(artist);
           }
-          
+
           const existingAlbum = artist.albums.find(a => a.title === albumTitle);
           if (!existingAlbum) {
             artist.albums.push(normalizeAlbum({ title: albumTitle, songs: [] }));
@@ -842,7 +941,7 @@ const songsSlice = createSlice({
       .addCase(updateArtist.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, oldArtistName, newArtistName, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local update - find and rename artist
           const artist = state.library.artists.find(a => a.name === oldArtistName);
@@ -876,7 +975,7 @@ const songsSlice = createSlice({
       .addCase(updateAlbum.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, oldAlbumTitle, newAlbumTitle, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local update - find and rename album
           const artist = state.library.artists.find(a => a.name === artistName);
@@ -913,7 +1012,7 @@ const songsSlice = createSlice({
       .addCase(deleteArtist.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local delete
           state.library.artists = state.library.artists.filter(a => a.name !== artistName);
@@ -931,7 +1030,7 @@ const songsSlice = createSlice({
           };
           state.library = normalizedLibrary;
         }
-        
+
         // Deselect song if the artist of the selected song was deleted
         if (state.selectedSong && state.selectedSong.artist.name === artistName) {
           state.selectedSong = null;
@@ -949,7 +1048,7 @@ const songsSlice = createSlice({
       .addCase(deleteAlbum.fulfilled, (state, action) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, isLocal } = action.payload;
-        
+
         if (isLocal) {
           // Handle local delete
           const artist = state.library.artists.find(a => a.name === artistName);
@@ -970,11 +1069,11 @@ const songsSlice = createSlice({
           };
           state.library = normalizedLibrary;
         }
-        
+
         // Deselect song if the album of the selected song was deleted
-        if (state.selectedSong && 
-            state.selectedSong.album.title === albumTitle &&
-            state.selectedSong.artist.name === artistName) {
+        if (state.selectedSong &&
+          state.selectedSong.album.title === albumTitle &&
+          state.selectedSong.artist.name === artistName) {
           state.selectedSong = null;
         }
       })
@@ -982,21 +1081,21 @@ const songsSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       });
-  },
+  }
 });
 
-export const { 
-  setSelectedSong, 
-  clearSelectedSong, 
-  setLibrary, 
+export const {
+  setSelectedSong,
+  clearSelectedSong,
+  setLibrary,
   loadMockLibrary,
   setGoogleDriveConnection,
   setUserInfo,
   setEditingEnabled,
-  setError, 
+  setError,
   clearError,
   updateSongLocal,
-  addSongLocal 
+  addSongLocal
 } = songsSlice.actions;
 
 // Selectors

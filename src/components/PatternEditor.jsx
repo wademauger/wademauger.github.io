@@ -3,7 +3,7 @@ import { Card, ColorPicker, Space, Button, Typography, Input, Row, Col, InputNum
 import { PlusOutlined, MinusOutlined, SaveOutlined } from '@ant-design/icons';
 import SwatchViewer from './SwatchViewer';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 const PatternEditor = ({ 
@@ -15,7 +15,7 @@ const PatternEditor = ({
   onPatternChange = () => {},
   onColorsChange = () => {},
   onSave = () => {},
-  title = "Pattern Editor"
+  title = 'Pattern Editor'
 }) => {
   const [activeColorIndex, setActiveColorIndex] = useState(0);
   const [patternName, setPatternName] = useState('');

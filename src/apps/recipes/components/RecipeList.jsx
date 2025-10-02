@@ -1,127 +1,96 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
-import FolderTree from 'react-folder-tree';
-import 'react-folder-tree/dist/style.css';
+import { PlusOutlined } from '@ant-design/icons';
+import RecipeListTree from './RecipeListTree';
+import AppNavigation from '../../../components/AppNavigation';
 import './RecipeList.css';
 
-const RecipeList = ({ recipes, onSelectRecipe, activeurlPermalink }) => {
+const RecipeList = ({ 
+  recipes, 
+  onSelectRecipe, 
+  activeurlPermalink,
+  isGoogleDriveConnected,
+  userInfo,
+  onSignIn,
+  onSignOut,
+  onSettingsChange, // New prop for settings changes
+  onCreateNewRecipe,
+  editingEnabled,
+  onEditingToggle,
+  showDemoRecipes,
+  onDemoRecipesToggle,
+  isLoading,
+  message
+}) => {
   const { driveRecipes } = useSelector(state => state.recipes);
 
-  // Transform recipe data to react-folder-tree format
-  const treeData = useMemo(() => {
-    const topLevelSections = [];
-
-    // Create Recipe Library section if there are local recipes
-    const hasLocalRecipes = Object.entries(recipes).some(([, sectionRecipes]) => 
-      Array.isArray(sectionRecipes) && sectionRecipes.length > 0
+  // Local function to count total recipes
+  const getTotalRecipesCount = () => {
+    const localCount = Object.values(recipes).reduce((total, sectionRecipes) => 
+      total + (Array.isArray(sectionRecipes) ? sectionRecipes.length : 0), 0
     );
-
-    if (hasLocalRecipes) {
-      const recipeLibrary = {
-        name: 'Test Recipe Library',
-        isOpen: false,
-        type: 'top-section',
-        children: []
-      };
-
-      // Add local recipe sections
-      Object.entries(recipes).forEach(([sectionKey, sectionRecipes]) => {
-        if (Array.isArray(sectionRecipes) && sectionRecipes.length > 0) {
-          const sectionNode = {
-            name: sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
-            isOpen: false,
-            type: 'section',
-            children: []
-          };
-
-          sectionRecipes.forEach(recipe => {
-            const isSelected = activeurlPermalink === recipe.permalink;
-            
-            sectionNode.children.push({
-              name: recipe.title,
-              type: 'recipe',
-              recipeData: recipe,
-              isSelected: isSelected
-            });
-          });
-
-          recipeLibrary.children.push(sectionNode);
-        }
-      });
-
-      topLevelSections.push(recipeLibrary);
-    }
-
-    // Create Google Drive Library section if there are Google Drive recipes
-    if (driveRecipes && driveRecipes.length > 0) {
-      const googleDriveLibrary = {
-        name: 'Google Drive Library',
-        isOpen: true,
-        type: 'top-section',
-        children: []
-      };
-
-      driveRecipes.forEach(recipe => {
-        const isSelected = activeurlPermalink === recipe.permalink;
-        
-        googleDriveLibrary.children.push({
-          name: recipe.title,
-          type: 'recipe',
-          recipeData: recipe,
-          isSelected: isSelected
-        });
-      });
-
-      topLevelSections.push(googleDriveLibrary);
-    }
-
-    // Return a root wrapper if we have multiple sections
-    if (topLevelSections.length > 1) {
-      return {
-        name: 'Recipes',
-        isOpen: true,
-        type: 'root',
-        children: topLevelSections
-      };
-    } else if (topLevelSections.length === 1) {
-      // If only one section, return it directly
-      return topLevelSections[0];
-    } else {
-      // No recipes at all
-      return {
-        name: 'Recipes',
-        isOpen: true,
-        type: 'root',
-        children: []
-      };
-    }
-  }, [recipes, driveRecipes, activeurlPermalink]);
-
-  const handleTreeStateChange = (newTreeState, event) => {
-    console.log('Recipe tree state changed:', { newTreeState, event });
-  };
-
-  const handleNameClick = ({ defaultOnClick, nodeData }) => {
-    console.log('Recipe name clicked:', { nodeData });
-    
-    // Handle recipe selection - only select if this is actually a recipe node
-    if (nodeData && nodeData.type === 'recipe' && onSelectRecipe) {
-      console.log('Selecting recipe:', nodeData.recipeData.title);
-      onSelectRecipe(nodeData.recipeData);
-    } else {
-      // For non-recipe nodes, use default behavior (expand/collapse)
-      defaultOnClick();
-    }
+    const driveCount = driveRecipes.length;
+    return localCount + driveCount;
   };
 
   return (
     <div className="recipe-list">
-      <FolderTree
-        data={treeData}
-        onTreeStateChange={handleTreeStateChange}
-        onNameClick={handleNameClick}
-        showCheckbox={false}
-        indentPixels={20}
+      {/* Recipe Library Navigation */}
+      <AppNavigation
+        appName="Recipes"
+        isGoogleDriveConnected={isGoogleDriveConnected}
+        userInfo={userInfo}
+        onSignIn={onSignIn}
+        onSignOut={onSignOut}
+        onSettingsChange={onSettingsChange}
+        primaryAction={isGoogleDriveConnected ? {
+          label: '🤖 New Recipe',
+          icon: <PlusOutlined />,
+          onClick: () => {
+            console.log('🎯 PRIMARY ACTION CLICKED - calling onCreateNewRecipe');
+            onCreateNewRecipe();
+          },
+          loading: isLoading
+        } : null}
+        toggles={[
+          {
+            label: 'Edit Mode',
+            checked: editingEnabled,
+            onChange: onEditingToggle,
+            disabled: !isGoogleDriveConnected
+          }
+        ]}
+        status={{
+          count: getTotalRecipesCount(),
+          loading: isLoading,
+          loadingText: 'Loading...'
+        }}
+        libraryInfo={{
+          title: 'Recipes',
+          emoji: '',
+          count: getTotalRecipesCount(),
+          isLoading: isLoading
+        }}
+        googleSignInProps={{
+          onError: () => message.error('Sign in failed'),
+          loading: isLoading,
+          showDemoRecipes: showDemoRecipes,
+          onDemoRecipesToggle: onDemoRecipesToggle
+        }}
+        style={{
+          background: 'transparent',
+          padding: 0,
+          margin: 0
+        }}
+        className="recipes-navigation"
+      />
+
+      {/* Recipe Tree */}
+      <RecipeListTree
+        recipes={recipes}
+        driveRecipes={driveRecipes}
+        onSelectRecipe={onSelectRecipe}
+        activeRecipePermalink={activeurlPermalink}
       />
     </div>
   );

@@ -6,5 +6,5 @@ export default {
     'Breads and Pastries': Breads,
     Dinners,
     Desserts,
-    'Sides and Snacks': Sides,
+    'Sides and Snacks': Sides
 };

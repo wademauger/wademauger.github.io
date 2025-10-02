@@ -19,10 +19,10 @@ class GoogleDriveService {
         try {
           const data = await error.clone().json();
           message = data.error?.message || '';
-        } catch (e) {
+        } catch {
           try {
             message = await error.clone().text();
-          } catch (e2) {
+          } catch {
             message = error.statusText;
           }
         }
@@ -36,7 +36,7 @@ class GoogleDriveService {
 
     // Check if error is authentication related
     const isAuthFailure = async (error) => {
-      const { status, message } = await getErrorDetails(error);
+      const { status } = await getErrorDetails(error);
       return status === 401;
     };
 
@@ -118,7 +118,7 @@ class GoogleDriveService {
         try {
           await window.gapi.client.init({
             apiKey: apiKey,
-            discoveryDocs: [this.DISCOVERY_DOC],
+            discoveryDocs: [this.DISCOVERY_DOC]
           });
 
           // Initialize the new OAuth2 token client
@@ -132,9 +132,9 @@ class GoogleDriveService {
               }
               this.accessToken = response.access_token;
               this.isSignedIn = true;
-              window.gapi.client.setToken({access_token: this.accessToken});
+              window.gapi.client.setToken({ access_token: this.accessToken });
               this.loadUserProfile();
-            },
+            }
           });
 
           // Attempt to restore session from localStorage
@@ -164,13 +164,13 @@ class GoogleDriveService {
         
         this.accessToken = response.access_token;
         this.isSignedIn = true;
-        window.gapi.client.setToken({access_token: this.accessToken});
+        window.gapi.client.setToken({ access_token: this.accessToken });
         this.loadUserProfile();
         this.persistSession();
         resolve();
       };
 
-      this.tokenClient.requestAccessToken({prompt: 'consent'});
+      this.tokenClient.requestAccessToken({ prompt: 'consent' });
     });
   }
 
@@ -247,8 +247,8 @@ class GoogleDriveService {
       };
 
       const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
-      form.append('file', new Blob([JSON.stringify(defaultLibrary, null, 2)], {type: 'application/json'}));
+      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify(defaultLibrary, null, 2)], { type: 'application/json' }));
 
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',

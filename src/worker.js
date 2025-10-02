@@ -44,7 +44,7 @@ const SPOTIFY_CONFIG = {
 const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-  'Access-Control-Max-Age': '86400',
+  'Access-Control-Max-Age': '86400'
 };
 
 // Spotify API Functions
@@ -65,7 +65,7 @@ async function getSpotifyToken(env) {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/x-www-form-urlencoded'
     },
     body: 'grant_type=client_credentials'
   });
@@ -96,7 +96,7 @@ async function searchSpotify(query, type, env) {
   const response = await fetch(`${SPOTIFY_CONFIG.searchUrl}?${searchParams}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     }
   });
   
@@ -173,7 +173,7 @@ function getCorsHeaders(request, env) {
   if (allowedOrigins.includes(origin)) {
     return {
       ...CORS_HEADERS,
-      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Origin': origin
     };
   }
   
@@ -458,7 +458,7 @@ async function handleRequest(request, env) {
     if (!response) {
       // All providers failed, return fallback response with ChatGPT link
       const fallbackResponse = {
-        response: `I'm having trouble connecting to AI services right now. You can try asking your question directly in ChatGPT for immediate help.`,
+        response: 'I\'m having trouble connecting to AI services right now. You can try asking your question directly in ChatGPT for immediate help.',
         provider: 'fallback',
         chatGptLink: `https://chat.openai.com/?q=${encodeURIComponent(userMessage)}`,
         error: lastError?.message || 'All AI providers unavailable'
@@ -493,7 +493,7 @@ async function handleRequest(request, env) {
 
 // Main entry point
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return handleOptions(request, env);

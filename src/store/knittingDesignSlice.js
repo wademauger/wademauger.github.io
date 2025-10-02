@@ -128,7 +128,7 @@ const knittingDesignSlice = createSlice({
       state.isDirty = false;
     },
     
-    resetSession: (state) => {
+    resetSession: () => {
       return { ...initialState, sessionId: generateSessionId() };
     },
     
@@ -252,8 +252,6 @@ export const selectLastSaved = (state) => state.knittingDesign.lastSaved;
 // Complex selectors
 export const selectCurrentStepInfo = (state) => {
   const currentStep = state.knittingDesign.currentStep;
-  const isCustomPattern = state.knittingDesign.patternData.basePattern?.id === 'custom';
-  const hasCustomShapes = Object.keys(state.knittingDesign.patternData.customShapes).length > 0;
   
   const steps = [
     { title: 'Pattern Setup', key: 'setup' },

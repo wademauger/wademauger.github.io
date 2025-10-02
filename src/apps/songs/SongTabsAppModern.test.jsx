@@ -56,7 +56,7 @@ const createTestStore = () => configureStore({
 });
 
 // Helper function to render component with providers
-const renderWithProviders = (component, { initialState = {} } = {}) => {
+const renderWithProviders = (component) => {
   const store = createTestStore();
   return render(
     <GoogleOAuthProvider clientId="test-client-id">

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Button, Input, Space, Popover, Typography } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import '../styles/ColorPalette.css';
 
 const { Text } = Typography;
 
 const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => {
-  const [editingColor, setEditingColor] = useState(null);
   const [newColorName, setNewColorName] = useState('');
   const [showAddColor, setShowAddColor] = useState(false);
   

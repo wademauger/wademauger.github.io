@@ -7,19 +7,21 @@ import MinimalLayout from './components/MinimalLayout';
 import ProfessionalLanding from './components/ProfessionalLanding';
 import RoutePreloader from './components/RoutePreloader';
 import './App.css';
+import LibraryModal from './components/LibraryModal';
 
 // Lazy load heavy components to split bundles
 const Layout = React.lazy(() => import('./components/Layout'));
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const RecipesApp = React.lazy(() => import('./apps/recipes/RecipesApp'));
-const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern'));
+// const RecipeChatApp = React.lazy(() => import('./apps/recipe-chat/RecipeChatApp'));
+const SongTabsApp = React.lazy(() => import('./apps/songs/SongTabsAppModern.jsx'));
 const KnittingDesignerApp = React.lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
 const ColorworkDesignerApp = React.lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
 const UnifiedDesignerApp = React.lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const App: React.FC = () => {
-  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   
   // Loading component for suspense fallback
   const LoadingSpinner: React.FC = () => (
@@ -65,17 +67,11 @@ const App: React.FC = () => {
                 </Layout>
               </Suspense>
             } />
+
             <Route path="/crafts/recipes/:recipeId" element={
               <Suspense fallback={<LoadingSpinner />}>
                 <Layout>
                   <RecipesApp />
-                </Layout>
-              </Suspense>
-            } />
-            <Route path="/crafts/recipes/reader-view/:recipeId" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Layout>
-                  <RecipesApp view="reader" />
                 </Layout>
               </Suspense>
             } />
@@ -153,6 +149,8 @@ const App: React.FC = () => {
               </Suspense>
             } />
           </Routes>
+          {/* Global Modals - controlled by Redux */}
+          <LibraryModal />
         </Router>
       </Provider>
     </GoogleOAuthProvider>

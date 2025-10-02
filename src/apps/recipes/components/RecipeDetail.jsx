@@ -1,32 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { Input, Button, message } from 'antd';
-import { FaPencilAlt, FaPlus, FaTrash, FaGripVertical } from 'react-icons/fa';
-import { EditOutlined, CheckOutlined, CloseOutlined, PlusOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { Input, message } from 'antd';
+import { FaPlus, FaTrash, FaGripVertical, FaEdit } from 'react-icons/fa';
+import { PlusOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { updateDriveRecipe } from '../../../reducers/recipes.reducer';
-import RecipeControls from './RecipeControls';
-import RecipeAIChat from './RecipeAIChat';
-import { fixedFontStyle } from '../styles/fontStyles';
+import IngredientDivider from './IngredientDivider';
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors,
+  useSensors
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import {
-  useSortable,
+  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const { TextArea } = Input;
 
 // Utility function to convert quantities to numbers
 const convertQuantityToNumber = (quantity) => {
@@ -80,6 +77,7 @@ const SortableIngredient = ({
   setHoveredIndex,
   handleEdit,
   handleInsertAfter,
+  handleInsertDividerAfter,
   handleDelete,
   handleSave,
   handleCancel,
@@ -95,7 +93,7 @@ const SortableIngredient = ({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({ 
     id,
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
@@ -125,7 +123,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.quantity || ''}
-              onChange={(e) => setEditValues({...editValues, quantity: e.target.value})}
+              onChange={(e) => setEditValues({ ...editValues, quantity: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -133,7 +131,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.unit || ''}
-              onChange={(e) => setEditValues({...editValues, unit: e.target.value})}
+              onChange={(e) => setEditValues({ ...editValues, unit: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -141,7 +139,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.name || ''}
-              onChange={(e) => setEditValues({...editValues, name: e.target.value})}
+              onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -203,6 +201,24 @@ const SortableIngredient = ({
                   title="Add ingredient after"
                 >
                   <FaPlus />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleInsertDividerAfter(index);
+                  }}
+                  style={{
+                    padding: '4px 6px',
+                    border: '1px solid #ccc',
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: '3px',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    color: '#1890ff'
+                  }}
+                  title="Add divider after"
+                >
+                  ➖
                 </button>
                 <button 
                   onClick={(e) => {
@@ -279,7 +295,7 @@ const SortableStep = ({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({ 
     id,
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
@@ -335,21 +351,21 @@ const SortableStep = ({
               }}
               placeholder="Enter instruction step..."
             />              {isMultilineInstructions && (
-                <div style={{ 
-                  position: 'absolute', 
-                  right: '8px', 
-                  top: '8px', 
-                  background: '#52c41a', 
-                  color: 'white', 
-                  padding: '2px 6px', 
-                  borderRadius: '4px', 
-                  fontSize: '10px',
-                  zIndex: 10,
-                  pointerEvents: 'none'
-                }}>
+              <div style={{ 
+                position: 'absolute', 
+                right: '8px', 
+                top: '8px', 
+                background: '#52c41a', 
+                color: 'white', 
+                padding: '2px 6px', 
+                borderRadius: '4px', 
+                fontSize: '10px',
+                zIndex: 10,
+                pointerEvents: 'none'
+              }}>
                   Will split into {editValueLines.length} steps
-                </div>
-              )}
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
             <Button size="small" type="primary" onClick={() => handleSave(editValue, index)}>
@@ -483,7 +499,7 @@ const SortableNote = ({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({ 
     id,
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
@@ -617,13 +633,24 @@ const RecipeDetail = ({
   recipe, 
   fontSize, 
   onFontSizeChange, 
-  currentView, 
-  onToggleView, 
   editingEnabled = false,
   isDraft = false,
   driveService = null,
-  userInfo = null
+  userInfo = null,
+  onEditRecipe = null,
+  onDeleteRecipe = null
 }) => {
+  // Debug logging for recipe structure (commented out for production)
+  // useEffect(() => {
+  //   console.log('🍽️ RecipeDetail loaded:', { 
+  //     hasRecipe: !!recipe, 
+  //     recipeId: recipe?.id, 
+  //     isDraft, 
+  //     editingEnabled,
+  //     recipeKeys: recipe ? Object.keys(recipe) : 'no recipe'
+  //   });
+  // }, [recipe, isDraft, editingEnabled]);
+
   const [scale, setScale] = useState(1);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
@@ -645,14 +672,37 @@ const RecipeDetail = ({
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
+  // Helper function to determine if this is a Drive recipe vs local recipe
+  const isDriveRecipe = () => {
+    // Drive recipes should have an id and be from the drive recipes collection
+    return recipe && recipe.id && typeof recipe.id === 'string' && !isDraft;
+  };
+
+  const isLocalStaticRecipe = () => {
+    // Local static recipes might have numeric IDs or no IDs and aren't editable
+    return recipe && (!recipe.id || typeof recipe.id === 'number');
+  };
+
   // Helper function to save recipe changes
   const saveRecipeChanges = async (updatedRecipe) => {
-    if (!recipe.id) {
-      message.error('Cannot save - recipe has no ID');
+    // Check if this is a draft recipe
+    if (isDraft) {
+      message.warning('Cannot modify draft recipes. Please save the recipe first.');
+      return;
+    }
+
+    // Check if this is a local static recipe
+    if (isLocalStaticRecipe()) {
+      message.warning('This is a local recipe. To modify it, please create a copy to your Google Drive first.');
+      return;
+    }
+
+    if (!isDriveRecipe()) {
+      message.error('Cannot save - this recipe is not stored in Google Drive. Please create a copy to your Drive first.');
       return;
     }
 
@@ -666,8 +716,7 @@ const RecipeDetail = ({
       }
       
       message.success('Recipe updated successfully');
-    } catch (error) {
-      console.error('Error updating recipe:', error);
+    } catch {
       message.error('Failed to update recipe');
       
       // Revert the optimistic update on error
@@ -868,43 +917,52 @@ const RecipeDetail = ({
     // Start editing the new note
     setEditingNoteIndex(updatedNotes.length - 1);
   };
-  
-  if (!recipe) return null;
-  
-  if (!recipe) return null;
-  
-  const scaleIngredient = (ingredient) => {
-    // Check if the ingredient is an object with quantity, unit, and name properties
-    if (typeof ingredient === 'object' && ingredient !== null) {
-      if (ingredient.quantity === undefined) {
-        // When quantity is undefined, just return the unit and name
-        return `${ingredient.name} ${ingredient.unit || ''}`;
-      } else if (ingredient.quantity) {
-        const scaledQuantity = (ingredient.quantity * scale).toFixed(2)
-          .replace(/\.?0+$/, ''); // Remove trailing zeros
-        return `${scaledQuantity} ${ingredient.unit || ''} ${ingredient.name}`;
-      }
+
+  // Divider handlers
+  const handleAddDivider = async () => {
+    if (isDraft) {
+      message.warning('Cannot add dividers to draft recipes. Please save the recipe first.');
+      return;
     }
     
-    // For string-type ingredients (backward compatibility)
-    // Make sure ingredient is a string before using match
-    if (typeof ingredient !== 'string') {
-      // Convert non-string, non-object ingredients to string to prevent React child errors
-      return String(ingredient);
+    if (!isDriveRecipe()) {
+      message.warning('Dividers can only be added to recipes stored in Google Drive. Please create a copy to your Drive first.');
+      return;
     }
-    
-    const match = ingredient.match(/^([\d./]+)\s+(.+)$/);
-    if (match) {
-      const amount = match[1];
-      const rest = match[2];
-      // Calculate scaled amount - this is a simple approach
-      const scaledAmount = (parseFloat(amount) * scale).toFixed(2);
-      // Remove trailing zeros and decimal point if needed
-      const formattedAmount = scaledAmount.replace(/\.?0+$/, '');
-      return `${formattedAmount} ${rest}`;
-    }
-    return ingredient;
+
+    const newDivider = { isDivider: true, label: '' };
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = [...ingredients, newDivider];
+    const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
+    await saveRecipeChanges(updatedRecipe);
+    // Start editing the new divider
+    setEditingIngredientIndex(updatedIngredients.length - 1);
   };
+
+  const handleInsertDividerAfter = async (index) => {
+    if (isDraft) {
+      message.warning('Cannot add dividers to draft recipes. Please save the recipe first.');
+      return;
+    }
+    
+    if (!isDriveRecipe()) {
+      message.warning('Dividers can only be added to recipes stored in Google Drive. Please create a copy to your Drive first.');
+      return;
+    }
+
+    const newDivider = { isDivider: true, label: '' };
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const updatedIngredients = [...ingredients];
+    updatedIngredients.splice(index + 1, 0, newDivider);
+    const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
+    await saveRecipeChanges(updatedRecipe);
+    // Start editing the new divider
+    setEditingIngredientIndex(index + 1);
+  };
+  
+  if (!recipe) return null;
+  
+  if (!recipe) return null;
   
   // Helper function to parse multi-line instructions into separate steps
   const parseMultilineInstructions = (text) => {
@@ -935,7 +993,7 @@ const RecipeDetail = ({
                !line.match(/^[-*+]\s*$/) && // Empty bullet points
                !line.match(/^\d+\.\s*$/) && // Empty numbered items
                line !== '---' && // Horizontal rules
-               !line.match(/^\s*\*\*[^*]*\*\*\s*:?\s*$/) // Standalone bold headers
+               !line.match(/^\s*\*\*[^*]*\*\*\s*:?\s*$/); // Standalone bold headers
       });
     
     // If there's only one line, return as is
@@ -949,7 +1007,7 @@ const RecipeDetail = ({
       // Remove common list markers and numbering
       let cleanLine = line
         .replace(/^\d+\.\s*/, '') // Remove "1. ", "2. ", etc.
-        .replace(/^[\-\*\+]\s*/, '') // Remove "- ", "* ", "+ "
+        .replace(/^[-*+]\s*/, '') // Remove "- ", "* ", "+ "
         .replace(/^•\s*/, '') // Remove bullet points
         .replace(/^\*\*([^*]+)\*\*:\s*/, '$1: ') // Convert "**Prep work**: " to "Prep work: "
         .trim();
@@ -998,9 +1056,9 @@ const RecipeDetail = ({
       style={{ fontSize: `${fontSize}%` }}
     >
       {/* Title Section */}
-      <div className="recipe-header" style={{ position: 'relative' }}>
+      <div className="recipe-header" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         {editingEnabled && !isDraft ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
             {editingTitle ? (
               <>
                 <Input
@@ -1008,7 +1066,7 @@ const RecipeDetail = ({
                   onChange={(e) => setTitleValue(e.target.value)}
                   onPressEnter={handleSaveTitle}
                   autoFocus
-                  style={{ fontSize: '1.5em', fontWeight: 'bold' }}
+                  style={{ fontSize: '1.5em', fontWeight: 'bold', flex: 1 }}
                 />
                 <Button 
                   type="primary" 
@@ -1025,17 +1083,73 @@ const RecipeDetail = ({
             ) : (
               <>
                 <h3 style={{ margin: 0, flex: 1 }}>{recipe.title}</h3>
-                <Button 
-                  type="text" 
-                  icon={<EditOutlined />} 
-                  size="small"
-                  onClick={handleEditTitle}
-                />
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <Button 
+                    type="text" 
+                    icon={<EditOutlined />} 
+                    size="small"
+                    onClick={handleEditTitle}
+                    title="Edit Recipe Title"
+                    style={{ color: '#666' }}
+                  />
+                  <Button
+                    type="text"
+                    icon={<FaEdit />}
+                    size="small"
+                    onClick={onEditRecipe}
+                    title="Edit Recipe"
+                    style={{ color: '#666' }}
+                  />
+                  <Popconfirm
+                    title="Delete Recipe"
+                    description={`Are you sure you want to delete "${recipe.title}"? This action cannot be undone.`}
+                    onConfirm={onDeleteRecipe}
+                    okText="Yes, Delete"
+                    cancelText="Cancel"
+                    okType="danger"
+                  >
+                    <Button
+                      type="text"
+                      icon={<FaTrash />}
+                      size="small"
+                      title="Delete Recipe"
+                      style={{ color: '#666' }}
+                    />
+                  </Popconfirm>
+                </div>
               </>
             )}
           </div>
         ) : (
-          <h3>{recipe.title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <h3 style={{ margin: 0 }}>{recipe.title}</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Button
+                type="text"
+                icon={<FaEdit />}
+                size="small"
+                onClick={onEditRecipe}
+                title="Edit Recipe"
+                style={{ color: '#666' }}
+              />
+              <Popconfirm
+                title="Delete Recipe"
+                description={`Are you sure you want to delete "${recipe.title}"? This action cannot be undone.`}
+                onConfirm={onDeleteRecipe}
+                okText="Yes, Delete"
+                cancelText="Cancel"
+                okType="danger"
+              >
+                <Button
+                  type="text"
+                  icon={<FaTrash />}
+                  size="small"
+                  title="Delete Recipe"
+                  style={{ color: '#666' }}
+                />
+              </Popconfirm>
+            </div>
+          </div>
         )}
         
         {/* AI Edit Button - Top Right Corner */}
@@ -1046,6 +1160,7 @@ const RecipeDetail = ({
             onClick={() => setShowAIChat(true)}
             className="ai-edit-button"
             size="small"
+            style={{ marginLeft: '1rem' }}
           >
             Edit with AI
           </Button>
@@ -1054,8 +1169,6 @@ const RecipeDetail = ({
       
       {/* Recipe Controls */}
       <RecipeControls
-        currentView={currentView}
-        onToggleView={onToggleView}
         fontSize={fontSize}
         onFontSizeChange={onFontSizeChange}
         scale={scale}
@@ -1064,232 +1177,271 @@ const RecipeDetail = ({
       />
       
       <div className="recipe-content">
-        {/* Ingredients Section */}
-        <div className="ingredients-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <h6 style={{ margin: 0, margin: 'auto'}}>Ingredients</h6>
-            {editingEnabled && !isDraft && Array.isArray(recipe.ingredients) && (
-              <Button 
-                type="dashed" 
-                icon={<PlusOutlined />} 
-                size="small"
-                onClick={handleAddIngredient}
-              >
-                Add
-              </Button>
-            )}
-          </div>
-          
-          <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleIngredientDragEnd}
-          >
-            <table className="ingredients-table" style={{ width: '100%' }}>
-              <thead>
-                <tr>
-                  <th className="quantity-column">Qty</th>
-                  <th className="unit-column">Unit</th>
-                  <th className="ingredient-column">Ingredient</th>
-                  <th className="controls-column" style={{ width: '120px' }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                <SortableContext 
-                  items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index) => `ingredient-${index}`) : []}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {(() => {
-                    // Handle both flat array and grouped object ingredients
-                    if (Array.isArray(recipe.ingredients)) {
-                      // Flat array format - render as before with full editing support
-                      return recipe.ingredients.map((ingredient, index) => (
-                        <SortableIngredient
-                          key={`ingredient-${index}`}
-                          id={`ingredient-${index}`}
-                          ingredient={ingredient}
-                          index={index}
-                          editingIndex={editingIngredientIndex}
-                          editingEnabled={editingEnabled && !isDraft}
-                          hoveredIndex={hoveredIngredientIndex}
-                          setHoveredIndex={setHoveredIngredientIndex}
-                          handleEdit={handleEditIngredient}
-                          handleInsertAfter={handleInsertIngredientAfter}
-                          handleDelete={handleDeleteIngredient}
-                          handleSave={handleSaveIngredient}
-                          handleCancel={handleCancelIngredientEdit}
-                          scale={scale}
-                        />
-                      ));
-                    } else if (recipe.ingredients && typeof recipe.ingredients === 'object') {
-                      // Grouped object format - render each group with a header (read-only for now)
-                      const groups = Object.entries(recipe.ingredients);
-                      let ingredientIndex = 0;
-                      
-                      return groups.map(([groupName, groupIngredients]) => {
-                        if (!Array.isArray(groupIngredients)) return null;
-                        
-                        return (
-                          <React.Fragment key={groupName}>
-                            {/* Group header row */}
-                            <tr style={{ backgroundColor: '#f8f9fa' }}>
-                              <td colSpan="4" style={{ 
-                                padding: '8px 12px', 
-                                fontWeight: 'bold', 
-                                fontSize: '14px',
-                                color: '#555',
-                                borderTop: '2px solid #e9ecef'
-                              }}>
-                                {groupName}
-                              </td>
-                            </tr>
-                            {/* Group ingredients - read only for now */}
-                            {groupIngredients.map((ingredient) => {
-                              const currentIndex = ingredientIndex++;
-                              return (
-                                <tr key={`ingredient-${currentIndex}`}>
-                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
-                                    {typeof ingredient === 'object' && ingredient.quantity !== undefined ? 
-                                      (ingredient.quantity * scale).toFixed(2).replace(/\.?0+$/, '') : ''}
-                                  </td>
-                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
-                                    {typeof ingredient === 'object' ? ingredient.unit : ''}
-                                  </td>
-                                  <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
-                                    {typeof ingredient === 'object' ? (
-                                      <>
-                                        {ingredient.name}
-                                        {ingredient.notes && (
-                                          <span style={{ fontSize: '11px', color: '#888', fontStyle: 'italic' }}>
-                                            {' '}({ingredient.notes})
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : ingredient}
-                                  </td>
-                                  <td style={{ padding: '8px' }}>
-                                    {/* No editing controls for grouped ingredients yet */}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </React.Fragment>
-                        );
-                      });
-                    } else {
-                      // No ingredients or invalid format
-                      return (
-                        <tr>
-                          <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                            No ingredients found. Click "Add" to add ingredients.
-                          </td>
-                        </tr>
-                      );
-                    }
-                  })()}
-                </SortableContext>
-              </tbody>
-            </table>
-          </DndContext>
-        </div>
-        
-        {/* Instructions Section */}
-        <div className="instructions-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <h6 style={{ margin: 0 , margin: 'auto'}}>Instructions</h6>
-            {editingEnabled && !isDraft && (
-              <>
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />} 
-                  size="small"
-                  onClick={handleAddStep}
-                >
-                  Add
-                </Button>
-              </>
-            )}
-          </div>
-          
-          <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleStepDragEnd}
-          >
-            <SortableContext 
-              items={recipe.steps.map((_, index) => `step-${index}`)}
-              strategy={verticalListSortingStrategy}
-            >
-              {recipe.steps.map((step, index) => (
-                <SortableStep
-                  key={`step-${index}`}
-                  id={`step-${index}`}
-                  step={step}
-                  index={index}
-                  editingIndex={editingStepIndex}
-                  editingEnabled={editingEnabled && !isDraft}
-                  hoveredIndex={hoveredStepIndex}
-                  setHoveredIndex={setHoveredStepIndex}
-                  handleEdit={handleEditStep}
-                  handleInsertAfter={handleInsertStepAfter}
-                  handleDelete={handleDeleteStep}
-                  handleSave={handleSaveStepWithMultiline}
-                  handleCancel={handleCancelStepEdit}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        </div>
-
-        {/* Notes Section */}
-        {((recipe.notes && recipe.notes.length > 0) || (editingEnabled && !isDraft)) && (
-          <div className="notes-section">
+        {/* Left Column - Ingredients */}
+        <div className="ingredients-column">
+          <div className="ingredients-section">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <h6 style={{ margin: 0, margin: 'auto'}}>Notes</h6>
-              {editingEnabled && !isDraft && (
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />} 
-                  size="small"
-                  onClick={handleAddNote}
-                >
-                  Add
-                </Button>
+              <h6 style={{ margin: 'auto' }}>Ingredients</h6>
+              {editingEnabled && !isDraft && isDriveRecipe() && Array.isArray(recipe.ingredients) && (
+                <>
+                  <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />} 
+                    size="small"
+                    onClick={handleAddIngredient}
+                  >
+                    Add
+                  </Button>
+                  <Button 
+                    type="dashed" 
+                    size="small"
+                    onClick={handleAddDivider}
+                    style={{ fontSize: '11px' }}
+                  >
+                    ➖ Divider
+                  </Button>
+                </>
               )}
             </div>
-            
-            {recipe.notes && recipe.notes.length > 0 && (
-              <DndContext 
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleNoteDragEnd}
-              >
-                <SortableContext 
-                  items={recipe.notes.map((_, index) => `note-${index}`)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {recipe.notes.map((note, index) => (
-                    <SortableNote
-                      key={`note-${index}`}
-                      id={`note-${index}`}
-                      note={note}
-                      index={index}
-                      editingIndex={editingNoteIndex}
-                      editingEnabled={editingEnabled && !isDraft}
-                      hoveredIndex={hoveredNoteIndex}
-                      setHoveredIndex={setHoveredNoteIndex}
-                      handleEdit={handleEditNote}
-                      handleInsertAfter={handleInsertNoteAfter}
-                      handleDelete={handleDeleteNote}
-                      handleSave={handleSaveNote}
-                      handleCancel={handleCancelNoteEdit}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
+          
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleIngredientDragEnd}
+            >
+              <table className="ingredients-table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th className="quantity-column">Qty</th>
+                    <th className="unit-column">Unit</th>
+                    <th className="ingredient-column">Ingredient</th>
+                    <th className="controls-column" style={{ width: '120px' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <SortableContext 
+                    items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index) => `ingredient-${index}`) : []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {(() => {
+                    // Handle both flat array and grouped object ingredients
+                      if (Array.isArray(recipe.ingredients)) {
+                      // Flat array format - render as before with full editing support
+                        return recipe.ingredients.map((ingredient, index) => {
+                        // Check if this is a divider
+                          if (ingredient.isDivider) {
+                            return (
+                              <IngredientDivider
+                                key={`ingredient-${index}`}
+                                id={`ingredient-${index}`}
+                                divider={ingredient}
+                                index={index}
+                                editingIndex={editingIngredientIndex}
+                                editingEnabled={editingEnabled && !isDraft}
+                                hoveredIndex={hoveredIngredientIndex}
+                                setHoveredIndex={setHoveredIngredientIndex}
+                                handleEdit={handleEditIngredient}
+                                handleDelete={handleDeleteIngredient}
+                                handleSave={handleSaveIngredient}
+                                handleCancel={handleCancelIngredientEdit}
+                              />
+                            );
+                          } else {
+                          // Regular ingredient
+                            return (
+                              <SortableIngredient
+                                key={`ingredient-${index}`}
+                                id={`ingredient-${index}`}
+                                ingredient={ingredient}
+                                index={index}
+                                editingIndex={editingIngredientIndex}
+                                editingEnabled={editingEnabled && !isDraft}
+                                hoveredIndex={hoveredIngredientIndex}
+                                setHoveredIndex={setHoveredIngredientIndex}
+                                handleEdit={handleEditIngredient}
+                                handleInsertAfter={handleInsertIngredientAfter}
+                                handleInsertDividerAfter={handleInsertDividerAfter}
+                                handleDelete={handleDeleteIngredient}
+                                handleSave={handleSaveIngredient}
+                                handleCancel={handleCancelIngredientEdit}
+                                scale={scale}
+                              />
+                            );
+                          }
+                        });
+                      } else if (recipe.ingredients && typeof recipe.ingredients === 'object') {
+                      // Grouped object format - render each group with a header (read-only for now)
+                        const groups = Object.entries(recipe.ingredients);
+                        let ingredientIndex = 0;
+                      
+                        return groups.map(([groupName, groupIngredients]) => {
+                          if (!Array.isArray(groupIngredients)) return null;
+                        
+                          return (
+                            <React.Fragment key={groupName}>
+                              {/* Group header row */}
+                              <tr style={{ backgroundColor: '#f8f9fa' }}>
+                                <td colSpan="4" style={{ 
+                                  padding: '8px 12px', 
+                                  fontWeight: 'bold', 
+                                  fontSize: '14px',
+                                  color: '#555',
+                                  borderTop: '2px solid #e9ecef'
+                                }}>
+                                  {groupName}
+                                </td>
+                              </tr>
+                              {/* Group ingredients - read only for now */}
+                              {groupIngredients.map((ingredient) => {
+                                const currentIndex = ingredientIndex++;
+                                return (
+                                  <tr key={`ingredient-${currentIndex}`}>
+                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                      {typeof ingredient === 'object' && ingredient.quantity !== undefined ? 
+                                        (ingredient.quantity * scale).toFixed(2).replace(/\.?0+$/, '') : ''}
+                                    </td>
+                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                      {typeof ingredient === 'object' ? ingredient.unit : ''}
+                                    </td>
+                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                      {typeof ingredient === 'object' ? (
+                                        <>
+                                          {ingredient.name}
+                                          {ingredient.notes && (
+                                            <span style={{ fontSize: '11px', color: '#888', fontStyle: 'italic' }}>
+                                              {' '}({ingredient.notes})
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : ingredient}
+                                    </td>
+                                    <td style={{ padding: '8px' }}>
+                                      {/* No editing controls for grouped ingredients yet */}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
+                          );
+                        });
+                      } else {
+                      // No ingredients or invalid format
+                        return (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                            No ingredients found. Click "Add" to add ingredients.
+                            </td>
+                          </tr>
+                        );
+                      }
+                    })()}
+                  </SortableContext>
+                </tbody>
+              </table>
+            </DndContext>
           </div>
-        )}
+        </div>
+        
+        {/* Right Column - Instructions and Notes */}
+        <div className="instructions-notes-column">
+          {/* Instructions Section */}
+          <div className="instructions-section">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <h6 style={{ margin: 'auto' }}>Instructions</h6>
+              {editingEnabled && !isDraft && (
+                <>
+                  <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />} 
+                    size="small"
+                    onClick={handleAddStep}
+                  >
+                  Add
+                  </Button>
+                </>
+              )}
+            </div>
+          
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleStepDragEnd}
+            >
+              <SortableContext 
+                items={recipe.steps.map((_, index) => `step-${index}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                {recipe.steps.map((step, index) => (
+                  <SortableStep
+                    key={`step-${index}`}
+                    id={`step-${index}`}
+                    step={step}
+                    index={index}
+                    editingIndex={editingStepIndex}
+                    editingEnabled={editingEnabled && !isDraft}
+                    hoveredIndex={hoveredStepIndex}
+                    setHoveredIndex={setHoveredStepIndex}
+                    handleEdit={handleEditStep}
+                    handleInsertAfter={handleInsertStepAfter}
+                    handleDelete={handleDeleteStep}
+                    handleSave={handleSaveStepWithMultiline}
+                    handleCancel={handleCancelStepEdit}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          {/* Notes Section */}
+          {((recipe.notes && recipe.notes.length > 0) || (editingEnabled && !isDraft)) && (
+            <div className="notes-section">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <h6 style={{ margin: 'auto' }}>Notes</h6>
+                {editingEnabled && !isDraft && (
+                  <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />} 
+                    size="small"
+                    onClick={handleAddNote}
+                  >
+                  Add
+                  </Button>
+                )}
+              </div>
+            
+              {recipe.notes && recipe.notes.length > 0 && (
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleNoteDragEnd}
+                >
+                  <SortableContext 
+                    items={recipe.notes.map((_, index) => `note-${index}`)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {recipe.notes.map((note, index) => (
+                      <SortableNote
+                        key={`note-${index}`}
+                        id={`note-${index}`}
+                        note={note}
+                        index={index}
+                        editingIndex={editingNoteIndex}
+                        editingEnabled={editingEnabled && !isDraft}
+                        hoveredIndex={hoveredNoteIndex}
+                        setHoveredIndex={setHoveredNoteIndex}
+                        handleEdit={handleEditNote}
+                        handleInsertAfter={handleInsertNoteAfter}
+                        handleDelete={handleDeleteNote}
+                        handleSave={handleSaveNote}
+                        handleCancel={handleCancelNoteEdit}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       
       {/* AI Chat Component */}

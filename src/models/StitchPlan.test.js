@@ -37,7 +37,7 @@ describe('StitchPlan Model', () => {
         it('should generate instructions for a trapezoidal panel', () => {
             stitchPlan.addRow(new StitchPlan.Row(1, 10, 10));
             stitchPlan.addRow(new StitchPlan.Row(2, 11, 11));
-            let expectedInstructions = ['Increase 1 stitch on the left. Increase 1 stitch on the right. Knit 2 rows. (RC=2, 22 sts in work)' ];
+            let expectedInstructions = ['Increase 1 stitch on the left. Increase 1 stitch on the right. Knit 2 rows. (RC=2, 22 sts in work)'];
             assert.deepStrictEqual(stitchPlan.generateKnittingInstructions(), expectedInstructions);
             stitchPlan.addRow(new StitchPlan.Row(3, 12, 12));
             expectedInstructions.push('Increase 1 stitch on the left. Increase 1 stitch on the right. Knit 1 row. (RC=3, 24 sts in work)');

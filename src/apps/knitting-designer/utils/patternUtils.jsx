@@ -43,7 +43,7 @@ export const validatePattern = (pattern, colors) => {
  * @param {string} fillColor - Color to use for new cells
  * @returns {Array<Array<string>>} Resized pattern
  */
-export const resizePattern = (pattern, newSize, fillColor = 'MC') => {
+export const resizePattern = (pattern, newSize, fillColor = 'CCX') => {
   const newPattern = Array(newSize.height).fill(null).map((_, row) => 
     Array(newSize.width).fill(null).map((_, col) => {
       // Preserve existing pattern data if within bounds

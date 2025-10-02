@@ -6,9 +6,9 @@ import GoogleDriveRecipeService from './services/GoogleDriveRecipeService';
 // Example of how to integrate the AddRecipeModal into your existing RecipesApp component
 
 const ExampleRecipesAppIntegration = () => {
-  const [googleDriveService] = useState(() => new GoogleDriveRecipeService());
+  // Use the singleton instance instead of creating a new one
+  const [googleDriveService] = useState(() => GoogleDriveRecipeService);
   const [recipes, setRecipes] = useState([]);
-  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     // Initialize the service
@@ -17,7 +17,6 @@ const ExampleRecipesAppIntegration = () => {
         // Replace with your actual Google Client ID
         await googleDriveService.initialize('YOUR_GOOGLE_CLIENT_ID');
         const signInStatus = googleDriveService.getSignInStatus();
-        setIsSignedIn(signInStatus.isSignedIn);
         
         if (signInStatus.isSignedIn) {
           loadRecipes();

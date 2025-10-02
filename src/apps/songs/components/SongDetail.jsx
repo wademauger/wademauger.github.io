@@ -1,29 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaPencilAlt, FaPlus, FaTrash, FaEdit, FaGripVertical, FaClipboard } from 'react-icons/fa';
-import { convertLyrics } from '../../../convert-lyrics';
 import { useDispatch, useSelector } from 'react-redux';
 import { setInstrument, transposeSongUp, transposeSongDown } from '../../../store/chordsSlice';
 import { deleteSong, clearSelectedSong, setGoogleDriveConnection, setUserInfo } from '../../../store/songsSlice';
 import ChordChart from './ChordChart';
 import LyricLineEditor from './LyricLineEditor';
-import AlbumArt from './AlbumArt';
-import { Spin, App } from 'antd';
+import { Spin, App, Modal } from 'antd';
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors,
+  useSensors
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import {
-  useSortable,
+  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -54,7 +52,7 @@ const SortableLyricLine = ({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({ 
     id,
     disabled: isDragDisabled
@@ -197,7 +195,7 @@ const SortableLyricLine = ({
                 }}
                 onMouseDown={isDragDisabled ? undefined : (e) => e.currentTarget.style.cursor = 'grabbing'}
                 onMouseUp={isDragDisabled ? undefined : (e) => e.currentTarget.style.cursor = 'grab'}
-                title={isDragDisabled ? "Drag disabled during update" : "Drag to reorder"}
+                title={isDragDisabled ? 'Drag disabled during update' : 'Drag to reorder'}
               >
                 {isThisLinePending ? (
                   <Spin size="small" />
@@ -214,26 +212,20 @@ const SortableLyricLine = ({
 };
 
 const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = true }) => {
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const [editingLineIndex, setEditingLineIndex] = useState(null);
   const [isAddingLine, setIsAddingLine] = useState(false);
-  const [insertAfterIndex, setInsertAfterIndex] = useState(null); // Track where we're inserting
   const [hoveredLineIndex, setHoveredLineIndex] = useState(null);
   const [localTranspose, setLocalTranspose] = useState(0);
-  const [dirty, setDirty] = useState(false);
   const [isEditingWholeSong, setIsEditingWholeSong] = useState(false);
   const [wholeSongText, setWholeSongText] = useState('');
   const [pendingSaves, setPendingSaves] = useState(new Set());
-  const [pendingDragOperation, setPendingDragOperation] = useState(null);
   const [optimisticLyrics, setOptimisticLyrics] = useState(null);
   const [pendingLineIndex, setPendingLineIndex] = useState(null);
   const [pendingDeleteLines, setPendingDeleteLines] = useState(new Set());
-  const [isPendingAdd, setIsPendingAdd] = useState(false);
   const [isPendingAnyOperation, setIsPendingAnyOperation] = useState(false);
   const [isSavingTranspose, setIsSavingTranspose] = useState(false);
   const [isSavingWholeSong, setIsSavingWholeSong] = useState(false);
-  const [isDeletingSong, setIsDeletingSong] = useState(false);
-  const [deleteCountdown, setDeleteCountdown] = useState(0);
   const dispatch = useDispatch();
   const instrument = useSelector((state) => state.chords.currentInstrument);
   const transpose = useSelector((state) => state.chords.transposeBy?.[song.title] || 0);
@@ -244,7 +236,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
@@ -268,20 +260,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   // Helper to shift a chord name by a number of semitones
   const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const FLAT_EQUIV = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
-  function normalizeChordName(name) {
-    // Convert flats to sharps for lookup
-    let base = name;
-    let suffix = '';
-    if (name.length > 1 && (name[1] === '#' || name[1] === 'b')) {
-      base = name.slice(0, 2);
-      suffix = name.slice(2);
-    } else {
-      base = name[0];
-      suffix = name.slice(1);
-    }
-    if (FLAT_EQUIV[base]) base = FLAT_EQUIV[base];
-    return base + suffix;
-  }
+
   function transposeChord(chord, semitones) {
     // Handle slashed chords (e.g. A/C# -> A#/D)
     if (chord.includes('/')) {
@@ -294,7 +273,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     // Extract root and suffix (e.g. C#m7 -> C#, m7)
     const match = chord.match(/^([A-G][b#]?)(.*)$/);
     if (!match) return chord;
-    let [_, root, suffix] = match;
+    let [, root, suffix] = match;
     // Normalize flats to sharps
     if (FLAT_EQUIV[root]) root = FLAT_EQUIV[root];
     let idx = CHROMATIC.indexOf(root);
@@ -361,17 +340,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setIsAddingLine(false);
   };
 
-  const handleAddLine = () => {
-    // Block if there are pending operations
-    if (isPendingAnyOperation || pendingDeleteLines.size > 0) {
-      message.warning('Please wait for current operation to complete before adding a new line.');
-      return;
-    }
-    
-    setIsAddingLine(true);
-    setEditingLineIndex(null);
-  };
-
   const handleInsertAfter = (afterIndex) => {
     // Block if there are pending operations
     if (isPendingAnyOperation || pendingDeleteLines.size > 0) {
@@ -380,7 +348,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     }
     
     setIsAddingLine(true);
-    setInsertAfterIndex(afterIndex); // Track the original position
     // Set to the position where we want to insert (after the specified index)
     if (afterIndex === -1) {
       // Empty song case - insert at position 0
@@ -396,7 +363,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     
     if (isAddingLine) {
       // Set pending add state
-      setIsPendingAdd(true);
       setIsPendingAnyOperation(true);
       
       // Check if we're inserting at a specific position or adding at the end
@@ -421,7 +387,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       }).then(() => {
         message.success('Line added successfully!');
         setOptimisticLyrics(null);
-        setIsPendingAdd(false);
         setIsPendingAnyOperation(false);
         setPendingSaves(prev => {
           const newSet = new Set(prev);
@@ -431,13 +396,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
         // Ensure we completely reset editing state
         setEditingLineIndex(null);
         setIsAddingLine(false);
-        setInsertAfterIndex(null);
       }).catch((error) => {
         console.error('Failed to add line:', error);
         message.error('Failed to add new line. Please try again.');
         // Revert optimistic update
         setOptimisticLyrics(null);
-        setIsPendingAdd(false);
         setIsPendingAnyOperation(false);
         setPendingSaves(prev => {
           const newSet = new Set(prev);
@@ -446,7 +409,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
         });
         setIsAddingLine(true);
         setEditingLineIndex(null);
-        setInsertAfterIndex(null);
       });
     } else {
       // Set pending edit state
@@ -492,7 +454,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const handleCancelEdit = () => {
     setEditingLineIndex(null);
     setIsAddingLine(false);
-    setInsertAfterIndex(null);
   };
 
   // Handle deleting a line with optimistic updates
@@ -633,28 +594,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     handleDeleteSong();
   };
 
-  // Start countdown when popconfirm opens
-  const handlePopconfirmOpen = (open) => {
-    if (open) {
-      setDeleteCountdown(3.0); // Start 3-second countdown with decimal
-      const timer = setInterval(() => {
-        setDeleteCountdown(prev => {
-          if (prev <= 0.1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return Math.max(0, prev - 0.1); // Decrease by 0.1 every 100ms
-        });
-      }, 100); // Update every 100ms (10 times per second)
-    } else {
-      // Reset countdown when popconfirm closes
-      setDeleteCountdown(0);
-    }
-  };
-
   // Handle actual song deletion
   const handleDeleteSong = async () => {
-    setIsDeletingSong(true);
     try {
       await dispatch(deleteSong({
         artistName: artist.name,
@@ -679,9 +620,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       } else {
         message.error(error.message || 'Failed to delete song. Please try again.');
       }
-    } finally {
-      setIsDeletingSong(false);
-      setDeleteCountdown(0);
     }
   };
 
@@ -689,25 +627,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setIsEditingWholeSong(false);
     setWholeSongText('');
   };
-
-  const renderDeletePopconfirmTitle = () => (
-    <div>
-      <div>Delete "{song.title}"?</div>
-      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-        This action cannot be undone.
-      </div>
-    </div>
-  );
-
-  const renderDeletePopconfirmContent = () => (
-    <div style={{ minWidth: '200px' }}>
-      <div>
-        <strong>Artist:</strong> {artist.name}<br />
-        <strong>Album:</strong> {song.album?.title}<br />
-        <strong>Song:</strong> {song.title}
-      </div>
-    </div>
-  );
 
   // Function to render a lyric line with chord formatting above text
   const renderLyricLine = (line) => {
@@ -767,17 +686,14 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   React.useEffect(() => {
     // Sync local transpose with redux only when song changes
     setLocalTranspose(transpose);
-    setDirty(false);
   }, [song.title]);
 
   const handleTransposeUp = () => {
     setLocalTranspose((prev) => prev + 1);
-    setDirty(true);
     dispatch(transposeSongUp(song.title));
   };
   const handleTransposeDown = () => {
     setLocalTranspose((prev) => prev - 1);
-    setDirty(true);
     dispatch(transposeSongDown(song.title));
   };
   const handleSaveTranspose = async () => {
@@ -803,8 +719,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       
       // Reset local transpose since it's now baked into the lyrics
       setLocalTranspose(0);
-      setDirty(false);
-      
+
       // Show success message
       message.success('Transposed lyrics saved successfully!');
     } catch (error) {
@@ -944,9 +859,13 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
                     onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
                     onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete "${song.title}" by ${artist?.name || 'Unknown Artist'}?`)) {
-                        handleDeleteConfirm();
-                      }
+                      Modal.confirm({
+                        title: 'Delete song?',
+                        content: `Are you sure you want to delete "${song.title}" by ${artist?.name || 'Unknown Artist'}?`,
+                        okText: 'Delete',
+                        cancelText: 'Cancel',
+                        onOk: () => handleDeleteConfirm()
+                      });
                     }}
                   >
                     <FaTrash /> Delete Song

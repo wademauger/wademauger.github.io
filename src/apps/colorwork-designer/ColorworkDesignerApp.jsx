@@ -1,16 +1,13 @@
-import ColorworkPanelEditor from '@/components/ColorworkPanelEditor.jsx';
-import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx'; React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
-import { PlusOutlined, HistoryOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
-import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.js';
-import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.js';
-import { Trapezoid } from '../../models/Trapezoid.js';
-import { Panel } from '../../models/Panel.js'; 
-import { Gauge } from '../../models/Gauge.js';
-import { ColorworkPattern } from '../../models/ColorworkPattern.js';
+import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
+import { garments } from '../../data/garments.js';
+import { DriveAuthProvider } from './context/DriveAuthContext.jsx';
+import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.jsx';
+import GoogleSignInButton from './components/GoogleSignInButton.jsx';
 import PanelShapeCreator from './PanelShapeCreator.jsx';
-import { garments, colorworkCharts, visualMotifs } from '../../data/garments.js';
+import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -26,9 +23,9 @@ const ColorworkDesignerApp = () => {
     const [showGarmentSelector, setShowGarmentSelector] = useState(false);
     const [knittingStage, setKnittingStage] = useState('settings'); // 'settings' or 'knitting'
     const editorRef = useRef(null);
-    const [recentProjects, setRecentProjects] = useState([
-        { id: 1, name: "Raglan Sweater Front", garment: "cozy-raglan-sweater", panel: "Front", lastModified: "2 hours ago" },
-        { id: 2, name: "Hat Crown", garment: "seam-top-hat", panel: "Hat", lastModified: "1 day ago" }
+    const [recentProjects] = useState([
+        { id: 1, name: 'Raglan Sweater Front', garment: 'cozy-raglan-sweater', panel: 'Front', lastModified: '2 hours ago' },
+        { id: 2, name: 'Hat Crown', garment: 'seam-top-hat', panel: 'Hat', lastModified: '1 day ago' }
     ]);
 
     // Handle selecting a garment panel to knit
@@ -47,21 +44,7 @@ const ColorworkDesignerApp = () => {
         setShowGarmentSelector(false);
     };
 
-    const handleResumeProject = (project) => {
-        setCurrentProject(project);
-        setCurrentView('editor');
-    };
-
-    const handleNewProject = () => {
-        setCurrentProject({
-            id: Date.now(),
-            name: 'New Colorwork Panel',
-            created: new Date().toISOString(),
-            panel: null,
-            colorwork: null
-        });
-        setCurrentView('editor');
-    };
+    // Removed unused handleNewProject function
 
     const handleLoadProject = (project) => {
         // Fix legacy projects that might be missing panelShape data
@@ -187,13 +170,14 @@ const ColorworkDesignerApp = () => {
                                     hoverable
                                     size="small"
                                     title={project.name}
-                                    extra={<Button type="link" onClick={() => handleResumeProject(project)}>Resume</Button>}
+                                    extra={<Button type="link" onClick={() => {}}>Resume</Button>}
                                     style={{ marginBottom: '12px', cursor: 'pointer' }}
-                                    onClick={() => handleResumeProject(project)}
+                                    onClick={() => {}}
                                 >
                                     <Text type="secondary">
                                         Last modified: {project.lastModified}
                                     </Text>
+
                                 </Card>
                             ))}
                             {savedPatterns.map(pattern => (
@@ -292,35 +276,44 @@ const ColorworkDesignerApp = () => {
     );
 
     return (
-        <Layout className="colorwork-designer-app">
-            <Content>
-                {currentView === 'home' && renderHomeView()}
-                {currentView === 'editor' && renderEditorView()}
-                {currentView === 'shape-creator' && (
-                    <div className="panel-shape-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                        <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                            <Button onClick={handleBackToHome}>← Back to Home</Button>
-                            <Title level={3} style={{ margin: 0, flex: 1 }}>Panel Shape Creator</Title>
-                        </div>
-                        <div style={{ flex: 1, minHeight: 0 }}>
-                            <PanelShapeCreator />
-                        </div>
-                    </div>
-                )}
-                {currentView === 'colorwork-creator' && (
-                    <div className="colorwork-pattern-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                        <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                            <Button onClick={handleBackToHome}>← Back to Home</Button>
-                            <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
-                        </div>
-                        <div style={{ flex: 1, minHeight: 0 }}>
-                            {/* Embed the same UX as /crafts/colorwork-designer */}
-                            <KnittingDesignerApp />
-                        </div>
-                    </div>
-                )}
-            </Content>
-        </Layout>
+            <Layout className="colorwork-designer-app">
+                <DriveAuthProvider>
+                    <Content>
+                        {currentView === 'home' && renderHomeView()}
+                        {currentView === 'editor' && renderEditorView()}
+                        {currentView === 'shape-creator' && (
+                            <div className="panel-shape-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                                <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                                    <Button onClick={handleBackToHome}>← Back to Home</Button>
+                                    <Title level={3} style={{ margin: 0, flex: 1 }}>Panel Shape Creator</Title>
+                                                    <div style={{ marginLeft: 'auto' }}>
+                                                        <GoogleSignInButton
+                                                            buttonText="Drive"
+                                                            onSaveAs={() => window.dispatchEvent(new CustomEvent('colorwork:save-as'))}
+                                                            onOpen={() => window.dispatchEvent(new CustomEvent('colorwork:open'))}
+                                                        />
+                                                    </div>
+                                </div>
+                                <div style={{ flex: 1, minHeight: 0 }}>
+                                    <PanelShapeCreator />
+                                </div>
+                            </div>
+                        )}
+                        {currentView === 'colorwork-creator' && (
+                            <div className="colorwork-pattern-creator" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                                    <Button onClick={handleBackToHome}>← Back to Home</Button>
+                                    <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
+                                </div>
+                                <div style={{ flex: 1, minHeight: 0 }}>
+                                    {/* Embed the same UX as /crafts/colorwork-designer */}
+                                    <KnittingDesignerApp />
+                                </div>
+                            </div>
+                        )}
+                    </Content>
+                </DriveAuthProvider>
+            </Layout>
     );
 };
 

@@ -51,6 +51,7 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-transform-private-property-in-object": "^7.16.7",
     "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.27.1",
     "@babel/register": "^7.25.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -63,10 +64,25 @@
     "@types/react-dom": "^19.1.9",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react-swc": "^4.1.0",
+    "autoprefixer": "^10.4.21",
     "chai": "^5.2.0",
+    "eslint": "^9.36.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+  "@typescript-eslint/parser": "^6.10.0",
+  "@typescript-eslint/eslint-plugin": "^6.10.0",
+  "chokidar-cli": "^3.0.0",
+  "onchange": "^7.2.0",
     "gh-pages": "^6.3.0",
+    "jest-environment-jsdom": "^29.7.0",
     "mocha": "^11.1.0",
+    "postcss": "^8.5.6",
     "source-map-explorer": "^2.5.3",
+    "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
     "vite": "^7.1.6",
     "webpack-bundle-analyzer": "^4.10.2"
@@ -86,13 +102,10 @@
     "eject": "react-scripts eject",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
-    "migrate-file": "node scripts/migrate-to-ts.js"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "migrate-file": "node scripts/migrate-to-ts.js",
+  "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+  "lint:watch": "npx -p chokidar-cli chokidar \"src/**/*.{js,jsx,ts,tsx}\" -i -c \"eslint --ext .js,.jsx,.ts,.tsx src || true\"",
+  "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "browserslist": {
     "production": [

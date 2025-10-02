@@ -11,7 +11,7 @@ const initialState = {
   driveRecipes: [],
   isLoading: false,
   error: null,
-  editingEnabled: false,
+  editingEnabled: false
 };
 
 const recipesSlice = createSlice({
@@ -73,8 +73,8 @@ const recipesSlice = createSlice({
     },
     setEditingEnabled: (state, action) => {
       state.editingEnabled = action.payload;
-    },
-  },
+    }
+  }
 });
 
 export const { 

@@ -20,6 +20,7 @@ const HomePage = () => {
           </div>
           <Link to="/crafts/recipes" className="app-link">Open Recipe App</Link>
         </div>
+
         
         <div className="app-card">
           <h2>Music Tabs</h2>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { throttle } from '../utils/performanceUtils';
 import RibbonUI from './RibbonUI';
 import '../styles/ColorworkGrid.css';
@@ -6,6 +6,7 @@ import '../styles/ColorworkGrid.css';
 const ColorworkGrid = ({
     pattern,
     colors,
+    backgroundColorId,
     gridSize,
     activeTool,
     activeColor,
@@ -19,7 +20,6 @@ const ColorworkGrid = ({
     clipboard,
     // Status bar props
     activeColorData,
-    statusInfo,
     // RibbonUI props
     onToolChange,
     hasClipboard,
@@ -46,6 +46,10 @@ const ColorworkGrid = ({
     const [selectionEnd, setSelectionEnd] = useState(null);
     const [hoverPosition, setHoverPosition] = useState(null);
     const gridRef = useRef(null);
+    const [offsetRow, setOffsetRow] = useState(0);
+    const [offsetCol, setOffsetCol] = useState(0);
+    const [visibleRows, setVisibleRows] = useState(20);
+    const [visibleCols, setVisibleCols] = useState(20);
 
     // Handle mouse down
     const handleMouseDown = useCallback((row, col, event) => {
@@ -127,6 +131,32 @@ const ColorworkGrid = ({
         };
     }, [handleMouseUp]);
 
+    // Compute visible rows/cols based on container size (viewport-limited rendering)
+    useEffect(() => {
+        const computeVisible = () => {
+            const container = gridRef.current;
+            if (!container) return;
+            // Measure available area for the SVG. Subtract space for RibbonUI and status bar if needed.
+            const rect = container.getBoundingClientRect();
+            const width = Math.max(40, rect.width - 20); // padding
+            const height = Math.max(40, rect.height - 80); // reserve space for ribbon/status
+
+            const cols = Math.max(1, Math.floor(width / 20));
+            const rows = Math.max(1, Math.floor(height / 20));
+
+            // Clamp offsets so we don't go out of bounds
+            setVisibleCols(cols);
+            setVisibleRows(rows);
+            setOffsetCol(prev => Math.min(Math.max(0, prev), Math.max(0, gridSize.width - cols)));
+            setOffsetRow(prev => Math.min(Math.max(0, prev), Math.max(0, gridSize.height - rows)));
+        };
+
+        computeVisible();
+        const handleResize = throttle(() => computeVisible(), 100);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [gridRef, gridSize.width, gridSize.height]);
+
     // Check if a stitch is selected - handle multiple selection areas and excluded cells
     const isStitchSelected = useCallback((row, col) => {
         const cellKey = `${row},${col}`;
@@ -176,10 +206,10 @@ const ColorworkGrid = ({
             const clipboardCol = col - pastePreview.col;
             const clipboardColor = clipboard[clipboardRow][clipboardCol];
             if (clipboardColor !== null) {
-                return colors[clipboardColor] || colors['MC'];
+                return colors[clipboardColor] || colors[backgroundColorId] || colors['MC'];
             }
         }
-        return colors[pattern[row][col]] || colors['MC'];
+        return colors[pattern[row][col]] || colors[backgroundColorId] || colors['MC'];
     }, [pattern, colors, isStitchInPastePreview, pastePreview, clipboard]);
 
     // Get stitch CSS classes
@@ -205,19 +235,24 @@ const ColorworkGrid = ({
         return classes.join(' ');
     }, [isStitchSelected, isStitchInCurrentSelection, isStitchInPastePreview, hoverPosition]);
 
-    // Generate grid lines - memoized for performance
+    // Generate grid lines for visible viewport - memoized for performance
     const gridLines = useMemo(() => {
         const lines = [];
+        const startCol = offsetCol;
+        const endCol = Math.min(gridSize.width - 1, offsetCol + visibleCols - 1);
+        const startRow = offsetRow;
+        const endRow = Math.min(gridSize.height - 1, offsetRow + visibleRows - 1);
 
-        // Vertical lines
-        for (let i = 0; i <= gridSize.width; i++) {
+        // Vertical lines (in viewport coordinates)
+        for (let c = startCol; c <= endCol + 1; c++) {
+            const x = (c - offsetCol) * 20;
             lines.push(
                 <line
-                    key={`v-${i}`}
-                    x1={i * 20}
+                    key={`v-${c}`}
+                    x1={x}
                     y1={0}
-                    x2={i * 20}
-                    y2={gridSize.height * 20}
+                    x2={x}
+                    y2={(endRow - startRow + 1) * 20}
                     stroke="#ddd"
                     strokeWidth="0.5"
                 />
@@ -225,14 +260,15 @@ const ColorworkGrid = ({
         }
 
         // Horizontal lines
-        for (let i = 0; i <= gridSize.height; i++) {
+        for (let r = startRow; r <= endRow + 1; r++) {
+            const y = (r - offsetRow) * 20;
             lines.push(
                 <line
-                    key={`h-${i}`}
+                    key={`h-${r}`}
                     x1={0}
-                    y1={i * 20}
-                    x2={gridSize.width * 20}
-                    y2={i * 20}
+                    y1={y}
+                    x2={(endCol - startCol + 1) * 20}
+                    y2={y}
                     stroke="#ddd"
                     strokeWidth="0.5"
                 />
@@ -240,17 +276,123 @@ const ColorworkGrid = ({
         }
 
         return lines;
-    }, [gridSize]);
+    }, [gridSize, offsetCol, offsetRow, visibleCols, visibleRows]);
 
-    // Memoized stitch renderer for performance
-    const renderStitch = useCallback((rowIndex, colIndex, stitch) => {
-        const x = colIndex * 20;
-        const y = rowIndex * 20;
-        const color = getStitchDisplayColor(rowIndex, colIndex);
+    // Selection overlays (viewport-relative) - memoized
+    const selectionOverlays = useMemo(() => {
+        if (!selection) return null;
+        return (Array.isArray(selection) ? selection : [selection]).map((sel, index) => {
+            const x = (sel.startCol - offsetCol) * 20;
+            const y = (sel.startRow - offsetRow) * 20;
+            const w = (sel.endCol - sel.startCol + 1) * 20;
+            const h = (sel.endRow - sel.startRow + 1) * 20;
+            if (sel.endCol < offsetCol || sel.startCol > offsetCol + visibleCols - 1 || sel.endRow < offsetRow || sel.startRow > offsetRow + visibleRows - 1) return null;
+            return (
+                <rect
+                    key={`selection-${index}`}
+                    x={x}
+                    y={y}
+                    width={w}
+                    height={h}
+                    fill="rgba(0, 100, 255, 0.2)"
+                    stroke="#0064ff"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                    pointerEvents="none"
+                />
+            );
+        });
+    }, [selection, offsetCol, offsetRow, visibleCols, visibleRows]);
+
+    const currentSelectionOverlay = useMemo(() => {
+        if (!isMouseDown || !selectionStart || !selectionEnd) return null;
+        const minCol = Math.min(selectionStart.col, selectionEnd.col);
+        const minRow = Math.min(selectionStart.row, selectionEnd.row);
+        const w = (Math.abs(selectionEnd.col - selectionStart.col) + 1) * 20;
+        const h = (Math.abs(selectionEnd.row - selectionStart.row) + 1) * 20;
+        const x = (minCol - offsetCol) * 20;
+        const y = (minRow - offsetRow) * 20;
+        if (minCol > offsetCol + visibleCols - 1 || (minCol + w / 20 - 1) < offsetCol || minRow > offsetRow + visibleRows - 1 || (minRow + h / 20 - 1) < offsetRow) return null;
+        return (
+            <rect
+                x={x}
+                y={y}
+                width={w}
+                height={h}
+                fill="rgba(255, 165, 0, 0.3)"
+                stroke="#ff6600"
+                strokeWidth="2"
+                pointerEvents="none"
+            />
+        );
+    }, [isMouseDown, selectionStart, selectionEnd, offsetCol, offsetRow, visibleCols, visibleRows]);
+
+    const pastePreviewOverlays = useMemo(() => {
+        if (!pastePreview || !clipboard) return null;
+        const items = [];
+        clipboard.forEach((prow, rowIndex) => {
+            prow.forEach((cell, colIndex) => {
+                if (cell === null) return;
+                const ar = pastePreview.row + rowIndex;
+                const ac = pastePreview.col + colIndex;
+                if (ar < offsetRow || ar > offsetRow + visibleRows - 1 || ac < offsetCol || ac > offsetCol + visibleCols - 1) return;
+                items.push(
+                    <rect
+                        key={`paste-${rowIndex}-${colIndex}`}
+                        x={(ac - offsetCol) * 20}
+                        y={(ar - offsetRow) * 20}
+                        width={20}
+                        height={20}
+                        fill="rgba(0, 255, 0, 0.2)"
+                        stroke="#00ff00"
+                        strokeWidth="2"
+                        strokeDasharray="3,3"
+                        pointerEvents="none"
+                    />
+                );
+            });
+        });
+        return items;
+    }, [pastePreview, clipboard, offsetCol, offsetRow, visibleCols, visibleRows]);
+
+    // Memoized stitch renderer for performance (renders at viewport-relative coords)
+    const renderStitch = useCallback((actualRow, actualCol, stitch) => {
+        const x = (actualCol - offsetCol) * 20;
+        const y = (actualRow - offsetRow) * 20;
+        const color = getStitchDisplayColor(actualRow, actualCol);
+
+        // If the stitch is the 'no color' marker (CCX) or resolves to transparent, render a 2x2 checkerboard
+        const resolvedId = pattern[actualRow] && pattern[actualRow][actualCol];
+        const isNoColor = resolvedId === 'CCX' || color === 'transparent' || color === undefined;
+
+        if (isNoColor) {
+            // Draw 2x2 checker inside the 18x18 cell (each sub-square 9x9)
+            return (
+                <g key={`${actualRow}-${actualCol}`} className={getStitchClasses(actualRow, actualCol)}>
+                    <rect x={x + 1} y={y + 1} width={9} height={9} fill="#e6e6e6" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 10} y={y + 1} width={8} height={9} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 1} y={y + 10} width={9} height={8} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 10} y={y + 10} width={8} height={8} fill="#e6e6e6" stroke="#999" strokeWidth="0.25" />
+                    <rect
+                        x={x + 1}
+                        y={y + 1}
+                        width={18}
+                        height={18}
+                        fill="none"
+                        stroke="#999"
+                        strokeWidth="0.5"
+                        onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
+                        onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
+                        style={{ cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
+                        title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
+                    />
+                </g>
+            );
+        }
 
         return (
             <rect
-                key={`${rowIndex}-${colIndex}`}
+                key={`${actualRow}-${actualCol}`}
                 x={x + 1}
                 y={y + 1}
                 width={18}
@@ -258,14 +400,14 @@ const ColorworkGrid = ({
                 fill={color}
                 stroke="#999"
                 strokeWidth="0.5"
-                className={getStitchClasses(rowIndex, colIndex)}
-                onMouseDown={(e) => handleMouseDown(rowIndex, colIndex, e)}
-                onMouseMove={(e) => handleMouseMove(rowIndex, colIndex, e)}
+                className={getStitchClasses(actualRow, actualCol)}
+                onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
+                onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
                 style={{ cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
-                title={`${rowIndex + 1},${colIndex + 1}: ${stitch}`}
+                title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
             />
         );
-    }, [getStitchDisplayColor, getStitchClasses, handleMouseDown, handleMouseMove, pasteMode, activeTool]);
+    }, [getStitchDisplayColor, getStitchClasses, handleMouseDown, handleMouseMove, pasteMode, activeTool, offsetCol, offsetRow, pattern]);
 
     return (
         <div className="colorwork-grid-container">
@@ -274,111 +416,63 @@ const ColorworkGrid = ({
                 ref={gridRef}
                 onMouseLeave={handleMouseLeave}
             >
-            {/* Ribbon UI */}
-            <RibbonUI
-                // Tool props
-                activeTool={activeTool}
-                onToolChange={onToolChange}
-                pasteMode={pasteMode}
-                hasClipboard={hasClipboard}
-                onCopy={onCopy}
-                onPaste={onPaste}
-                onClearSelection={onClearSelection}
-                onFillSelection={onFillSelection}
-                hasSelection={hasSelection}
-                
-                // Selection tools props
-                onDuplicateSelection={onDuplicateSelection}
-                onRotateSelection={onRotateSelection}
-                onReflectSelection={onReflectSelection}
-                
-                // Grid props
-                gridSize={gridSize}
-                onGridResize={onGridResize}
-                onClearPattern={onClearPattern}
-                onUndo={onUndo}
-                onRedo={onRedo}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                onExport={onExport}
-                
-                // Symmetry props
-                symmetry={symmetry}
-                onSymmetryChange={onSymmetryChange}
-            />
-                <svg
-                    width={4 + (gridSize.width * 20)}
-                    height={4 + (gridSize.height * 20)}
-                    className="grid-svg"
-                >
-                    {/* Grid lines */}
-                    {gridLines}
+                {/* Ribbon UI */}
+                <RibbonUI
+                    // Tool props
+                    activeTool={activeTool}
+                    onToolChange={onToolChange}
+                    pasteMode={pasteMode}
+                    hasClipboard={hasClipboard}
+                    onCopy={onCopy}
+                    onPaste={onPaste}
+                    onClearSelection={onClearSelection}
+                    onFillSelection={onFillSelection}
+                    hasSelection={hasSelection}
 
-                    {/* Stitches */}
-                    {pattern.map((row, rowIndex) =>
-                        row.map((stitch, colIndex) => renderStitch(rowIndex, colIndex, stitch))
-                    )}
+                    // Selection tools props
+                    onDuplicateSelection={onDuplicateSelection}
+                    onRotateSelection={onRotateSelection}
+                    onReflectSelection={onReflectSelection}
 
-                    {/* Selection overlay - handle rectangular selection areas */}
-                    {selection && (
-                        <>
-                            {(Array.isArray(selection) ? selection : [selection]).map((sel, index) => (
-                                <rect
-                                    key={`selection-${index}`}
-                                    x={sel.startCol * 20}
-                                    y={sel.startRow * 20}
-                                    width={(sel.endCol - sel.startCol + 1) * 20}
-                                    height={(sel.endRow - sel.startRow + 1) * 20}
-                                    fill="rgba(0, 100, 255, 0.2)"
-                                    stroke="#0064ff"
-                                    strokeWidth="2"
-                                    strokeDasharray="5,5"
-                                    pointerEvents="none"
-                                />
-                            ))}
-                        </>
-                    )}
+                    // Grid props
+                    gridSize={gridSize}
+                    onGridResize={onGridResize}
+                    onClearPattern={onClearPattern}
+                    onUndo={onUndo}
+                    onRedo={onRedo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onExport={onExport}
 
-                    {/* Current selection overlay */}
-                    {isMouseDown && selectionStart && selectionEnd && (
-                        <rect
-                            x={Math.min(selectionStart.col, selectionEnd.col) * 20}
-                            y={Math.min(selectionStart.row, selectionEnd.row) * 20}
-                            width={(Math.abs(selectionEnd.col - selectionStart.col) + 1) * 20}
-                            height={(Math.abs(selectionEnd.row - selectionStart.row) + 1) * 20}
-                            fill="rgba(255, 165, 0, 0.3)"
-                            stroke="#ff6600"
-                            strokeWidth="2"
-                            pointerEvents="none"
-                        />
-                    )}
+                    // Symmetry props
+                    symmetry={symmetry}
+                    onSymmetryChange={onSymmetryChange}
+                />
+                <div className="svg-wrapper">
+                    <svg
+                        width={4 + (gridSize.width * 20)}
+                        height={4 + (gridSize.height * 20)}
+                        className="grid-svg"
+                    >
+                        {/* Grid lines */}
+                        {gridLines}
 
-                    {/* Paste preview overlay - handle irregular shapes */}
-                    {pastePreview && clipboard && (
-                        <>
-                            {clipboard.map((row, rowIndex) =>
-                                row.map((cell, colIndex) => {
-                                    if (cell === null) return null; // Skip null cells
-                                    return (
-                                        <rect
-                                            key={`paste-${rowIndex}-${colIndex}`}
-                                            x={(pastePreview.col + colIndex) * 20}
-                                            y={(pastePreview.row + rowIndex) * 20}
-                                            width={20}
-                                            height={20}
-                                            fill="rgba(0, 255, 0, 0.2)"
-                                            stroke="#00ff00"
-                                            strokeWidth="2"
-                                            strokeDasharray="3,3"
-                                            pointerEvents="none"
-                                        />
-                                    );
-                                })
-                            )}
-                        </>
-                    )}
-                </svg>
-                
+                        {/* Stitches */}
+                        {pattern.map((row, rowIndex) =>
+                            row.map((stitch, colIndex) => renderStitch(rowIndex, colIndex, stitch))
+                        )}
+
+                        {/* Selection overlay - handle rectangular selection areas */}
+                        {selectionOverlays}
+
+                        {/* Current selection overlay */}
+                        {currentSelectionOverlay}
+
+                        {/* Paste preview overlay - handle irregular shapes */}
+                        {pastePreviewOverlays}
+                    </svg>
+                </div>
+
                 {/* Status bar */}
                 <div className="status-bar">
                     <span>Size: {gridSize.width} × {gridSize.height}</span>

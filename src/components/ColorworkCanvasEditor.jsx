@@ -1,16 +1,16 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { Card, Button, Select, Radio, Row, Col, Space, Typography, Divider, ColorPicker, InputNumber, Switch, Collapse, Slider, List } from 'antd';
+import { Card, Button, Select, Row, Col, Space, Typography, Divider, ColorPicker, InputNumber, Collapse, Slider } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined, ExpandOutlined, DragOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import { ColorworkPattern } from '../models/ColorworkPattern.js';
 import { Gauge } from '../models/Gauge.js';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import './ColorworkCanvasEditor.css';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 // Draggable Layer Item Component - defined outside to prevent re-creation
-const DraggableLayerItem = React.memo(({ layer, index, children, onLayerReorder, dragItemHoverStyle, dragItemNormalStyle }) => {
+const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragItemHoverStyle, dragItemNormalStyle }) => {
     const layerRef = useRef(null);
     const [isDraggedOver, setIsDraggedOver] = useState(false);
 
@@ -72,8 +72,7 @@ const ColorworkCanvasEditor = ({
     patternLayers = [],
     gauge = null,
     onLayersChange = () => {},
-    onGaugeChange = () => {},
-    renderToolbarControls = null // Optional function to render zoom controls in parent toolbar
+    onGaugeChange = () => {}
 }) => {
     const canvasRef = useRef(null);
     const [zoom, setZoom] = useState(1);
@@ -85,14 +84,13 @@ const ColorworkCanvasEditor = ({
 
     // Pattern creation functions (same as original)
     const availablePatterns = {
-        'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{color: '#ffffff'}] } },
-        'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{color: '#ffffff', rows: 2}, {color: '#000000', rows: 2}], width: 4 } },
-        'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{color: '#ffffff', columns: 2}, {color: '#000000', columns: 2}], height: 4 } },
-        'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{color: '#ffffff'}, {color: '#000000'}] } },
-        'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}] } }
+        'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{ color: '#ffffff' }] } },
+        'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{ color: '#ffffff', rows: 2 }, { color: '#000000', rows: 2 }], width: 4 } },
+        'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
+        'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{ color: '#ffffff' }, { color: '#000000' }] } },
+        'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } }
     };
 
-    const [selectedPatternKey, setSelectedPatternKey] = useState('checkerboard');
     const [collapsedLayers, setCollapsedLayers] = useState(new Set()); // Track collapsed layers
 
     // Canvas rendering functions (adapted from ColorworkPanelDiagram)
@@ -256,7 +254,7 @@ const ColorworkCanvasEditor = ({
         return grid;
     };
 
-    const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer, displayWidth, displayHeight) => {
+    const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
         let { pattern, settings } = layer;
         
         // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
@@ -432,8 +430,6 @@ const drawRulers = (ctx, canvasWidth, canvasHeight, shape, zoom, pan, scaleFacto
     const shapeCenterX = centerX;
     const shapeCenterY = centerY;
     const shapeLeft = shapeCenterX - shapeScreenWidth / 2;
-    const shapeRight = shapeCenterX + shapeScreenWidth / 2;
-    const shapeTop = shapeCenterY - shapeScreenHeight / 2;
     const shapeBottom = shapeCenterY + shapeScreenHeight / 2;
     
     // Origin should be at bottom-left of the shape (0,0)
@@ -914,9 +910,9 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
             const defaultBackgroundLayer = {
                 id: Date.now(),
                 name: 'solid color bg',
-                pattern: generatePattern('solid', { colors: [{color: '#cfcfcf'}] }),
+                pattern: generatePattern('solid', { colors: [{ color: '#cfcfcf' }] }),
                 patternType: 'solid',
-                patternConfig: { colors: [{color: '#cfcfcf'}] },
+                patternConfig: { colors: [{ color: '#cfcfcf' }] },
                 priority: 1,
                 settings: {
                     repeatMode: 'both', // repeat in both x and y
@@ -1068,20 +1064,6 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
             return [copiedLayer, ...prevLayers];
         });
     }, [onLayersChange]);
-
-    const moveLayer = (fromIndex, toIndex) => {
-        const newLayers = [...patternLayers];
-        const [movedLayer] = newLayers.splice(fromIndex, 1);
-        newLayers.splice(toIndex, 0, movedLayer);
-        
-        // Update priorities based on new order
-        const updatedLayers = newLayers.map((layer, index) => ({
-            ...layer,
-            priority: newLayers.length - index // Higher index = higher priority (top of stack)
-        }));
-        
-        onLayersChange(updatedLayers);
-    };
 
     const handlePatternChangeForLayer = useCallback((layerId, patternKey) => {
         const patternType = availablePatterns[patternKey].type;
@@ -1470,7 +1452,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                             </div>
                                                         ))}
                                                         <Button size="small" onClick={() => {
-                                                            const newColors = [...layer.patternConfig.colors, {color: '#ff0000', rows: 2}];
+                                                            const newColors = [...layer.patternConfig.colors, { color: '#ff0000', rows: 2 }];
                                                             handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                         }}>Add Color</Button>
                                                     </Space>
@@ -1526,7 +1508,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                             </div>
                                                         ))}
                                                         <Button size="small" onClick={() => {
-                                                            const newColors = [...layer.patternConfig.colors, {color: '#ff0000', columns: 2}];
+                                                            const newColors = [...layer.patternConfig.colors, { color: '#ff0000', columns: 2 }];
                                                             handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                         }}>Add Color</Button>
                                                     </Space>
@@ -1639,7 +1621,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 };
 
 // Helper pattern creation functions
-function createSolidPattern(colors = [{color: '#ffffff'}]) {
+function createSolidPattern(colors = [{ color: '#ffffff' }]) {
     const colorMap = {};
     colors.forEach((colorConfig, index) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
@@ -1659,7 +1641,7 @@ function createSolidPattern(colors = [{color: '#ffffff'}]) {
     );
 }
 
-function createCheckerboardPattern(cellSize = 2, colors = [{color: '#ffffff'}, {color: '#000000'}]) {
+function createCheckerboardPattern(cellSize = 2, colors = [{ color: '#ffffff' }, { color: '#000000' }]) {
     const patternSize = cellSize * 2; // Each full checkerboard cycle is 2x the cell size
     const grid = [];
     
@@ -1690,7 +1672,7 @@ function createCheckerboardPattern(cellSize = 2, colors = [{color: '#ffffff'}, {
     );
 }
 
-function createArgylePattern(colors = [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}]) {
+function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }]) {
     const colorMap = {};
     colors.forEach((colorConfig, index) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
@@ -1777,8 +1759,6 @@ function generatePattern(type, config, targetDimension = null) {
         } else {
             // Calculate remaining rows for zero-row colors
             const remainingRowsAfterDefined = Math.max(0, patternHeight - definedRowsTotal);
-            const rowsPerZeroColor = zeroRowColors.length > 0 ? 
-                Math.floor(remainingRowsAfterDefined / zeroRowColors.length) : 0;
             colors.forEach((colorConfig, index) => {
                 if (colorConfig.rows === 0) {
                     // For zero-row colors, behavior depends on position
@@ -1961,11 +1941,11 @@ function generatePattern(type, config, targetDimension = null) {
         });
     return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });
     } else if (type === 'solid') {
-        return createSolidPattern(config.colors || [{color: '#ffffff'}]);
+        return createSolidPattern(config.colors || [{ color: '#ffffff' }]);
     } else if (type === 'checkerboard') {
-        return createCheckerboardPattern(config.cellSize || 2, config.colors || [{color: '#ffffff'}, {color: '#000000'}]);
+        return createCheckerboardPattern(config.cellSize || 2, config.colors || [{ color: '#ffffff' }, { color: '#000000' }]);
     } else if (type === 'argyle') {
-        return createArgylePattern(config.colors || [{color: '#ffffff'}, {color: '#ff0000'}, {color: '#0000ff'}]);
+        return createArgylePattern(config.colors || [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }]);
     }
 }
 

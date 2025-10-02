@@ -16,7 +16,6 @@ import {
   addAlbum,
   deleteSong
 } from '@/store/songsSlice';
-// import SongDetail from './components/SongDetail';
 import AlbumArt from './components/AlbumArt';
 import SongEditor from './components/SongEditor';
 import SongListTest from './components/SongListTest';
@@ -80,10 +79,9 @@ const SongTabsApp: React.FC = () => {
 
   const handleLoadLibraryFromDrive = useCallback(async () => {
     try {
-      await dispatch(loadLibraryFromDrive()).unwrap();
-      console.log('Library loaded from Google Drive');
+  await dispatch(loadLibraryFromDrive()).unwrap();
     } catch (error: any) {
-      console.error('Failed to load library from Google Drive:', error);
+  // Error handled below and user-friendly message shown via Ant Design message
 
       // Detailed error analysis
       let errorMessage = 'Failed to load library from Google Drive';
@@ -110,16 +108,11 @@ const SongTabsApp: React.FC = () => {
         errorMessage = `Error: ${error.message}`;
       }
 
-      console.error('Detailed error info:', {
-        errorType: typeof error,
-        errorMessage: error?.message || error,
-        errorStack: error?.stack,
-        timestamp: new Date().toISOString()
-      });
+      // Detailed error information intentionally not logged to console in production.
 
       // Check if this is an authentication error
       if (isAuthError(error) || errorMessage.includes('sign in') || errorMessage.includes('authentication')) {
-        message.error(errorMessage);
+  message.error(errorMessage);
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
       } else {
@@ -150,7 +143,7 @@ const SongTabsApp: React.FC = () => {
 
       message.success('Song updated successfully');
     } catch (error: any) {
-      console.error('Failed to update song:', error);
+  // Error displayed to user via message.error
 
       // Check if this is an authentication error
       if (isAuthError(error)) {
@@ -189,7 +182,7 @@ const SongTabsApp: React.FC = () => {
       message.success('Song updated successfully');
       setIsEditingSong(false); // Exit editing mode after successful save
     } catch (error: any) {
-      console.error('Failed to update song:', error);
+  // Error displayed to user via message.error
 
       // Check if this is an authentication error
       if (isAuthError(error)) {
@@ -223,14 +216,14 @@ const SongTabsApp: React.FC = () => {
             name: signInStatus.userName,
             picture: signInStatus.userPicture
           }));
-          console.log('Restored user session for:', signInStatus.userEmail);
+          // Restored user session; proceed to load library from Drive
           await handleLoadLibraryFromDrive();
         } else {
-          console.debug('No valid session found, using mock library');
+          // No valid session found; use mock library
           handleLoadMockLibrary();
         }
       } catch (error) {
-        console.error('Failed to initialize Google Drive:', error);
+        // Initialization failed; fall back to mock library (error shown to user elsewhere if needed)
         handleLoadMockLibrary();
       }
     };
@@ -253,13 +246,13 @@ const SongTabsApp: React.FC = () => {
 
       await handleLoadLibraryFromDrive();
     } catch (error) {
-      console.error('Google Sign-In failed:', error);
+      // Sign-in failure handled via user message
       message.error('Failed to connect to Google Drive. Please try again.');
     }
   };
 
   const handleGoogleSignInError = (error: any) => {
-    console.error('Google Sign-In error:', error);
+    // Sign-in error displayed to user
     message.error('Failed to sign in with Google. Please try again.');
   };
 
@@ -270,7 +263,7 @@ const SongTabsApp: React.FC = () => {
       dispatch(setUserInfo(null));
       handleLoadMockLibrary();
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      // Sign-out failure not logged to console
     }
   };
 
@@ -345,29 +338,37 @@ const SongTabsApp: React.FC = () => {
     try {
       const { title, artist, album, lyrics } = newSongData;
 
-      // First ensure the artist exists
+      // First ensure the artist exists. Use the thunk result (unwrap) which returns the
+      // updated library from Drive so we don't rely on the stale `library` closure.
       const existingArtist = library.artists?.find((a: Artist) => a.name === artist);
+      let updatedLibraryAfterArtist = null;
 
       if (!existingArtist) {
-        await dispatch((addArtist as any)({
+        const artistResult = await dispatch((addArtist as any)({
           artistName: artist,
           isGoogleDriveConnected
         })).unwrap();
+        updatedLibraryAfterArtist = artistResult && artistResult.library ? artistResult.library : null;
       }
 
-      // Then ensure the album exists
-      const artistAfterAdd = library.artists?.find((a: Artist) => a.name === artist) || existingArtist;
+      // Then ensure the album exists. Prefer checking the most-recent library returned
+      // by the previous operation (if any), otherwise fall back to the current selector value.
+      const libraryToCheckForAlbum = updatedLibraryAfterArtist || library;
+      const artistAfterAdd = libraryToCheckForAlbum.artists?.find((a: Artist) => a.name === artist) || existingArtist;
       const existingAlbum = artistAfterAdd?.albums?.find((a: Album) => a.title === album);
 
+      let updatedLibraryAfterAlbum = null;
       if (!existingAlbum) {
-        await dispatch((addAlbum as any)({
+        const albumResult = await dispatch((addAlbum as any)({
           artistName: artist,
           albumTitle: album,
           isGoogleDriveConnected
         })).unwrap();
+        updatedLibraryAfterAlbum = albumResult && albumResult.library ? albumResult.library : null;
       }
 
-      // Finally, add the song
+      // Finally, add the song. Again prefer the most-recent library snapshot.
+      const libraryToAddSong = updatedLibraryAfterAlbum || updatedLibraryAfterArtist || library;
       await dispatch((addSong as any)({
         artistName: artist,
         albumTitle: album,
@@ -382,6 +383,16 @@ const SongTabsApp: React.FC = () => {
 
       // Reload library to get updated data
       const finalLibrary = await dispatch(loadLibraryFromDrive()).unwrap();
+      // Debug: log final library structure to help diagnose missing entries
+      // (Kept lightweight to avoid flooding console)
+      try {
+        console.log('Debug: finalLibrary after create:', {
+          artistsCount: finalLibrary.artists ? finalLibrary.artists.length : 0,
+          sampleArtistNames: (finalLibrary.artists || []).slice(0,5).map((a: any) => a.name)
+        });
+      } catch (e) {
+        console.warn('Failed to log finalLibrary debug info', e);
+      }
 
       // Auto-select the new song
       const newArtist = finalLibrary.artists?.find((a: any) => a.name === artist);
@@ -397,7 +408,7 @@ const SongTabsApp: React.FC = () => {
 
       message.success('Song created successfully!');
     } catch (error) {
-      console.error('Failed to create song:', error);
+      // Creation failure shown to user
       message.error('Failed to create song. Please try again.');
     }
   };
@@ -419,7 +430,7 @@ const SongTabsApp: React.FC = () => {
       
       message.success('Song deleted successfully!');
     } catch (error) {
-      console.error('Failed to delete song:', error);
+      // Deletion failed; show user-friendly message
       message.error('Failed to delete song. Please try again.');
     }
   };

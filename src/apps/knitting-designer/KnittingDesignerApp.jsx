@@ -1,19 +1,15 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Typography } from 'antd';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
     selectActiveColorId,
     selectColorPalette,
     selectActiveColor
 } from './store/colorworkGridSlice';
+import { selectBackgroundColorId } from './store/colorworkGridSlice';
 import ColorworkGrid from './components/ColorworkGrid';
 import './styles/KnittingDesignerApp.css';
 
-const { Title, Text } = Typography;
-
 const KnittingDesignerApp = () => {
-    const dispatch = useDispatch();
-
     // Redux selectors
     const activeColorId = useSelector(selectActiveColorId);
     const colors = useSelector(selectColorPalette); // Legacy format for existing code
@@ -21,12 +17,14 @@ const KnittingDesignerApp = () => {
 
     // Current active color (for painting)
     const activeColor = activeColorId;
+    const backgroundColorId = useSelector(selectBackgroundColorId);
 
     // Grid state
     const [gridSize, setGridSize] = useState({ width: 20, height: 20 });
     const [pattern, setPattern] = useState(() => {
-        // Initialize with all MC (Main Color)
-        return Array(20).fill(null).map(() => Array(20).fill(activeColorId));
+        // Initialize with background color (defaults to CC1)
+        const defaultFill = backgroundColorId || activeColorId || 'MC';
+        return Array(20).fill(null).map(() => Array(20).fill(defaultFill));
     });
 
     // Tool state
@@ -42,7 +40,6 @@ const KnittingDesignerApp = () => {
     // Selection state - now supports individual cells and rectangles
     const [selection, setSelection] = useState(null); // Can be rectangles or individual cells
     const [selectedCells, setSelectedCells] = useState(new Set()); // Set of "row,col" strings
-    const [isSelecting, setIsSelecting] = useState(false);
 
     // Clipboard state
     const [clipboard, setClipboard] = useState(null);
@@ -55,31 +52,6 @@ const KnittingDesignerApp = () => {
 
     // Helper functions for selection management
     const cellKey = (row, col) => `${row},${col}`;
-
-    const addCellToSelection = useCallback((row, col) => {
-        const key = cellKey(row, col);
-        setSelectedCells(prev => new Set(prev).add(key));
-    }, []);
-
-    const removeCellFromSelection = useCallback((row, col) => {
-        const key = cellKey(row, col);
-        setSelectedCells(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(key);
-            return newSet;
-        });
-    }, []);
-
-    const isCellSelected = useCallback((row, col) => {
-        return selectedCells.has(cellKey(row, col));
-    }, [selectedCells]);
-
-    const getAllSelectedCells = useCallback(() => {
-        return Array.from(selectedCells).map(key => {
-            const [row, col] = key.split(',').map(Number);
-            return { row, col };
-        });
-    }, [selectedCells]);
 
     // Save current state to history - defined early to avoid hoisting issues
     const saveToHistory = useCallback((newPattern) => {
@@ -141,7 +113,8 @@ const KnittingDesignerApp = () => {
         setSelectedCells(new Set());
     }, [selection, selectedCells, pattern, gridSize, saveToHistory]);
 
-    const rotateSelection = useCallback(() => {
+    // rotateCounterclockwise: boolean. false => rotate right (clockwise), true => rotate left (counter-clockwise).
+    const rotateSelection = useCallback((rotateCounterclockwise = false) => {
         if (!selection) return;
 
         const newPattern = [...pattern];
@@ -171,7 +144,7 @@ const KnittingDesignerApp = () => {
                 for (let col = sel.startCol; col <= sel.endCol; col++) {
                     const isIndividuallyUnselected = selectedCells.has(cellKey(row, col));
                     if (!isIndividuallyUnselected) {
-                        newPattern[row][col] = 'MC';
+                        newPattern[row][col] = backgroundColorId || activeColorId || 'MC';
                     }
                 }
             }
@@ -179,7 +152,9 @@ const KnittingDesignerApp = () => {
             // Track the bounds of the rotated area
             let minRow = Infinity, maxRow = -Infinity, minCol = Infinity, maxCol = -Infinity;
 
-            // Rotate 90 degrees clockwise around center
+            // Rotate 90 degrees around center
+            // For clockwise (rotateCounterclockwise=false): (x, y) -> (-y, x)
+            // For counter-clockwise (rotateCounterclockwise=true): (x, y) -> (y, -x)
             for (let row = sel.startRow; row <= sel.endRow; row++) {
                 for (let col = sel.startCol; col <= sel.endCol; col++) {
                     const isExcluded = selectedCells.has(cellKey(row, col));
@@ -187,9 +162,18 @@ const KnittingDesignerApp = () => {
                         const relativeRow = row - centerRow;
                         const relativeCol = col - centerCol;
 
-                        // Rotate 90 degrees: (x, y) -> (-y, x)
-                        const newRelativeRow = -relativeCol;
-                        const newRelativeCol = relativeRow;
+                        let newRelativeRow, newRelativeCol;
+                        // Note: grid row increases downward, which flips the visual sense of rotation.
+                        // To match expected visual directions in screen coordinates, swap the math used for the boolean.
+                        if (rotateCounterclockwise) {
+                            // Visual left (counter-clockwise) mapping for grid coordinates
+                            newRelativeRow = -relativeCol;
+                            newRelativeCol = relativeRow;
+                        } else {
+                            // Visual right (clockwise) mapping for grid coordinates
+                            newRelativeRow = relativeCol;
+                            newRelativeCol = -relativeRow;
+                        }
 
                         const newRow = Math.round(centerRow + newRelativeRow);
                         const newCol = Math.round(centerCol + newRelativeCol);
@@ -228,7 +212,7 @@ const KnittingDesignerApp = () => {
         }
         // Clear individual excluded cells since we have new selection areas
         setSelectedCells(new Set());
-    }, [selection, selectedCells, pattern, gridSize, saveToHistory]);
+    }, [selection, selectedCells, pattern, gridSize, saveToHistory, backgroundColorId, activeColorId]);
 
     const reflectSelection = useCallback((direction) => {
         if (!selection) return;
@@ -260,7 +244,7 @@ const KnittingDesignerApp = () => {
                 for (let col = sel.startCol; col <= sel.endCol; col++) {
                     const isExcluded = selectedCells.has(cellKey(row, col));
                     if (!isExcluded) {
-                        newPattern[row][col] = 'MC';
+                        newPattern[row][col] = backgroundColorId || activeColorId || 'MC';
                     }
                 }
             }
@@ -318,16 +302,17 @@ const KnittingDesignerApp = () => {
         }
         // Clear individual excluded cells since we have new selection areas
         setSelectedCells(new Set());
-    }, [selection, selectedCells, pattern, gridSize, saveToHistory]);
+    }, [selection, selectedCells, pattern, gridSize, saveToHistory, backgroundColorId, activeColorId]);
 
     // Initialize history with first pattern
     useEffect(() => {
         if (history.length === 0) {
-            const initialPattern = Array(20).fill(null).map(() => Array(20).fill('MC'));
+            const initialFill = backgroundColorId || activeColorId || 'MC';
+            const initialPattern = Array(20).fill(null).map(() => Array(20).fill(initialFill));
             setHistory([JSON.parse(JSON.stringify(initialPattern))]);
             setHistoryIndex(0);
         }
-    }, [history.length]);
+    }, [history.length, backgroundColorId, activeColorId]);
 
     // Apply symmetry to pattern
     const applySymmetry = useCallback((newPattern, row, col, color) => {
@@ -349,8 +334,6 @@ const KnittingDesignerApp = () => {
                 }
             } else if (symmetry.type === 'rotational') {
                 // Rotate 180 degrees around center
-                const centerRow = Math.floor(height / 2);
-                const centerCol = Math.floor(width / 2);
                 const rotatedRow = height - 1 - row;
                 const rotatedCol = width - 1 - col;
                 if (rotatedRow >= 0 && rotatedRow < height && rotatedCol >= 0 && rotatedCol < width) {
@@ -384,13 +367,14 @@ const KnittingDesignerApp = () => {
 
     // Resize grid
     const handleGridResize = useCallback((newSize) => {
+        const defaultFill = backgroundColorId || activeColorId || 'MC';
         const newPattern = Array(newSize.height).fill(null).map((_, row) =>
             Array(newSize.width).fill(null).map((_, col) => {
                 // Preserve existing pattern data if within bounds
                 if (row < pattern.length && col < pattern[0].length) {
                     return pattern[row][col];
                 }
-                return 'MC';
+                return defaultFill;
             })
         );
 
@@ -399,7 +383,7 @@ const KnittingDesignerApp = () => {
         setGridSize(newSize);
         setSelection(null);
         setSelectedCells(new Set());
-    }, [pattern, saveToHistory]);
+    }, [pattern, saveToHistory, backgroundColorId, activeColorId]);
 
     // Handle stitch clicks
     const handleStitchClick = useCallback((row, col, event) => {
@@ -597,12 +581,13 @@ const KnittingDesignerApp = () => {
 
     // Clear entire pattern
     const handleClearPattern = useCallback(() => {
-        const newPattern = Array(gridSize.height).fill(null).map(() => Array(gridSize.width).fill('MC'));
+        const defaultFill = backgroundColorId || activeColorId || 'MC';
+        const newPattern = Array(gridSize.height).fill(null).map(() => Array(gridSize.width).fill(defaultFill));
         saveToHistory(newPattern);
         setPattern(newPattern);
         setSelection(null);
         setSelectedCells(new Set());
-    }, [gridSize, saveToHistory]);
+    }, [gridSize, saveToHistory, backgroundColorId, activeColorId]);
 
     // Undo/Redo
     const handleUndo = useCallback(() => {
@@ -703,6 +688,7 @@ const KnittingDesignerApp = () => {
         <ColorworkGrid
             pattern={pattern}
             colors={colors}
+            backgroundColorId={backgroundColorId}
             gridSize={gridSize}
             activeTool={activeTool}
             activeColor={activeColor}

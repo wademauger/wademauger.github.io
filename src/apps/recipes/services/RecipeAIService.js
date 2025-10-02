@@ -1,4 +1,5 @@
-import { pipeline, env } from '@xenova/transformers';
+/* eslint-disable no-useless-escape */
+import { env } from '@xenova/transformers';
 
 // Configure transformers.js to use local models
 env.allowLocalModels = false;
@@ -110,7 +111,7 @@ NOT like:
       const response = await fetch(this.workerUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
       });
@@ -319,7 +320,7 @@ Create recipes that are clear, detailed, and easy to follow. Make your commentar
       
       // Format notes
       const notesList = recipe?.notes?.length > 0
-        ? recipe.notes.map((note, index) => `• ${note}`).join('\n')
+        ? recipe.notes.map((note) => `• ${note}`).join('\n')
         : 'No notes added yet';
 
       return `You are an expert recipe assistant helping with "${recipeTitle}".
@@ -595,7 +596,7 @@ Choose the most appropriate format based on what the user is asking for.`;
       
       // Build JSON object with structured ingredients
       const jsonRecipe = {
-        commentary: "I've converted this recipe to a structured format for you! Feel free to ask if you need any adjustments or have questions about the cooking process.",
+        commentary: 'I\'ve converted this recipe to a structured format for you! Feel free to ask if you need any adjustments or have questions about the cooking process.',
         title,
         description: `A delicious ${title.toLowerCase()} recipe`,
         prepTime: prepTimeMatch ? prepTimeMatch[1].trim() : '',
@@ -620,7 +621,7 @@ Choose the most appropriate format based on what the user is asking for.`;
     }
   }
 
-  _generateFullRecipeFallback(userMessage, recipe) {
+  _generateFullRecipeFallback(userMessage) {
     const dishName = this._extractDishName(userMessage) || 'this dish';
     
     return `# Recipe for ${dishName}
@@ -735,10 +736,10 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       if (hasSteps) {
         response += `Your current recipe has ${recipe.steps.length} step${recipe.steps.length > 1 ? 's' : ''}. I can help you:\n\n`;
       } else {
-        response += `Your recipe doesn't have instructions yet. I can help you:\n\n`;
+        response += 'Your recipe doesn\'t have instructions yet. I can help you:\n\n';
       }
       
-      response += `• Break down complex steps into smaller actions\n• Add specific temperatures and timing\n• Include prep work and mise en place\n• Mention visual cues for doneness\n\nFor example: "Sauté onions over medium heat for 5-7 minutes until translucent and fragrant."\n\nWhat specific step would you like me to help improve?`;
+      response += '• Break down complex steps into smaller actions\n• Add specific temperatures and timing\n• Include prep work and mise en place\n• Mention visual cues for doneness\n\nFor example: "Sauté onions over medium heat for 5-7 minutes until translucent and fragrant."\n\nWhat specific step would you like me to help improve?';
       return this._createResponseObject(response);
     }
     
@@ -748,7 +749,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       if (hasIngredients) {
         const ingredientsArray = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
         response += `Your current recipe has ${ingredientsArray.length} ingredient${ingredientsArray.length > 1 ? 's' : ''}:\n`;
-        response += ingredientsArray.slice(0, 3).map((ing, i) => {
+        response += ingredientsArray.slice(0, 3).map((ing) => {
           const ingredientText = typeof ing === 'object' && ing !== null
             ? `${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim()
             : ing;
@@ -760,10 +761,10 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
           response += '\n\n';
         }
       } else {
-        response += `Your recipe doesn't have ingredients yet. `;
+        response += 'Your recipe doesn\'t have ingredients yet. ';
       }
       
-      response += `I can help you:\n• Suggest flavor-enhancing additions\n• Provide ingredient substitutions\n• Adjust quantities for different serving sizes\n• Recommend complementary seasonings\n\nWhat ingredient changes are you considering?`;
+      response += 'I can help you:\n• Suggest flavor-enhancing additions\n• Provide ingredient substitutions\n• Adjust quantities for different serving sizes\n• Recommend complementary seasonings\n\nWhat ingredient changes are you considering?';
       return this._createResponseObject(response);
     }
     
@@ -782,22 +783,22 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       const ingredientsCount = Array.isArray(recipe.ingredients) ? recipe.ingredients.length : 0;
       contextualHelp += `✅ ${ingredientsCount} ingredient${ingredientsCount > 1 ? 's' : ''} listed\n`;
     } else {
-      contextualHelp += `❌ No ingredients yet\n`;
+      contextualHelp += '❌ No ingredients yet\n';
     }
     
     if (hasSteps) {
       contextualHelp += `✅ ${recipe.steps.length} instruction step${recipe.steps.length > 1 ? 's' : ''}\n`;
     } else {
-      contextualHelp += `❌ No instructions yet\n`;
+      contextualHelp += '❌ No instructions yet\n';
     }
     
     if (hasNotes) {
       contextualHelp += `✅ ${recipe.notes.length} note${recipe.notes.length > 1 ? 's' : ''} added\n\n`;
     } else {
-      contextualHelp += `❌ No notes yet\n\n`;
+      contextualHelp += '❌ No notes yet\n\n';
     }
     
-    contextualHelp += `**How I Can Help:**\n• **Recipe Generation**: "Create a recipe for [dish]"\n• **Ingredient Help**: "Add more vegetables" or "What can I substitute for X?"\n• **Instruction Help**: "How do I cook this?" or "Make step 2 clearer"\n• **Flavor Enhancement**: "Make this more flavorful" or "Add spices"\n\n**Examples:**\n• "Create a complete chicken fajita recipe"\n• "Add more spices to make this flavorful"\n• "How should I cook the chicken?"\n\nWhat would you like me to help you with?`;
+    contextualHelp += '**How I Can Help:**\n• **Recipe Generation**: "Create a recipe for [dish]"\n• **Ingredient Help**: "Add more vegetables" or "What can I substitute for X?"\n• **Instruction Help**: "How do I cook this?" or "Make step 2 clearer"\n• **Flavor Enhancement**: "Make this more flavorful" or "Add spices"\n\n**Examples:**\n• "Create a complete chicken fajita recipe"\n• "Add more spices to make this flavorful"\n• "How should I cook the chicken?"\n\nWhat would you like me to help you with?';
     
     return this._createResponseObject(contextualHelp);
   }

@@ -1,14 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { Card, Button, Space, Row, Col, Typography, Select, Slider } from 'antd';
+import { Card, Button, Space, Row, Col, Typography, Slider } from 'antd';
 import { ColorworkStitchPlanService } from '../models/ColorworkStitchPlanService.js';
 import { Panel } from '../models/Panel.js';
 import { Trapezoid } from '../models/Trapezoid.js';
 import { Gauge } from '../models/Gauge.js';
 import { ColorworkPattern } from '../models/ColorworkPattern.js';
-import RowByRowInstructions from './RowByRowInstructions.js';
+import RowByRowInstructions from './RowByRowInstructions.jsx';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 /**
  * ColorworkInstructionDemo - Demo component showing enhanced stitch plan with colorwork
@@ -16,7 +15,6 @@ const { Option } = Select;
 const ColorworkInstructionDemo = () => {
     const [stitchPlan, setStitchPlan] = useState(null);
     const [currentRow, setCurrentRow] = useState(0);
-    const [knittingProgress, setKnittingProgress] = useState({ currentRow: 0 });
 
     // Create demo data
     const createDemoPanel = useCallback(() => {
@@ -61,7 +59,6 @@ const ColorworkInstructionDemo = () => {
         
         setStitchPlan(enhancedStitchPlan);
         setCurrentRow(0);
-        setKnittingProgress({ currentRow: 0 });
     }, [createDemoPanel, createDemoColorworkPattern]);
 
     const handleRowProgress = useCallback((direction) => {
@@ -72,7 +69,6 @@ const ColorworkInstructionDemo = () => {
             : Math.max(currentRow - 1, 0);
             
         setCurrentRow(newRow);
-        setKnittingProgress({ currentRow: newRow });
     }, [currentRow, stitchPlan]);
 
     return (

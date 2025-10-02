@@ -2,14 +2,6 @@ import { useEffect } from 'react';
 
 const RoutePreloader = () => {
   useEffect(() => {
-    // Preload chunks for likely next routes when user hovers over navigation links
-    const prefetchChunk = (chunkName) => {
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = chunkName;
-      document.head.appendChild(link);
-    };
-
     // Add hover listeners to navigation links
     const handleMouseEnter = (e) => {
       const href = e.target.getAttribute('href');
@@ -20,8 +12,9 @@ const RoutePreloader = () => {
         if (href.includes('recipes')) {
           import('../apps/recipes/RecipesApp');
         } else if (href.includes('songs') || href.includes('tabs')) {
-          import('../apps/songs/SongTabsAppModern');
+          import('../apps/songs/SongTabsAppModern.jsx');
         } else if (href.includes('knitting')) {
+          // Knitting app preloading can be added here if needed
         }
       }
     };

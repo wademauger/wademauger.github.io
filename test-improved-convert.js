@@ -32,11 +32,11 @@ G  C  Am  D
 
 G  C  Am  D`;
 
-console.log('=== INPUT WITH CHORD PROGRESSIONS ===');
-console.log(testWithChordProgressions);
-console.log('\n=== CONVERTED OUTPUT ===');
+// console.log('=== INPUT WITH CHORD PROGRESSIONS ===');
+// console.log(testWithChordProgressions);
+// console.log('\n=== CONVERTED OUTPUT ===');
 const result = convertLyrics(testWithChordProgressions);
-console.log(result);
+// console.log(result);
 
 // Test case with single chords followed by chords (not lyrics)
 const testWithSingleChords = `Am
@@ -57,8 +57,8 @@ F
 Em                 F
 More lyrics here`;
 
-console.log('\n\n=== INPUT WITH SINGLE CHORDS ===');
-console.log(testWithSingleChords);
-console.log('\n=== CONVERTED OUTPUT ===');
+// console.log('\n\n=== INPUT WITH SINGLE CHORDS ===');
+// console.log(testWithSingleChords);
+// console.log('\n=== CONVERTED OUTPUT ===');
 const result2 = convertLyrics(testWithSingleChords);
-console.log(result2);
+// console.log(result2);

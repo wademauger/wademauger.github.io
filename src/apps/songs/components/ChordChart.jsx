@@ -10,10 +10,6 @@ import { baritoneUkuleleChords } from '../data/baritoneUkuleleChords';
 
 // Simple chord generation for missing chords
 const generateBasicChord = (chordSymbol, instrument) => {
-  // Parse chord symbol for basic generation
-  const isMinor = chordSymbol.includes('m') && !chordSymbol.includes('maj');
-  const is7th = chordSymbol.includes('7');
-  
   // Handle slash chords
   const parts = chordSymbol.split('/');
   const rootChord = parts[0];
@@ -175,11 +171,10 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     const maxFret = frettedNotes.length > 0 ? Math.max(...frettedNotes) : 5;
     
     // Determine the display window (5 frets wide)
-    let startFret, endFret;
+    let startFret;
     if (maxFret <= 5 || minFret <= 1) {
       // Show frets 1-5 (traditional view)
       startFret = 1;
-      endFret = 5;
     } else {
       // Show a window that includes all fretted notes
       const span = maxFret - minFret;
@@ -187,11 +182,9 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         // All notes fit in 5-fret window, center them
         const center = Math.floor((minFret + maxFret) / 2);
         startFret = Math.max(1, center - 2);
-        endFret = startFret + 4;
       } else {
         // Use full span, starting from minFret
         startFret = minFret;
-        endFret = Math.min(startFret + 4, maxFret);
       }
     }
     
@@ -210,7 +203,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             y1={40 + i * fretSpacing}
             x2={size.width - stringSpacing}
             y2={40 + i * fretSpacing}
-            stroke={i === 0 ? "#333" : "#666"}
+            stroke={i === 0 ? '#333' : '#666'}
             strokeWidth={i === 0 ? (isNutShown ? 3 : 1) : 1}
           />
         ))}
@@ -230,7 +223,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
                 x={stringSpacing / 2}
                 y={40 + (i + 0.5) * fretSpacing + 2}
                 textAnchor="middle"
-                fontSize={small ? "7" : "9"}
+                fontSize={small ? '7' : '9'}
                 fontWeight="bold"
               >
                 {fretNumber}
@@ -324,7 +317,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
                   y={40 + (relativeFret - 0.5) * fretSpacing + 2}
                   textAnchor="middle"
                   fill="white"
-                  fontSize={small ? "6" : "8"}
+                  fontSize={small ? '6' : '8'}
                   fontWeight="bold"
                 >
                   {finger}
@@ -342,7 +335,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             y={size.height - 5}
             textAnchor="middle"
             fill="#666"
-            fontSize={small ? "10" : "12"}
+            fontSize={small ? '10' : '12'}
             fontStyle="italic"
           >
             *
@@ -427,7 +420,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             y={0}
             width={whiteKeyWidth - 1}
             height={pianoHeight}
-            fill={chordNotes.includes(key) ? "#c41e3a" : "white"}
+            fill={chordNotes.includes(key) ? '#c41e3a' : 'white'}
             stroke="#333"
             strokeWidth={1}
           />
@@ -447,7 +440,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
               y={0}
               width={blackKeyWidth}
               height={actualBlackKeyHeight}
-              fill={chordNotes.includes(key) ? "#c41e3a" : "#333"}
+              fill={chordNotes.includes(key) ? '#c41e3a' : '#333'}
               stroke="#000"
               strokeWidth={1}
             />
@@ -462,7 +455,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
             y={pianoHeight - 5}
             textAnchor="middle"
             fill="#333"
-            fontSize={small ? "6" : "8"}
+            fontSize={small ? '6' : '8'}
           >
             {key}
           </text>

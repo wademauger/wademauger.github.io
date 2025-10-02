@@ -138,13 +138,13 @@ class SessionManager {
   }
 
   // Future: Google Drive integration
-  async saveToGoogleDrive(sessionData) {
+  async saveToGoogleDrive() {
     // This will be implemented when Google Drive integration is added
     console.log('Google Drive save not yet implemented');
     return false;
   }
 
-  async loadFromGoogleDrive(sessionId) {
+  async loadFromGoogleDrive() {
     // This will be implemented when Google Drive integration is added
     console.log('Google Drive load not yet implemented');
     return null;

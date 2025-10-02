@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Card, Tabs, Steps, Space, Typography, Button, Tag, Collapse, Row, Col } from 'antd';
+import { Card, Tabs, Steps, Space, Typography, Button, Tag, Row, Col } from 'antd';
 import { EyeOutlined, PrinterOutlined, DownloadOutlined } from '@ant-design/icons';
 import { ColorworkVisualizer } from '../models/ColorworkVisualizer.js';
 import './CombinedView.css';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { Step } = Steps;
-const { Panel } = Collapse;
 
 /**
  * CombinedView - Displays the combined pattern with instructions and visualizations
@@ -17,9 +16,7 @@ const CombinedView = ({
     combinedPattern,
     instructions = [],
     isLoading = false,
-    isPreview = false,
-    currentRow = -1,
-    completedRows = []
+    isPreview = false
 }) => {
     const [activeTab, setActiveTab] = useState(isPreview ? 'compact' : 'compact');
     const [currentStep, setCurrentStep] = useState(0);

@@ -12,8 +12,8 @@ const store = configureStore({
     recipes: recipesReducer,
     chords: chordsReducer,
     songs: songsReducer,
-    colorworkGrid: colorworkGridReducer,
-  },
+    colorworkGrid: colorworkGridReducer
+  }
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -43,7 +43,7 @@ const setCachedData = (cacheKey, data) => {
   }
 };
 
-const AlbumArt = ({ artist, track, album, size = 150 }) => {
+const AlbumArt = ({ artist, album, size = 150 }) => {
   const [albumData, setAlbumData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

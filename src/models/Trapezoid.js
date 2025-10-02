@@ -1,5 +1,5 @@
-import { StitchPlan } from "./StitchPlan";
-import { defaultGauge } from "./Gauge";
+import { StitchPlan } from './StitchPlan';
+import { defaultGauge } from './Gauge';
 
 class Trapezoid {
     /**
@@ -46,7 +46,7 @@ class Trapezoid {
             ? json.successors.filter(s => s != null).map(s => Trapezoid.fromObject(s))
             : [];
 
-        return new Trapezoid(
+        const trap = new Trapezoid(
             json.height,
             json.baseA,
             json.baseB,
@@ -56,6 +56,27 @@ class Trapezoid {
             json.sizeModifier || 1,
             json.label || null
         );
+
+        // Preserve hem flag and short-row metadata if present
+        trap.isHem = !!json.isHem;
+        trap.shortRows = Array.isArray(json.shortRows) ? json.shortRows.map(s => ({ ...s })) : [];
+
+        return trap;
+    }
+
+    toJSON() {
+        return {
+            height: this.height,
+            baseA: this.baseA,
+            baseB: this.baseB,
+            baseBHorizontalOffset: this.baseBHorizontalOffset,
+            successors: (this.successors || []).map(s => (typeof s.toJSON === 'function' ? s.toJSON() : s)),
+            finishingSteps: this.finishingSteps || [],
+            sizeModifier: this.modificationScale || 1,
+            label: this.label || null,
+            isHem: !!this.isHem,
+            shortRows: Array.isArray(this.shortRows) ? this.shortRows.map(s => ({ ...s })) : []
+        };
     }
 
     getUpperBaseWidthInStitches(gauge = defaultGauge) {
