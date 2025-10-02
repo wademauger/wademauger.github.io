@@ -1,5 +1,13 @@
 // singleton Google Drive service
 class GoogleDriveService {
+  isSignedIn: boolean;
+  tokenClient: any;
+  accessToken: string | null;
+  userEmail: string | null;
+  LIBRARY_FILENAME: string;
+  DISCOVERY_DOC: string;
+  SCOPES: string;
+
   constructor() {
     this.isSignedIn = false;
     this.tokenClient = null;

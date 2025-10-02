@@ -7,6 +7,32 @@ import GoogleDriveErrorHandler from '../../../utils/GoogleDriveErrorHandler';
 import libFormat from '../../../utils/libraryFormat';
 
 class GoogleDriveServiceModern {
+  isSignedIn: boolean;
+  tokenClient: any;
+  accessToken: string | null;
+  userEmail: string | null;
+  userName: string | null;
+  userPicture: string | null;
+  LIBRARY_FILENAME: string;
+  DISCOVERY_DOC: string;
+  SCOPES: string;
+  CLIENT_ID: string | null;
+  gapiInited: boolean;
+  gisInited: boolean;
+  authRetryAttempts: Map<string, number>;
+  maxRetryAttempts: number;
+  SESSION_KEYS: {
+    ACCESS_TOKEN: string;
+    USER_EMAIL: string;
+    USER_NAME: string;
+    USER_PICTURE: string;
+    IS_SIGNED_IN: string;
+    TOKEN_EXPIRY: string;
+    SONGS_LIBRARY_FILE: string;
+    SONGS_FOLDER_PATH: string;
+  };
+  USE_UPLOAD_FALLBACK: boolean;
+
   constructor() {
     this.isSignedIn = false;
     this.tokenClient = null;

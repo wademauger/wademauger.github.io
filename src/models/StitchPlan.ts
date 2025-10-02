@@ -1,4 +1,7 @@
 class StitchPlan {
+    rows: any[];
+    colorworkMapping: any;
+
     constructor() {
         this.rows = [];
         this.colorworkMapping = null; // New: Store colorwork data

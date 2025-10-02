@@ -1,6 +1,10 @@
 // Spotify Web API service for fetching album artwork and artist albums
 // NOTE: This is the updated secure version that calls a backend API
 class SpotifyService {
+  apiEndpoint: string;
+  albumCache: Map<string, any>;
+  cacheExpiry: number;
+
   constructor() {
     // Backend API endpoint for Spotify searches - using your deployed Cloudflare worker
     this.apiEndpoint = import.meta.env.VITE_SPOTIFY_API_ENDPOINT || 'https://songs-spotify-api.ai-recipe-notepad.workers.dev/api/spotify-search';
