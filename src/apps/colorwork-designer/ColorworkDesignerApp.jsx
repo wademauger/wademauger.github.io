@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
@@ -23,10 +23,10 @@ const ColorworkDesignerApp = () => {
     const [showGarmentSelector, setShowGarmentSelector] = useState(false);
     const [knittingStage, setKnittingStage] = useState('settings'); // 'settings' or 'knitting'
     const editorRef = useRef(null);
-    const [recentProjects] = useState([
+    const recentProjects = useMemo(() => ([
         { id: 1, name: 'Raglan Sweater Front', garment: 'cozy-raglan-sweater', panel: 'Front', lastModified: '2 hours ago' },
         { id: 2, name: 'Hat Crown', garment: 'seam-top-hat', panel: 'Hat', lastModified: '1 day ago' }
-    ]);
+    ]), []);
 
     // Handle selecting a garment panel to knit
     const handleKnitPanel = (garment, panelName, panelShape) => {
@@ -254,7 +254,6 @@ const ColorworkDesignerApp = () => {
                         onClick={() => {
                             if (editorRef.current && editorRef.current.startKnitting) {
                                 editorRef.current.startKnitting();
-                                setKnittingStage('knitting');
                             }
                         }}
                     >
@@ -268,6 +267,7 @@ const ColorworkDesignerApp = () => {
                 initialPanel={currentProject?.panel}
                 initialColorwork={currentProject?.colorwork}
                 project={currentProject}
+                stage={knittingStage}
                 onSave={handleSaveProject}
                 onCancel={handleBackToHome}
                 onStageChange={(stage) => setKnittingStage(stage)}

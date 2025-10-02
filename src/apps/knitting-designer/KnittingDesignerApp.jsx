@@ -14,6 +14,8 @@ const KnittingDesignerApp = () => {
     const activeColorId = useSelector(selectActiveColorId);
     const colors = useSelector(selectColorPalette); // Legacy format for existing code
     const activeColorData = useSelector(selectActiveColor);
+    // Google Drive connection state (some UI paths expect this variable)
+    const isGoogleDriveConnected = useSelector((state) => (state && state.songs ? state.songs.isGoogleDriveConnected : false));
 
     // Current active color (for painting)
     const activeColor = activeColorId;

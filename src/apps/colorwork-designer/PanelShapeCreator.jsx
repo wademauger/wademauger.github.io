@@ -526,31 +526,58 @@ export default function PanelShapeCreator() {
 
   const openFromDrive = async () => {
     try {
-      const svc = DriveService || GoogleDriveServiceModern;
-      const library = await svc.loadLibrary();
-      if (!library || !library.panels) {
-  message.info('No panels found in Drive library');
-        return;
-      }
-      const names = Object.keys(library.panels || {});
-      if (!names.length) {
-  message.info('No panels found in Drive library');
-        return;
-      }
-      const choice = window.prompt('Open which panel?\n' + names.join('\n'), names[0]);
-      if (!choice) return;
-      const panelJson = library.panels[choice] || library.panels[choice.replace('.json','')];
-      if (!panelJson) {
-  message.error('Panel not found: ' + choice);
-        return;
-      }
-      const p = Panel.fromObject(panelJson);
-      setRoot(assignLabelsToTrapezoids(p.shape));
-      setSelectedId(p.shape.id);
-  message.success('Loaded panel: ' + choice);
+      // Register a callback that will be invoked by LibraryModal when the user
+      // selects a file and picks a panel. The callback receives { libraryData, fileStatus, panelName }
+      const { registerCallback } = await import('@/utils/modalCallbackRegistry');
+      const cbId = registerCallback(async ({ libraryData, fileStatus, panelName }) => {
+        try {
+          if (!libraryData || !libraryData.panels) {
+            message.error('Selected library does not contain panels');
+            return;
+          }
+
+          // If a top-level panelName was provided by the modal, use it.
+          // Otherwise if libraryData contains a single panel choose it, else prompt user to pick first.
+          let chosenName = panelName;
+          const keys = Object.keys(libraryData.panels || {});
+          if (!chosenName) {
+            if (keys.length === 1) chosenName = keys[0];
+            else chosenName = keys[0];
+          }
+
+          const panelJson = libraryData.panels[chosenName] || libraryData.panels[chosenName.replace('.json','')];
+          if (!panelJson) {
+            message.error('Panel not found in selected library: ' + chosenName);
+            return;
+          }
+
+          const p = Panel.fromObject(panelJson);
+          setRoot(assignLabelsToTrapezoids(p.shape));
+          setSelectedId(p.shape.id);
+          message.success('Loaded panel: ' + chosenName);
+        } catch (cbErr) {
+          console.error('PanelShapeCreator: callback error loading panel', cbErr);
+          message.error('Failed to load panel: ' + String(cbErr));
+        }
+      });
+
+      // Open the LibraryModal in panels context and pass the callback id so it behaves in 'open' mode
+      dispatch(openModal({
+        modalType: MODAL_TYPES.LIBRARY_SETTINGS,
+        appContext: 'panels',
+        data: {
+          currentSettings: {
+            panelsLibraryFile: 'panels-library.json',
+            panelsFolder: '/'
+          },
+          userInfo: null,
+          onSelectFileCallbackId: cbId,
+          intent: 'open'
+        }
+      }));
     } catch (err) {
       console.error('Open failed', err);
-  message.error('Open failed: ' + String(err));
+      message.error('Open failed: ' + String(err));
     }
   };
 

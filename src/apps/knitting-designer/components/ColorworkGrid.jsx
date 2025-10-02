@@ -254,7 +254,7 @@ const ColorworkGrid = ({
                     x2={x}
                     y2={(endRow - startRow + 1) * 20}
                     stroke="#ddd"
-                    strokeWidth="0.5"
+                    strokewidth="1"
                 />
             );
         }
@@ -270,7 +270,7 @@ const ColorworkGrid = ({
                     x2={(endCol - startCol + 1) * 20}
                     y2={y}
                     stroke="#ddd"
-                    strokeWidth="0.5"
+                    strokewidth="1"
                 />
             );
         }
@@ -369,21 +369,21 @@ const ColorworkGrid = ({
             // Draw 2x2 checker inside the 18x18 cell (each sub-square 9x9)
             return (
                 <g key={`${actualRow}-${actualCol}`} className={getStitchClasses(actualRow, actualCol)}>
-                    <rect x={x + 1} y={y + 1} width={9} height={9} fill="#e6e6e6" stroke="#999" strokeWidth="0.25" />
-                    <rect x={x + 10} y={y + 1} width={8} height={9} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
-                    <rect x={x + 1} y={y + 10} width={9} height={8} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
-                    <rect x={x + 10} y={y + 10} width={8} height={8} fill="#e6e6e6" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 1} y={y + 1} width={9} height={9} fill="#f0f0f0" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 10} y={y + 1} width={9} height={9} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 1} y={y + 10} width={9} height={9} fill="#ffffff" stroke="#999" strokeWidth="0.25" />
+                    <rect x={x + 10} y={y + 10} width={9} height={9} fill="#f0f0f0" stroke="#999" strokeWidth="0.25" />
                     <rect
                         x={x + 1}
                         y={y + 1}
                         width={18}
                         height={18}
-                        fill="none"
+                        fill="transparent"
                         stroke="#999"
-                        strokeWidth="0.5"
+                        strokeWidth={1}
                         onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
                         onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
-                        style={{ cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
+                        style={{ pointerEvents: 'all', cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
                         title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
                     />
                 </g>
@@ -399,11 +399,11 @@ const ColorworkGrid = ({
                 height={18}
                 fill={color}
                 stroke="#999"
-                strokeWidth="0.5"
+                strokeWidth="1"
                 className={getStitchClasses(actualRow, actualCol)}
                 onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
                 onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
-                style={{ cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
+                style={{ pointerEvents: 'all', cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
                 title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
             />
         );

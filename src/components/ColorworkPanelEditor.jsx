@@ -1,4 +1,5 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { ColorworkPattern } from '../models/ColorworkPattern.js';
 import { PanelColorworkComposer } from '../models/PanelColorworkComposer.js';
 import { InstructionGenerator } from '../models/InstructionGenerator.js';
@@ -17,10 +18,12 @@ const ColorworkPanelEditor = forwardRef(({
     initialPanel = null,
     initialColorwork = null,
     project = null,
+    stage, // optional controlled stage from parent: 'settings' | 'knitting'
     onStageChange = null
 }, ref) => {
-    // Workflow state: 'settings' or 'knitting'
-    const [currentStage, setCurrentStage] = useState('settings');
+    // Workflow state: allow controlled via prop, fallback to internal state
+    const [internalStage, setInternalStage] = useState('settings');
+    const currentStage = stage ?? internalStage;
     
     // Progress tracking for interactive knitting
     const [knittingProgress, setKnittingProgress] = useState({
@@ -41,11 +44,21 @@ const ColorworkPanelEditor = forwardRef(({
         };
     });
 
-    // State for colorwork pattern
-    const colorworkPattern = initialColorwork || createDefaultColorwork();
+    // State for colorwork pattern (base layer); layers/editor may augment this
+    const colorworkPattern = useMemo(() => initialColorwork || createDefaultColorwork(), [initialColorwork]);
 
-    // Color assignment state
-    const patternColors = ['#cfcfcf']; // Default to soft gray
+    // Derive colors from global colorworkGrid Redux slice for consistency across apps
+    // Falls back to a single soft gray if slice is unavailable
+    const reduxColorsArray = useSelector((state) => {
+        const colors = state?.colorworkGrid?.colors;
+        return colors ? Object.values(colors) : null;
+    });
+    const patternColors = useMemo(() => {
+        if (reduxColorsArray && reduxColorsArray.length > 0) {
+            return reduxColorsArray.map(c => c.color);
+        }
+        return ['#cfcfcf'];
+    }, [reduxColorsArray]);
 
     // Pattern layers state for complex colorwork compositions
     const [patternLayers, setPatternLayers] = useState(() => {
@@ -81,12 +94,12 @@ const ColorworkPanelEditor = forwardRef(({
         ];
     });
 
-    // State for combination settings
-    const combinationSettings = {
+    // State for combination settings (stable identity)
+    const combinationSettings = useMemo(() => ({
         stretchMode: 'repeat',
         alignmentMode: 'center',
         instructionFormat: 'compact'
-    };
+    }), []);
 
     // State for the combined result
     const [combinedPattern, setCombinedPattern] = useState(null);
@@ -100,6 +113,17 @@ const ColorworkPanelEditor = forwardRef(({
     useEffect(() => {
         generateCombinedPattern();
     }, [panelConfig, colorworkPattern, combinationSettings, patternColors]);
+
+    // When project changes (e.g., load/open), reinitialize panel configuration
+    useEffect(() => {
+        const shape = convertToTrapezoid(project?.panelShape || initialPanel?.shape) || createDefaultShape();
+        setPanelConfig(prev => ({
+            ...prev,
+            shape,
+            gauge: initialPanel?.gauge || prev.gauge,
+            sizeModifier: initialPanel?.sizeModifier || prev.sizeModifier
+        }));
+    }, [project?.id]);
 
     const generateCombinedPattern = () => {
         if (!panelConfig.shape || !colorworkPattern) {
@@ -149,16 +173,18 @@ const ColorworkPanelEditor = forwardRef(({
     };
 
     // Workflow transition functions
+    const setStage = (next) => {
+        if (onStageChange) onStageChange(next);
+        if (stage === undefined) setInternalStage(next);
+    };
+
     const handleStartKnitting = () => {
-        setCurrentStage('knitting');
+        setStage('knitting');
         setKnittingProgress({
             currentRow: 0,
             completedRows: [],
             currentSection: 0
         });
-        if (onStageChange) {
-            onStageChange('knitting');
-        }
     };
 
     // Expose methods to parent component
@@ -167,10 +193,7 @@ const ColorworkPanelEditor = forwardRef(({
     }));
 
     const handleBackToSettings = () => {
-        setCurrentStage('settings');
-        if (onStageChange) {
-            onStageChange('settings');
-        }
+        setStage('settings');
     };
 
     const handleRowComplete = (rowIndex) => {

@@ -38,24 +38,59 @@ class Trapezoid {
     }
 
     static fromObject(json) {
-        if (!json || json == [] || json == {}) {
-            return null; // Handle empty JSON
+        // Defensive checks: ensure json is an object with meaningful data
+        if (!json || typeof json !== 'object' || Array.isArray(json) && json.length === 0) {
+            return null;
         }
 
-        const successors = (json.successors && Array.isArray(json.successors))
-            ? json.successors.filter(s => s != null).map(s => Trapezoid.fromObject(s))
+        // Build successors first, recursively. Ensure we filter out any nulls
+        // returned from recursive calls so the successors array contains only
+        // valid Trapezoid instances.
+        const successors = Array.isArray(json.successors)
+            ? json.successors.map(s => Trapezoid.fromObject(s)).filter(s => s != null)
             : [];
 
+        // Parse numeric fields defensively so downstream logic doesn't receive undefined
+        const height = (typeof json.height === 'number') ? json.height : (Number(json.height) || 0);
+        const baseA = (typeof json.baseA === 'number') ? json.baseA : (Number(json.baseA) || 0);
+        const baseB = (typeof json.baseB === 'number') ? json.baseB : (Number(json.baseB) || 0);
+        const baseBHorizontalOffset = (typeof json.baseBHorizontalOffset === 'number') ? json.baseBHorizontalOffset : (Number(json.baseBHorizontalOffset) || 0);
+        const finishingSteps = Array.isArray(json.finishingSteps) ? json.finishingSteps : (json.finishingSteps ? [json.finishingSteps] : []);
+        const sizeModifier = (typeof json.sizeModifier === 'number') ? json.sizeModifier : (Number(json.sizeModifier) || 1);
+        const label = (typeof json.label === 'string') ? json.label : (json.label == null ? null : String(json.label));
+
         const trap = new Trapezoid(
-            json.height,
-            json.baseA,
-            json.baseB,
-            json.baseBHorizontalOffset || 0,
+            height,
+            baseA,
+            baseB,
+            baseBHorizontalOffset,
             successors,
-            json.finishingSteps || [], // Ensure finishingSteps is an array
-            json.sizeModifier || 1,
-            json.label || null
+            finishingSteps,
+            sizeModifier,
+            label
         );
+
+        // Preserve existing id if present, otherwise generate a stable-ish fallback id.
+        // Use json.id if available, or try common alternative keys, then fall back to
+        // a deterministic-ish counter to avoid many duplicates during a single load.
+        try {
+            if (json.id) {
+                trap.id = json.id;
+            } else if (json._id) {
+                trap.id = json._id;
+            } else {
+                // Maintain a simple counter on the class to provide stable ids within
+                // the same runtime load. This is safer than using Date.now+random for
+                // reproducible behavior during a single import operation.
+                if (!Trapezoid._nextId) Trapezoid._nextId = 1;
+                trap.id = `trap-${Trapezoid._nextId++}`;
+            }
+        } catch (e) {
+            trap.id = json && (json.id || json._id) ? (json.id || json._id) : (`trap-${Date.now()}`);
+        }
+
+        // Ensure label is never undefined (use null when absent)
+        trap.label = label === undefined ? null : label;
 
         // Preserve hem flag and short-row metadata if present
         trap.isHem = !!json.isHem;

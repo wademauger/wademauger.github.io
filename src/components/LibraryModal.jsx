@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Modal, Form, Input, AutoComplete, Button, Space, Alert, Card, Spin, message, Select } from 'antd';
+import { Modal, Form, Input, AutoComplete, Button, Space, Alert, Card, Spin, message, Select, List } from 'antd';
 import { FolderOutlined, FileOutlined, CheckCircleOutlined, ExclamationCircleOutlined, SearchOutlined, PlusOutlined, ArrowRightOutlined, ReloadOutlined } from '@ant-design/icons';
 import { closeModal, selectCurrentModal, selectModalData, selectAppContext, MODAL_TYPES } from '../reducers/modal.reducer';
 import { setLibrary } from '../store/songsSlice';
@@ -165,6 +165,19 @@ const LibraryModal = () => {
     }
   }, [isVisible, modalData, appContext]);
 
+  // When a fileStatus is selected/changed, attempt to load its library data
+  useEffect(() => {
+    if (fileStatus && fileStatus.found && appContext === 'panels') {
+      // load the library so we can show contained panels for selection
+      loadLibraryDataForFile(fileStatus).catch(err => {
+        console.warn('LibraryModal: failed to load library data for panels list', err);
+      });
+    } else {
+      // clear previously loaded library when file selection is cleared
+      setSelectedLibraryData(null);
+    }
+  }, [fileStatus, appContext]);
+
 
   const loadFolderSuggestions = async (query = '') => {
     const service = getService();
@@ -285,9 +298,30 @@ const LibraryModal = () => {
     try {
       let libraryData = null;
       if (status.fileId) {
-        libraryData = await service.loadLibraryById(status.fileId);
+        try {
+          libraryData = await service.loadLibraryById(status.fileId);
+        } catch (e) {
+          // Some Drive files are not downloadable (e.g. Docs editors) and API returns a 403
+          // with reason 'fileNotDownloadable'. Normalize this into a user-friendly error.
+          console.warn('loadLibraryDataForFile: loadLibraryById failed', e);
+          const body = e && (e.body || e.result || e.response || e.message);
+          // show a helpful message when file is a Drive native type or not downloadable
+          message.error('Selected file cannot be downloaded from Google Drive. It may be a Google Docs/Sheets/Slides file or you lack permission.');
+          setSelectedLibraryData(null);
+          return null;
+        }
       } else {
         libraryData = await service.loadLibraryData();
+      }
+
+      // Defensive: sometimes the service may return a Drive file resource (e.g. folder)
+      // instead of the expected JSON library object. Detect common indicators and
+      // surface a helpful error instead of trying to treat it as library data.
+      if (libraryData && libraryData.mimeType && String(libraryData.mimeType).includes('application/vnd.google-apps')) {
+        console.warn('loadLibraryDataForFile: returned resource appears to be a Drive native file (mimeType)', libraryData.mimeType);
+        message.error('The selected Drive item is not a JSON library file. Please select a .json library file.');
+        setSelectedLibraryData(null);
+        return null;
       }
       // attach a panel count for convenience
       const c = countPanels(libraryData);
@@ -297,6 +331,8 @@ const LibraryModal = () => {
     } catch (e) {
       console.warn('Failed to load library data for fileStatus', e);
       setSelectedLibraryData(null);
+      // Surface a friendly message when load fails
+      message.error('Failed to load library data: ' + (e && e.message ? e.message : String(e)));
       return null;
     }
   };
@@ -395,7 +431,14 @@ const LibraryModal = () => {
       let libraryData;
       if (fileStatus.fileId) {
         // Load by file ID and update settings to match this file's location
-        libraryData = await service.loadLibraryById(fileStatus.fileId);
+        try {
+          libraryData = await service.loadLibraryById(fileStatus.fileId);
+        } catch (loadErr) {
+          console.warn('handleLoadExisting: loadLibraryById failed', loadErr);
+          message.error('Cannot load the selected file. It may not be a downloadable JSON file or you lack permission.');
+          setLoading(false);
+          return;
+        }
         
         // Update the form and settings to match the loaded file's location
         const updatedSettings = {
@@ -536,7 +579,15 @@ const LibraryModal = () => {
 
       // If we have a selected existing file with an ID, load it and invoke the callback
       if (fileStatus?.found && fileStatus.fileId) {
-        const libraryData = await service.loadLibraryById(fileStatus.fileId);
+        let libraryData = null;
+        try {
+          libraryData = await service.loadLibraryById(fileStatus.fileId);
+        } catch (loadErr) {
+          console.warn('handleSaveHere: loadLibraryById failed', loadErr);
+          message.error('Cannot load the selected file. It may not be a downloadable JSON file or you lack permission.');
+          setLoading(false);
+          return;
+        }
         const cbId = modalData && modalData.onSelectFileCallbackId;
         if (cbId) {
           const { getCallback, removeCallback } = await import('@/utils/modalCallbackRegistry');
@@ -759,20 +810,32 @@ const LibraryModal = () => {
   const folderFieldName = appContext === 'songs' ? 'songsFolder' : (appContext === 'recipes' ? 'recipesFolder' : 'panelsFolder');
 
   const isSaveAsMode = !!(modalData && modalData.onSelectFileCallbackId);
+  // Intent can be used to change UI language (e.g. 'open' vs 'save')
+  const intent = modalData && modalData.intent ? modalData.intent : (isSaveAsMode ? 'save' : null);
 
   return (
     <Modal
       title={
         <Space>
           <FileOutlined />
-          {isSaveAsMode ? 'Save As — Select destination' : `${appName} Library Manager`}
+          {intent === 'open' ? `Open — Select ${appName}` : (isSaveAsMode ? 'Save As — Select destination' : `${appName} Library Manager`)}
         </Space>
       }
       open={isVisible}
       onCancel={handleClose}
       width={600}
       footer={
-        modalData && modalData.onSelectFileCallbackId ? [
+        intent === 'open' ? [
+          <Button key="cancel" onClick={handleClose}>
+            Cancel
+          </Button>,
+          <Button key="clear" onClick={handleClearSettings}>
+            Clear Settings
+          </Button>,
+          <Button key="open" type="primary" onClick={handleLoadExisting} loading={loading}>
+            Open
+          </Button>
+        ] : modalData && modalData.onSelectFileCallbackId ? [
           <Button key="cancel" onClick={handleClose}>
             Cancel
           </Button>,
@@ -927,6 +990,72 @@ const LibraryModal = () => {
                   </Button>
                 </div>
               </div>
+            </Card>
+          )}
+
+          {/* When in Open mode for panels, show list of panels inside selected library */}
+          {!isSaveAsMode && appContext === 'panels' && selectedLibraryData && selectedLibraryData.__data && selectedLibraryData.__data.panels && (
+            <Card size="small" style={{ marginTop: 12 }}>
+              <div style={{ fontSize: '13px', marginBottom: 8 }}><strong>Panels in selected library</strong></div>
+              <List
+                size="small"
+                bordered
+                dataSource={Object.entries(selectedLibraryData.__data.panels || {}).map(([k,v]) => ({ key: k, panel: v }))}
+                renderItem={(item) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        key="open"
+                        type="link"
+                        onClick={async () => {
+                          try {
+                            // If this modal was opened with a callback id, invoke it
+                            const cbId = modalData && modalData.onSelectFileCallbackId;
+                            if (cbId) {
+                              const { getCallback, removeCallback } = await import('@/utils/modalCallbackRegistry');
+                              const cb = getCallback(cbId);
+                              if (cb) {
+                                await cb({ libraryData: selectedLibraryData.__data, fileStatus, panelName: item.key });
+                                message.success('Panel handed to caller');
+                              } else {
+                                message.error('Panel callback not found');
+                              }
+                              // remove callback to avoid leaks
+                              removeCallback(cbId);
+                            } else {
+                              // No callback: load directly into active app (fallback)
+                              if (getService() && getService().loadLibraryById) {
+                                // attempt to load library and then dispatch to relevant store
+                                const svc = getService();
+                                let lib = null;
+                                try {
+                                  if (fileStatus && fileStatus.fileId) lib = await svc.loadLibraryById(fileStatus.fileId);
+                                  else lib = selectedLibraryData.__data;
+                                } catch (e) {
+                                  lib = selectedLibraryData.__data;
+                                }
+                                // mimic handleLoadExisting behavior for panels: no redux action, just show message
+                                message.success('Selected panel: ' + item.key);
+                              }
+                            }
+                            handleClose();
+                          } catch (err) {
+                            console.error('Error selecting panel from modal', err);
+                            message.error('Failed to select panel: ' + String(err));
+                          }
+                        }}
+                      >
+                        Open
+                      </Button>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={item.key}
+                      description={item.panel && (item.panel.name || item.panel.title) ? (item.panel.name || item.panel.title) : null}
+                    />
+                  </List.Item>
+                )}
+              />
             </Card>
           )}
 
