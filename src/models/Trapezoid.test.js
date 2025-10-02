@@ -83,6 +83,101 @@ describe('Trapezoid Model', () => {
             assert.strictEqual(trapezoid.successors[0].baseA, 10);
             assert.strictEqual(trapezoid.successors[0].baseB, 15);
         });
+
+        it('should return null for invalid input', () => {
+            assert.strictEqual(Trapezoid.fromObject(null), null);
+            assert.strictEqual(Trapezoid.fromObject([]), null);
+        });
+
+        it('should filter out null successors', () => {
+            const json = {
+                height: 10,
+                baseA: 20,
+                baseB: 30,
+                successors: [{ height: 5, baseA: 10, baseB: 15 }, null, []]
+            };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.successors.length, 1);
+        });
+
+        it('should parse string numeric fields', () => {
+            const json = {
+                height: '10',
+                baseA: '20',
+                baseB: '30',
+                baseBHorizontalOffset: '5'
+            };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.height, 10);
+            assert.strictEqual(trapezoid.baseA, 20);
+            assert.strictEqual(trapezoid.baseB, 30);
+            assert.strictEqual(trapezoid.baseBHorizontalOffset, 5);
+        });
+
+        it('should handle non-array finishingSteps', () => {
+            const json = {
+                height: 10,
+                baseA: 20,
+                baseB: 30,
+                finishingSteps: 'single step'
+            };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.deepStrictEqual(trapezoid.finishingSteps, ['single step']);
+        });
+
+        it('should use default values for missing numeric fields', () => {
+            const json = {};
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.height, 0);
+            assert.strictEqual(trapezoid.baseA, 0);
+            assert.strictEqual(trapezoid.baseB, 0);
+            assert.strictEqual(trapezoid.baseBHorizontalOffset, 0);
+        });
+
+        it('should preserve id from json', () => {
+            const json = { height: 10, baseA: 20, baseB: 30, id: 'test-id' };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.id, 'test-id');
+        });
+
+        it('should use _id as fallback for id', () => {
+            const json = { height: 10, baseA: 20, baseB: 30, _id: 'alt-id' };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.id, 'alt-id');
+        });
+
+        it('should generate id when not provided', () => {
+            const json = { height: 10, baseA: 20, baseB: 30 };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid.id);
+            assert.ok(trapezoid.id.startsWith('trap-'));
+        });
+
+        it('should preserve isHem flag', () => {
+            const json = { height: 10, baseA: 20, baseB: 30, isHem: true };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.isHem, true);
+        });
+
+        it('should preserve shortRows', () => {
+            const shortRows = [{ row: 1, stitches: 10 }];
+            const json = { height: 10, baseA: 20, baseB: 30, shortRows };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.shortRows.length, 1);
+            assert.strictEqual(trapezoid.shortRows[0].row, 1);
+        });
+
+        it('should convert label to string', () => {
+            const json = { height: 10, baseA: 20, baseB: 30, label: 123 };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.label, '123');
+        });
+
+        it('should set label to null when undefined', () => {
+            const json = { height: 10, baseA: 20, baseB: 30 };
+            const trapezoid = Trapezoid.fromObject(json);
+            assert.strictEqual(trapezoid.label, null);
+        });
     });
 
     describe('getUpperBaseWidthInStitches', () => {
