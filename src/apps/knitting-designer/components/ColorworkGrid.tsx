@@ -165,7 +165,7 @@ const ColorworkGrid = ({
         let inRectangularSelection = false;
         if (selection) {
             const selections = Array.isArray(selection) ? selection : [selection];
-            inRectangularSelection = selections.some(sel =>
+            inRectangularSelection = selections.some((sel: any) =>
                 row >= sel.startRow && row <= sel.endRow &&
                 col >= sel.startCol && col <= sel.endCol
             );

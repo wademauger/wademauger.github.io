@@ -10,8 +10,8 @@ const generateGarmentSizes = () => {
   const sizes = {};
   
   // Generate all combinations based on Men's M = Women's L equivalency
-  sizeOrder.forEach(mensSize => {
-    sizeOrder.forEach(womensSize => {
+  sizeOrder.forEach((mensSize: any) => {
+    sizeOrder.forEach((womensSize: any) => {
       const mensSizeIndex = getSizeIndex(mensSize);
       const womensSizeIndex = getSizeIndex(womensSize) - 1; // Offset by 1 for equivalency
       

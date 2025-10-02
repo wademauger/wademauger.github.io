@@ -121,22 +121,22 @@ const LibraryModal = () => {
         const rawUserPreferences = service.getUserPreferences ? service.getUserPreferences() : {};
         const filteredPrefs = {};
         if (appContext === 'songs') {
-          ['songsLibraryFile', 'songsFolder'].forEach(k => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
+          ['songsLibraryFile', 'songsFolder'].forEach((k: any) => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
         } else if (appContext === 'recipes') {
-          ['recipesLibraryFile', 'recipesFolder', 'showDemoRecipes'].forEach(k => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
+          ['recipesLibraryFile', 'recipesFolder', 'showDemoRecipes'].forEach((k: any) => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
         } else if (appContext === 'panels') {
-          ['panelsLibraryFile', 'panelsFolder'].forEach(k => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
+          ['panelsLibraryFile', 'panelsFolder'].forEach((k: any) => { if (rawUserPreferences[k] !== undefined) filteredPrefs[k] = rawUserPreferences[k]; });
         }
 
         // Merge modalData.currentSettings but only include keys relevant to the current appContext
         const modalCurrent = modalData?.currentSettings || {};
         const filteredModalCurrent = {};
         if (appContext === 'songs') {
-          ['songsLibraryFile', 'songsFolder'].forEach(k => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
+          ['songsLibraryFile', 'songsFolder'].forEach((k: any) => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
         } else if (appContext === 'recipes') {
-          ['recipesLibraryFile', 'recipesFolder', 'showDemoRecipes'].forEach(k => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
+          ['recipesLibraryFile', 'recipesFolder', 'showDemoRecipes'].forEach((k: any) => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
         } else if (appContext === 'panels') {
-          ['panelsLibraryFile', 'panelsFolder'].forEach(k => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
+          ['panelsLibraryFile', 'panelsFolder'].forEach((k: any) => { if (modalCurrent[k] !== undefined) filteredModalCurrent[k] = modalCurrent[k]; });
         }
 
         const settingsToUse = {
@@ -214,7 +214,7 @@ const LibraryModal = () => {
       if (service.listFilesInFolderWithCounts) {
         const all = await service.listFilesInFolderWithCounts(folderPath);
         // Normalize output
-        return (all || []).map(f => ({
+        return (all || []).map((f: any) => ({
           id: f.fileId || f.fileId,
           fileId: f.fileId || f.fileId,
           name: f.name || f.fileName || f.name,
@@ -340,7 +340,7 @@ const LibraryModal = () => {
   const countPanels = (libraryData) => {
     if (!libraryData || typeof libraryData !== 'object') return 0;
     let total = 0;
-    const arrays = Object.values(libraryData).filter(v => Array.isArray(v));
+    const arrays = Object.values(libraryData).filter((v: any) => Array.isArray(v));
     for (const arr of arrays) {
       total += arr.length;
     }
@@ -351,7 +351,7 @@ const LibraryModal = () => {
     if (!panelName) return false;
     const lib = libraryData || selectedLibraryData;
     if (!lib || typeof lib !== 'object') return false;
-    const arrays = Object.values(lib).filter(v => Array.isArray(v));
+    const arrays = Object.values(lib).filter((v: any) => Array.isArray(v));
     for (const arr of arrays) {
       for (const item of arr) {
         if (!item) continue;
@@ -382,7 +382,7 @@ const LibraryModal = () => {
       const lib = selectedLibraryData;
       let conflict = false;
       if (lib && typeof lib === 'object') {
-        const arrays = Object.values(lib).filter(v => Array.isArray(v));
+        const arrays = Object.values(lib).filter((v: any) => Array.isArray(v));
         for (const arr of arrays) {
           for (const item of arr) {
             if (!item) continue;
@@ -404,7 +404,7 @@ const LibraryModal = () => {
       setSelectedFileName(fileName || '');
       // If the typed fileName is not in jsonFiles, append a will-create entry
       if (fileName) {
-        const exists = (jsonFiles || []).some(f => String(f.name || f.fileName).toLowerCase() === String(fileName).toLowerCase());
+        const exists = (jsonFiles || []).some((f: any) => String(f.name || f.fileName).toLowerCase() === String(fileName).toLowerCase());
         if (!exists) {
           setJsonFiles(prev => ([...(prev || []), { name: fileName, id: null, __willCreate: true, count: 0 }]));
         }
@@ -889,7 +889,7 @@ const LibraryModal = () => {
           {isSaveAsMode && jsonFiles?.length > 0 && (
             <Card size="small" style={{ marginBottom: 12 }}>
               <div style={{ fontSize: '13px', marginBottom: 8 }}><strong>JSON files in path</strong></div>
-              {jsonFiles.map(f => {
+              {jsonFiles.map((f: any) => {
                 const name = f.name || f.fileName;
                 const isSelected = String(name).toLowerCase() === String(selectedFileName).toLowerCase();
                 return (
@@ -923,7 +923,7 @@ const LibraryModal = () => {
                       {f.preview && Object.keys(f.preview).length > 0 && (
                         <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
                           {Object.entries(f.preview).map(([ns, items]) => (
-                            <div key={ns}><strong>{ns}:</strong> {items.map(it => it.name || it.id).filter(Boolean).slice(0,3).join(', ')}</div>
+                            <div key={ns}><strong>{ns}:</strong> {items.map((it: any) => it.name || it.id).filter(Boolean).slice(0,3).join(', ')}</div>
                           ))}
                         </div>
                       )}

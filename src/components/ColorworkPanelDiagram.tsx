@@ -14,10 +14,10 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
     if (allCoordinates.length === 0) return;
     
     // Find the bounding box of the entire shape
-    let minX = Math.min(...allCoordinates.map(coord => Math.min(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
-    let maxX = Math.max(...allCoordinates.map(coord => Math.max(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
-    let minY = Math.min(...allCoordinates.map(coord => Math.min(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
-    let maxY = Math.max(...allCoordinates.map(coord => Math.max(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
+    let minX = Math.min(...allCoordinates.map((coord: any) => Math.min(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
+    let maxX = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
+    let minY = Math.min(...allCoordinates.map((coord: any) => Math.min(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
+    let maxY = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
     
     // Create unified clipping path
     ctx.save();
@@ -63,7 +63,7 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
     
-    allCoordinates.forEach(coord => {
+    allCoordinates.forEach((coord: any) => {
         ctx.beginPath();
         ctx.moveTo(coord.topLeft.x, coord.topLeft.y);
         ctx.lineTo(coord.topRight.x, coord.topRight.y);
@@ -91,7 +91,7 @@ const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coor
     });
 
     if (trap.successors && trap.successors.length > 0) {
-        const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+        const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
         const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
         let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
@@ -149,7 +149,7 @@ const createCombinedGridCentered = (totalStitches, totalRows, patternLayers) => 
     const grid = Array(totalRows).fill().map(() => Array(totalStitches).fill('transparent'));
     
     // Process layers from bottom to top (lower priority to higher priority)
-    patternLayers.sort((a, b) => a.priority - b.priority).forEach(layer => {
+    patternLayers.sort((a, b) => a.priority - b.priority).forEach((layer: any) => {
         applyPatternLayerCentered(grid, totalStitches, totalRows, layer);
     });
     
@@ -290,7 +290,7 @@ const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dim
 
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
-        const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+        const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
         const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
 
         // Compute initial offset to center the row

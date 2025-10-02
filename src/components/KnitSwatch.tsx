@@ -115,7 +115,7 @@ const KnitSwatch = ({
 
       {/* Stitch grid */}
       <div style={gridStyle}>
-        {stitchGrid.map(row => 
+        {stitchGrid.map((row: any) => 
           row.map(({ row: r, stitch: s, color, key }) => (
             <KnitStitch
               key={key}

@@ -64,12 +64,12 @@ export class ColorworkPattern {
 
     getColorsUsed() {
         const usedColorIds = new Set();
-        this.grid.forEach(row => {
-            row.forEach(colorId => {
+        this.grid.forEach((row: any) => {
+            row.forEach((colorId: any) => {
                 if (colorId) usedColorIds.add(colorId);
             });
         });
-        return Array.from(usedColorIds).map(id => this.colors[id]).filter(Boolean);
+        return Array.from(usedColorIds).map((id: any) => this.colors[id]).filter(Boolean);
     }
 
     // Get the color instructions for a specific row

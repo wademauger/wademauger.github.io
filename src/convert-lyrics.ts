@@ -159,8 +159,8 @@ function convertLyrics(input) {
             // Sort end chords by their original position in the chord line
             const sortedEndChords = endChords.sort((a, b) => {
               // Find the original chord positions
-              const aOriginalPos = chordPositions.find(cp => cp.chord === a.text.slice(1, -1))?.position || 0;
-              const bOriginalPos = chordPositions.find(cp => cp.chord === b.text.slice(1, -1))?.position || 0;
+              const aOriginalPos = chordPositions.find((cp: any) => cp.chord === a.text.slice(1, -1))?.position || 0;
+              const bOriginalPos = chordPositions.find((cp: any) => cp.chord === b.text.slice(1, -1))?.position || 0;
               return aOriginalPos - bOriginalPos;
             });
             

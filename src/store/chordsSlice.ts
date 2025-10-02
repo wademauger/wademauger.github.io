@@ -21,7 +21,7 @@ const chordsSlice = createSlice({
     },
     unpinChord: (state, action) => {
       const chord = action.payload;
-      state.pinnedChords = state.pinnedChords.filter(c => c !== chord);
+      state.pinnedChords = state.pinnedChords.filter((c: any) => c !== chord);
     },
     clearPinnedChords: (state) => {
       state.pinnedChords = [];

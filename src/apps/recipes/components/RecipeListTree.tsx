@@ -48,12 +48,12 @@ function RecipeListTree({
     
     const searchTerm = filterText.toLowerCase();
     return combinedRecipes
-      .map(section => {
+      .map((section: any) => {
         const matchesSection = section.name.toLowerCase().includes(searchTerm);
-        const filteredRecipes = section.recipes.filter(recipe => 
+        const filteredRecipes = section.recipes.filter((recipe: any) => 
           recipe.title?.toLowerCase().includes(searchTerm) ||
           recipe.description?.toLowerCase().includes(searchTerm) ||
-          recipe.ingredients?.some(ing => ing.toLowerCase().includes(searchTerm))
+          recipe.ingredients?.some((ing: any) => ing.toLowerCase().includes(searchTerm))
         );
         
         if (matchesSection || filteredRecipes.length > 0) {
@@ -116,7 +116,7 @@ function RecipeListTree({
             {filterText ? 'No recipes found matching your search.' : 'No recipes available.'}
           </div>
         ) : (
-          filteredSections.map(section => {
+          filteredSections.map((section: any) => {
             const sectionExpanded = expandedSections.has(section.name);
             return (
               <div key={section.name} className="tree-section">
@@ -138,7 +138,7 @@ function RecipeListTree({
                 
                 {sectionExpanded && (
                   <div className="tree-recipes" style={{ marginLeft: '20px' }}>
-                    {(section.recipes || []).map(recipe => {
+                    {(section.recipes || []).map((recipe: any) => {
                       const recipeId = recipe.permalink || recipe.id || recipe.title;
                       const isSelected = selectedRecipeId === recipeId || activeRecipePermalink === recipe.permalink;
                       return (

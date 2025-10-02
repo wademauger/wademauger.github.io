@@ -121,7 +121,7 @@ function updateNode(root, id, updater) {
       updater(n);
       break;
     }
-    (n.successors || []).forEach(c => stack.push(c));
+    (n.successors || []).forEach((c: any) => stack.push(c));
   }
   return next;
 }
@@ -133,12 +133,12 @@ function removeNode(root, id) {
   while (queue.length) {
     const n = queue.shift();
     if (!n.successors) continue;
-    const idx = n.successors.findIndex(c => c.id === id);
+    const idx = n.successors.findIndex((c: any) => c.id === id);
     if (idx !== -1) {
       n.successors.splice(idx, 1);
       break;
     }
-    n.successors.forEach(c => queue.push(c));
+    n.successors.forEach((c: any) => queue.push(c));
   }
   return next;
 }
@@ -153,7 +153,7 @@ function addChild(root, parentId) {
       n.successors.push(defaultChild());
       break;
     }
-    (n.successors || []).forEach(c => stack.push(c));
+    (n.successors || []).forEach((c: any) => stack.push(c));
   }
   return next;
 }
@@ -170,7 +170,7 @@ function reorderChildren(root, parentId, from, to) {
       arr.splice(to, 0, moved);
       break;
     }
-    (n.successors || []).forEach(c => stack.push(c));
+    (n.successors || []).forEach((c: any) => stack.push(c));
   }
   return next;
 }
@@ -210,11 +210,11 @@ export default function PanelShapeCreator() {
     while (stack.length) {
       const n = stack.pop();
       if (n.id === parent.id) {
-        const idx = n.successors.findIndex(c => c.id === selected.id);
+        const idx = n.successors.findIndex((c: any) => c.id === selected.id);
         n.successors.splice(idx + 1, 0, copy);
         break;
       }
-      (n.successors || []).forEach(c => stack.push(c));
+      (n.successors || []).forEach((c: any) => stack.push(c));
     }
   setRoot(assignLabelsToTrapezoids(next));
   }, [root, selected]);
@@ -399,7 +399,7 @@ export default function PanelShapeCreator() {
 
                 // De-duplicate candidates
                 const seen = new Set();
-                const uniqCandidates = candidates.filter(c => {
+                const uniqCandidates = candidates.filter((c: any) => {
                   const key = `${c.folder}::${c.filename}`;
                   if (seen.has(key)) return false;
                   seen.add(key);
@@ -600,7 +600,7 @@ export default function PanelShapeCreator() {
 
   const removeShortRow = useCallback(() => {
     if (!selectedShortRowId) return;
-    setRoot(prev => updateNode(prev, selected.id, (n) => { n.shortRows = (n.shortRows || []).filter(s => s.id !== selectedShortRowId); }));
+    setRoot(prev => updateNode(prev, selected.id, (n) => { n.shortRows = (n.shortRows || []).filter((s: any) => s.id !== selectedShortRowId); }));
     setSelectedShortRowId(null);
   }, [selected?.id, selectedShortRowId]);
 
@@ -608,7 +608,7 @@ export default function PanelShapeCreator() {
     if (!selectedShortRowId) return;
     setRoot(prev => updateNode(prev, selected.id, (n) => {
       n.shortRows = n.shortRows || [];
-      const idx = n.shortRows.findIndex(s => s.id === selectedShortRowId);
+      const idx = n.shortRows.findIndex((s: any) => s.id === selectedShortRowId);
       if (idx === -1) return;
       const copy = { ...n.shortRows[idx], id: `sr-${Date.now()}-${Math.random().toString(36).slice(2,6)}` };
       n.shortRows.splice(idx + 1, 0, copy);
@@ -622,7 +622,7 @@ export default function PanelShapeCreator() {
     const v = (key === 'posX' || key === 'posY') ? Math.max(0, Math.min(1, value)) : value;
     setRoot(prev => updateNode(prev, selected.id, (n) => {
       if (!n.shortRows) return;
-      const idx = n.shortRows.findIndex(s => s.id === id);
+      const idx = n.shortRows.findIndex((s: any) => s.id === id);
       if (idx === -1) return;
       n.shortRows[idx] = { ...n.shortRows[idx], [key]: v };
     }));
@@ -742,7 +742,7 @@ export default function PanelShapeCreator() {
 
             {selectedShortRowId ? (
               (() => {
-                const sr = (shortRows || []).find(s => s.id === selectedShortRowId);
+                const sr = (shortRows || []).find((s: any) => s.id === selectedShortRowId);
                 if (!sr) return null;
                 return (
                   <div style={{ marginTop: 12 }}>

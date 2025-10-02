@@ -117,7 +117,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
   };
 
   const clearSession = () => {
-    Object.values(SESSION_KEYS).forEach(key => {
+    Object.values(SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
     addLog('🗑️ Session cleared completely', 'info');
@@ -358,7 +358,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
                 {logs.length === 0 ? (
                   <Text type="secondary">No logs yet...</Text>
                 ) : (
-                  logs.map(log => (
+                  logs.map((log: any) => (
                     <div 
                       key={log.id} 
                       style={{ 

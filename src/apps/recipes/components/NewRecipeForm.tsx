@@ -180,7 +180,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           if (Array.isArray(parsed.ingredients)) {
             console.log('🔄 Processing ingredients as array format');
             // Simple array format - preserve structured objects
-            ingredients = parsed.ingredients.map(ing => {
+            ingredients = parsed.ingredients.map((ing: any) => {
               if (typeof ing === 'object' && ing !== null) {
                 // Keep structured format for proper ingredient handling, preserving numeric quantities
                 return {
@@ -216,7 +216,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                   isGroupHeader: true
                 });
                 
-                items.forEach(ing => {
+                items.forEach((ing: any) => {
                   if (typeof ing === 'object' && ing !== null) {
                     flatIngredients.push({
                       quantity: ing.quantity !== undefined ? ing.quantity : '',
@@ -287,7 +287,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     let currentSection = '';
     
     // First, try to extract title from the beginning of the text
-    const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
+    const firstNonEmptyLine = lines.find((line: any) => line.trim().length > 0);
     if (firstNonEmptyLine && !firstNonEmptyLine.includes(':') && firstNonEmptyLine.length < 100) {
       title = firstNonEmptyLine.trim();
     }
@@ -409,8 +409,8 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     
     // PRIORITY 3: Only if JSON parsing fails, check markdown format
     // Before checking markdown patterns, eliminate obvious suggestion lists
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
-    const suggestionLines = lines.filter(line => {
+    const lines = text.split('\n').filter((line: any) => line.trim().length > 0);
+    const suggestionLines = lines.filter((line: any) => {
       const trimmed = line.trim();
       return (
         /^\d+\.\s*[\*]*[A-Z][^:]+:\s*/.test(trimmed) ||       // Number + Recipe Name: Description  
@@ -541,8 +541,8 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     }
     
     // Look for multiple recipe names with colons or numbered list pattern
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
-    const recipeLineCount = lines.filter(line => {
+    const lines = text.split('\n').filter((line: any) => line.trim().length > 0);
+    const recipeLineCount = lines.filter((line: any) => {
       const trimmed = line.trim();
       return (
         /^[•\-\*]\s*[\*]*[A-Z][^:]+:\s*/.test(trimmed) ||     // Bullet + Recipe Name: Description
@@ -575,7 +575,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
     const jsonData = extractJsonFromMixedContent(text);
     if (jsonData && jsonData.suggestions && Array.isArray(jsonData.suggestions)) {
       console.log('🔍 Parsing JSON suggestions format with', jsonData.suggestions.length, 'suggestions');
-      return jsonData.suggestions.map(suggestion => ({
+      return jsonData.suggestions.map((suggestion: any) => ({
         name: suggestion.title || suggestion.name || 'Unnamed Recipe',
         description: suggestion.description || 'No description available',
         difficulty: suggestion.difficulty
@@ -731,7 +731,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
           
           // Add ingredients from this group
           if (Array.isArray(groupIngredients)) {
-            groupIngredients.forEach(ing => {
+            groupIngredients.forEach((ing: any) => {
               if (typeof ing === 'object') {
                 ingredientsForSave.push({
                   name: ing.name || '',
@@ -751,7 +751,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
         });
       } else {
         // Convert flat ingredient list to standard format
-        ingredientsForSave = safeIngredients.map(ing => {
+        ingredientsForSave = safeIngredients.map((ing: any) => {
           if (typeof ing === 'object') {
             return {
               name: ing.name || ing.toString(),
@@ -972,7 +972,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
 
     try {
       // Convert messages to conversation history format for AI service
-      const conversationHistory = aiMessages.map(msg => ({
+      const conversationHistory = aiMessages.map((msg: any) => ({
         type: msg.isUser ? 'user' : 'ai',
         content: msg.text
       }));
@@ -1061,7 +1061,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
 
     try {
       // Convert messages to conversation history format for AI service
-      const conversationHistory = aiMessages.map(msg => ({
+      const conversationHistory = aiMessages.map((msg: any) => ({
         type: msg.isUser ? 'user' : 'ai',
         content: msg.text
       }));
@@ -1377,7 +1377,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                                               [
                                                 typeof ingredient.quantity === 'number' && ingredient.quantity > 0 ? ingredient.quantity : '',
                                                 ingredient.unit
-                                              ].filter(p => p).join(' ')
+                                              ].filter((p: any) => p).join(' ')
                                             ) : (
                                               // Try to extract quantity from string
                                               ingredient.match(/^[\d\s\/\-\.]+(?:\s*\w+)?/) ? 
@@ -1432,7 +1432,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                                         {[
                                           typeof ingredient.quantity === 'number' && ingredient.quantity > 0 ? ingredient.quantity : '',
                                           ingredient.unit
-                                        ].filter(p => p).join(' ')}
+                                        ].filter((p: any) => p).join(' ')}
                                       </span>
                                       {' '}
                                       <span>{ingredient.name}</span>
@@ -1604,7 +1604,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
                 </div>
               )}
               
-              {aiMessages.map(message => {
+              {aiMessages.map((message: any) => {
                 const responseType = !message.isUser ? getResponseType(message.text) : null;
                 
                 return (

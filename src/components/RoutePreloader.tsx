@@ -21,13 +21,13 @@ const RoutePreloader = () => {
 
     // Add listeners to all navigation links (both hash and non-hash)
     const links = document.querySelectorAll('a[href^="/crafts"], a[href*="#/crafts"]');
-    links.forEach(link => {
+    links.forEach((link: any) => {
       link.addEventListener('mouseenter', handleMouseEnter);
     });
 
     // Cleanup
     return () => {
-      links.forEach(link => {
+      links.forEach((link: any) => {
         link.removeEventListener('mouseenter', handleMouseEnter);
       });
     };

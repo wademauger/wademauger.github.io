@@ -54,13 +54,13 @@ const recipesSlice = createSlice({
     },
     updateDriveRecipe: (state, action) => {
       const { id, ...updatedData } = action.payload;
-      const index = state.driveRecipes.findIndex(recipe => recipe.id === id);
+      const index = state.driveRecipes.findIndex((recipe: any) => recipe.id === id);
       if (index !== -1) {
         state.driveRecipes[index] = { ...state.driveRecipes[index], ...updatedData };
       }
     },
     removeDriveRecipe: (state, action) => {
-      state.driveRecipes = state.driveRecipes.filter(recipe => recipe.id !== action.payload);
+      state.driveRecipes = state.driveRecipes.filter((recipe: any) => recipe.id !== action.payload);
     },
     setLoading: (state, action) => {
       state.isLoading = action.payload;

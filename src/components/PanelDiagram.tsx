@@ -4,7 +4,7 @@ import { theme } from 'antd'; // Import theme from antd
 const darkenHex = (hex, factor = 0.7) => {
     if (!hex) return hex;
     let h = hex.replace('#', '');
-    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (h.length === 3) h = h.split('').map((c: any) => c + c).join('');
     const r = Math.max(0, Math.min(255, Math.floor(parseInt(h.slice(0,2),16) * factor)));
     const g = Math.max(0, Math.min(255, Math.floor(parseInt(h.slice(2,4),16) * factor)));
     const b = Math.max(0, Math.min(255, Math.floor(parseInt(h.slice(4,6),16) * factor)));
@@ -237,7 +237,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
 
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
-        const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+        const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
         const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
 
         // Compute initial offset to center the row

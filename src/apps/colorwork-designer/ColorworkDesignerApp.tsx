@@ -61,9 +61,9 @@ const ColorworkDesignerApp = () => {
         };
         
         setSavedPatterns(prev => {
-            const existing = prev.find(p => p.id === updatedProject.id);
+            const existing = prev.find((p: any) => p.id === updatedProject.id);
             if (existing) {
-                return prev.map(p => p.id === updatedProject.id ? updatedProject : p);
+                return prev.map((p: any) => p.id === updatedProject.id ? updatedProject : p);
             } else {
                 return [...prev, updatedProject];
             }
@@ -164,7 +164,7 @@ const ColorworkDesignerApp = () => {
                     <Title level={2}>Recent Projects</Title>
                     <Row gutter={[16, 16]}>
                         <Col xs={24}>
-                            {recentProjects.map(project => (
+                            {recentProjects.map((project: any) => (
                                 <Card 
                                     key={project.id}
                                     hoverable
@@ -180,7 +180,7 @@ const ColorworkDesignerApp = () => {
 
                                 </Card>
                             ))}
-                            {savedPatterns.map(pattern => (
+                            {savedPatterns.map((pattern: any) => (
                                 <Card 
                                     key={pattern.id}
                                     hoverable

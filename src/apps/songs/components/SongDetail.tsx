@@ -245,7 +245,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     const chordRegex = /\[(.*?)\]/g;
     const allChords = [];
     
-    lyrics?.forEach(line => {
+    lyrics?.forEach((line: any) => {
       let match;
       while ((match = chordRegex.exec(line)) !== null) {
         if (!allChords.includes(match[1])) {
@@ -331,7 +331,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   // Ensure lyrics is always an array
   const lyricsArray = convertLyricsToArray(song.lyrics);
 
-  const chords = (song.chords || extractChords(lyricsArray)).map(chord =>
+  const chords = (song.chords || extractChords(lyricsArray)).map((chord: any) =>
     localTranspose !== 0 ? transposeChord(chord, localTranspose) : chord
   );
 
@@ -550,7 +550,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const handleSaveWholeSong = async () => {
     setIsSavingWholeSong(true);
     try {
-      const newLyrics = wholeSongText.split('\n').filter(line => line.trim() !== '');
+      const newLyrics = wholeSongText.split('\n').filter((line: any) => line.trim() !== '');
       await onUpdateSong({
         ...song,
         lyrics: newLyrics,
@@ -583,7 +583,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       'token_expired',
       'Request had invalid authentication credentials'
     ];
-    return authErrorPatterns.some(pattern => 
+    return authErrorPatterns.some((pattern: any) => 
       message.toLowerCase().includes(pattern.toLowerCase())
     );
   };
@@ -700,7 +700,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setIsSavingTranspose(true);
     try {
       // Apply transposition to all lyrics inline
-      const transposedLyrics = lyricsArray.map(line => {
+      const transposedLyrics = lyricsArray.map((line: any) => {
         const chordRegex = /\[([^\]]+)\]/g;
         return line.replace(chordRegex, (match, chord) => {
           const transposedChord = transposeChord(chord, localTranspose);
@@ -788,7 +788,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
           </div>
         </div>
         <div className="chord-container">
-          {chords.map(chord => (
+          {chords.map((chord: any) => (
             <div key={chord} className="chord-item" onClick={() => onPinChord(chord)}>
               <ChordChart
                 chord={chord}

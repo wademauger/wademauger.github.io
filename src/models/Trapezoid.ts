@@ -56,7 +56,7 @@ class Trapezoid {
         // returned from recursive calls so the successors array contains only
         // valid Trapezoid instances.
         const successors = Array.isArray(json.successors)
-            ? json.successors.map(s => Trapezoid.fromObject(s)).filter(s => s != null)
+            ? json.successors.map((s: any) => Trapezoid.fromObject(s)).filter((s: any) => s != null)
             : [];
 
         // Parse numeric fields defensively so downstream logic doesn't receive undefined
@@ -103,7 +103,7 @@ class Trapezoid {
 
         // Preserve hem flag and short-row metadata if present
         trap.isHem = !!json.isHem;
-        trap.shortRows = Array.isArray(json.shortRows) ? json.shortRows.map(s => ({ ...s })) : [];
+        trap.shortRows = Array.isArray(json.shortRows) ? json.shortRows.map((s: any) => ({ ...s })) : [];
 
         return trap;
     }
@@ -114,12 +114,12 @@ class Trapezoid {
             baseA: this.baseA,
             baseB: this.baseB,
             baseBHorizontalOffset: this.baseBHorizontalOffset,
-            successors: (this.successors || []).map(s => (typeof s.toJSON === 'function' ? s.toJSON() : s)),
+            successors: (this.successors || []).map((s: any) => (typeof s.toJSON === 'function' ? s.toJSON() : s)),
             finishingSteps: this.finishingSteps || [],
             sizeModifier: this.modificationScale || 1,
             label: this.label || null,
             isHem: !!this.isHem,
-            shortRows: Array.isArray(this.shortRows) ? this.shortRows.map(s => ({ ...s })) : []
+            shortRows: Array.isArray(this.shortRows) ? this.shortRows.map((s: any) => ({ ...s })) : []
         };
     }
 

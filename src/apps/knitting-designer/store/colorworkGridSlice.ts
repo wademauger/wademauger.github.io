@@ -37,7 +37,7 @@ const colorworkGridSlice = createSlice({
       let defaultLabel = label;
       if (!label) {
         // Count existing CC colors to determine the next number
-        const ccColors = Object.values(state.colors).filter(c => c.label.match(/^CC\d+$/));
+        const ccColors = Object.values(state.colors).filter((c: any) => c.label.match(/^CC\d+$/));
         const nextNumber = ccColors.length + 1;
         defaultLabel = `CC${nextNumber}`;
       }
@@ -76,7 +76,7 @@ const colorworkGridSlice = createSlice({
       // Never allow removing the persistent 'no color' token CCX
       if (id === 'CCX') return;
 
-      const remainingColors = Object.keys(state.colors).filter(colorId => colorId !== id);
+      const remainingColors = Object.keys(state.colors).filter((colorId: any) => colorId !== id);
 
       // If we're removing the foreground/active color, switch to the first available color
       if (state.activeColorId === id || state.foregroundColorId === id) {
@@ -125,7 +125,7 @@ const colorworkGridSlice = createSlice({
       const newColors = {};
       
       // Rebuild colors object in the new order
-      colorIds.forEach(id => {
+      colorIds.forEach((id: any) => {
         if (state.colors[id]) {
           newColors[id] = state.colors[id];
         }
@@ -165,7 +165,7 @@ const colorworkGridSlice = createSlice({
       } else {
         // pick first key that isn't the foreground if possible
         const keys = Object.keys(colors);
-        const alt = keys.find(k => k !== state.foregroundColorId) || keys[0];
+        const alt = keys.find((k: any) => k !== state.foregroundColorId) || keys[0];
         state.backgroundColorId = alt;
       }
 
@@ -233,7 +233,7 @@ export const selectColorPalette = (state) => {
   const colors = state.colorworkGrid?.colors || {};
   const palette = {};
   
-  Object.values(colors).forEach(color => {
+  Object.values(colors).forEach((color: any) => {
     palette[color.id] = color.color;
   });
   

@@ -119,7 +119,7 @@ const SwatchViewer = ({
   return (
     <div className={className} style={containerStyle}>
       <div style={gridStyle}>
-        {patternGrid.map(row => 
+        {patternGrid.map((row: any) => 
           row.map(({ row: r, stitch: s, color, key }) => (
             <KnitStitch
               key={key}

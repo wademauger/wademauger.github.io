@@ -30,7 +30,7 @@ export const validatePattern = (pattern) => {
   if (pattern.length === 0) return false;
   
   const width = pattern[0].length;
-  return pattern.every(row => Array.isArray(row) && row.length === width);
+  return pattern.every((row: any) => Array.isArray(row) && row.length === width);
 };
 
 export const createEmptyPattern = (width, height, fillColor = 'CCX') => {

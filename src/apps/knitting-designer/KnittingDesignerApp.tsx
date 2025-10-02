@@ -77,7 +77,7 @@ const KnittingDesignerApp = () => {
         // Handle rectangular selection
         const selections = Array.isArray(selection) ? selection : [selection];
 
-        selections.forEach(sel => {
+        selections.forEach((sel: any) => {
             const offsetCol = sel.endCol - sel.startCol + 2;
 
             for (let row = sel.startRow; row <= sel.endRow; row++) {
@@ -129,7 +129,7 @@ const KnittingDesignerApp = () => {
         // Handle rectangular selection
         const selections = Array.isArray(selection) ? selection : [selection];
 
-        selections.forEach(sel => {
+        selections.forEach((sel: any) => {
             const centerRow = (sel.startRow + sel.endRow) / 2;
             const centerCol = (sel.startCol + sel.endCol) / 2;
 
@@ -229,7 +229,7 @@ const KnittingDesignerApp = () => {
         // Handle rectangular selection
         const selections = Array.isArray(selection) ? selection : [selection];
 
-        selections.forEach(sel => {
+        selections.forEach((sel: any) => {
             const centerRow = (sel.startRow + sel.endRow) / 2;
             const centerCol = (sel.startCol + sel.endCol) / 2;
 
@@ -433,7 +433,7 @@ const KnittingDesignerApp = () => {
                 const selections = Array.isArray(selection) ? selection : [selection];
                 let cellIsInSelection = false;
 
-                selections.forEach(sel => {
+                selections.forEach((sel: any) => {
                     if (row >= sel.startRow && row <= sel.endRow && col >= sel.startCol && col <= sel.endCol) {
                         cellIsInSelection = true;
                     }
@@ -507,7 +507,7 @@ const KnittingDesignerApp = () => {
 
             // Find the bounding box of all selections
             let minRow = Infinity, maxRow = -Infinity, minCol = Infinity, maxCol = -Infinity;
-            selections.forEach(sel => {
+            selections.forEach((sel: any) => {
                 minRow = Math.min(minRow, sel.startRow);
                 maxRow = Math.max(maxRow, sel.endRow);
                 minCol = Math.min(minCol, sel.startCol);
@@ -520,7 +520,7 @@ const KnittingDesignerApp = () => {
                 for (let col = minCol; col <= maxCol; col++) {
                     let isInSelection = false;
                     // Check if this cell is in any of the selected areas
-                    selections.forEach(sel => {
+                    selections.forEach((sel: any) => {
                         if (row >= sel.startRow && row <= sel.endRow && col >= sel.startCol && col <= sel.endCol) {
                             isInSelection = true;
                         }
@@ -566,7 +566,7 @@ const KnittingDesignerApp = () => {
             // Handle rectangular selection areas with individually unselected cells
             const selections = Array.isArray(selection) ? selection : [selection];
 
-            selections.forEach(sel => {
+            selections.forEach((sel: any) => {
                 for (let row = sel.startRow; row <= sel.endRow; row++) {
                     newPattern[row] = [...newPattern[row]];
                     for (let col = sel.startCol; col <= sel.endCol; col++) {
@@ -740,7 +740,7 @@ const KnittingDesignerApp = () => {
                             else if (arr.length > 0) chosenName = arr[0].name;
                         }
 
-                        const chosen = arr.find(p => p.name === chosenName) || arr[0];
+                        const chosen = arr.find((p: any) => p.name === chosenName) || arr[0];
                         if (!chosen) {
                             message.error('No colorwork pattern found in selected library');
                             return;

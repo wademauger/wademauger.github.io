@@ -320,7 +320,7 @@ const SongTabsApp = () => {
       'token_expired',
       'Request had invalid authentication credentials'
     ];
-    return authErrorPatterns.some(pattern =>
+    return authErrorPatterns.some((pattern: any) =>
       message.toLowerCase().includes(pattern.toLowerCase())
     );
   };
@@ -341,7 +341,7 @@ const SongTabsApp = () => {
       const { title, artist, album, lyrics } = newSongData;
 
       // First ensure the artist exists
-      const existingArtist = library.artists?.find(a => a.name === artist);
+      const existingArtist = library.artists?.find((a: any) => a.name === artist);
 
       if (!existingArtist) {
         await dispatch(addArtist({
@@ -351,8 +351,8 @@ const SongTabsApp = () => {
       }
 
       // Then ensure the album exists
-      const artistAfterAdd = library.artists?.find(a => a.name === artist) || existingArtist;
-      const existingAlbum = artistAfterAdd?.albums?.find(a => a.title === album);
+      const artistAfterAdd = library.artists?.find((a: any) => a.name === artist) || existingArtist;
+      const existingAlbum = artistAfterAdd?.albums?.find((a: any) => a.title === album);
 
       if (!existingAlbum) {
         await dispatch(addAlbum({
@@ -379,9 +379,9 @@ const SongTabsApp = () => {
       const finalLibrary = await dispatch(loadLibraryFromDrive()).unwrap();
 
       // Auto-select the new song
-      const newArtist = finalLibrary.artists?.find(a => a.name === artist);
-      const newAlbum = newArtist?.albums?.find(a => a.title === album);
-      const newSong = newAlbum?.songs?.find(s => s.title === title);
+      const newArtist = finalLibrary.artists?.find((a: any) => a.name === artist);
+      const newAlbum = newArtist?.albums?.find((a: any) => a.title === album);
+      const newSong = newAlbum?.songs?.find((s: any) => s.title === title);
 
       if (newSong) {
         handleSongSelect(newSong, artist, album);

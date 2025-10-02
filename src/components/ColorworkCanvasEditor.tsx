@@ -94,7 +94,7 @@ const ColorworkCanvasEditor = ({
     const [collapsedLayers, setCollapsedLayers] = useState(new Set()); // Track collapsed layers
 
     // Canvas rendering functions (adapted from ColorworkPanelDiagram)
-    const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null) => {
+    const renderUnifiedShapeToCanvas = (ctx: any, shape: any, scale: any, xOffset = 0, yOffset = 0, fillColor: any, patternLayers: any = [], gauge: any = null) => {
         // Collect all trapezoid coordinates into one unified path
         const allCoordinates = [];
         collectTrapezoidCoordinates(shape, scale, xOffset, yOffset, allCoordinates);
@@ -102,10 +102,10 @@ const ColorworkCanvasEditor = ({
         if (allCoordinates.length === 0) return;
         
         // Find the bounding box of the entire shape
-        let minX = Math.min(...allCoordinates.map(coord => Math.min(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
-        let maxX = Math.max(...allCoordinates.map(coord => Math.max(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
-        let minY = Math.min(...allCoordinates.map(coord => Math.min(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
-        let maxY = Math.max(...allCoordinates.map(coord => Math.max(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
+        let minX = Math.min(...allCoordinates.map((coord: any) => Math.min(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
+        let maxX = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
+        let minY = Math.min(...allCoordinates.map((coord: any) => Math.min(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
+        let maxY = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
         
         // Create unified clipping path
         ctx.save();
@@ -156,7 +156,7 @@ const ColorworkCanvasEditor = ({
         ctx.lineWidth = 3;
         ctx.lineJoin = 'round';
         
-        allCoordinates.forEach(coord => {
+        allCoordinates.forEach((coord: any) => {
             ctx.beginPath();
             ctx.moveTo(coord.topLeft.x, coord.topLeft.y);
             ctx.lineTo(coord.topRight.x, coord.topRight.y);
@@ -167,7 +167,7 @@ const ColorworkCanvasEditor = ({
         });
     };
 
-    const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coordinates = []) => {
+    const collectTrapezoidCoordinates = (trap: any, scale: any, xOffset = 0, yOffset = 0, coordinates: any = []) => {
         const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
         const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
         const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
@@ -184,7 +184,7 @@ const ColorworkCanvasEditor = ({
         });
 
         if (trap.successors && trap.successors.length > 0) {
-            const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+            const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
             const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
             let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
@@ -247,7 +247,7 @@ const ColorworkCanvasEditor = ({
         // Process layers from bottom to top using reverse array order
         // First item in array = top visual layer, so render it last
         // Last item in array = bottom visual layer, so render it first
-        [...patternLayers].reverse().forEach(layer => {
+        [...patternLayers].reverse().forEach((layer: any) => {
             applyPatternLayerCentered(grid, totalStitches, totalRows, layer, displayWidth, displayHeight);
         });
         
@@ -259,12 +259,12 @@ const ColorworkCanvasEditor = ({
         
         // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
         if (layer.patternType === 'stripes' && layer.patternConfig && layer.patternConfig.colors) {
-            const hasZeroRows = layer.patternConfig.colors.some(c => c.rows === 0);
+            const hasZeroRows = layer.patternConfig.colors.some((c: any) => c.rows === 0);
             if (hasZeroRows) {
                 pattern = generatePattern('stripes', layer.patternConfig, totalRows);
             }
         } else if (layer.patternType === 'vstripes' && layer.patternConfig && layer.patternConfig.colors) {
-            const hasZeroColumns = layer.patternConfig.colors.some(c => c.columns === 0);
+            const hasZeroColumns = layer.patternConfig.colors.some((c: any) => c.columns === 0);
             if (hasZeroColumns) {
                 pattern = generatePattern('vstripes', layer.patternConfig, totalStitches);
             }
@@ -650,7 +650,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         // Render successors recursively
         if (trap.successors && trap.successors.length > 0) {
             const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
-            const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+            const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
             const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
             let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
             const yTop = yOffset;
@@ -695,7 +695,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 
         if (trap.successors && trap.successors.length > 0) {
             // Compute total width of all successors
-            const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scale);
+            const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
             const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
 
             // Compute initial offset to center the row
@@ -930,7 +930,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
     // Pattern layer management
     const handleLayerSettingChange = useCallback((layerId, setting, value) => {
         onLayersChange(prevLayers => 
-            prevLayers.map(layer => {
+            prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     return {
                         ...layer,
@@ -946,7 +946,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         // Convert color to hex string if it's a color object
         const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
         
-        const updatedLayers = patternLayers.map(layer => {
+        const updatedLayers = patternLayers.map((layer: any) => {
             if (layer.id === layerId) {
                 const newColorMapping = {
                     ...layer.settings.colorMapping,
@@ -967,8 +967,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 
     const handleLayerReorder = useCallback((draggedLayerId, targetLayerId) => {
         onLayersChange(prevLayers => {
-            const draggedIndex = prevLayers.findIndex(layer => layer.id === draggedLayerId);
-            const targetIndex = prevLayers.findIndex(layer => layer.id === targetLayerId);
+            const draggedIndex = prevLayers.findIndex((layer: any) => layer.id === draggedLayerId);
+            const targetIndex = prevLayers.findIndex((layer: any) => layer.id === targetLayerId);
             
             if (draggedIndex === -1 || targetIndex === -1) return prevLayers;
             
@@ -1045,12 +1045,12 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
     }, []);
 
     const removePatternLayer = useCallback((layerId) => {
-        onLayersChange(prevLayers => prevLayers.filter(layer => layer.id !== layerId));
+        onLayersChange(prevLayers => prevLayers.filter((layer: any) => layer.id !== layerId));
     }, [onLayersChange]);
 
     const copyPatternLayer = useCallback((layerId) => {
         onLayersChange(prevLayers => {
-            const layerToCopy = prevLayers.find(layer => layer.id === layerId);
+            const layerToCopy = prevLayers.find((layer: any) => layer.id === layerId);
             if (!layerToCopy) return prevLayers;
             
             const copiedLayer = {
@@ -1070,7 +1070,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         const config = availablePatterns[patternKey].defaultConfig;
         const pattern = generatePattern(patternType, config);
         onLayersChange(prevLayers => 
-            prevLayers.map(layer => {
+            prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     return { 
                         ...layer, 
@@ -1090,7 +1090,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 
     const handlePatternConfigChange = useCallback((layerId, newConfig) => {
         onLayersChange(prevLayers => 
-            prevLayers.map(layer => {
+            prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     const newPattern = generatePattern(layer.patternType, newConfig);
                     return {
@@ -1412,8 +1412,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     {(() => {
                                                         const zeroRowIndices = layer.patternConfig.colors
                                                             .map((c, i) => c.rows === 0 ? i : -1)
-                                                            .filter(i => i !== -1);
-                                                        const invalidZeroRows = zeroRowIndices.filter(i => 
+                                                            .filter((i: any) => i !== -1);
+                                                        const invalidZeroRows = zeroRowIndices.filter((i: any) => 
                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
                                                         );
                                                         
@@ -1468,8 +1468,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     {(() => {
                                                         const zeroColumnIndices = layer.patternConfig.colors
                                                             .map((c, i) => c.columns === 0 ? i : -1)
-                                                            .filter(i => i !== -1);
-                                                        const invalidZeroColumns = zeroColumnIndices.filter(i => 
+                                                            .filter((i: any) => i !== -1);
+                                                        const invalidZeroColumns = zeroColumnIndices.filter((i: any) => 
                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
                                                         );
                                                         
@@ -1703,7 +1703,7 @@ function generatePattern(type, config, targetDimension = null) {
         // Calculate pattern height - if targetDimension is provided and we have 0-row colors,
         // use targetDimension, otherwise use sum of explicit row counts
         let patternHeight;
-        const zeroRowColors = colors.filter(c => c.rows === 0);
+        const zeroRowColors = colors.filter((c: any) => c.rows === 0);
         const definedRowsTotal = colors.reduce((sum, c) => sum + (c.rows || 0), 0);
         
         if (zeroRowColors.length > 0 && targetDimension) {
@@ -1746,7 +1746,7 @@ function generatePattern(type, config, targetDimension = null) {
                     }
                 }
             });
-        } else if (colors.every(c => c.rows === 0)) {
+        } else if (colors.every((c: any) => c.rows === 0)) {
             // If all colors have 0 rows, split area evenly
             const rowsPerColor = Math.floor(patternHeight / colors.length);
             let extra = patternHeight - rowsPerColor * colors.length;
@@ -1815,7 +1815,7 @@ function generatePattern(type, config, targetDimension = null) {
         // Calculate pattern width - if targetDimension is provided and we have 0-column colors,
         // use targetDimension, otherwise use sum of explicit column counts
         let patternWidth;
-        const zeroColumnColors = colors.filter(c => c.columns === 0);
+        const zeroColumnColors = colors.filter((c: any) => c.columns === 0);
         const definedColumnsTotal = colors.reduce((sum, c) => sum + (c.columns || 0), 0);
         
         if (zeroColumnColors.length > 0 && targetDimension) {
@@ -1867,7 +1867,7 @@ function generatePattern(type, config, targetDimension = null) {
                     }
                 }
             });
-        } else if (colors.every(c => c.columns === 0)) {
+        } else if (colors.every((c: any) => c.columns === 0)) {
             // If all colors have 0 columns, split area evenly
             const colsPerColor = Math.floor(patternWidth / colors.length);
             let extra = patternWidth - colsPerColor * colors.length;

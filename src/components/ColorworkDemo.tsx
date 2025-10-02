@@ -232,7 +232,7 @@ const ColorworkDemo = () => {
                                             Colors: {Object.keys(currentExampleData.colorwork.colors).length}
                                         </Text>
                                         <div style={{ marginTop: '8px' }}>
-                                            {Object.values(currentExampleData.colorwork.colors).map(color => (
+                                            {Object.values(currentExampleData.colorwork.colors).map((color: any) => (
                                                 <div key={color.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                                                     <div 
                                                         style={{ 

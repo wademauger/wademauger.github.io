@@ -166,7 +166,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     if (instrument === 'ukulele' || instrument === 'bassUkulele' || instrument === 'baritoneUkulele' || instrument === 'bassGuitar') strings = 4;
     
     // Calculate fret window for display
-    const frettedNotes = chordData.frets.filter(fret => fret > 0);
+    const frettedNotes = chordData.frets.filter((fret: any) => fret > 0);
     const minFret = frettedNotes.length > 0 ? Math.min(...frettedNotes) : 1;
     const maxFret = frettedNotes.length > 0 ? Math.max(...frettedNotes) : 5;
     

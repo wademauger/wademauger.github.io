@@ -31,7 +31,7 @@ const RecipeIndex = ({ onAIClick }) => {
           <div key={index}>
             <h2 className="text-2xl font-semibold">{category}</h2>
             <ul>
-              {recipes[category].map(recipe => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
+              {recipes[category].map((recipe: any) => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
             </ul>
           </div>
         );
@@ -43,7 +43,7 @@ const RecipeIndex = ({ onAIClick }) => {
 function Recipes() {
   const { id } = useParams();
   const recipe = Object.keys(recipes).reduce((acc, category) => {
-    const found = recipes[category].find(recipe => recipe.permalink === id);
+    const found = recipes[category].find((recipe: any) => recipe.permalink === id);
     return found ? found : acc;
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
@@ -81,7 +81,7 @@ function Recipes() {
     setShowAIChat(true);
   };
 
-  const scaledIngredients = recipe && Array.isArray(recipe.ingredients) ? recipe.ingredients.map(ingredient => {
+  const scaledIngredients = recipe && Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ingredient: any) => {
     // Handle both object and string ingredient formats
     if (typeof ingredient === 'object' && ingredient !== null && ingredient.quantity !== undefined) {
       const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);

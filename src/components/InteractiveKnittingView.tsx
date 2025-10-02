@@ -308,7 +308,7 @@ const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
     }
 
     const rows = combinedPattern.stitchPlan.rows;
-    const maxStitches = Math.max(...rows.map(row => row.leftStitchesInWork + row.rightStitchesInWork));
+    const maxStitches = Math.max(...rows.map((row: any) => row.leftStitchesInWork + row.rightStitchesInWork));
     
     return (
         <div style={{ maxWidth: '400px', margin: '0 auto' }}>

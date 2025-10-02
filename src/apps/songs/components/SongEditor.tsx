@@ -134,7 +134,7 @@ const SongEditor = ({
     }
     
     const searchTerm = songAlbum.toLowerCase().trim();
-    return spotifyAlbums.filter(album => 
+    return spotifyAlbums.filter((album: any) => 
       album.toLowerCase().includes(searchTerm)
     );
   }, [spotifyAlbums, songAlbum]);
@@ -146,7 +146,7 @@ const SongEditor = ({
     }
     
     const searchTerm = songArtist.toLowerCase().trim();
-    return spotifyArtists.filter(artist => 
+    return spotifyArtists.filter((artist: any) => 
       artist.toLowerCase().includes(searchTerm)
     );
   }, [spotifyArtists, songArtist]);
@@ -154,12 +154,12 @@ const SongEditor = ({
   // Get existing artists from library (filtered and memoized)
   const filteredLibraryArtists = useMemo(() => {
     if (!library?.artists) return [];
-    let artists = library.artists.map(artist => artist.name).sort();
+    let artists = library.artists.map((artist: any) => artist.name).sort();
     
     // Filter based on current artist input if there is one
     if (songArtist && songArtist.trim() !== '') {
       const searchTerm = songArtist.toLowerCase().trim();
-      artists = artists.filter(artist => 
+      artists = artists.filter((artist: any) => 
         artist.toLowerCase().includes(searchTerm)
       );
     }
@@ -170,15 +170,15 @@ const SongEditor = ({
   // Get existing albums for selected artist from library (filtered and memoized)
   const filteredLibraryAlbums = useMemo(() => {
     if (!library?.artists || !songArtist) return [];
-    const artist = library.artists.find(a => a.name === songArtist);
+    const artist = library.artists.find((a: any) => a.name === songArtist);
     if (!artist?.albums) return [];
     
-    let albums = artist.albums.map(album => album.title).sort();
+    let albums = artist.albums.map((album: any) => album.title).sort();
     
     // Filter based on current album input if there is one
     if (songAlbum && songAlbum.trim() !== '') {
       const searchTerm = songAlbum.toLowerCase().trim();
-      albums = albums.filter(album => 
+      albums = albums.filter((album: any) => 
         album.toLowerCase().includes(searchTerm)
       );
     }
@@ -190,13 +190,13 @@ const SongEditor = ({
   const existingSongTitles = useMemo(() => {
     if (!library?.artists || !songArtist || !songAlbum) return [];
     
-    const artist = library.artists.find(a => a.name === songArtist);
+    const artist = library.artists.find((a: any) => a.name === songArtist);
     if (!artist?.albums) return [];
     
-    const album = artist.albums.find(a => a.title === songAlbum);
+    const album = artist.albums.find((a: any) => a.title === songAlbum);
     if (!album?.songs) return [];
     
-    return album.songs.map(song => song.title.toLowerCase().trim());
+    return album.songs.map((song: any) => song.title.toLowerCase().trim());
   }, [library, songArtist, songAlbum]);
 
   // Get deduplicated and filtered Spotify tracks (memoized)
@@ -204,14 +204,14 @@ const SongEditor = ({
     if (!spotifyTracks || spotifyTracks.length === 0) return [];
     
     // Filter out Spotify tracks that already exist in the library
-    let filtered = spotifyTracks.filter(track => 
+    let filtered = spotifyTracks.filter((track: any) => 
       !existingSongTitles.includes(track.toLowerCase().trim())
     );
     
     // Also filter based on current song title input if there is one
     if (songTitle && songTitle.trim() !== '') {
       const searchTerm = songTitle.toLowerCase().trim();
-      filtered = filtered.filter(track => 
+      filtered = filtered.filter((track: any) => 
         track.toLowerCase().includes(searchTerm)
       );
     }
@@ -223,18 +223,18 @@ const SongEditor = ({
   const filteredLibrarySongs = useMemo(() => {
     if (!library?.artists || !songArtist || !songAlbum) return [];
     
-    const artist = library.artists.find(a => a.name === songArtist);
+    const artist = library.artists.find((a: any) => a.name === songArtist);
     if (!artist?.albums) return [];
     
-    const album = artist.albums.find(a => a.title === songAlbum);
+    const album = artist.albums.find((a: any) => a.title === songAlbum);
     if (!album?.songs) return [];
     
-    let songs = album.songs.map(song => song.title).sort();
+    let songs = album.songs.map((song: any) => song.title).sort();
     
     // Filter based on current song title input if there is one
     if (songTitle && songTitle.trim() !== '') {
       const searchTerm = songTitle.toLowerCase().trim();
-      songs = songs.filter(title => 
+      songs = songs.filter((title: any) => 
         title.toLowerCase().includes(searchTerm)
       );
     }
@@ -249,7 +249,7 @@ const SongEditor = ({
       // Remove blank lines
       const cleaned = converted
         .split('\n')
-        .filter(line => line.trim() !== '')
+        .filter((line: any) => line.trim() !== '')
         .join('\n');
       setEditedLyrics(cleaned);
       setOriginalLyrics(''); // Clear the conversion input

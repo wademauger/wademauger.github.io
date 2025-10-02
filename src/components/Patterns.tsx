@@ -127,9 +127,9 @@ function KnittingPatterns() {
   const [gauge, setGauge] = useState({ stitches: 19, rows: 30 }); // Add state for gauge
   const [selectedMotif, setSelectedMotif] = useState(null); // Add state for selected visual motif
 
-  const pattern = garments.find(pattern => pattern.permalink === patternId);
+  const pattern = garments.find((pattern: any) => pattern.permalink === patternId);
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
-    .map(panelId => {
+    .map((panelId: any) => {
       const panelData = pattern.shapes[panelId];
       const trapezoid = Trapezoid.fromObject(panelData);
       const panel = new Panel(trapezoid, new Gauge(gauge.stitches, gauge.rows), sizeModifier, selectedMotif); // Pass gauge, sizeModifier, and selectedMotif to Panel
@@ -242,7 +242,7 @@ function KnittingPatterns() {
                         onChange={handleMotifChange}
                         options={[
                           { label: 'None', value: null },
-                          ...Object.keys(visualMotifs).map(key => ({ label: key, value: key }))
+                          ...Object.keys(visualMotifs).map((key: any) => ({ label: key, value: key }))
                         ]}
                       />
                     </span>

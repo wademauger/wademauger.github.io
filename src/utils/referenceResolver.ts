@@ -25,7 +25,7 @@ async function resolveEntryReference({ fileId, namespace, entryId, loader, libra
 
   const ns = (lib.namespaces && lib.namespaces[namespace]) || (lib[namespace]) || [];
   if (!Array.isArray(ns)) throw new Error(`Namespace ${namespace} not found or invalid`);
-  const entry = ns.find(e => e && (e.id === entryId || e.name === entryId));
+  const entry = ns.find((e: any) => e && (e.id === entryId || e.name === entryId));
   if (!entry) throw new Error(`Entry ${entryId} not found in ${namespace}`);
   return { entry, library: lib };
 }

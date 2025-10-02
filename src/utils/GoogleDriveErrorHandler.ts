@@ -252,7 +252,7 @@ export class GoogleDriveErrorHandler {
     };
 
     // Group errors by type
-    errors.forEach(error => {
+    errors.forEach((error: any) => {
       if (!report.errorsByType[error.type]) {
         report.errorsByType[error.type] = 0;
       }

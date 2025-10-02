@@ -386,7 +386,7 @@ const CombinedView = ({
                     <Col xs={24} lg={12}>
                         <Card title="Color Legend" size="small">
                             <div className="color-legend">
-                                {combinedPattern.getColorsUsed().map(color => (
+                                {combinedPattern.getColorsUsed().map((color: any) => (
                                     <div key={color.id} className="legend-item">
                                         <div
                                             className="color-swatch"
@@ -432,7 +432,7 @@ const CombinedView = ({
                             <div>
                                 <Text strong>Yarns:</Text>
                                 <ul>
-                                    {combinedPattern.getColorsUsed().map(color => (
+                                    {combinedPattern.getColorsUsed().map((color: any) => (
                                         <li key={color.id}>
                                             {color.label} ({color.color})
                                         </li>
@@ -480,7 +480,7 @@ const CombinedView = ({
     const downloadJSON = () => {
         const data = {
             combinedPattern: combinedPattern.toJSON(),
-            instructions: instructions.map(i => i.toJSON()),
+            instructions: instructions.map((i: any) => i.toJSON()),
             metadata: {
                 exported: new Date().toISOString(),
                 version: '1.0'

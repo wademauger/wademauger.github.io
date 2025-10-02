@@ -61,7 +61,7 @@ const PatternDimensionVisualization = ({
             dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
 
             if (trap.successors && trap.successors.length > 0) {
-                const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scaleParam);
+                const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scaleParam);
                 const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
                 let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
@@ -104,7 +104,7 @@ const PatternDimensionVisualization = ({
             dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
 
             if (trap.successors && trap.successors.length > 0) {
-                const successorWidths = trap.successors.map(s => Math.max(s.baseA, s.baseB) * scaleParam);
+                const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scaleParam);
                 const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
                 let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 

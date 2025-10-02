@@ -585,8 +585,8 @@ class GoogleDriveServiceTester {
         console.log('\\n📊 Test Summary');
         console.log('================');
 
-        const passed = this.testResults.filter(r => r.passed).length;
-        const failed = this.testResults.filter(r => !r.passed).length;
+        const passed = this.testResults.filter((r: any) => r.passed).length;
+        const failed = this.testResults.filter((r: any) => !r.passed).length;
         const total = this.testResults.length;
 
         console.log(`Total tests: ${total}`);
@@ -597,8 +597,8 @@ class GoogleDriveServiceTester {
         if (failed > 0) {
             console.log('\\n❌ Failed Tests:');
             this.testResults
-                .filter(r => !r.passed)
-                .forEach(r => console.log(`  - ${r.test}: ${r.error}`));
+                .filter((r: any) => !r.passed)
+                .forEach((r: any) => console.log(`  - ${r.test}: ${r.error}`));
         }
 
         console.log('\\n🔍 Manual Tests Required:');

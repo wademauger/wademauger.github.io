@@ -47,9 +47,9 @@ export const updateSong = createAsyncThunk(
           const targetTitle = newSongTitle || songTitle;
 
           // First, get the current song data
-          const artist = library.artists.find(a => a.name === artistName);
-          const album = artist?.albums.find(a => a.title === albumTitle);
-          const song = album?.songs.find(s => s.title === songTitle);
+          const artist = library.artists.find((a: any) => a.name === artistName);
+          const album = artist?.albums.find((a: any) => a.title === albumTitle);
+          const song = album?.songs.find((s: any) => s.title === songTitle);
 
           if (!song) {
             throw new Error('Original song not found');
@@ -331,13 +331,13 @@ const normalizeSong = (song) => {
 
 // Helper function to find and return song with normalized structure
 const findSongWithArtistAlbum = (library, artistName, albumTitle, songTitle) => {
-  const artist = library.artists.find(a => a.name === artistName);
+  const artist = library.artists.find((a: any) => a.name === artistName);
   if (!artist) return null;
 
-  const album = artist.albums.find(a => a.title === albumTitle);
+  const album = artist.albums.find((a: any) => a.title === albumTitle);
   if (!album) return null;
 
-  const song = album.songs.find(s => s.title === songTitle);
+  const song = album.songs.find((s: any) => s.title === songTitle);
   if (!song) return null;
 
   return {
@@ -361,9 +361,9 @@ const songsSlice = createSlice({
       // Normalize all albums and songs in the library
       const normalizedLibrary = {
         ...action.payload,
-        artists: action.payload.artists.map(artist => ({
+        artists: action.payload.artists.map((artist: any) => ({
           ...artist,
-          albums: artist.albums.map(album => ({
+          albums: artist.albums.map((album: any) => ({
             ...normalizeAlbum(album),
             songs: album.songs.map(normalizeSong)
           }))
@@ -502,9 +502,9 @@ const songsSlice = createSlice({
       // Apply normalization like setLibrary does
       const normalizedLibrary = {
         ...mockLibrary,
-        artists: mockLibrary.artists.map(artist => ({
+        artists: mockLibrary.artists.map((artist: any) => ({
           ...artist,
-          albums: artist.albums.map(album => ({
+          albums: artist.albums.map((album: any) => ({
             ...normalizeAlbum(album),
             songs: album.songs.map(normalizeSong)
           }))
@@ -542,13 +542,13 @@ const songsSlice = createSlice({
       } = action.payload;
 
       // Find the original song
-      const artist = state.library.artists.find(a => a.name === artistName);
+      const artist = state.library.artists.find((a: any) => a.name === artistName);
       if (!artist) return;
 
-      const album = artist.albums.find(a => a.title === albumTitle);
+      const album = artist.albums.find((a: any) => a.title === albumTitle);
       if (!album) return;
 
-      const songIndex = album.songs.findIndex(s => s.title === songTitle);
+      const songIndex = album.songs.findIndex((s: any) => s.title === songTitle);
       if (songIndex === -1) return;
 
       const currentSong = album.songs[songIndex];
@@ -560,14 +560,14 @@ const songsSlice = createSlice({
         const targetTitle = newSongTitle || songTitle;
 
         // Find or create target artist
-        let targetArtistObj = state.library.artists.find(a => a.name === targetArtist);
+        let targetArtistObj = state.library.artists.find((a: any) => a.name === targetArtist);
         if (!targetArtistObj) {
           targetArtistObj = { name: targetArtist, albums: [] };
           state.library.artists.push(targetArtistObj);
         }
 
         // Find or create target album
-        let targetAlbumObj = targetArtistObj.albums.find(a => a.title === targetAlbum);
+        let targetAlbumObj = targetArtistObj.albums.find((a: any) => a.title === targetAlbum);
         if (!targetAlbumObj) {
           targetAlbumObj = normalizeAlbum({ title: targetAlbum, songs: [] });
           targetArtistObj.albums.push(targetAlbumObj);
@@ -587,13 +587,13 @@ const songsSlice = createSlice({
 
         // Clean up empty albums/artists
         if (album.songs.length === 0) {
-          const albumIndex = artist.albums.findIndex(a => a.title === albumTitle);
+          const albumIndex = artist.albums.findIndex((a: any) => a.title === albumTitle);
           if (albumIndex !== -1) {
             artist.albums.splice(albumIndex, 1);
           }
         }
         if (artist.albums.length === 0) {
-          const artistIndex = state.library.artists.findIndex(a => a.name === artistName);
+          const artistIndex = state.library.artists.findIndex((a: any) => a.name === artistName);
           if (artistIndex !== -1) {
             state.library.artists.splice(artistIndex, 1);
           }
@@ -639,14 +639,14 @@ const songsSlice = createSlice({
       const { artistName, albumTitle, songData } = action.payload;
 
       // Find or create artist
-      let artist = state.library.artists.find(a => a.name === artistName);
+      let artist = state.library.artists.find((a: any) => a.name === artistName);
       if (!artist) {
         artist = { name: artistName, albums: [] };
         state.library.artists.push(artist);
       }
 
       // Find or create album
-      let album = artist.albums.find(a => a.title === albumTitle);
+      let album = artist.albums.find((a: any) => a.title === albumTitle);
       if (!album) {
         album = normalizeAlbum({
           title: albumTitle,
@@ -676,9 +676,9 @@ const songsSlice = createSlice({
         // Normalize the library from Google Drive
         const normalizedLibrary = {
           ...action.payload,
-          artists: action.payload.artists.map(artist => ({
+          artists: action.payload.artists.map((artist: any) => ({
             ...artist,
-            albums: artist.albums.map(album => ({
+            albums: artist.albums.map((album: any) => ({
               ...normalizeAlbum(album),
               songs: album.songs.map(normalizeSong)
             }))
@@ -756,9 +756,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -795,9 +795,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -824,21 +824,21 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local delete
-          const artist = state.library.artists.find(a => a.name === artistName);
+          const artist = state.library.artists.find((a: any) => a.name === artistName);
           if (artist) {
-            const album = artist.albums.find(a => a.title === albumTitle);
+            const album = artist.albums.find((a: any) => a.title === albumTitle);
             if (album) {
               // Remove song locally
-              album.songs = album.songs.filter(s => s.title !== songTitle);
+              album.songs = album.songs.filter((s: any) => s.title !== songTitle);
             }
           }
         } else {
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -870,7 +870,7 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local add
-          const existingArtist = state.library.artists.find(a => a.name === artistName);
+          const existingArtist = state.library.artists.find((a: any) => a.name === artistName);
           if (!existingArtist) {
             state.library.artists.push({ name: artistName, albums: [] });
           }
@@ -878,9 +878,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -904,13 +904,13 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local add
-          let artist = state.library.artists.find(a => a.name === artistName);
+          let artist = state.library.artists.find((a: any) => a.name === artistName);
           if (!artist) {
             artist = { name: artistName, albums: [] };
             state.library.artists.push(artist);
           }
 
-          const existingAlbum = artist.albums.find(a => a.title === albumTitle);
+          const existingAlbum = artist.albums.find((a: any) => a.title === albumTitle);
           if (!existingAlbum) {
             artist.albums.push(normalizeAlbum({ title: albumTitle, songs: [] }));
           }
@@ -918,9 +918,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -944,7 +944,7 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local update - find and rename artist
-          const artist = state.library.artists.find(a => a.name === oldArtistName);
+          const artist = state.library.artists.find((a: any) => a.name === oldArtistName);
           if (artist) {
             artist.name = newArtistName;
           }
@@ -952,9 +952,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -978,9 +978,9 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local update - find and rename album
-          const artist = state.library.artists.find(a => a.name === artistName);
+          const artist = state.library.artists.find((a: any) => a.name === artistName);
           if (artist) {
-            const album = artist.albums.find(a => a.title === oldAlbumTitle);
+            const album = artist.albums.find((a: any) => a.title === oldAlbumTitle);
             if (album) {
               album.title = newAlbumTitle;
             }
@@ -989,9 +989,9 @@ const songsSlice = createSlice({
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -1015,14 +1015,14 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local delete
-          state.library.artists = state.library.artists.filter(a => a.name !== artistName);
+          state.library.artists = state.library.artists.filter((a: any) => a.name !== artistName);
         } else {
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))
@@ -1051,17 +1051,17 @@ const songsSlice = createSlice({
 
         if (isLocal) {
           // Handle local delete
-          const artist = state.library.artists.find(a => a.name === artistName);
+          const artist = state.library.artists.find((a: any) => a.name === artistName);
           if (artist) {
-            artist.albums = artist.albums.filter(a => a.title !== albumTitle);
+            artist.albums = artist.albums.filter((a: any) => a.title !== albumTitle);
           }
         } else {
           // Update with library from Google Drive
           const normalizedLibrary = {
             ...library,
-            artists: library.artists.map(artist => ({
+            artists: library.artists.map((artist: any) => ({
               ...artist,
-              albums: artist.albums.map(album => ({
+              albums: artist.albums.map((album: any) => ({
                 ...normalizeAlbum(album),
                 songs: album.songs.map(normalizeSong)
               }))

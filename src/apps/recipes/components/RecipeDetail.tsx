@@ -286,7 +286,7 @@ const SortableStep = ({
   
   // Detect if the current edit value contains multiple instruction lines
   const normalizedEditValue = editValue ? editValue.replace(/\r\n/g, '\n').replace(/\r/g, '\n') : '';
-  const editValueLines = normalizedEditValue.split('\n').filter(line => line.trim().length > 0);
+  const editValueLines = normalizedEditValue.split('\n').filter((line: any) => line.trim().length > 0);
   const isMultilineInstructions = editValueLines.length > 1;
   
   const {
@@ -984,8 +984,8 @@ const RecipeDetail = ({
     
     // Split by lines and filter out empty lines and markdown elements
     const lines = normalizedText.split('\n')
-      .map(line => line.trim())
-      .filter(line => {
+      .map((line: any) => line.trim())
+      .filter((line: any) => {
         // Filter out empty lines, markdown headers, and other non-instruction content
         return line.length > 0 && 
                !line.startsWith('#') && 

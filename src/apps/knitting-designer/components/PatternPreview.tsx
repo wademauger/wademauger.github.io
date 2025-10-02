@@ -15,8 +15,8 @@ const PatternPreview = ({ pattern, colors, gridSize }) => {
     const colorCounts = {};
     let totalStitches = 0;
 
-    pattern.forEach(row => {
-      row.forEach(stitch => {
+    pattern.forEach((row: any) => {
+      row.forEach((stitch: any) => {
         colorCounts[stitch] = (colorCounts[stitch] || 0) + 1;
         totalStitches++;
       });

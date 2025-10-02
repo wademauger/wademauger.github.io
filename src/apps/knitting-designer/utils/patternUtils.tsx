@@ -84,7 +84,7 @@ export const copySelection = (pattern, selection) => {
  * @returns {Array<Array<string>>} Updated pattern
  */
 export const pasteSelection = (pattern, clipboardData, startRow, startCol) => {
-  const newPattern = pattern.map(row => [...row]);
+  const newPattern = pattern.map((row: any) => [...row]);
   
   for (let r = 0; r < clipboardData.length; r++) {
     for (let c = 0; c < clipboardData[r].length; c++) {
@@ -107,7 +107,7 @@ export const pasteSelection = (pattern, clipboardData, startRow, startCol) => {
  * @returns {Array<Array<string>>} Updated pattern
  */
 export const fillSelection = (pattern, selection, color) => {
-  const newPattern = pattern.map(row => [...row]);
+  const newPattern = pattern.map((row: any) => [...row]);
   
   for (let row = selection.startRow; row <= selection.endRow; row++) {
     for (let col = selection.startCol; col <= selection.endCol; col++) {
@@ -127,15 +127,15 @@ export const calculatePatternStats = (pattern) => {
   const colorCounts = {};
   let totalStitches = 0;
   
-  pattern.forEach(row => {
-    row.forEach(stitch => {
+  pattern.forEach((row: any) => {
+    row.forEach((stitch: any) => {
       colorCounts[stitch] = (colorCounts[stitch] || 0) + 1;
       totalStitches++;
     });
   });
   
   const colorPercentages = {};
-  Object.keys(colorCounts).forEach(color => {
+  Object.keys(colorCounts).forEach((color: any) => {
     colorPercentages[color] = Math.round((colorCounts[color] / totalStitches) * 100);
   });
   
@@ -165,11 +165,11 @@ export const exportPattern = (pattern, colors, format = 'json') => {
       }, null, 2);
       
     case 'csv':
-      return pattern.map(row => row.join(',')).join('\n');
+      return pattern.map((row: any) => row.join(',')).join('\n');
       
     case 'txt':
-      return pattern.map(row => 
-        row.map(stitch => stitch.padEnd(4)).join('')
+      return pattern.map((row: any) => 
+        row.map((stitch: any) => stitch.padEnd(4)).join('')
       ).join('\n');
       
     default:

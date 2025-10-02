@@ -312,7 +312,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     await user.type(albumInput, 'My Test Album');
 
     // Submit the form
-    const submitButton = screen.getAllByText('Add Song').find(button => 
+    const submitButton = screen.getAllByText('Add Song').find((button: any) => 
       button.closest('button')?.type === 'button'
     );
     await user.click(submitButton);
@@ -357,7 +357,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     await user.type(albumInput, 'My Test Album');
 
     // Submit the form
-    const submitButton = screen.getAllByText('Add Song').find(button => 
+    const submitButton = screen.getAllByText('Add Song').find((button: any) => 
       button.closest('button')?.type === 'button'
     );
     await user.click(submitButton);
@@ -485,7 +485,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     await user.type(albumInput, 'My Test Album');
 
     // Submit the form
-    const submitButton = screen.getAllByText('Add Song').find(button => 
+    const submitButton = screen.getAllByText('Add Song').find((button: any) => 
       button.closest('button')?.type === 'button'
     );
     await user.click(submitButton);
@@ -544,7 +544,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     await user.type(albumInput, 'My Test Album');
 
     // Submit the form
-    const submitButton = screen.getAllByText('Add Song').find(button => 
+    const submitButton = screen.getAllByText('Add Song').find((button: any) => 
       button.closest('button')?.type === 'button'
     );
     await user.click(submitButton);

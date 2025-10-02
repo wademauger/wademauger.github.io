@@ -73,7 +73,7 @@ const ExampleRecipesAppIntegration = () => {
           <p>No recipes yet. Create your first recipe!</p>
         ) : (
           <div>
-            {recipes.map(recipe => (
+            {recipes.map((recipe: any) => (
               <div key={recipe.id} style={{ 
                 border: '1px solid #ddd', 
                 padding: '16px', 

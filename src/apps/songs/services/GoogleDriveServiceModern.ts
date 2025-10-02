@@ -831,7 +831,7 @@ class GoogleDriveServiceModern {
   }
 
   clearSession() {
-    Object.values(this.SESSION_KEYS).forEach(key => {
+    Object.values(this.SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
     
@@ -1201,7 +1201,7 @@ class GoogleDriveServiceModern {
           let parsed = body;
           if (typeof body === 'string') parsed = JSON.parse(body);
           const parsedPanels = parsed && parsed.panels ? Object.keys(parsed.panels) : [];
-          const parsedColorwork = parsed && parsed.colorworkPatterns ? (Array.isArray(parsed.colorworkPatterns) ? parsed.colorworkPatterns.map(p => p.name || p.id).slice(0,10) : []) : [];
+          const parsedColorwork = parsed && parsed.colorworkPatterns ? (Array.isArray(parsed.colorworkPatterns) ? parsed.colorworkPatterns.map((p: any) => p.name || p.id).slice(0,10) : []) : [];
           console.log('GoogleDriveServiceModern: verification parsed panels keys count=', parsedPanels.length, 'keysPreview=', parsedPanels.slice(0,10));
           console.log('GoogleDriveServiceModern: verification parsed colorwork count=', parsedColorwork.length, 'previewNames=', parsedColorwork);
         } catch (pvErr: unknown) {
@@ -1385,7 +1385,7 @@ class GoogleDriveServiceModern {
             Object.keys(parsed.namespaces).forEach((ns) => {
               const arr = parsed.namespaces[ns];
               if (Array.isArray(arr)) {
-                preview[ns] = arr.slice(0, 3).map(e => ({ id: e && e.id, name: e && (e.name || e.title || '') }));
+                preview[ns] = arr.slice(0, 3).map((e: any) => ({ id: e && e.id, name: e && (e.name || e.title || '') }));
               }
             });
           }
@@ -1450,7 +1450,7 @@ class GoogleDriveServiceModern {
       if (!Array.isArray(libObj.namespaces[namespace])) libObj.namespaces[namespace] = [];
 
       if (replaceExisting && entry && (entry.id || entry.name)) {
-        const idx = libObj.namespaces[namespace].findIndex(e => e.id === entry.id || e.name === entry.name);
+        const idx = libObj.namespaces[namespace].findIndex((e: any) => e.id === entry.id || e.name === entry.name);
         if (idx !== -1) {
           libObj.namespaces[namespace][idx] = entry;
         } else {
@@ -1522,7 +1522,7 @@ class GoogleDriveServiceModern {
       }
     }
 
-    const existingArtist = libraryData.artists.find(a => a.name === artistName);
+    const existingArtist = libraryData.artists.find((a: any) => a.name === artistName);
     if (existingArtist) {
       throw new Error('Artist already exists');
     }
@@ -1559,12 +1559,12 @@ class GoogleDriveServiceModern {
       }
     }
 
-    const artist = libraryData.artists.find(a => a.name === artistName);
+    const artist = libraryData.artists.find((a: any) => a.name === artistName);
     if (!artist) {
       throw new Error('Artist not found');
     }
 
-    const existingAlbum = artist.albums.find(a => a.title === albumTitle);
+    const existingAlbum = artist.albums.find((a: any) => a.title === albumTitle);
     if (existingAlbum) {
       throw new Error('Album already exists for this artist');
     }
@@ -1602,7 +1602,7 @@ class GoogleDriveServiceModern {
     }
 
     // Find or create artist
-    let artist = libraryData.artists.find(a => a.name === artistName);
+    let artist = libraryData.artists.find((a: any) => a.name === artistName);
     if (!artist) {
       console.log(`Artist '${artistName}' not found, creating new artist`);
       artist = {
@@ -1613,7 +1613,7 @@ class GoogleDriveServiceModern {
     }
 
     // Find or create album
-    let album = artist.albums.find(a => a.title === albumTitle);
+    let album = artist.albums.find((a: any) => a.title === albumTitle);
     if (!album) {
       console.log(`Album '${albumTitle}' not found for artist '${artistName}', creating new album`);
       album = {
@@ -1660,17 +1660,17 @@ class GoogleDriveServiceModern {
       }
     }
 
-    const artist = libraryData.artists.find(a => a.name === artistName);
+    const artist = libraryData.artists.find((a: any) => a.name === artistName);
     if (!artist) {
       throw new Error('Artist not found');
     }
 
-    const album = artist.albums.find(a => a.title === albumTitle);
+    const album = artist.albums.find((a: any) => a.title === albumTitle);
     if (!album) {
       throw new Error('Album not found');
     }
 
-    const song = album.songs.find(s => s.title === songTitle);
+    const song = album.songs.find((s: any) => s.title === songTitle);
     if (!song) {
       throw new Error('Song not found');
     }
@@ -1709,17 +1709,17 @@ class GoogleDriveServiceModern {
       }
     }
 
-    const artist = libraryData.artists.find(a => a.name === artistName);
+    const artist = libraryData.artists.find((a: any) => a.name === artistName);
     if (!artist) {
       throw new Error('Artist not found');
     }
 
-    const album = artist.albums.find(a => a.title === albumTitle);
+    const album = artist.albums.find((a: any) => a.title === albumTitle);
     if (!album) {
       throw new Error('Album not found');
     }
 
-    const songIndex = album.songs.findIndex(s => s.title === songTitle);
+    const songIndex = album.songs.findIndex((s: any) => s.title === songTitle);
     if (songIndex === -1) {
       throw new Error('Song not found');
     }
@@ -1729,13 +1729,13 @@ class GoogleDriveServiceModern {
 
     // If the album has no more songs, remove the album
     if (album.songs.length === 0) {
-      const albumIndex = artist.albums.findIndex(a => a.title === albumTitle);
+      const albumIndex = artist.albums.findIndex((a: any) => a.title === albumTitle);
       artist.albums.splice(albumIndex, 1);
     }
 
     // If the artist has no more albums, remove the artist
     if (artist.albums.length === 0) {
-      const artistIndex = libraryData.artists.findIndex(a => a.name === artistName);
+      const artistIndex = libraryData.artists.findIndex((a: any) => a.name === artistName);
       libraryData.artists.splice(artistIndex, 1);
     }
 
@@ -1873,7 +1873,7 @@ class GoogleDriveServiceModern {
       ];
 
       // Add all discovered folders
-      folders.forEach(folder => {
+      folders.forEach((folder: any) => {
         options.push({
           value: folder.fullPath,
           label: folder.fullPath,
@@ -2384,7 +2384,7 @@ class GoogleDriveServiceModern {
       'authorization required'
     ];
     
-    return authErrorPatterns.some(pattern => 
+    return authErrorPatterns.some((pattern: any) => 
       message.toLowerCase().includes(pattern.toLowerCase())
     );
   }

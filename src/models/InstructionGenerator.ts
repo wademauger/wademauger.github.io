@@ -76,7 +76,7 @@ export class InstructionGenerator {
      */
     formatCompactInstructions(instructions) {
         // Return only key instructions, skip redundant details
-        return instructions.filter(instruction => 
+        return instructions.filter((instruction: any) => 
             instruction.hasShaping() || 
             instruction.hasColorwork() || 
             instruction.row % 5 === 1 // Every 5th row for reference
@@ -88,7 +88,7 @@ export class InstructionGenerator {
      */
     formatVisualInstructions(instructions) {
         // Return instructions with visual charts
-        return instructions.filter(instruction => 
+        return instructions.filter((instruction: any) => 
             instruction.visualChart
         ).slice(0, 5); // Limit for preview
     }
@@ -236,7 +236,7 @@ export class InstructionGenerator {
     formatColorworkDescription(colorSequence, colors) {
         if (colorSequence.length === 0) return 'No colorwork';
         
-        const parts = colorSequence.map(segment => {
+        const parts = colorSequence.map((segment: any) => {
             const color = colors[segment.colorId];
             const colorLabel = color ? color.label : segment.colorId;
             return `${segment.stitchCount} ${colorLabel}`;

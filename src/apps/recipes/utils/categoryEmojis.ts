@@ -113,5 +113,5 @@ export const getCategoryEmoji = (categoryName) => {
  * @returns {string[]} Array of category names
  */
 export const getAvailableCategories = () => {
-  return Object.keys(RECIPE_CATEGORY_EMOJIS).filter(key => key !== 'default');
+  return Object.keys(RECIPE_CATEGORY_EMOJIS).filter((key: any) => key !== 'default');
 };

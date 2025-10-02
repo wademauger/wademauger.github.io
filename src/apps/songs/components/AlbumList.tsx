@@ -4,7 +4,7 @@ const AlbumList = ({ albums, selectedAlbum, onSelectAlbum }) => {
   return (
     <div className="album-list">
       <ul>
-        {albums.map(album => {
+        {albums.map((album: any) => {
           const className = [
             selectedAlbum?.title === album.title ? 'active' : '',
             album.isOptimistic ? 'optimistic' : ''

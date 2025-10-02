@@ -366,7 +366,7 @@ class GoogleDriveService {
       const library = await this.loadLibrary();
       
       // Check if artist already exists
-      if (library.artists.some(artist => artist.name === artistName)) {
+      if (library.artists.some((artist: any) => artist.name === artistName)) {
         throw new Error(`Artist "${artistName}" already exists`);
       }
       
@@ -398,13 +398,13 @@ class GoogleDriveService {
       const library = await this.loadLibrary();
       
       // Find artist
-      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      const artistIndex = library.artists.findIndex((artist: any) => artist.name === artistName);
       if (artistIndex === -1) {
         throw new Error(`Artist "${artistName}" not found`);
       }
       
       // Check if album already exists
-      if (library.artists[artistIndex].albums.some(album => album.title === albumTitle)) {
+      if (library.artists[artistIndex].albums.some((album: any) => album.title === albumTitle)) {
         throw new Error(`Album "${albumTitle}" already exists for artist "${artistName}"`);
       }
       
@@ -436,19 +436,19 @@ class GoogleDriveService {
       const library = await this.loadLibrary();
       
       // Find artist
-      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      const artistIndex = library.artists.findIndex((artist: any) => artist.name === artistName);
       if (artistIndex === -1) {
         throw new Error(`Artist "${artistName}" not found`);
       }
       
       // Find album
-      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
+      const albumIndex = library.artists[artistIndex].albums.findIndex((album: any) => album.title === albumTitle);
       if (albumIndex === -1) {
         throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
       }
       
       // Check if song already exists
-      if (library.artists[artistIndex].albums[albumIndex].songs.some(song => song.title === songTitle)) {
+      if (library.artists[artistIndex].albums[albumIndex].songs.some((song: any) => song.title === songTitle)) {
         throw new Error(`Song "${songTitle}" already exists in album "${albumTitle}"`);
       }
       
@@ -482,19 +482,19 @@ class GoogleDriveService {
       const library = await this.loadLibrary();
       
       // Find artist
-      const artistIndex = library.artists.findIndex(artist => artist.name === artistName);
+      const artistIndex = library.artists.findIndex((artist: any) => artist.name === artistName);
       if (artistIndex === -1) {
         throw new Error(`Artist "${artistName}" not found`);
       }
       
       // Find album
-      const albumIndex = library.artists[artistIndex].albums.findIndex(album => album.title === albumTitle);
+      const albumIndex = library.artists[artistIndex].albums.findIndex((album: any) => album.title === albumTitle);
       if (albumIndex === -1) {
         throw new Error(`Album "${albumTitle}" not found for artist "${artistName}"`);
       }
       
       // Find song
-      const songIndex = library.artists[artistIndex].albums[albumIndex].songs.findIndex(song => song.id === updatedSong.id);
+      const songIndex = library.artists[artistIndex].albums[albumIndex].songs.findIndex((song: any) => song.id === updatedSong.id);
       if (songIndex === -1) {
         throw new Error(`Song with ID ${updatedSong.id} not found`);
       }

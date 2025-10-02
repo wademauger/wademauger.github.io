@@ -19,13 +19,13 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
     if (!searchTerm) return library;
 
     const filteredArtists = library.artists
-      .map(artist => {
+      .map((artist: any) => {
         const matchesArtist = artist.name?.toLowerCase().includes(searchTerm);
         const filteredAlbums = (artist.albums || [])
-          .map(album => {
+          .map((album: any) => {
             const matchesAlbum = album.title?.toLowerCase().includes(searchTerm);
             const filteredSongs = (album.songs || [])
-              .filter(song => song.title?.toLowerCase().includes(searchTerm));
+              .filter((song: any) => song.title?.toLowerCase().includes(searchTerm));
             
             if (matchesAlbum || filteredSongs.length > 0) {
               return { ...album, songs: matchesAlbum ? album.songs : filteredSongs };
@@ -104,7 +104,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
             {filterText ? 'No songs found matching your search.' : 'No songs available.'}
           </div>
         ) : (
-          filteredLibrary.artists.map(artist => {
+          filteredLibrary.artists.map((artist: any) => {
             const artistExpanded = expandedArtists.has(artist.name);
             return (
               <div key={artist.name} className="tree-artist">
@@ -124,7 +124,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
                 
                 {artistExpanded && (
                   <div className="tree-albums" style={{ marginLeft: '20px' }}>
-                    {(artist.albums || []).map(album => {
+                    {(artist.albums || []).map((album: any) => {
                       const albumId = `${artist.name}-${album.title}`;
                       const albumExpanded = expandedAlbums.has(albumId);
                       return (
@@ -145,7 +145,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
                           
                           {albumExpanded && (
                             <div className="tree-songs" style={{ marginLeft: '20px' }}>
-                              {(album.songs || []).map(song => {
+                              {(album.songs || []).map((song: any) => {
                                 const songId = `${artist.name}-${album.title}-${song.title}`;
                                 const isSelected = selectedSongId === songId;
                                 return (

@@ -32,7 +32,7 @@ const renderIngredientsList = (ingredients, maxItems = 3) => {
   const ingredientStrings = flatIngredients.slice(0, maxItems).map((ing) => {
     if (typeof ing === 'object' && ing !== null) {
       // Convert structured ingredient to readable string
-      const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.toString().trim()).join(' ');
+      const parts = [ing.quantity, ing.unit, ing.name].filter((p: any) => p && p.toString().trim()).join(' ');
       return ing.notes ? `${parts} (${ing.notes})` : parts;
     } else if (typeof ing === 'string') {
       // Already a string
@@ -267,8 +267,8 @@ const saveChatHistory = (recipeId, messages) => {
     
     // Filter out system messages and only save user/ai messages
     const messagesToSave = messages
-      .filter(msg => msg.type === 'user' || msg.type === 'ai')
-      .map(msg => ({
+      .filter((msg: any) => msg.type === 'user' || msg.type === 'ai')
+      .map((msg: any) => ({
         id: msg.id,
         type: msg.type,
         content: msg.content,
@@ -287,7 +287,7 @@ const saveChatHistory = (recipeId, messages) => {
     if (historyKeys.length > MAX_CHAT_HISTORIES) {
       // Sort by lastUpdated and remove oldest entries
       const sortedHistories = historyKeys
-        .map(key => ({ key, lastUpdated: existingHistories[key].lastUpdated }))
+        .map((key: any) => ({ key, lastUpdated: existingHistories[key].lastUpdated }))
         .sort((a, b) => b.lastUpdated - a.lastUpdated)
         .slice(0, MAX_CHAT_HISTORIES);
       
@@ -314,7 +314,7 @@ const loadChatHistory = (recipeId) => {
     
     if (history && history.messages) {
       // Convert timestamps back to Date objects
-      return history.messages.map(msg => ({
+      return history.messages.map((msg: any) => ({
         ...msg,
         timestamp: new Date(msg.timestamp)
       }));
@@ -546,7 +546,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
 
     try {
       // Get conversation history for context
-      const conversationHistory = messages.filter(msg => msg.type !== 'system');
+      const conversationHistory = messages.filter((msg: any) => msg.type !== 'system');
       
       // Generate AI response using the local LLM
       const aiResponseText = await recipeAIService.generateResponse(
@@ -592,7 +592,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
   };
 
   const handleApplyChanges = async (messageId) => {
-    const message = messages.find(msg => msg.id === messageId);
+    const message = messages.find((msg: any) => msg.id === messageId);
     if (!message || !editingEnabled) return;
 
     try {
@@ -629,7 +629,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
         // Apply ingredient changes (replace if we have new ingredients)
         if (suggestedChanges.ingredients && suggestedChanges.ingredients.length > 0) {
           // Convert string ingredients to proper format
-          updatedRecipe.ingredients = suggestedChanges.ingredients.map(ingredient => {
+          updatedRecipe.ingredients = suggestedChanges.ingredients.map((ingredient: any) => {
             if (typeof ingredient === 'string') {
               // Try to parse quantity, unit, and name from string
               const parts = ingredient.trim().split(' ');
@@ -659,7 +659,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
           });
           
           if (flatIngredients.length > 0) {
-            updatedRecipe.ingredients = flatIngredients.map(ingredient => {
+            updatedRecipe.ingredients = flatIngredients.map((ingredient: any) => {
               if (typeof ingredient === 'object' && ingredient !== null) {
                 // Already in proper format
                 return ingredient;

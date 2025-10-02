@@ -57,7 +57,7 @@ export function getChordNotes(chordSymbol) {
   const intervals = chordIntervals[quality] || chordIntervals['major'];
   
   // Generate chord tones
-  const chordNotes = intervals.map(interval => {
+  const chordNotes = intervals.map((interval: any) => {
     const semitone = (rootSemitone + interval) % 12;
     return semitoneToNote[semitone];
   });
@@ -65,7 +65,7 @@ export function getChordNotes(chordSymbol) {
   // If there's a bass note, put it first
   if (bassNote) {
     // Remove bass note from chord if it's already there
-    const filteredNotes = chordNotes.filter(note => note !== bassNote);
+    const filteredNotes = chordNotes.filter((note: any) => note !== bassNote);
     return [bassNote, ...filteredNotes];
   }
   
@@ -79,8 +79,8 @@ export function generateGuitarChord(chordSymbol) {
   
   // Standard guitar tuning: E-A-D-G-B-E (low to high)
   const tuning = ['E', 'A', 'D', 'G', 'B', 'E'];
-  const tuningSemitones = tuning.map(note => noteToSemitone[note]);
-  const targetSemitones = notes.map(note => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
   
   // Simple algorithm: find the lowest fret position that contains all chord tones
   const frets = new Array(6).fill(-1); // Start with all muted
@@ -117,8 +117,8 @@ export function generateUkuleleChord(chordSymbol) {
   
   // Standard ukulele tuning: G-C-E-A (low to high)
   const tuning = ['G', 'C', 'E', 'A'];
-  const tuningSemitones = tuning.map(note => noteToSemitone[note]);
-  const targetSemitones = notes.map(note => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
   
   const frets = new Array(4).fill(-1);
   
@@ -153,8 +153,8 @@ export function generateBassGuitarChord(chordSymbol) {
   
   // Standard bass tuning: E-A-D-G (low to high)
   const tuning = ['E', 'A', 'D', 'G'];
-  const tuningSemitones = tuning.map(note => noteToSemitone[note]);
-  const targetSemitones = notes.map(note => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
   
   const frets = new Array(4).fill(-1);
   

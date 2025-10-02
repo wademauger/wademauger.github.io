@@ -4,7 +4,7 @@ const ArtistList = ({ artists, selectedArtist, onSelectArtist }) => {
   return (
     <div className="artist-list">
       <ul>
-        {artists.map(artist => {
+        {artists.map((artist: any) => {
           const className = [
             selectedArtist?.name === artist.name ? 'active' : '',
             artist.isOptimistic ? 'optimistic' : ''

@@ -55,7 +55,7 @@ const ColorworkPanelEditor = forwardRef(({
     });
     const patternColors = useMemo(() => {
         if (reduxColorsArray && reduxColorsArray.length > 0) {
-            return reduxColorsArray.map(c => c.color);
+            return reduxColorsArray.map((c: any) => c.color);
         }
         return ['#cfcfcf'];
     }, [reduxColorsArray]);
@@ -257,7 +257,7 @@ function convertToTrapezoid(shape) {
             // Convert successors recursively
             const successors = [];
             if (shapeData.successors && Array.isArray(shapeData.successors)) {
-                shapeData.successors.forEach(successor => {
+                shapeData.successors.forEach((successor: any) => {
                     const convertedSuccessor = convertShapeRecursively(successor);
                     if (convertedSuccessor) {
                         successors.push(convertedSuccessor);

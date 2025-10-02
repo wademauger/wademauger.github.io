@@ -191,7 +191,7 @@ const knittingDesignSlice = createSlice({
 
     updateGarmentSequence: (state, action) => {
       const { id, updates } = action.payload;
-      const index = state.patternData.colorwork.garmentSequence.findIndex(item => item.id === id);
+      const index = state.patternData.colorwork.garmentSequence.findIndex((item: any) => item.id === id);
       if (index !== -1) {
         state.patternData.colorwork.garmentSequence[index] = {
           ...state.patternData.colorwork.garmentSequence[index],

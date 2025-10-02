@@ -284,7 +284,7 @@ const RecipesApp = () => {
       await driveService.deleteRecipe(activeRecipe.id);
       
       // Remove from local state
-      const updatedRecipes = driveRecipes.filter(r => r.id !== activeRecipe.id);
+      const updatedRecipes = driveRecipes.filter((r: any) => r.id !== activeRecipe.id);
       dispatch(setDriveRecipes(updatedRecipes));
       
       // Clear active recipe
@@ -355,7 +355,7 @@ const RecipesApp = () => {
     } else {
       // Return same structure but with empty arrays when demo recipes are hidden
       const emptyLibrary = {};
-      Object.keys(recipeLibrary).forEach(section => {
+      Object.keys(recipeLibrary).forEach((section: any) => {
         emptyLibrary[section] = [];
       });
       return emptyLibrary;
@@ -364,7 +364,7 @@ const RecipesApp = () => {
 
   useEffect(() => {
     console.log('🔍 useEffect triggered with urlPermalink:', urlPermalink);
-    console.log('🔍 driveRecipes state:', driveRecipes.length, driveRecipes.map(r => r.permalink));
+    console.log('🔍 driveRecipes state:', driveRecipes.length, driveRecipes.map((r: any) => r.permalink));
     setRecipes(filteredRecipes);
     
     // Find recipe across all sections when URL permalink changes
@@ -374,8 +374,8 @@ const RecipesApp = () => {
         console.log('🔍 Looking for permalink:', permalink);
         
         // First check driveRecipes
-        console.log('🔍 Checking driveRecipes:', driveRecipes.map(r => ({ title: r.title, permalink: r.permalink })));
-        const driveRecipe = driveRecipes.find(recipe => recipe.permalink === permalink);
+        console.log('🔍 Checking driveRecipes:', driveRecipes.map((r: any) => ({ title: r.title, permalink: r.permalink })));
+        const driveRecipe = driveRecipes.find((recipe: any) => recipe.permalink === permalink);
         if (driveRecipe) {
           console.log('✅ Found recipe in driveRecipes:', driveRecipe.title);
           return driveRecipe;
@@ -384,8 +384,8 @@ const RecipesApp = () => {
         // Then check filtered local recipe library for display (respects demo recipe toggle)
         console.log('🔍 Checking filtered recipe library sections:', Object.keys(filteredRecipes));
         for (const section in filteredRecipes) {
-          console.log(`🔍 Checking section "${section}":`, filteredRecipes[section].map(r => ({ title: r.title, permalink: r.permalink })));
-          const foundRecipe = filteredRecipes[section].find(r => r.permalink === permalink);
+          console.log(`🔍 Checking section "${section}":`, filteredRecipes[section].map((r: any) => ({ title: r.title, permalink: r.permalink })));
+          const foundRecipe = filteredRecipes[section].find((r: any) => r.permalink === permalink);
           if (foundRecipe) {
             console.log('✅ Found recipe in filtered recipe library:', foundRecipe.title);
             return foundRecipe;
@@ -396,7 +396,7 @@ const RecipesApp = () => {
         // This allows demo recipes to be accessed via URL even when toggle is off
         console.log('🔍 Recipe not found in filtered library, checking full library for URL support');
         for (const section in recipeLibrary) {
-          const foundRecipe = recipeLibrary[section].find(r => r.permalink === permalink);
+          const foundRecipe = recipeLibrary[section].find((r: any) => r.permalink === permalink);
           if (foundRecipe) {
             console.log('✅ Found recipe in full recipe library (URL access):', foundRecipe.title);
             return foundRecipe;

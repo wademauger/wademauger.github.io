@@ -126,7 +126,7 @@ export class ColorworkVisualizer {
     formatRowInstructions(rowInstructions, rowNumber) {
         if (rowInstructions.length === 0) return `Row ${rowNumber}: No stitches`;
         
-        const parts = rowInstructions.map(instruction => {
+        const parts = rowInstructions.map((instruction: any) => {
             const colorLabel = instruction.color ? instruction.color.label : instruction.colorId;
             return `${instruction.stitchCount} ${colorLabel}`;
         });
@@ -151,7 +151,7 @@ export class ColorworkVisualizer {
      */
     generateLegend(pattern) {
         const colorsUsed = pattern.getColorsUsed();
-        return colorsUsed.map(color => ({
+        return colorsUsed.map((color: any) => ({
             id: color.id,
             label: color.label,
             color: color.color,

@@ -192,12 +192,12 @@ NOT like:
     ];
     
     // Check for direct recipe requests
-    if (fullRecipeKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    if (fullRecipeKeywords.some((keyword: any) => lowerMessage.includes(keyword))) {
       return true;
     }
     
     // Check for recipe variations that should also return full recipes
-    if (recipeVariationKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    if (recipeVariationKeywords.some((keyword: any) => lowerMessage.includes(keyword))) {
       // Additional check: make sure it's asking for a substantial ingredient change
       const substantialChangeKeywords = [
         'quinoa', 'rice', 'pasta', 'wheat', 'grain', 'protein', 'meat', 'fish',
@@ -205,14 +205,14 @@ NOT like:
         'dairy', 'milk', 'cheese', 'vegan', 'vegetarian'
       ];
       
-      return substantialChangeKeywords.some(ingredient => lowerMessage.includes(ingredient));
+      return substantialChangeKeywords.some((ingredient: any) => lowerMessage.includes(ingredient));
     }
     
     // Check if they're asking about a specific dish (likely wants full recipe)
-    if (dishKeywords.some(dish => lowerMessage.includes(dish))) {
+    if (dishKeywords.some((dish: any) => lowerMessage.includes(dish))) {
       // Make sure it's in a question context
       const questionWords = ['how', 'what', 'can', 'could', 'should', 'will', 'make'];
-      if (questionWords.some(word => lowerMessage.includes(word))) {
+      if (questionWords.some((word: any) => lowerMessage.includes(word))) {
         return true;
       }
     }
@@ -564,12 +564,12 @@ Choose the most appropriate format based on what the user is asking for.`;
       const ingredientsMatch = markdownText.match(/### Ingredients:?\s*([\s\S]*?)(?=###|$)/i);
       const ingredientsText = ingredientsMatch 
         ? ingredientsMatch[1].split('\n')
-            .map(line => line.replace(/^[-•*]\s*/, '').trim())
-            .filter(line => line.length > 0)
+            .map((line: any) => line.replace(/^[-•*]\s*/, '').trim())
+            .filter((line: any) => line.length > 0)
         : [];
       
       // Parse ingredients into structured format
-      const ingredients = ingredientsText.map(ingredientStr => {
+      const ingredients = ingredientsText.map((ingredientStr: any) => {
         return this._parseIngredientString(ingredientStr);
       });
       
@@ -577,16 +577,16 @@ Choose the most appropriate format based on what the user is asking for.`;
       const stepsMatch = markdownText.match(/### Instructions:?\s*([\s\S]*?)(?=###|$)/i);
       const steps = stepsMatch
         ? stepsMatch[1].split('\n')
-            .map(line => line.replace(/^\d+\.\s*/, '').trim())
-            .filter(line => line.length > 2)
+            .map((line: any) => line.replace(/^\d+\.\s*/, '').trim())
+            .filter((line: any) => line.length > 2)
         : [];
       
       // Extract notes
       const notesMatch = markdownText.match(/### Notes:?\s*([\s\S]*?)(?=###|\*\*|$)/i);
       const notes = notesMatch
         ? notesMatch[1].split('\n')
-            .map(line => line.replace(/^[-•*]\s*/, '').trim())
-            .filter(line => line.length > 0)
+            .map((line: any) => line.replace(/^[-•*]\s*/, '').trim())
+            .filter((line: any) => line.length > 0)
         : [];
       
       // Extract timing info
@@ -849,10 +849,10 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
         }
         
         if (jsonRecipe.ingredients && Array.isArray(jsonRecipe.ingredients)) {
-          changes.ingredients = jsonRecipe.ingredients.map(ing => {
+          changes.ingredients = jsonRecipe.ingredients.map((ing: any) => {
             if (typeof ing === 'object') {
               // Convert structured ingredient to string format for compatibility
-              const parts = [ing.quantity, ing.unit, ing.name].filter(p => p && p.trim()).join(' ');
+              const parts = [ing.quantity, ing.unit, ing.name].filter((p: any) => p && p.trim()).join(' ');
               return ing.notes ? `${parts} (${ing.notes})` : parts;
             }
             return ing;
@@ -937,8 +937,8 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     if (ingredientsSection) {
       const ingredientLines = ingredientsSection[1]
         .split('\n')
-        .map(line => line.replace(/^[-•*]\s*/, '').trim())
-        .filter(line => line.length > 0);
+        .map((line: any) => line.replace(/^[-•*]\s*/, '').trim())
+        .filter((line: any) => line.length > 0);
       changes.ingredients = ingredientLines;
     }
     
@@ -976,7 +976,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
         steps.push(currentStep);
       }
       
-      steps = steps.map(step => step.replace(/\s+/g, ' ').trim()).filter(step => step.length > 2);
+      steps = steps.map((step: any) => step.replace(/\s+/g, ' ').trim()).filter((step: any) => step.length > 2);
       
       if (steps.length > 0) {
         changes.steps = steps;
@@ -988,8 +988,8 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     if (notesSection) {
       const noteLines = notesSection[1]
         .split('\n')
-        .map(line => line.replace(/^[-•*]\s*/, '').trim())
-        .filter(line => line.length > 0);
+        .map((line: any) => line.replace(/^[-•*]\s*/, '').trim())
+        .filter((line: any) => line.length > 0);
       changes.notes = noteLines;
     }
     
@@ -1004,8 +1004,8 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       const ingredientMatches = response.match(/(?:add|try|use|include)\s+([^.!?\n]+)(?:\.|!|\?|$)/gi);
       if (ingredientMatches) {
         changes.ingredients = ingredientMatches
-          .map(match => match.replace(/^(?:add|try|use|include)\s+/i, '').trim())
-          .filter(ingredient => ingredient.length > 2);
+          .map((match: any) => match.replace(/^(?:add|try|use|include)\s+/i, '').trim())
+          .filter((ingredient: any) => ingredient.length > 2);
       }
     }
     
@@ -1014,14 +1014,14 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       // Try to extract numbered steps first
       const numberedSteps = response.match(/\d+\.\s*([^.\n]+(?:\.[^.\n]*)?)/g);
       if (numberedSteps && numberedSteps.length > 0) {
-        changes.steps = numberedSteps.map(step => step.replace(/^\d+\.\s*/, '').trim());
+        changes.steps = numberedSteps.map((step: any) => step.replace(/^\d+\.\s*/, '').trim());
       } else {
         // Look for instructional sentences
         const stepMatches = response.match(/(?:first|then|next|finally|cook|bake|heat|mix|stir|add|season)\s+([^.!?\n]{10,})/gi);
         if (stepMatches) {
           changes.steps = stepMatches
-            .map(match => match.trim())
-            .filter(step => step.length > 10);
+            .map((match: any) => match.trim())
+            .filter((step: any) => step.length > 10);
         }
       }
     }
@@ -1031,8 +1031,8 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       const noteMatches = response.match(/(?:tip|note|remember|important):\s*([^.!?\n]+)/gi);
       if (noteMatches) {
         changes.notes = noteMatches
-          .map(match => match.replace(/^(?:tip|note|remember|important):\s*/i, '').trim())
-          .filter(note => note.length > 5);
+          .map((match: any) => match.replace(/^(?:tip|note|remember|important):\s*/i, '').trim())
+          .filter((note: any) => note.length > 5);
       }
     }
     

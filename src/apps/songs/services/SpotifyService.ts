@@ -150,7 +150,7 @@ class SpotifyService {
       if (data.albums?.items) {
         // Deduplicate and sort album names
         albums = [...new Set(
-          data.albums.items.map(album => album.name)
+          data.albums.items.map((album: any) => album.name)
         )].sort();
       }
       
@@ -216,7 +216,7 @@ class SpotifyService {
       if (data.artists?.items) {
         // Deduplicate and sort artist names
         artists = [...new Set(
-          data.artists.items.map(artist => artist.name)
+          data.artists.items.map((artist: any) => artist.name)
         )].sort();
       }
       
@@ -302,7 +302,7 @@ class SpotifyService {
       if (data.tracks?.items) {
         // Deduplicate and sort track names
         tracks = [...new Set(
-          data.tracks.items.map(track => track.name)
+          data.tracks.items.map((track: any) => track.name)
         )].sort();
       }
       
@@ -369,7 +369,7 @@ class SpotifyService {
       if (data.tracks?.items) {
         // Deduplicate and sort track names
         tracks = [...new Set(
-          data.tracks.items.map(track => track.name)
+          data.tracks.items.map((track: any) => track.name)
         )].sort();
       }
       

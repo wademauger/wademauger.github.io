@@ -39,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     '/crafts/colorwork-designer': 'Colorwork Designer'
   };
 
-  const pathSnippets = location.pathname.split('/').filter(i => i);
+  const pathSnippets = location.pathname.split('/').filter((i: any) => i);
   const breadcrumbItems = [
     {
       path: '/',
@@ -85,7 +85,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
       height: '150px'
     }}>
       <div className="ant-flex css-ra95ns ant-flex-wrap-wrap ant-flex-justify-center ant-flex-gap-small">
-        {pinnedChords.map(chord => (
+        {pinnedChords.map((chord: any) => (
           <div key={chord} style={{ cursor: 'pointer', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'top left', position: 'relative' }} onClick={() => handleUnpinChord(chord)}>
             <div className="chord-chart">
               <ChordChart

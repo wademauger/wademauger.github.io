@@ -90,7 +90,7 @@ class MockGoogleDriveServiceModern {
   }
 
   clearSession() {
-    Object.values(this.SESSION_KEYS).forEach(key => {
+    Object.values(this.SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
   }

@@ -30,7 +30,7 @@ export function countNamespaces(libraryObj) {
           counts['songs'] = songCount;
         } else {
           // fallback: if object keys look like artist names
-          const possibleArtists = Object.keys(arr).filter(k2 => k2 !== 'metadata');
+          const possibleArtists = Object.keys(arr).filter((k2: any) => k2 !== 'metadata');
           let artists = possibleArtists.length;
           let songCount = 0;
           for (const aKey of possibleArtists) {
@@ -71,7 +71,7 @@ export function detectLegacyFormat(obj) {
   // If top-level keys look like namespace names (panels, recipes, songs) and are arrays, consider not legacy
   const likelyNamespaces = ['panels', 'recipes', 'songs', 'colorworks', 'patterns'];
   const topKeys = Object.keys(obj);
-  const matches = topKeys.filter(k => likelyNamespaces.includes(k) && Array.isArray(obj[k]));
+  const matches = topKeys.filter((k: any) => likelyNamespaces.includes(k) && Array.isArray(obj[k]));
   // If there are multiple top-level keys that match known namespaces (and more than one),
   // treat as already namespaced. If there's only one key and it's an array, we'll treat it as legacy below.
   if (matches.length > 0 && topKeys.length === matches.length && topKeys.length > 1) return { isLegacy: false };

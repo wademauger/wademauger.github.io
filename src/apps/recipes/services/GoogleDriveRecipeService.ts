@@ -556,7 +556,7 @@ class GoogleDriveRecipeService {
   }
 
   clearSession() {
-    Object.values(this.SESSION_KEYS).forEach(key => {
+    Object.values(this.SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
     
@@ -868,7 +868,7 @@ class GoogleDriveRecipeService {
       const library = await this.loadRecipeLibrary();
       
       // Validate permalink uniqueness
-      const existingPermalinks = new Set(library.recipes.map(r => r.permalink));
+      const existingPermalinks = new Set(library.recipes.map((r: any) => r.permalink));
       if (existingPermalinks.has(recipeData.permalink)) {
         throw new Error('A recipe with this permalink already exists');
       }
@@ -922,7 +922,7 @@ class GoogleDriveRecipeService {
       const library = await this.loadRecipeLibrary();
       
       // Find and update recipe
-      const recipeIndex = library.recipes.findIndex(r => r.id === recipeId);
+      const recipeIndex = library.recipes.findIndex((r: any) => r.id === recipeId);
       if (recipeIndex === -1) {
         throw new Error('Recipe not found');
       }
@@ -941,7 +941,7 @@ class GoogleDriveRecipeService {
 
       // If title is changed, update the permalink
       if (updatedData.title && updatedData.title !== originalRecipe.title) {
-        const otherRecipes = library.recipes.filter(r => r.id !== recipeId);
+        const otherRecipes = library.recipes.filter((r: any) => r.id !== recipeId);
         updatedRecipe.permalink = this._generatePermalink(updatedData.title, otherRecipes);
       }
       
@@ -969,7 +969,7 @@ class GoogleDriveRecipeService {
       
       // Remove recipe
       const originalLength = library.recipes.length;
-      library.recipes = library.recipes.filter(r => r.id !== recipeId);
+      library.recipes = library.recipes.filter((r: any) => r.id !== recipeId);
       
       if (library.recipes.length === originalLength) {
         throw new Error('Recipe not found');
@@ -994,7 +994,7 @@ class GoogleDriveRecipeService {
 
     try {
       const library = await this.loadRecipeLibrary();
-      const existingPermalinks = new Set(library.recipes.map(r => r.permalink));
+      const existingPermalinks = new Set(library.recipes.map((r: any) => r.permalink));
       return !existingPermalinks.has(permalink);
     } catch (error: unknown) {
       console.error('Error checking permalink availability:', error);
@@ -1081,7 +1081,7 @@ class GoogleDriveRecipeService {
       ];
 
       // Add all discovered folders
-      folders.forEach(folder => {
+      folders.forEach((folder: any) => {
         options.push({
           value: folder.fullPath,
           label: folder.fullPath,
@@ -1468,7 +1468,7 @@ class GoogleDriveRecipeService {
     const basePermalink = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     let permalink = basePermalink || 'untitled-recipe';
     let counter = 1;
-    const existingPermalinks = new Set(existingRecipes.map(r => r.permalink));
+    const existingPermalinks = new Set(existingRecipes.map((r: any) => r.permalink));
     
     while (existingPermalinks.has(permalink)) {
       permalink = `${basePermalink || 'untitled-recipe'}-${counter}`;
