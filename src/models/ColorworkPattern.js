@@ -141,7 +141,7 @@ export class ColorworkPattern {
             section.push(newRow);
         }
 
-        return new ColorworkPattern(section, this.colors, {
+        return new ColorworkPattern(0, 0, section, this.colors, {
             ...this.metadata,
             isSection: true,
             originalStitchRange: [startStitch, endStitch],
