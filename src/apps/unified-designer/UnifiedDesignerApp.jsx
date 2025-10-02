@@ -5,7 +5,7 @@ import {
     BuildOutlined, 
     BgColorsOutlined
 } from '@ant-design/icons';
-import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.js';
+import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.jsx';
 import GarmentComposer from '../../components/GarmentComposer.js';
 import PanelShapeCreator from './PanelShapeCreator.jsx';
 import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';
