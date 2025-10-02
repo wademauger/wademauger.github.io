@@ -270,6 +270,37 @@ body {
   top: 8px;
 }
 
+/* Header-specific Ant Design overrides for dark theme */
+.main-header .ant-btn {
+  background-color: transparent;
+  color: rgba(255,255,255,0.95);
+  border-color: rgba(255,255,255,0.06);
+}
+
+.main-header .ant-btn:hover {
+  background-color: rgba(255,255,255,0.04);
+}
+
+.main-header .ant-dropdown-menu {
+  background-color: #1f2d3a;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.main-header .ant-dropdown-menu-item,
+.main-header .ant-dropdown-menu-item a {
+  color: #fff;
+}
+
+.main-header .ant-avatar {
+  background-color: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.breadcrumb-wrapper a {
+  color: rgba(255,255,255,0.9) !important;
+}
+
 /* Media queries for responsive design */
 @media (max-width: 768px) {
   .menu-toggle {

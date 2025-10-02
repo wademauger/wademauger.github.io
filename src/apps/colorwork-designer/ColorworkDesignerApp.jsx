@@ -5,7 +5,7 @@ import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design
 import { garments } from '../../data/garments.js';
 import { DriveAuthProvider } from './context/DriveAuthContext.jsx';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor.jsx';
-import GoogleSignInButton from './components/GoogleSignInButton.jsx';
+// Google sign-in now rendered by the page header; per-editor buttons removed
 import PanelShapeCreator from './PanelShapeCreator.jsx';
 import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp.jsx';
 
@@ -286,13 +286,7 @@ const ColorworkDesignerApp = () => {
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
                                     <Button onClick={handleBackToHome}>← Back to Home</Button>
                                     <Title level={3} style={{ margin: 0, flex: 1 }}>Panel Shape Creator</Title>
-                                                    <div style={{ marginLeft: 'auto' }}>
-                                                        <GoogleSignInButton
-                                                            buttonText="Drive"
-                                                            onSaveAs={() => window.dispatchEvent(new CustomEvent('colorwork:save-as'))}
-                                                            onOpen={() => window.dispatchEvent(new CustomEvent('colorwork:open'))}
-                                                        />
-                                                    </div>
+                                                    {/* sign-in handled by page header; per-editor toolbar buttons removed */}
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
                                     <PanelShapeCreator />
@@ -304,13 +298,7 @@ const ColorworkDesignerApp = () => {
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
                                     <Button onClick={handleBackToHome}>← Back to Home</Button>
                                     <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
-                                    <div style={{ marginLeft: 'auto' }}>
-                                        <GoogleSignInButton
-                                            buttonText="Drive"
-                                            onSaveAs={() => window.dispatchEvent(new CustomEvent('colorwork:save-as'))}
-                                            onOpen={() => window.dispatchEvent(new CustomEvent('colorwork:open'))}
-                                        />
-                                    </div>
+                                    {/* sign-in handled by page header; per-editor toolbar buttons removed */}
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
                                     {/* Embed the same UX as /crafts/colorwork-designer */}

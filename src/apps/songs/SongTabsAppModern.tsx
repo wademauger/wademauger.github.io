@@ -270,6 +270,44 @@ const SongTabsApp: React.FC = () => {
   // Ref for lyrics section in SongEditor
   const lyricsSectionRef = React.useRef<HTMLDivElement>(null);
 
+  // Listen for header-emitted auth events so header control can drive app auth handlers
+  React.useEffect(() => {
+    const onSigninSuccess = (ev: any) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        // Only process events for this app
+        if (d.app && d.app !== 'songs') return;
+        handleGoogleSignInSuccess(d.tokenResponse);
+      } catch (e) { /* swallow */ }
+    };
+    const onSigninError = (ev: any) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        if (d.app && d.app !== 'songs') return;
+        handleGoogleSignInError(d.error);
+      } catch (e) { /* swallow */ }
+    };
+    const onSignout = (ev: any) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        if (d.app && d.app !== 'songs') return;
+        handleGoogleSignOut();
+      } catch (e) { /* swallow */ }
+    };
+
+    window.addEventListener('app:google-signin-success', onSigninSuccess as any);
+    window.addEventListener('app:google-signin-error', onSigninError as any);
+    window.addEventListener('app:google-signout', onSignout as any);
+    return () => {
+      window.removeEventListener('app:google-signin-success', onSigninSuccess as any);
+      window.removeEventListener('app:google-signin-error', onSigninError as any);
+      window.removeEventListener('app:google-signout', onSignout as any);
+    };
+  }, [handleGoogleSignInSuccess, handleGoogleSignInError, handleGoogleSignOut]);
+
   // Handle song selection from SongList
   const handleSongSelect = React.useCallback((songData: any, artistName: string, albumTitle: string) => {
     if (songData && artistName && albumTitle) {
@@ -625,37 +663,20 @@ const SongTabsApp: React.FC = () => {
                 )}
               </div>
 
-              {/* Always show Google Drive button and Add Song button */}
+              {/* Add Song button only; Google sign-in is provided by the page header */}
               <div className="google-drive-section">
-                {isGoogleDriveConnected ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <GoogleSignInButton
-                      isSignedIn={true}
-                      onSignOut={handleGoogleSignOut}
-                      disabled={isLoading}
-                      userInfo={userInfo as any}
-                      onSuccess={() => {}}
-                      onError={() => {}}
-                    />
-                    <Button
-                      type="primary"
-                      onClick={openNewSongEditor}
-                      style={{
-                        backgroundColor: '#4CAF50',
-                        borderColor: '#4CAF50'
-                      }}
-                    >
-                      + Add New Song
-                    </Button>
-                  </div>
-                ) : (
-                  <GoogleSignInButton
-                    onSuccess={handleGoogleSignInSuccess}
-                    onError={handleGoogleSignInError}
-                    onSignOut={() => {}} // Not used when not signed in
-                    disabled={isLoading}
-                  />
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                  <Button
+                    type="primary"
+                    onClick={openNewSongEditor}
+                    style={{
+                      backgroundColor: '#4CAF50',
+                      borderColor: '#4CAF50'
+                    }}
+                  >
+                    + Add New Song
+                  </Button>
+                </div>
               </div>
             </div>
 

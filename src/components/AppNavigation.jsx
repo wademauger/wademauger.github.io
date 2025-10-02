@@ -143,30 +143,7 @@ const AppNavigation = ({
 
           {/* Right Section - Authentication and Right Content */}
           <div className="right-section" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '0 0 auto' }}>
-            {/* Google Drive Authentication */}
-            <div className="google-drive-section">
-              {(appName === 'Recipes' || appName === 'Recipe AI Chat') ? (
-                <RecipesGoogleSignInButton
-                  onSuccess={onSignIn}
-                  onSignOut={onSignOut}
-                  onSettingsChange={onSettingsChange}
-                  isSignedIn={isGoogleDriveConnected}
-                  userInfo={userInfo}
-                  {...googleSignInProps}
-                />
-              ) : (
-                <SongsGoogleSignInButton
-                  onSuccess={onSignIn}
-                  onSignOut={onSignOut}
-                  onSettingsChange={onSettingsChange}
-                  isSignedIn={isGoogleDriveConnected}
-                  userInfo={userInfo}
-                  {...googleSignInProps}
-                />
-              )}
-            </div>
-
-            {/* Right Content Area */}
+            {/* Right Content Area (header now contains the Google sign-in control) */}
             {rightContent}
           </div>
         </div>

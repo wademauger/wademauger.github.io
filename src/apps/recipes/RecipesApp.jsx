@@ -197,6 +197,44 @@ const RecipesApp = () => {
     }
   };
 
+  // Listen for header-emitted auth events for recipes
+  React.useEffect(() => {
+    const onSigninSuccess = (ev) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        if (d.app && d.app !== 'recipes') return;
+        handleGoogleSignIn(d.tokenResponse || null);
+      } catch (e) { /* swallow */ }
+    };
+    const onSigninError = (ev) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        if (d.app && d.app !== 'recipes') return;
+        // Report the error via existing handler
+        handleGoogleSignInError && handleGoogleSignInError(d.error);
+      } catch (e) { /* swallow */ }
+    };
+    const onSignout = (ev) => {
+      try {
+        const d = ev && ev.detail;
+        if (!d) return;
+        if (d.app && d.app !== 'recipes') return;
+        handleGoogleSignOut();
+      } catch (e) { /* swallow */ }
+    };
+
+    window.addEventListener('app:google-signin-success', onSigninSuccess);
+    window.addEventListener('app:google-signin-error', onSigninError);
+    window.addEventListener('app:google-signout', onSignout);
+    return () => {
+      window.removeEventListener('app:google-signin-success', onSigninSuccess);
+      window.removeEventListener('app:google-signin-error', onSigninError);
+      window.removeEventListener('app:google-signout', onSignout);
+    };
+  }, []);
+
   // Handle creating a new recipe
   const handleCreateNewRecipe = () => {
     console.log('� NEW RECIPE BUTTON CLICKED - handleCreateNewRecipe called');

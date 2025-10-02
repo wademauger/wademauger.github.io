@@ -1,8 +1,13 @@
 import React, { useState, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Breadcrumb, ConfigProvider, theme as antdTheme } from 'antd';
+import { HomeOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { unpinChord } from '@/store/chordsSlice';
 import ChordChart from '@/apps/songs/components/ChordChart';
+import RecipesGoogleSignInButton from '@/apps/recipes/components/GoogleSignInButton';
+import SongsGoogleSignInButton from '@/apps/songs/components/GoogleSignInButton';
+import ColorworkGoogleSignInButton from '@/apps/colorwork-designer/components/GoogleSignInButton';
 import { RootState } from '@/types';
 import '@/styles/Layout.css';
 
@@ -22,6 +27,35 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
   
   // Check if we're on a crafts page
   const isCraftsPage = location.pathname.startsWith('/crafts');
+
+  // Breadcrumb items generation based on pathname
+  const breadcrumbNameMap: Record<string, string> = {
+    '/': 'Professional',
+    '/crafts': 'Projects',
+    '/crafts/recipes': 'Recipes',
+    '/crafts/tabs': 'Music Tabs',
+    '/crafts/knitting': 'Knitting',
+    '/crafts/unified-designer': 'Unified Designer',
+    '/crafts/colorwork-designer': 'Colorwork Designer'
+  };
+
+  const pathSnippets = location.pathname.split('/').filter(i => i);
+  const breadcrumbItems = [
+    {
+      path: '/',
+      breadcrumbName: breadcrumbNameMap['/']
+    }
+  ];
+
+  // Build breadcrumb for crafts and deeper routes
+  if (pathSnippets.length > 0) {
+    let accumulated = '';
+    pathSnippets.forEach((_, idx) => {
+      accumulated += `/${pathSnippets[idx]}`;
+      const name = breadcrumbNameMap[accumulated] || pathSnippets[idx];
+      breadcrumbItems.push({ path: accumulated, breadcrumbName: name });
+    });
+  }
   
   const isActive = (path: string): string => {
     // For root path, check exact match to avoid highlighting on all pages
@@ -69,42 +103,81 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     <div className={`app-container ${isCraftsPage ? 'crafts-layout' : 'professional-layout'}`}>
       {/* Only show header for crafts pages */}
       {isCraftsPage && (
-        <header className="main-header">
-          <div className="header-content">
-                <span className={isActive('/crafts')}>
-                  <Link to="/crafts">
-                      <span className="site-title">
-                        <span className="home-icon">🏠</span>
-                      </span>
-                  </Link>
-                </span>
+        <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm }}>
+          <header className="main-header">
+            <div className="header-content">
+              <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
+                <Breadcrumb style={{ margin: 0 }}>
+                  {breadcrumbItems.map((item, idx) => (
+                    <Breadcrumb.Item key={item.path}>
+                      <Link to={item.path} style={{ color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center' }}>
+                        {idx === 0 ? <HomeOutlined style={{ fontSize: '20px' }} /> : null}
+                        {idx === 0 ? null : item.breadcrumbName}
+                      </Link>
+                    </Breadcrumb.Item>
+                  ))}
+                </Breadcrumb>
+              </div>
             
-            {/* Desktop navigation - will be visible only on desktop */}
-            <nav className="desktop-navigation">
-              <ul className="nav-list">
-                <li className={isActive('/')}>
-                  <Link to="/">Professional</Link>
-                </li>
-                <li className={isActive('/crafts/recipes')}>
-                  <Link to="/crafts/recipes">Recipes</Link>
-                </li>
-                <li className={isActive('/crafts/tabs')}>
-                  <Link to="/crafts/tabs">Music Tabs</Link>
-                </li>
+              {/* Right-side header area: unified Google login button that shows app-specific dropdowns */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+              {(() => {
+                const noop = () => {};
+                const signOut = async () => {
+                  try {
+                    const w: any = typeof window !== 'undefined' ? window : {};
+                    if (w.GoogleDriveServiceModern && w.GoogleDriveServiceModern.signOut) {
+                      await w.GoogleDriveServiceModern.signOut();
+                    }
+                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e) { /* swallow */ }
+                  } catch (err) {
+                    // swallow
+                  }
+                };
 
-              </ul>
-            </nav>
-            
-            {/* Mobile menu toggle - will be visible only on mobile */}
-            <button 
-              className="menu-toggle" 
-              onClick={toggleMenu}
-              aria-label="Toggle navigation menu"
-            >
-              <span className="hamburger"></span>
-            </button>
+                const emitSignInSuccess = (tokenResponse: any, appName: string) => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('app:google-signin-success', { detail: { app: appName, tokenResponse } }));
+                  } catch (e) { /* swallow */ }
+                };
+                const emitSignInError = (error: any, appName: string) => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('app:google-signin-error', { detail: { app: appName, error } }));
+                  } catch (e) { /* swallow */ }
+                };
+
+                const appNameFromPath = (path: string) => {
+                  if (path.startsWith('/crafts/recipes')) return 'recipes';
+                  if (path.startsWith('/crafts/tabs')) return 'songs';
+                  if (path.startsWith('/crafts/colorwork-designer') || path.startsWith('/crafts/unified-designer') || path.startsWith('/crafts/knitting')) return 'colorwork';
+                  return 'songs';
+                };
+
+                if (location.pathname.startsWith('/crafts/recipes')) {
+                  const app = 'recipes';
+                  return <RecipesGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} />;
+                }
+                if (location.pathname.startsWith('/crafts/tabs')) {
+                  const app = 'songs';
+                  return <SongsGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} />;
+                }
+                if (location.pathname.startsWith('/crafts/colorwork-designer') || location.pathname.startsWith('/crafts/unified-designer') || location.pathname.startsWith('/crafts/knitting')) {
+                  const openHandler = () => {
+                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e) { /* swallow */ }
+                  };
+                  const saveAsHandler = () => {
+                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e) { /* swallow */ }
+                  };
+                  const app = 'colorwork';
+                  return <ColorworkGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} onOpen={openHandler} onSaveAs={saveAsHandler} />;
+                }
+                return <SongsGoogleSignInButton onSuccess={noop} onError={noop} onSignOut={signOut} />;
+              })()}
+            </div>
+
           </div>
         </header>
+        </ConfigProvider>
       )}
 
       {/* Mobile navigation - will be visible only when toggled on mobile and on crafts pages */}
