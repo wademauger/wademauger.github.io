@@ -40,7 +40,7 @@ const RecipeControls = ({
             <select
               id="scale"
               value={scale}
-              onChange={(e) => onScaleChange(parseFloat(e.target.value))}
+              onChange={(e: any) => onScaleChange(parseFloat(e.target.value))}
               className="scale-select"
             >
               <option value="0.25">¼×</option>

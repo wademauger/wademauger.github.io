@@ -27,13 +27,13 @@ const recipesSlice = createSlice({
     setDraftRecipe: (state, action) => {
       state.draftRecipe = action.payload;
     },
-    clearDraftRecipe: (state) => {
+    clearDraftRecipe: (state: any) => {
       state.draftRecipe = null;
     },
     addChatMessage: (state, action) => {
       state.chatMessages.push(action.payload);
     },
-    clearChatMessages: (state) => {
+    clearChatMessages: (state: any) => {
       state.chatMessages = [];
     },
     updateDraftRecipe: (state, action) => {
@@ -68,7 +68,7 @@ const recipesSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload;
     },
-    clearError: (state) => {
+    clearError: (state: any) => {
       state.error = null;
     },
     setEditingEnabled: (state, action) => {

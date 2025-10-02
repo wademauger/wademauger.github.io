@@ -49,8 +49,8 @@ function Recipes() {
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
   const [showAIChat, setShowAIChat] = useState(false);
   const dispatch = useDispatch();
-  const isPrintMode = useSelector((state) => state.recipes.isPrintMode);
-  const fontSize = useSelector((state) => state.recipes.printModeFontSize);
+  const isPrintMode = useSelector((state: any) => state.recipes.isPrintMode);
+  const fontSize = useSelector((state: any) => state.recipes.printModeFontSize);
 
   console.log('Recipes component rendered:', { id, hasRecipe: !!recipe, showAIChat });
 
@@ -60,7 +60,7 @@ function Recipes() {
     }
   }, [id, recipe]);
 
-  const handleSliderChange = (value) => {
+  const handleSliderChange = (value: any) => {
     setServings(value);
   };
 

@@ -38,7 +38,7 @@ export const createEmptyPattern = (width, height, fillColor = 'CCX') => {
 };
 
 export const resizePattern = (pattern, newWidth, newHeight, fillColor = 'CCX') => {
-  const newPattern = Array(newHeight).fill(null).map((_, row) => 
+  const newPattern = Array(newHeight).fill(null).map((_, row: any) => 
     Array(newWidth).fill(null).map((_, col) => {
       if (row < pattern.length && col < pattern[0].length) {
         return pattern[row][col];

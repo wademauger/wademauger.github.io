@@ -29,7 +29,7 @@ const RecipesApp = () => {
   const [showLibrarySelector, setShowLibrarySelector] = useState(false); // Library file selector modal
   
   // Get Redux modal state
-  const currentModal = useSelector((state) => state.modal.currentModal);
+  const currentModal = useSelector((state: any) => state.modal.currentModal);
   // modalData unused for now but available in redux state.modal.modalData
   const isNewRecipeModalOpen = currentModal === 'NEW_RECIPE';
   const isLibrarySettingsModalOpen = currentModal === 'LIBRARY_SETTINGS';
@@ -40,7 +40,7 @@ const RecipesApp = () => {
   }, [currentModal]);
 
   // Check for Redux modal state that might be interfering
-  const reduxModalState = useSelector((state) => state.modal);
+  const reduxModalState = useSelector((state: any) => state.modal);
   useEffect(() => {
     console.log('🔧 Redux modal state:', reduxModalState);
   }, [reduxModalState]);

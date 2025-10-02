@@ -38,7 +38,7 @@ const modalSlice = createSlice({
     },
     
     // Close current modal
-    closeModal: (state) => {
+    closeModal: (state: any) => {
       state.currentModal = MODAL_TYPES.NONE;
       state.modalData = null;
       state.appContext = null;
@@ -65,11 +65,11 @@ export const {
 } = modalSlice.actions;
 
 // Selectors
-export const selectCurrentModal = (state) => state.modal.currentModal;
-export const selectModalData = (state) => state.modal.modalData;
-export const selectModalLoading = (state) => state.modal.isLoading;
-export const selectAppContext = (state) => state.modal.appContext;
-export const selectIsModalOpen = (modalType) => (state) => state.modal.currentModal === modalType;
+export const selectCurrentModal = (state: any) => state.modal.currentModal;
+export const selectModalData = (state: any) => state.modal.modalData;
+export const selectModalLoading = (state: any) => state.modal.isLoading;
+export const selectAppContext = (state: any) => state.modal.appContext;
+export const selectIsModalOpen = (modalType) => (state: any) => state.modal.currentModal === modalType;
 
 // Thunk actions for common modal operations
 export const openLibrarySettingsModal = (appContext, currentSettings = {}) => (dispatch) => {

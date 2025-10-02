@@ -302,7 +302,7 @@ const RibbonUI = ({
                       className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
                       style={color.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: color.color }}
                       onClick={() => handleColorSelect(color.id)}
-                      onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                      onContextMenu={(e: any) => handleColorContextMenu(e, color.id)}
                       title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                     >
                       {foregroundColorId === color.id && <div className="active-dot">●</div>}
@@ -319,7 +319,7 @@ const RibbonUI = ({
                       className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
                       style={color.color === 'transparent' ? { backgroundImage: 'linear-gradient(45deg, #e6e6e6 25%, #ffffff 25%, #ffffff 50%, #e6e6e6 50%, #e6e6e6 75%, #ffffff 75%, #ffffff 100%)', backgroundSize: '12px 12px' } : { backgroundColor: color.color }}
                       onClick={() => handleColorSelect(color.id)}
-                      onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                      onContextMenu={(e: any) => handleColorContextMenu(e, color.id)}
                       title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                     >
                       {foregroundColorId === color.id && <div className="active-dot">●</div>}
@@ -351,7 +351,7 @@ const RibbonUI = ({
                     className={`ribbon-color-swatch ${foregroundColorId === color.id ? 'active' : ''} ${backgroundColorId === color.id ? 'bg-active' : ''}`}
                     style={{ backgroundColor: color.color }}
                     onClick={() => handleColorSelect(color.id)}
-                    onContextMenu={(e) => handleColorContextMenu(e, color.id)}
+                    onContextMenu={(e: any) => handleColorContextMenu(e, color.id)}
                     title={`${color.label} (${color.color}) - left click to set foreground, right click to set background`}
                   >
                     {foregroundColorId === color.id && <div className="active-dot">●</div>}

@@ -33,7 +33,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
   useEffect(() => {
     if (!isKnitting) return;
 
-    const handleKeyPress = (event) => {
+    const handleKeyPress = (event: any) => {
       if (event.key === 'ArrowRight') {
         handleNextStep();
       }
@@ -71,7 +71,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
     </div>
   ) : null);
 
-  const handleButtonClick = (event) => {
+  const handleButtonClick = (event: any) => {
     event.stopPropagation(); // Prevent collapse from toggling
     setIsKnitting(`${patternId}-${panelId}`, setCurrentStep);
     setIsCompleted(false);
@@ -175,7 +175,7 @@ function KnittingPatterns() {
     setCurrentKnittingPanel(null);
   };
 
-  const handleSizeChange = (event) => {
+  const handleSizeChange = (event: any) => {
     const newSizeModifier = parseFloat(event?.target?.value || event);
       if (currentKnittingPanel) {
       Modal.confirm({
@@ -193,11 +193,11 @@ function KnittingPatterns() {
     }
   };
 
-  const handleGaugeChange = (type, value) => {
+  const handleGaugeChange = (type, value: any) => {
     setGauge(prevGauge => ({ ...prevGauge, [type]: value }));
   };
 
-  const handleMotifChange = (value) => {
+  const handleMotifChange = (value: any) => {
     setSelectedMotif(value ? visualMotifs[value] : null);
   };
 
@@ -225,13 +225,13 @@ function KnittingPatterns() {
                   <p>
                     Gauge stitches per 4 inches
                     <span className="card-input">
-                      <InputNumber min={1} defaultValue={19} onChange={(value) => handleGaugeChange('stitches', value)} />
+                      <InputNumber min={1} defaultValue={19} onChange={(value: any) => handleGaugeChange('stitches', value)} />
                     </span>
                   </p>
                   <p>
                     Gauge rows per 4 inches
                     <span className="card-input">
-                      <InputNumber min={1} defaultValue={30} onChange={(value) => handleGaugeChange('rows', value)} />
+                      <InputNumber min={1} defaultValue={30} onChange={(value: any) => handleGaugeChange('rows', value)} />
                     </span>
                   </p>
                   <p>

@@ -722,7 +722,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
     };
 
     // Canvas event handlers
-    const handleMouseDown = (e) => {
+    const handleMouseDown = (e: any) => {
         // Only handle left mouse button for panning
         if (e.button !== 0) return;
         
@@ -731,7 +731,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         setLastMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: any) => {
         if (!isDragging) return;
         
         e.preventDefault();
@@ -746,13 +746,13 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
         setLastMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    const handleMouseUp = (e) => {
+    const handleMouseUp = (e: any) => {
         e.preventDefault();
         setIsDragging(false);
     };
 
     // Prevent context menu on right click
-    const handleContextMenu = (e) => {
+    const handleContextMenu = (e: any) => {
         e.preventDefault();
     };
 
@@ -763,7 +763,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
 
     // Keyboard controls for zoom and pan
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: any) => {
             // Only handle when canvas area is focused/active
             if (!canvasRef.current) return;
             
@@ -928,7 +928,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
     }, [patternLayers.length, onLayersChange]);
 
     // Pattern layer management
-    const handleLayerSettingChange = useCallback((layerId, setting, value) => {
+    const handleLayerSettingChange = useCallback((layerId, setting, value: any) => {
         onLayersChange(prevLayers => 
             prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
@@ -1130,7 +1130,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                         value={zoom}
                         onChange={setZoom}
                         style={{ width: 100 }}
-                        tooltip={{ formatter: (value) => `${Math.round(value * 100)}%` }}
+                        tooltip={{ formatter: (value: any) => `${Math.round(value * 100)}%` }}
                     />
                     <Button 
                         icon={<ZoomOutOutlined />} 
@@ -1180,7 +1180,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                 <Text style={textStyle12}>Stitches per 4":</Text>
                                 <InputNumber
                                     value={gauge?.stitchesPerFourInches || 19}
-                                    onChange={(value) => onGaugeChange(new Gauge(value || 19, gauge?.rowsPerFourInches || 30, gauge?.scalingFactor || 1.0))}
+                                    onChange={(value: any) => onGaugeChange(new Gauge(value || 19, gauge?.rowsPerFourInches || 30, gauge?.scalingFactor || 1.0))}
                                     min={10}
                                     max={40}
                                     style={{ width: '100%' }}
@@ -1191,7 +1191,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                 <Text style={textStyle12}>Rows per 4":</Text>
                                 <InputNumber
                                     value={gauge?.rowsPerFourInches || 30}
-                                    onChange={(value) => onGaugeChange(new Gauge(gauge?.stitchesPerFourInches || 19, value || 30, gauge?.scalingFactor || 1.0))}
+                                    onChange={(value: any) => onGaugeChange(new Gauge(gauge?.stitchesPerFourInches || 19, value || 30, gauge?.scalingFactor || 1.0))}
                                     min={20}
                                     max={60}
                                     style={{ width: '100%' }}
@@ -1203,7 +1203,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                 <Text style={textStyle12}>Scaling Factor:</Text>
                                 <InputNumber
                                     value={gauge?.scalingFactor || 1.0}
-                                    onChange={(value) => {
+                                    onChange={(value: any) => {
                                         const newGauge = new Gauge(
                                             gauge?.stitchesPerFourInches || 19, 
                                             gauge?.rowsPerFourInches || 30,
@@ -1216,8 +1216,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                     step={0.1}
                                     style={{ width: '100%' }}
                                     size="small"
-                                    formatter={(value) => `${value}x`}
-                                    parser={(value) => value.replace('x', '')}
+                                    formatter={(value: any) => `${value}x`}
+                                    parser={(value: any) => value.replace('x', '')}
                                 />
                                 <Text style={{ fontSize: '10px', color: '#999', display: 'block', marginTop: 2 }}>
                                     Scales the entire garment size (0.5x = 50%, 2.0x = 200%)
@@ -1311,7 +1311,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                                     size="small" 
                                                                     type="text"
                                                                     icon={<CopyOutlined />}
-                                                                    onClick={(e) => {
+                                                                    onClick={(e: any) => {
                                                                         e.stopPropagation();
                                                                         copyPatternLayer(layer.id);
                                                                     }}
@@ -1322,7 +1322,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                                     danger 
                                                                     type="text"
                                                                     icon={<DeleteOutlined />}
-                                                                    onClick={(e) => {
+                                                                    onClick={(e: any) => {
                                                                         e.stopPropagation();
                                                                         removePatternLayer(layer.id);
                                                                     }}
@@ -1353,7 +1353,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Pattern Width (stitches):</Text>
                                                     <InputNumber
                                                         value={layer.patternConfig?.width || 4}
-                                                        onChange={(value) => {
+                                                        onChange={(value: any) => {
                                                             const newConfig = { ...layer.patternConfig, width: value || 4 };
                                                             handlePatternConfigChange(layer.id, newConfig);
                                                         }}
@@ -1370,7 +1370,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Pattern Height (rows):</Text>
                                                     <InputNumber
                                                         value={layer.patternConfig?.height || 4}
-                                                        onChange={(value) => {
+                                                        onChange={(value: any) => {
                                                             const newConfig = { ...layer.patternConfig, height: value || 4 };
                                                             handlePatternConfigChange(layer.id, newConfig);
                                                         }}
@@ -1387,7 +1387,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Cell Size (n x n):</Text>
                                                     <InputNumber
                                                         value={layer.patternConfig?.cellSize || 2}
-                                                        onChange={(value) => {
+                                                        onChange={(value: any) => {
                                                             const newConfig = { ...layer.patternConfig, cellSize: value || 2 };
                                                             handlePatternConfigChange(layer.id, newConfig);
                                                         }}
@@ -1395,8 +1395,8 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                         max={10}
                                                         size="small"
                                                         style={fullWidthStyle}
-                                                        formatter={(value) => `${value} x ${value}`}
-                                                        parser={(value) => value.replace(' x ' + value.split(' x ')[1], '')}
+                                                        formatter={(value: any) => `${value} x ${value}`}
+                                                        parser={(value: any) => value.replace(' x ' + value.split(' x ')[1], '')}
                                                     />
                                                 </div>
                                             )}
@@ -1432,7 +1432,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                 <InputNumber
                                                                     value={colorConfig.rows}
-                                                                    onChange={(value) => {
+                                                                    onChange={(value: any) => {
                                                                         const newColors = [...layer.patternConfig.colors];
                                                                         newColors[index].rows = value || 0;
                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
@@ -1488,7 +1488,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                 <InputNumber
                                                                     value={colorConfig.columns}
-                                                                    onChange={(value) => {
+                                                                    onChange={(value: any) => {
                                                                         const newColors = [...layer.patternConfig.colors];
                                                                         newColors[index].columns = value || 0;
                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
@@ -1519,7 +1519,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                 <Text style={textStyle12}>Repeat:</Text>
                                                 <Select
                                                     value={layer.settings.repeatMode || 'none'}
-                                                    onChange={(value) => handleLayerSettingChange(layer.id, 'repeatMode', value)}
+                                                    onChange={(value: any) => handleLayerSettingChange(layer.id, 'repeatMode', value)}
                                                     style={fullWidthStyle}
                                                     size="small"
                                                 >
@@ -1535,13 +1535,13 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Horizontal Repeats (0=infinity):</Text>
                                                     <InputNumber
                                                         value={layer.settings.repeatCountX || 0}
-                                                        onChange={(value) => handleLayerSettingChange(layer.id, 'repeatCountX', value || 0)}
+                                                        onChange={(value: any) => handleLayerSettingChange(layer.id, 'repeatCountX', value || 0)}
                                                         min={0}
                                                         max={50}
                                                         size="small"
                                                         style={fullWidthStyle}
-                                                        formatter={(value) => value === 0 ? 'infinity' : value}
-                                                        parser={(value) => value === 'infinity' ? 0 : parseInt(value) || 0}
+                                                        formatter={(value: any) => value === 0 ? 'infinity' : value}
+                                                        parser={(value: any) => value === 'infinity' ? 0 : parseInt(value) || 0}
                                                     />
                                                 </div>
                                             )}
@@ -1551,13 +1551,13 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Vertical Repeats (0=infinity):</Text>
                                                     <InputNumber
                                                         value={layer.settings.repeatCountY || 0}
-                                                        onChange={(value) => handleLayerSettingChange(layer.id, 'repeatCountY', value || 0)}
+                                                        onChange={(value: any) => handleLayerSettingChange(layer.id, 'repeatCountY', value || 0)}
                                                         min={0}
                                                         max={50}
                                                         size="small"
                                                         style={fullWidthStyle}
-                                                        formatter={(value) => value === 0 ? 'infinity' : value}
-                                                        parser={(value) => value === 'infinity' ? 0 : parseInt(value) || 0}
+                                                        formatter={(value: any) => value === 0 ? 'infinity' : value}
+                                                        parser={(value: any) => value === 'infinity' ? 0 : parseInt(value) || 0}
                                                     />
                                                 </div>
                                             )}
@@ -1567,7 +1567,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Horizontal Offset:</Text>
                                                     <InputNumber
                                                         value={layer.settings.offsetHorizontal}
-                                                        onChange={(value) => handleLayerSettingChange(layer.id, 'offsetHorizontal', value || 0)}
+                                                        onChange={(value: any) => handleLayerSettingChange(layer.id, 'offsetHorizontal', value || 0)}
                                                         size="small"
                                                         style={fullWidthStyle}
                                                     />
@@ -1576,7 +1576,7 @@ const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dim
                                                     <Text style={textStyle12}>Vertical Offset:</Text>
                                                     <InputNumber
                                                         value={layer.settings.offsetVertical}
-                                                        onChange={(value) => handleLayerSettingChange(layer.id, 'offsetVertical', value || 0)}
+                                                        onChange={(value: any) => handleLayerSettingChange(layer.id, 'offsetVertical', value || 0)}
                                                         size="small"
                                                         style={fullWidthStyle}
                                                     />

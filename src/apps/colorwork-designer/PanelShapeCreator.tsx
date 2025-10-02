@@ -184,12 +184,12 @@ export default function PanelShapeCreator() {
   const selected = selectedInfo.node || root;
 
   // Generic field handler for numeric fields — preserve falsy 0 values
-  const handleField = useCallback((key, value) => {
+  const handleField = useCallback((key, value: any) => {
     setRoot(prev => updateNode(prev, selected.id, (n) => { n[key] = (value === undefined || value === null) ? 0 : value; }));
   }, [selected?.id]);
 
   // Toggle boolean fields like isHem
-  const handleToggle = useCallback((key, value) => {
+  const handleToggle = useCallback((key, value: any) => {
     setRoot(prev => updateNode(prev, selected.id, (n) => { n[key] = !!value; }));
   }, [selected?.id]);
 
@@ -617,7 +617,7 @@ export default function PanelShapeCreator() {
 
   // short rows are positioned individually; no reordering needed
 
-  const updateShortRowField = useCallback((id, key, value) => {
+  const updateShortRowField = useCallback((id, key, value: any) => {
     // clamp posX/posY
     const v = (key === 'posX' || key === 'posY') ? Math.max(0, Math.min(1, value)) : value;
     setRoot(prev => updateNode(prev, selected.id, (n) => {
@@ -701,9 +701,9 @@ export default function PanelShapeCreator() {
                   onClick={() => setSelectedId(item.id)}
                   actions={[
                     <Button key="up" icon={<ArrowUpOutlined />} size="small" disabled={index === 0}
-                      onClick={(e) => { e.stopPropagation(); setRoot(prev => reorderChildren(prev, selected.id, index, index - 1)); }} />,
+                      onClick={(e: any) => { e.stopPropagation(); setRoot(prev => reorderChildren(prev, selected.id, index, index - 1)); }} />,
                     <Button key="down" icon={<ArrowDownOutlined />} size="small" disabled={index === children.length - 1}
-                      onClick={(e) => { e.stopPropagation(); setRoot(prev => reorderChildren(prev, selected.id, index, index + 1)); }} />
+                      onClick={(e: any) => { e.stopPropagation(); setRoot(prev => reorderChildren(prev, selected.id, index, index + 1)); }} />
                   ]}
                 >
                   <Space>

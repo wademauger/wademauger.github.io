@@ -52,7 +52,7 @@ const ColorworkGrid = ({
     const [visibleCols, setVisibleCols] = useState(20);
 
     // Handle mouse down
-    const handleMouseDown = useCallback((row, col, event) => {
+    const handleMouseDown = useCallback((row, col, event: any) => {
         // Handle control-click for individual cell selection
         if (event.ctrlKey && activeTool === 'area-select') {
             // Don't prevent default for control-click to allow proper handling
@@ -73,7 +73,7 @@ const ColorworkGrid = ({
 
     // Throttled mouse move handler for better performance
     const throttledMouseMove = useMemo(
-        () => throttle((row, col, event) => {
+        () => throttle((row, col, event: any) => {
             setHoverPosition({ row, col });
 
             if (pasteMode && clipboard) {
@@ -92,12 +92,12 @@ const ColorworkGrid = ({
     );
 
     // Handle mouse move
-    const handleMouseMove = useCallback((row, col, event) => {
+    const handleMouseMove = useCallback((row, col, event: any) => {
         throttledMouseMove(row, col, event);
     }, [throttledMouseMove]);
 
     // Handle mouse up
-    const handleMouseUp = useCallback((event) => {
+    const handleMouseUp = useCallback((event: any) => {
         if (isMouseDown && activeTool === 'area-select' && selectionStart && selectionEnd) {
             const modifierKey = event.shiftKey ? 'shift' : event.ctrlKey ? 'ctrl' : null;
             onAreaSelect(selectionStart.row, selectionStart.col, selectionEnd.row, selectionEnd.col, modifierKey);
@@ -121,7 +121,7 @@ const ColorworkGrid = ({
 
     // Add event listeners
     useEffect(() => {
-        const handleGlobalMouseUp = (event) => {
+        const handleGlobalMouseUp = (event: any) => {
             handleMouseUp(event);
         };
 
@@ -381,8 +381,8 @@ const ColorworkGrid = ({
                         fill="transparent"
                         stroke="#999"
                         strokeWidth={1}
-                        onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
-                        onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
+                        onMouseDown={(e: any) => handleMouseDown(actualRow, actualCol, e)}
+                        onMouseMove={(e: any) => handleMouseMove(actualRow, actualCol, e)}
                         style={{ pointerEvents: 'all', cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
                         title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
                     />
@@ -401,8 +401,8 @@ const ColorworkGrid = ({
                 stroke="#999"
                 strokeWidth="1"
                 className={getStitchClasses(actualRow, actualCol)}
-                onMouseDown={(e) => handleMouseDown(actualRow, actualCol, e)}
-                onMouseMove={(e) => handleMouseMove(actualRow, actualCol, e)}
+                onMouseDown={(e: any) => handleMouseDown(actualRow, actualCol, e)}
+                onMouseMove={(e: any) => handleMouseMove(actualRow, actualCol, e)}
                 style={{ pointerEvents: 'all', cursor: pasteMode ? 'crosshair' : activeTool === 'pencil' ? 'crosshair' : 'cell' }}
                 title={`${actualRow + 1},${actualCol + 1}: ${stitch}`}
             />

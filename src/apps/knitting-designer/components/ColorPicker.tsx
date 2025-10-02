@@ -90,7 +90,7 @@ const ColorPicker = ({
             id="color-label"
             placeholder="Enter color label"
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e: any) => setLabel(e.target.value)}
             maxLength={20}
             size="small"
             style={{ marginTop: 4 }}

@@ -49,7 +49,7 @@ const ColorworkPanelEditor = forwardRef(({
 
     // Derive colors from global colorworkGrid Redux slice for consistency across apps
     // Falls back to a single soft gray if slice is unavailable
-    const reduxColorsArray = useSelector((state) => {
+    const reduxColorsArray = useSelector((state: any) => {
         const colors = state?.colorworkGrid?.colors;
         return colors ? Object.values(colors) : null;
     });
@@ -165,7 +165,7 @@ const ColorworkPanelEditor = forwardRef(({
         }
     };
 
-    const handlePanelConfigChange = (key, value) => {
+    const handlePanelConfigChange = (key, value: any) => {
         setPanelConfig(prev => ({
             ...prev,
             [key]: value

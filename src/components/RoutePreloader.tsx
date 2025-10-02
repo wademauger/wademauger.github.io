@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 const RoutePreloader = () => {
   useEffect(() => {
     // Add hover listeners to navigation links
-    const handleMouseEnter = (e) => {
+    const handleMouseEnter = (e: any) => {
       const href = e.target.getAttribute('href');
       if (href && (href.startsWith('/crafts') || href.includes('#/crafts'))) {
         // Prefetch the Layout component and related chunks

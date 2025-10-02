@@ -45,7 +45,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
   }, [library, filterText]);
 
   // Toggle artist expansion
-  const toggleArtist = React.useCallback((artistName) => {
+  const toggleArtist = React.useCallback((artistName: any) => {
     setExpandedArtists(prev => {
       const newSet = new Set(prev);
       if (newSet.has(artistName)) {
@@ -71,7 +71,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
   }, []);
 
   // Handle song selection
-  const handleSongSelect = React.useCallback((song, artistName, albumTitle) => {
+  const handleSongSelect = React.useCallback((song, artistName, albumTitle: any) => {
     const songId = `${artistName}-${albumTitle}-${song.title}`;
     setSelectedSongId(songId);
     if (onSelectSong) {

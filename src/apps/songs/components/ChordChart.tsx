@@ -132,7 +132,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
   const currentFingeringIndex = chordFingerings[chord] || 0;
   
   // Handle right-click to cycle through fingering alternatives
-  const handleRightClick = (e) => {
+  const handleRightClick = (e: any) => {
     e.preventDefault(); // Prevent context menu
     dispatch(cycleChordFingering(chord));
   };

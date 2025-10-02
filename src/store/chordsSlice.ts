@@ -23,7 +23,7 @@ const chordsSlice = createSlice({
       const chord = action.payload;
       state.pinnedChords = state.pinnedChords.filter((c: any) => c !== chord);
     },
-    clearPinnedChords: (state) => {
+    clearPinnedChords: (state: any) => {
       state.pinnedChords = [];
     },
     setInstrument: (state, action) => {

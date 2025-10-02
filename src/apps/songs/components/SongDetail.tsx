@@ -121,7 +121,7 @@ const SortableLyricLine = ({
             <div className="lyric-controls" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button 
                 className="control-button edit" 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleEditLine(index);
                 }}
@@ -139,7 +139,7 @@ const SortableLyricLine = ({
               </button>
               <button 
                 className="control-button insert" 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleInsertAfter(index);
                 }}
@@ -158,7 +158,7 @@ const SortableLyricLine = ({
               </button>
               <button 
                 className="control-button delete" 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleDeleteLine(index);
                 }}
@@ -193,8 +193,8 @@ const SortableLyricLine = ({
                   boxShadow: isDragDisabled ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
                   opacity: isDragDisabled ? 0.6 : 1
                 }}
-                onMouseDown={isDragDisabled ? undefined : (e) => e.currentTarget.style.cursor = 'grabbing'}
-                onMouseUp={isDragDisabled ? undefined : (e) => e.currentTarget.style.cursor = 'grab'}
+                onMouseDown={isDragDisabled ? undefined : (e: any) => e.currentTarget.style.cursor = 'grabbing'}
+                onMouseUp={isDragDisabled ? undefined : (e: any) => e.currentTarget.style.cursor = 'grab'}
                 title={isDragDisabled ? 'Drag disabled during update' : 'Drag to reorder'}
               >
                 {isThisLinePending ? (
@@ -227,10 +227,10 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   const [isSavingTranspose, setIsSavingTranspose] = useState(false);
   const [isSavingWholeSong, setIsSavingWholeSong] = useState(false);
   const dispatch = useDispatch();
-  const instrument = useSelector((state) => state.chords.currentInstrument);
-  const transpose = useSelector((state) => state.chords.transposeBy?.[song.title] || 0);
-  const chordFingerings = useSelector((state) => state.chords.chordFingerings);
-  const isGoogleDriveConnected = useSelector((state) => state.songs.isGoogleDriveConnected);
+  const instrument = useSelector((state: any) => state.chords.currentInstrument);
+  const transpose = useSelector((state: any) => state.chords.transposeBy?.[song.title] || 0);
+  const chordFingerings = useSelector((state: any) => state.chords.chordFingerings);
+  const isGoogleDriveConnected = useSelector((state: any) => state.songs.isGoogleDriveConnected);
 
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -504,7 +504,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   // Handle drag end for reordering lines with optimistic updates
-  const handleDragEnd = async (event) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event;
 
     if (active.id !== over.id) {
@@ -775,7 +775,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
             <select
               id="instrument-select"
               value={instrument}
-              onChange={(e) => dispatch(setInstrument(e.target.value))}
+              onChange={(e: any) => dispatch(setInstrument(e.target.value))}
               style={{ minWidth: 120 }}
             >
               <option value="ukulele">Ukulele</option>
@@ -836,8 +836,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                       gap: '0.5em',
                       transition: 'background-color 0.2s ease'
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#3367d6'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#4285f4'}
+                    onMouseEnter={(e: any) => e.target.style.backgroundColor = '#3367d6'}
+                    onMouseLeave={(e: any) => e.target.style.backgroundColor = '#4285f4'}
                   >
                     <FaEdit /> Edit Whole Song
                   </button>
@@ -856,8 +856,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                       gap: '0.5em',
                       transition: 'background-color 0.2s ease'
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    onMouseEnter={(e: any) => e.target.style.backgroundColor = '#c82333'}
+                    onMouseLeave={(e: any) => e.target.style.backgroundColor = '#dc3545'}
                     onClick={() => {
                       Modal.confirm({
                         title: 'Delete song?',
@@ -917,7 +917,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
           {isEditingWholeSong ? (
             <textarea
               value={wholeSongText}
-              onChange={(e) => setWholeSongText(e.target.value)}
+              onChange={(e: any) => setWholeSongText(e.target.value)}
               style={{
                 width: '100%',
                 height: '60vh',

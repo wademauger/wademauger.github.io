@@ -80,7 +80,7 @@ const PatternEditor = ({
   };
 
   // Handle pattern size changes
-  const handleSizeChange = (dimension, value) => {
+  const handleSizeChange = (dimension, value: any) => {
     const newSize = { ...patternSize, [dimension]: value };
     
     // Resize pattern array
@@ -92,7 +92,7 @@ const PatternEditor = ({
         newPattern[i] = currentPattern[i] || 0;
       }
     } else {
-      newPattern = Array(newSize.height).fill(null).map((_, row) => {
+      newPattern = Array(newSize.height).fill(null).map((_, row: any) => {
         const newRow = new Array(newSize.width).fill(0);
         if (currentPattern[row]) {
           for (let col = 0; col < Math.min(currentPattern[row].length, newSize.width); col++) {
@@ -146,7 +146,7 @@ const PatternEditor = ({
               <Text strong>Width (stitches)</Text>
               <InputNumber
                 value={patternSize.width}
-                onChange={(value) => handleSizeChange('width', value)}
+                onChange={(value: any) => handleSizeChange('width', value)}
                 min={1}
                 max={50}
                 style={{ width: '100%' }}
@@ -157,7 +157,7 @@ const PatternEditor = ({
             <Text strong>{patternType === 'stripes' ? 'Rows' : 'Height (rows)'}</Text>
             <InputNumber
               value={patternSize.height}
-              onChange={(value) => handleSizeChange('height', value)}
+              onChange={(value: any) => handleSizeChange('height', value)}
               min={1}
               max={50}
               style={{ width: '100%' }}
@@ -192,14 +192,14 @@ const PatternEditor = ({
                 onClick={() => setActiveColorIndex(index)}>
                   <ColorPicker
                     value={color}
-                    onChange={(value) => updateColor(index, value.toHexString())}
+                    onChange={(value: any) => updateColor(index, value.toHexString())}
                     size="small"
                   />
                   <Button
                     size="small"
                     type="text"
                     icon={<MinusOutlined />}
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.stopPropagation();
                       removeColor(index);
                     }}
@@ -251,7 +251,7 @@ const PatternEditor = ({
             <Input
               placeholder="Pattern name"
               value={patternName}
-              onChange={(e) => setPatternName(e.target.value)}
+              onChange={(e: any) => setPatternName(e.target.value)}
             />
             <Button 
               type="primary" 

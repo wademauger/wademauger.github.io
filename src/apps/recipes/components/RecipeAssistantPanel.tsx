@@ -7,8 +7,8 @@ import './RecipeAssistantPanel.css';
 
 const RecipeAssistantPanel = () => {
   const dispatch = useDispatch();
-  const draftRecipe = useSelector((state) => state.recipes.draftRecipe);
-  const chatMessages = useSelector((state) => state.recipes.chatMessages);
+  const draftRecipe = useSelector((state: any) => state.recipes.draftRecipe);
+  const chatMessages = useSelector((state: any) => state.recipes.chatMessages);
 
   // Helper function to try parsing a recipe from assistant response
   const tryParseRecipe = (text) => {

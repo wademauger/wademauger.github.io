@@ -123,7 +123,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.quantity || ''}
-              onChange={(e) => setEditValues({ ...editValues, quantity: e.target.value })}
+              onChange={(e: any) => setEditValues({ ...editValues, quantity: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -131,7 +131,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.unit || ''}
-              onChange={(e) => setEditValues({ ...editValues, unit: e.target.value })}
+              onChange={(e: any) => setEditValues({ ...editValues, unit: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -139,7 +139,7 @@ const SortableIngredient = ({
             <Input
               size="small"
               value={editValues.name || ''}
-              onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+              onChange={(e: any) => setEditValues({ ...editValues, name: e.target.value })}
               style={{ width: '100%' }}
             />
           </td>
@@ -167,7 +167,7 @@ const SortableIngredient = ({
             {hoveredIndex === index && editingEnabled && !isPendingDelete && (
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 <button 
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleEdit(index);
                     setEditValues(ingredient);
@@ -185,7 +185,7 @@ const SortableIngredient = ({
                   <FaPencilAlt />
                 </button>
                 <button 
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleInsertAfter(index);
                   }}
@@ -203,7 +203,7 @@ const SortableIngredient = ({
                   <FaPlus />
                 </button>
                 <button 
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleInsertDividerAfter(index);
                   }}
@@ -221,7 +221,7 @@ const SortableIngredient = ({
                   ➖
                 </button>
                 <button 
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleDelete(index);
                   }}
@@ -342,7 +342,7 @@ const SortableStep = ({
           <div style={{ flex: 1, position: 'relative' }}>
             <TextArea
               value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
+              onChange={(e: any) => setEditValue(e.target.value)}
               autoSize={{ minRows: 1, maxRows: 6 }}
               style={{ 
                 width: '100%',
@@ -395,7 +395,7 @@ const SortableStep = ({
           {hoveredIndex === index && editingEnabled && !isPendingDelete && (
             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleEdit(index);
                   setEditValue(step);
@@ -413,7 +413,7 @@ const SortableStep = ({
                 <FaPencilAlt />
               </button>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleInsertAfter(index);
                 }}
@@ -431,7 +431,7 @@ const SortableStep = ({
                 <FaPlus />
               </button>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleDelete(index);
                 }}
@@ -531,7 +531,7 @@ const SortableNote = ({
         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
           <TextArea
             value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
+            onChange={(e: any) => setEditValue(e.target.value)}
             autoSize={{ minRows: 1, maxRows: 3 }}
             style={{ flex: 1 }}
           />
@@ -550,7 +550,7 @@ const SortableNote = ({
           {hoveredIndex === index && editingEnabled && !isPendingDelete && (
             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleEdit(index);
                   setEditValue(note);
@@ -568,7 +568,7 @@ const SortableNote = ({
                 <FaPencilAlt />
               </button>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleInsertAfter(index);
                 }}
@@ -586,7 +586,7 @@ const SortableNote = ({
                 <FaPlus />
               </button>
               <button 
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   handleDelete(index);
                 }}
@@ -851,7 +851,7 @@ const RecipeDetail = ({
   };
 
   // Drag and drop handlers
-  const handleIngredientDragEnd = async (event) => {
+  const handleIngredientDragEnd = async (event: any) => {
     const { active, over } = event;
     
     if (active.id !== over.id) {
@@ -865,7 +865,7 @@ const RecipeDetail = ({
     }
   };
 
-  const handleStepDragEnd = async (event) => {
+  const handleStepDragEnd = async (event: any) => {
     const { active, over } = event;
     
     if (active.id !== over.id) {
@@ -878,7 +878,7 @@ const RecipeDetail = ({
     }
   };
 
-  const handleNoteDragEnd = async (event) => {
+  const handleNoteDragEnd = async (event: any) => {
     const { active, over } = event;
     
     if (active.id !== over.id) {
@@ -1063,7 +1063,7 @@ const RecipeDetail = ({
               <>
                 <Input
                   value={titleValue}
-                  onChange={(e) => setTitleValue(e.target.value)}
+                  onChange={(e: any) => setTitleValue(e.target.value)}
                   onPressEnter={handleSaveTitle}
                   autoFocus
                   style={{ fontSize: '1.5em', fontWeight: 'bold', flex: 1 }}

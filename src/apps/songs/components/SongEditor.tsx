@@ -287,7 +287,7 @@ const SongEditor = ({
 
   // Add keyboard shortcuts for chord insertion
   useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: any) => {
       // Check if Ctrl is pressed and it's a number key
       if (event.ctrlKey && !event.shiftKey && !event.altKey) {
         const keyNum = parseInt(event.key);
@@ -646,7 +646,7 @@ const SongEditor = ({
                 <div className="conversion-content">
                   <textarea
                     value={originalLyrics}
-                    onChange={(e) => setOriginalLyrics(e.target.value)}
+                    onChange={(e: any) => setOriginalLyrics(e.target.value)}
                     placeholder="Paste Ultimate Guitar format lyrics here..."
                     className="conversion-textarea-compact"
                     rows={4}
@@ -702,7 +702,7 @@ const SongEditor = ({
           <textarea
             ref={textareaRef}
             value={editedLyrics}
-            onChange={(e) => setEditedLyrics(e.target.value)}
+            onChange={(e: any) => setEditedLyrics(e.target.value)}
             placeholder="Enter lyrics with chords in [chord] format..."
             className={`lyrics-editor${chordPalette.length > 0 ? ' has-chord-palette' : ''}`}
             spellCheck={false}

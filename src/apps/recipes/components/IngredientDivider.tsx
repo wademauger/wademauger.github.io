@@ -63,7 +63,7 @@ const IngredientDivider = ({
               <Input
                 size="small"
                 value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                onChange={(e: any) => setEditValue(e.target.value)}
                 placeholder="Section name (e.g., For the dough)"
                 style={{ 
                   fontWeight: 'bold',

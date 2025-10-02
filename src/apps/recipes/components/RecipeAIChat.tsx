@@ -722,7 +722,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: any) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -986,7 +986,7 @@ I'll be able to see all your ingredients, steps, and notes to provide contextual
             <Space.Compact style={{ width: '100%' }}>
               <TextArea
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e: any) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
                   isSwitchingModel 

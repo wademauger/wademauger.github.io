@@ -818,7 +818,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
   };
 
   // Update slug when title changes (only if user hasn't manually edited slug)
-  const handleTitleChange = (e) => {
+  const handleTitleChange = (e: any) => {
     const newTitle = e.target.value;
     setTitleValue(newTitle);
     
@@ -833,7 +833,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
   };
 
   // Track manual slug edits
-  const handleSlugChange = (e) => {
+  const handleSlugChange = (e: any) => {
     const newSlug = e.target.value;
     setSlugValue(newSlug);
     setManualSlugEdit(true);
@@ -953,7 +953,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
   }, [aiMessages]);
 
   // Handle chat input submission
-  const handleChatSubmit = async (e) => {
+  const handleChatSubmit = async (e: any) => {
     e.preventDefault();
     if (!chatInput.trim() || aiLoading) return;
 
@@ -1781,7 +1781,7 @@ const NewRecipeForm = ({ visible, onCancel, onSave, loading = false }) => {
             <form onSubmit={handleChatSubmit} style={{ display: 'flex', gap: 8 }}>
               <Input
                 value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
+                onChange={(e: any) => setChatInput(e.target.value)}
                 placeholder="Ask me about your recipe..."
                 disabled={aiLoading}
                 style={{ flex: 1 }}

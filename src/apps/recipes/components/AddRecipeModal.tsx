@@ -44,7 +44,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
   };
 
   // Handle title input change
-  const handleTitleChange = (e) => {
+  const handleTitleChange = (e: any) => {
     const title = e.target.value;
 
     // Only auto-generate permalink if user hasn't manually edited it
@@ -56,7 +56,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
     }
   };
 
-  const validatePermalink = async (_, value) => {
+  const validatePermalink = async (_, value: any) => {
     if (!value) {
       return Promise.reject(new Error('Permalink is required'));
     }
@@ -106,7 +106,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
     }
   };
 
-  const formatPermalink = (value) => {
+  const formatPermalink = (value: any) => {
     if (!value) return value;
 
     // Convert to lowercase and replace invalid characters with hyphens
@@ -118,7 +118,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
   };
 
   // Handle permalink input change (manual editing)
-  const handlePermalinkChange = (e) => {
+  const handlePermalinkChange = (e: any) => {
     const value = e.target.value;
     const formatted = formatPermalink(value);
     form.setFieldsValue({ permalink: formatted });

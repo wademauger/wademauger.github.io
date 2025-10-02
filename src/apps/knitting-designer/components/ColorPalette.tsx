@@ -50,7 +50,7 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
       <Input
         type="color"
         value={colors[colorCode]}
-        onChange={(e) => handleColorValueChange(colorCode, e.target.value)}
+        onChange={(e: any) => handleColorValueChange(colorCode, e.target.value)}
         style={{ width: '100%', height: '40px' }}
       />
       <div style={{ marginTop: '8px' }}>
@@ -78,7 +78,7 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
       <Input
         placeholder="Color name (e.g., CC5)"
         value={newColorName}
-        onChange={(e) => setNewColorName(e.target.value)}
+        onChange={(e: any) => setNewColorName(e.target.value)}
         onPressEnter={handleAddColor}
         style={{ marginBottom: '8px' }}
       />

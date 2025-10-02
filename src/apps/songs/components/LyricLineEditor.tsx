@@ -15,7 +15,7 @@ const LyricLineEditor = ({ line, onSave, onCancel }) => {
     onSave(editedLine);
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: any) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
@@ -29,7 +29,7 @@ const LyricLineEditor = ({ line, onSave, onCancel }) => {
         ref={inputRef}
         type="text"
         value={editedLine}
-        onChange={(e) => setEditedLine(e.target.value)}
+        onChange={(e: any) => setEditedLine(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Enter lyrics with [Chord] notation..."
         className="lyric-input"

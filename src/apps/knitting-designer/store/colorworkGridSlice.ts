@@ -172,7 +172,7 @@ const colorworkGridSlice = createSlice({
       state.isDirty = false;
     },
     
-    resetColors: (state) => {
+    resetColors: (state: any) => {
       state.colors = initialState.colors;
       state.activeColorId = initialState.activeColorId;
       state.foregroundColorId = initialState.foregroundColorId;
@@ -180,7 +180,7 @@ const colorworkGridSlice = createSlice({
       state.isDirty = true;
     },
     
-    markSaved: (state) => {
+    markSaved: (state: any) => {
       state.lastSaved = new Date().toISOString();
       state.isDirty = false;
     }
@@ -203,33 +203,33 @@ export const {
 export default colorworkGridSlice.reducer;
 
 // Selectors
-export const selectColors = (state) => state.colorworkGrid?.colors || {};
-export const selectActiveColorId = (state) => state.colorworkGrid?.activeColorId || 'CC1';
-export const selectActiveColor = (state) => {
+export const selectColors = (state: any) => state.colorworkGrid?.colors || {};
+export const selectActiveColorId = (state: any) => state.colorworkGrid?.activeColorId || 'CC1';
+export const selectActiveColor = (state: any) => {
   const colors = state.colorworkGrid?.colors || {};
   const activeId = state.colorworkGrid?.activeColorId || 'CC1';
   return colors[activeId];
 };
-export const selectForegroundColorId = (state) => state.colorworkGrid?.foregroundColorId || state.colorworkGrid?.activeColorId || 'MC';
-export const selectBackgroundColorId = (state) => state.colorworkGrid?.backgroundColorId || 'CCX';
-export const selectForegroundColor = (state) => {
+export const selectForegroundColorId = (state: any) => state.colorworkGrid?.foregroundColorId || state.colorworkGrid?.activeColorId || 'MC';
+export const selectBackgroundColorId = (state: any) => state.colorworkGrid?.backgroundColorId || 'CCX';
+export const selectForegroundColor = (state: any) => {
   const colors = state.colorworkGrid?.colors || {};
   const id = state.colorworkGrid?.foregroundColorId || state.colorworkGrid?.activeColorId || 'MC';
   return colors[id];
 };
-export const selectBackgroundColor = (state) => {
+export const selectBackgroundColor = (state: any) => {
   const colors = state.colorworkGrid?.colors || {};
   const id = state.colorworkGrid?.backgroundColorId || 'CCX';
   return colors[id];
 };
 export const selectColorById = (state, id) => state.colorworkGrid?.colors?.[id];
-export const selectColorsArray = (state) => Object.values(state.colorworkGrid?.colors || {});
-export const selectColorsCount = (state) => Object.keys(state.colorworkGrid?.colors || {}).length;
-export const selectIsDirty = (state) => state.colorworkGrid?.isDirty || false;
-export const selectLastSaved = (state) => state.colorworkGrid?.lastSaved;
+export const selectColorsArray = (state: any) => Object.values(state.colorworkGrid?.colors || {});
+export const selectColorsCount = (state: any) => Object.keys(state.colorworkGrid?.colors || {}).length;
+export const selectIsDirty = (state: any) => state.colorworkGrid?.isDirty || false;
+export const selectLastSaved = (state: any) => state.colorworkGrid?.lastSaved;
 
 // Color palette for legacy compatibility (returns simple color map)
-export const selectColorPalette = (state) => {
+export const selectColorPalette = (state: any) => {
   const colors = state.colorworkGrid?.colors || {};
   const palette = {};
   

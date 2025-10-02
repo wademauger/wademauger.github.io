@@ -27,7 +27,7 @@ const InteractiveKnittingView = ({
                 setEnhancedStitchPlan(combinedPattern.stitchPlan);
             } else {
                 // Fallback: create enhanced stitch plan with colorwork
-                const service = new ColorworkStitchPlanService();
+                const service: any = new ColorworkStitchPlanService();
                 const panel = combinedPattern.panel;
                 const colorworkPattern = combinedPattern.colorworkPattern;
                 

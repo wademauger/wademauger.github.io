@@ -5,7 +5,7 @@ import SpotifyService from '../services/SpotifyService';
 const CACHE_KEY_PREFIX = 'albumArt_';
 const CACHE_EXPIRY_HOURS = 24; // Cache for 24 hours
 
-const getCacheKey = (artist, album) => {
+const getCacheKey = (artist, album: any) => {
   // Cache by artist and album only (not track)
   return `${CACHE_KEY_PREFIX}${artist}_${album || 'unknown'}`.replace(/[^a-zA-Z0-9_]/g, '_');
 };
@@ -31,7 +31,7 @@ const getCachedData = (cacheKey) => {
   return null;
 };
 
-const setCachedData = (cacheKey, data) => {
+const setCachedData = (cacheKey, data: any) => {
   try {
     const cacheObject = {
       data,
@@ -171,7 +171,7 @@ const AlbumArt = ({ artist, album, size = 150 }) => {
           border: '1px solid #ddd',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}
-        onError={(e) => {
+        onError={(e: any) => {
           e.target.style.display = 'none';
           setError('Image failed to load');
         }}

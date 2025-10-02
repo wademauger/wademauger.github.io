@@ -26,7 +26,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
     useEffect(() => {
         if (!isKnitting) return;
 
-        const handleKeyPress = (event) => {
+        const handleKeyPress = (event: any) => {
             if (event.key === 'ArrowRight') {
                 handleNextStep();
             }
@@ -64,7 +64,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
         </div>
     ) : null);
 
-    const handleButtonClick = (event) => {
+    const handleButtonClick = (event: any) => {
         event.stopPropagation(); // Prevent collapse from toggling
         setIsKnitting(`${patternId}-${panelId}`, setCurrentStep);
         setIsCompleted(false);

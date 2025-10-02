@@ -19,7 +19,7 @@ const KnittingDesignerApp = () => {
     const colors = useSelector(selectColorPalette); // Legacy format for existing code
     const activeColorData = useSelector(selectActiveColor);
     // Google Drive connection state (some UI paths expect this variable)
-    const isGoogleDriveConnected = useSelector((state) => (state && state.songs ? state.songs.isGoogleDriveConnected : false));
+    const isGoogleDriveConnected = useSelector((state: any) => (state && state.songs ? state.songs.isGoogleDriveConnected : false));
 
     // Current active color (for painting)
     const activeColor = activeColorId;
@@ -374,7 +374,7 @@ const KnittingDesignerApp = () => {
     // Resize grid
     const handleGridResize = useCallback((newSize) => {
         const defaultFill = backgroundColorId || activeColorId || 'MC';
-        const newPattern = Array(newSize.height).fill(null).map((_, row) =>
+        const newPattern = Array(newSize.height).fill(null).map((_, row: any) =>
             Array(newSize.width).fill(null).map((_, col) => {
                 // Preserve existing pattern data if within bounds
                 if (row < pattern.length && col < pattern[0].length) {
@@ -392,7 +392,7 @@ const KnittingDesignerApp = () => {
     }, [pattern, saveToHistory, backgroundColorId, activeColorId]);
 
     // Handle stitch clicks
-    const handleStitchClick = useCallback((row, col, event) => {
+    const handleStitchClick = useCallback((row, col, event: any) => {
         if (pasteMode && clipboard) {
             // Handle paste - skip null cells
             const newPattern = [...pattern];
@@ -790,7 +790,7 @@ const KnittingDesignerApp = () => {
 
     // Keyboard shortcuts
     useEffect(() => {
-        const handleKeyDown = (event) => {
+        const handleKeyDown = (event: any) => {
             // Prevent default browser shortcuts
             if (event.ctrlKey || event.metaKey) {
                 switch (event.key) {

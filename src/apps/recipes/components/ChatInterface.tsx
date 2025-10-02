@@ -17,7 +17,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
     inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
@@ -34,7 +34,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: any) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -110,7 +110,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
           <textarea
             ref={inputRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e: any) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask me about recipes, ingredients, cooking techniques..."
             className="chat-input"

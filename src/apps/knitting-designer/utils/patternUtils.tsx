@@ -44,7 +44,7 @@ export const validatePattern = (pattern, colors) => {
  * @returns {Array<Array<string>>} Resized pattern
  */
 export const resizePattern = (pattern, newSize, fillColor = 'CCX') => {
-  const newPattern = Array(newSize.height).fill(null).map((_, row) => 
+  const newPattern = Array(newSize.height).fill(null).map((_, row: any) => 
     Array(newSize.width).fill(null).map((_, col) => {
       // Preserve existing pattern data if within bounds
       if (row < pattern.length && col < pattern[0].length) {

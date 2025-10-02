@@ -95,7 +95,7 @@ const LibrarySettingsModal = () => {
       // Debug: show whether callback id is present on modalData
       console.log('LibrarySettingsModal: modalData.onSelectFileCallbackId =', modalData && modalData.onSelectFileCallbackId);
       
-      const service = getService();
+      const service: any = getService();
       if (service) {
         // Load user preferences from the appropriate service
         const userPreferences = service.getUserPreferences ? service.getUserPreferences() : {};
@@ -125,7 +125,7 @@ const LibrarySettingsModal = () => {
   
 
   const loadFolderSuggestions = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     try {
@@ -156,7 +156,7 @@ const LibrarySettingsModal = () => {
   };
 
   const searchForFile = async (settings = null) => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const { fileName, folderPath } = resolveFileAndFolder(settings);
@@ -203,7 +203,7 @@ const LibrarySettingsModal = () => {
   };
 
   const handleLoadExisting = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service || !fileStatus?.found) return;
 
     try {
@@ -289,7 +289,7 @@ const LibrarySettingsModal = () => {
   };
 
   const handleCreateNew = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const settings = form.getFieldsValue();
@@ -311,7 +311,7 @@ const LibrarySettingsModal = () => {
   };
 
   const handleSaveSettings = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const settings = form.getFieldsValue();
@@ -343,7 +343,7 @@ const LibrarySettingsModal = () => {
   // When the modal is used as a Save As dialog for other apps (panels),
   // invoke the registered callback with the chosen file (existing or newly created).
   const handleSaveHere = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     try {
@@ -429,7 +429,7 @@ const LibrarySettingsModal = () => {
   };
 
   const handleClearSettings = () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     if (service.clearUserPreferences) {

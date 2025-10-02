@@ -296,7 +296,7 @@ const initialState = {
 };
 
 // Helper function to normalize album property names
-const normalizeAlbum = (album) => {
+const normalizeAlbum = (album: any) => {
   if (!album) return album;
   // Albums should only have 'title' property
   // Create a completely new object to avoid read-only property issues
@@ -308,7 +308,7 @@ const normalizeAlbum = (album) => {
 };
 
 // Helper function to normalize song property names
-const normalizeSong = (song) => {
+const normalizeSong = (song: any) => {
   if (!song) return song;
   // Songs should only have 'title' property
   // Create a completely new object to avoid read-only property issues
@@ -354,7 +354,7 @@ const songsSlice = createSlice({
     setSelectedSong: (state, action) => {
       state.selectedSong = action.payload;
     },
-    clearSelectedSong: (state) => {
+    clearSelectedSong: (state: any) => {
       state.selectedSong = null;
     },
     setLibrary: (state, action) => {
@@ -371,7 +371,7 @@ const songsSlice = createSlice({
       };
       state.library = normalizedLibrary;
     },
-    loadMockLibrary: (state) => {
+    loadMockLibrary: (state: any) => {
       const mockLibrary = {
         artists: [
           {
@@ -525,7 +525,7 @@ const songsSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload;
     },
-    clearError: (state) => {
+    clearError: (state: any) => {
       state.error = null;
     },
     // Local update for mock data
@@ -667,7 +667,7 @@ const songsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Load library from Drive
-      .addCase(loadLibraryFromDrive.pending, (state) => {
+      .addCase(loadLibraryFromDrive.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -719,7 +719,7 @@ const songsSlice = createSlice({
         };
       })
       // Update song
-      .addCase(updateSong.pending, (state) => {
+      .addCase(updateSong.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -778,7 +778,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Add song
-      .addCase(addSong.pending, (state) => {
+      .addCase(addSong.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -814,7 +814,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Delete song
-      .addCase(deleteSong.pending, (state) => {
+      .addCase(deleteSong.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -860,7 +860,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Add artist
-      .addCase(addArtist.pending, (state) => {
+      .addCase(addArtist.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -894,7 +894,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Add album
-      .addCase(addAlbum.pending, (state) => {
+      .addCase(addAlbum.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -934,7 +934,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Update artist
-      .addCase(updateArtist.pending, (state) => {
+      .addCase(updateArtist.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -968,7 +968,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Update album
-      .addCase(updateAlbum.pending, (state) => {
+      .addCase(updateAlbum.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -1005,7 +1005,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Delete artist
-      .addCase(deleteArtist.pending, (state) => {
+      .addCase(deleteArtist.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -1041,7 +1041,7 @@ const songsSlice = createSlice({
         state.error = action.payload;
       })
       // Delete album
-      .addCase(deleteAlbum.pending, (state) => {
+      .addCase(deleteAlbum.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
@@ -1099,19 +1099,19 @@ export const {
 } = songsSlice.actions;
 
 // Selectors
-export const selectLibrary = (state) => state.songs.library;
-export const selectSelectedSong = (state) => state.songs.selectedSong;
-export const selectIsLoading = (state) => state.songs.isLoading;
-export const selectError = (state) => state.songs.error;
-export const selectIsGoogleDriveConnected = (state) => state.songs.isGoogleDriveConnected;
-export const selectUserInfo = (state) => state.songs.userInfo;
+export const selectLibrary = (state: any) => state.songs.library;
+export const selectSelectedSong = (state: any) => state.songs.selectedSong;
+export const selectIsLoading = (state: any) => state.songs.isLoading;
+export const selectError = (state: any) => state.songs.error;
+export const selectIsGoogleDriveConnected = (state: any) => state.songs.isGoogleDriveConnected;
+export const selectUserInfo = (state: any) => state.songs.userInfo;
 
 // Helper selector to get total songs count
-export const selectTotalSongsCount = (state) => {
+export const selectTotalSongsCount = (state: any) => {
   const library = selectLibrary(state);
   if (!library || !library.artists) return 0;
-  return library.artists.reduce((total, artist) => {
-    return total + artist.albums.reduce((albumTotal, album) => {
+  return library.artists.reduce((total, artist: any) => {
+    return total + artist.albums.reduce((albumTotal, album: any) => {
       return albumTotal + (album.songs ? album.songs.length : 0);
     }, 0);
   }, 0);

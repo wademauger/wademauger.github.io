@@ -113,7 +113,7 @@ const LibraryModal = () => {
 
   useEffect(() => {
     if (isVisible && modalData) {
-      const service = getService();
+      const service: any = getService();
       if (service) {
         // Load user preferences from the appropriate service and filter them
         // so preferences from other app contexts (e.g. songs) don't override
@@ -180,7 +180,7 @@ const LibraryModal = () => {
 
 
   const loadFolderSuggestions = async (query = '') => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     try {
@@ -206,7 +206,7 @@ const LibraryModal = () => {
   };
 
   const listJsonFilesInFolder = async (folderPath) => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return [];
 
     try {
@@ -264,7 +264,7 @@ const LibraryModal = () => {
   }, [form, appContext, modalData]);
 
   const searchForFile = async (settings = null) => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const { fileName, folderPath } = resolveFileAndFolder(settings);
@@ -293,7 +293,7 @@ const LibraryModal = () => {
   };
 
   const loadLibraryDataForFile = async (status) => {
-    const service = getService();
+    const service: any = getService();
     if (!service || !status?.found) return null;
     try {
       let libraryData = null;
@@ -337,7 +337,7 @@ const LibraryModal = () => {
     }
   };
 
-  const countPanels = (libraryData) => {
+  const countPanels = (libraryData: any) => {
     if (!libraryData || typeof libraryData !== 'object') return 0;
     let total = 0;
     const arrays = Object.values(libraryData).filter((v: any) => Array.isArray(v));
@@ -347,7 +347,7 @@ const LibraryModal = () => {
     return total;
   };
 
-  const checkPanelConflict = (panelName, libraryData) => {
+  const checkPanelConflict = (panelName, libraryData: any) => {
     if (!panelName) return false;
     const lib = libraryData || selectedLibraryData;
     if (!lib || typeof lib !== 'object') return false;
@@ -422,7 +422,7 @@ const LibraryModal = () => {
   };
 
   const handleLoadExisting = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service || !fileStatus?.found) return;
 
     try {
@@ -517,7 +517,7 @@ const LibraryModal = () => {
   };
 
   const handleCreateNew = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const settings = form.getFieldsValue();
@@ -539,7 +539,7 @@ const LibraryModal = () => {
   };
 
   const handleSaveSettings = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     const settings = form.getFieldsValue();
@@ -571,7 +571,7 @@ const LibraryModal = () => {
   // When the modal is used as a Save As dialog for other apps (panels),
   // invoke the registered callback with the chosen file (existing or newly created).
   const handleSaveHere = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     try {
@@ -741,7 +741,7 @@ const LibraryModal = () => {
   };
 
   const handleReplaceExisting = async () => {
-    const service = getService();
+    const service: any = getService();
     if (!service || !fileStatus?.found) return;
 
     try {
@@ -786,7 +786,7 @@ const LibraryModal = () => {
   };
 
   const handleClearSettings = () => {
-    const service = getService();
+    const service: any = getService();
     if (!service) return;
 
     if (service.clearUserPreferences) {
@@ -872,8 +872,8 @@ const LibraryModal = () => {
             >
               <AutoComplete
                 options={folderOptions}
-                onSearch={(value) => loadFolderSuggestions(value)}
-                onSelect={(value) => {
+                onSearch={(value: any) => loadFolderSuggestions(value)}
+                onSelect={(value: any) => {
                   form.setFieldsValue({ locationPath: value });
                   // refresh json file list for selected folder
                   const { folderPath } = resolveFileAndFolder(form.getFieldsValue());

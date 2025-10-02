@@ -45,8 +45,8 @@ const SongTabsApp = () => {
   // Helper function to count total songs in library
   const getTotalSongsCount = useCallback(() => {
     if (!library || !library.artists) return 0;
-    return library.artists.reduce((total, artist) => {
-      return total + artist.albums.reduce((albumTotal, album) => {
+    return library.artists.reduce((total, artist: any) => {
+      return total + artist.albums.reduce((albumTotal, album: any) => {
         return albumTotal + (album.songs ? album.songs.length : 0);
       }, 0);
     }, 0);
@@ -273,7 +273,7 @@ const SongTabsApp = () => {
   const lyricsSectionRef = React.useRef(null);
 
   // Handle song selection from SongList
-  const handleSongSelect = React.useCallback((songData, artistName, albumTitle) => {
+  const handleSongSelect = React.useCallback((songData, artistName, albumTitle: any) => {
     if (songData && artistName && albumTitle) {
       // Create normalized song object for Redux
       const normalizedSong = {
@@ -476,8 +476,8 @@ const SongTabsApp = () => {
                               height: 'auto',
                               fontSize: '16px'
                             }}
-                            onMouseEnter={(e) => e.target.style.color = '#1890ff'}
-                            onMouseLeave={(e) => e.target.style.color = '#666'}
+                            onMouseEnter={(e: any) => e.target.style.color = '#1890ff'}
+                            onMouseLeave={(e: any) => e.target.style.color = '#666'}
                             title="Edit Song"
                           >
                             ✏️
@@ -500,8 +500,8 @@ const SongTabsApp = () => {
                                 height: 'auto',
                                 fontSize: '16px'
                               }}
-                              onMouseEnter={(e) => e.target.style.color = '#ff4d4f'}
-                              onMouseLeave={(e) => e.target.style.color = '#666'}
+                              onMouseEnter={(e: any) => e.target.style.color = '#ff4d4f'}
+                              onMouseLeave={(e: any) => e.target.style.color = '#666'}
                               title="Delete Song"
                             >
                               🗑️

@@ -47,7 +47,7 @@ const ColorworkInstructionDemo = () => {
         const panel = createDemoPanel();
         const colorworkPattern = createDemoColorworkPattern();
         
-        const service = new ColorworkStitchPlanService();
+        const service: any = new ColorworkStitchPlanService();
         const enhancedStitchPlan = service.createColorworkStitchPlan(
             panel, 
             colorworkPattern, 

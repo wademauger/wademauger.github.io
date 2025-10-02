@@ -84,7 +84,7 @@ const knittingDesignSlice = createSlice({
       state.isDirty = true;
     },
     
-    nextStep: (state) => {
+    nextStep: (state: any) => {
       // Always have 7 steps with pattern editor as step 2
       const maxSteps = 6; // 0-6, so 7 total steps
       
@@ -95,7 +95,7 @@ const knittingDesignSlice = createSlice({
       }
     },
     
-    previousStep: (state) => {
+    previousStep: (state: any) => {
       if (state.currentStep > 0) {
         // Simple reverse progression
         state.currentStep -= 1;
@@ -132,7 +132,7 @@ const knittingDesignSlice = createSlice({
       return { ...initialState, sessionId: generateSessionId() };
     },
     
-    markClean: (state) => {
+    markClean: (state: any) => {
       state.isDirty = false;
     },
 
@@ -242,15 +242,15 @@ export const {
 export default knittingDesignSlice.reducer;
 
 // Selectors
-export const selectCurrentStep = (state) => state.knittingDesign.currentStep;
-export const selectPatternData = (state) => state.knittingDesign.patternData;
-export const selectIsKnittingMode = (state) => state.knittingDesign.isKnittingMode;
-export const selectIsDirty = (state) => state.knittingDesign.isDirty;
-export const selectSessionId = (state) => state.knittingDesign.sessionId;
-export const selectLastSaved = (state) => state.knittingDesign.lastSaved;
+export const selectCurrentStep = (state: any) => state.knittingDesign.currentStep;
+export const selectPatternData = (state: any) => state.knittingDesign.patternData;
+export const selectIsKnittingMode = (state: any) => state.knittingDesign.isKnittingMode;
+export const selectIsDirty = (state: any) => state.knittingDesign.isDirty;
+export const selectSessionId = (state: any) => state.knittingDesign.sessionId;
+export const selectLastSaved = (state: any) => state.knittingDesign.lastSaved;
 
 // Complex selectors
-export const selectCurrentStepInfo = (state) => {
+export const selectCurrentStepInfo = (state: any) => {
   const currentStep = state.knittingDesign.currentStep;
   
   const steps = [

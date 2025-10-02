@@ -18,7 +18,7 @@ const RecipeEditor = ({ recipe }) => {
     dispatch(setDraftRecipe(updatedRecipe));
   };
 
-  const updateIngredient = (index, field, value) => {
+  const updateIngredient = (index, field, value: any) => {
     const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
     const updatedIngredients = [...ingredients];
     updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
@@ -92,7 +92,7 @@ const RecipeEditor = ({ recipe }) => {
             <input
               type="text"
               value={localRecipe.title || ''}
-              onChange={(e) => updateRecipe({ title: e.target.value })}
+              onChange={(e: any) => updateRecipe({ title: e.target.value })}
               className="form-input"
               placeholder="Enter recipe title..."
             />
@@ -102,7 +102,7 @@ const RecipeEditor = ({ recipe }) => {
             <label>Description</label>
             <textarea
               value={localRecipe.description || ''}
-              onChange={(e) => updateRecipe({ description: e.target.value })}
+              onChange={(e: any) => updateRecipe({ description: e.target.value })}
               className="form-textarea"
               placeholder="Brief description of the recipe..."
               rows="3"
@@ -115,7 +115,7 @@ const RecipeEditor = ({ recipe }) => {
               <input
                 type="number"
                 value={localRecipe.defaultServings || ''}
-                onChange={(e) => updateRecipe({ defaultServings: parseInt(e.target.value) || 1 })}
+                onChange={(e: any) => updateRecipe({ defaultServings: parseInt(e.target.value) || 1 })}
                 className="form-input"
                 min="1"
               />
@@ -125,7 +125,7 @@ const RecipeEditor = ({ recipe }) => {
               <input
                 type="text"
                 value={localRecipe.servingUnits || ''}
-                onChange={(e) => updateRecipe({ servingUnits: e.target.value })}
+                onChange={(e: any) => updateRecipe({ servingUnits: e.target.value })}
                 className="form-input"
                 placeholder="servings, portions, etc."
               />
@@ -134,7 +134,7 @@ const RecipeEditor = ({ recipe }) => {
               <label>Category</label>
               <select
                 value={localRecipe.category || 'Dinners'}
-                onChange={(e) => updateRecipe({ category: e.target.value })}
+                onChange={(e: any) => updateRecipe({ category: e.target.value })}
                 className="form-select"
               >
                 <option value="Dinners">Dinners</option>
@@ -161,21 +161,21 @@ const RecipeEditor = ({ recipe }) => {
                   <input
                     type="text"
                     value={ingredient.quantity || ''}
-                    onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
+                    onChange={(e: any) => updateIngredient(index, 'quantity', e.target.value)}
                     className="form-input quantity-input"
                     placeholder="Qty"
                   />
                   <input
                     type="text"
                     value={ingredient.unit || ''}
-                    onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                    onChange={(e: any) => updateIngredient(index, 'unit', e.target.value)}
                     className="form-input unit-input"
                     placeholder="Unit"
                   />
                   <input
                     type="text"
                     value={ingredient.name || ''}
-                    onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+                    onChange={(e: any) => updateIngredient(index, 'name', e.target.value)}
                     className="form-input name-input"
                     placeholder="Ingredient name"
                   />
@@ -198,7 +198,7 @@ const RecipeEditor = ({ recipe }) => {
           </div>
           <textarea
             value={localRecipe.instructions || ''}
-            onChange={(e) => updateRecipe({ instructions: e.target.value })}
+            onChange={(e: any) => updateRecipe({ instructions: e.target.value })}
             className="form-textarea instructions-textarea"
             placeholder="Enter cooking instructions..."
             rows="10"
