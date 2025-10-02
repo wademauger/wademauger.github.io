@@ -304,6 +304,13 @@ const ColorworkDesignerApp = () => {
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
                                     <Button onClick={handleBackToHome}>← Back to Home</Button>
                                     <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
+                                    <div style={{ marginLeft: 'auto' }}>
+                                        <GoogleSignInButton
+                                            buttonText="Drive"
+                                            onSaveAs={() => window.dispatchEvent(new CustomEvent('colorwork:save-as'))}
+                                            onOpen={() => window.dispatchEvent(new CustomEvent('colorwork:open'))}
+                                        />
+                                    </div>
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
                                     {/* Embed the same UX as /crafts/colorwork-designer */}

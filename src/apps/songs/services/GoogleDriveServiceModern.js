@@ -719,9 +719,13 @@ class GoogleDriveServiceModern {
         }
       }
 
-      // If the object directly has a panels namespace, preserve it
-      if (lib && lib.panels && typeof lib.panels === 'object') {
-        return { panels: lib.panels, lastUpdated: lib.lastUpdated || new Date().toISOString() };
+      // If the object directly has a panels or colorworkPatterns namespace, preserve them
+      if (lib && ( (lib.panels && typeof lib.panels === 'object') || Array.isArray(lib.colorworkPatterns) )) {
+        const out = {};
+        if (lib.panels && typeof lib.panels === 'object') out.panels = lib.panels;
+        if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
+        out.lastUpdated = lib.lastUpdated || new Date().toISOString();
+        return out;
       }
 
       // If the object uses 'namespaces' with a panels key (legacy), normalize that
@@ -732,8 +736,12 @@ class GoogleDriveServiceModern {
       // If the payload itself looks like the library (artists/versions), but no panels,
       // attempt to find anything that resembles panels and store under panels key.
       if (lib && typeof lib === 'object') {
-        if (lib.panels) {
-          return { panels: lib.panels, lastUpdated: lib.lastUpdated || new Date().toISOString() };
+        if (lib.panels || Array.isArray(lib.colorworkPatterns)) {
+          const out = {};
+          if (lib.panels) out.panels = lib.panels;
+          if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
+          out.lastUpdated = lib.lastUpdated || new Date().toISOString();
+          return out;
         }
         // Nothing recognizable: store an empty panels object to avoid leaking wrapper fields
         return { panels: {}, lastUpdated: lib.lastUpdated || new Date().toISOString() };
@@ -1118,10 +1126,11 @@ class GoogleDriveServiceModern {
     
     try {
       // Debug: log preview of normalized payload (don't dump entire body if large)
-      try {
+        try {
         const previewObj = {
           panelsKeys: Object.keys(normalized.panels || {}).slice(0, 50),
           panelsCount: Object.keys(normalized.panels || {}).length,
+          colorworkCount: Array.isArray(normalized.colorworkPatterns) ? normalized.colorworkPatterns.length : 0,
           lastUpdated: normalized.lastUpdated
         };
         console.log('GoogleDriveServiceModern: normalized payload preview for save:', previewObj);
@@ -1162,11 +1171,13 @@ class GoogleDriveServiceModern {
         const body = verify && (verify.body || verify.result || verify);
         const len = body ? (typeof body === 'string' ? body.length : JSON.stringify(body).length) : 0;
         // Debug: attempt to parse verification body and log panels keys/count
-        try {
+          try {
           let parsed = body;
           if (typeof body === 'string') parsed = JSON.parse(body);
           const parsedPanels = parsed && parsed.panels ? Object.keys(parsed.panels) : [];
+          const parsedColorwork = parsed && parsed.colorworkPatterns ? (Array.isArray(parsed.colorworkPatterns) ? parsed.colorworkPatterns.map(p => p.name || p.id).slice(0,10) : []) : [];
           console.log('GoogleDriveServiceModern: verification parsed panels keys count=', parsedPanels.length, 'keysPreview=', parsedPanels.slice(0,10));
+          console.log('GoogleDriveServiceModern: verification parsed colorwork count=', parsedColorwork.length, 'previewNames=', parsedColorwork);
         } catch (pvErr) {
           console.warn('GoogleDriveServiceModern: failed to parse verification body', pvErr);
         }

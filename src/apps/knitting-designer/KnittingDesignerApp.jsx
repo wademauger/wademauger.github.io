@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { message, Modal } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
 import {
     selectActiveColorId,
     selectColorPalette,
@@ -8,6 +9,9 @@ import {
 import { selectBackgroundColorId } from './store/colorworkGridSlice';
 import ColorworkGrid from './components/ColorworkGrid';
 import './styles/KnittingDesignerApp.css';
+import { openModal, MODAL_TYPES } from '@/reducers/modal.reducer';
+import { useDriveAuth } from '../colorwork-designer/context/DriveAuthContext.jsx';
+import mergeColorworkIntoLibrary from '@/utils/libraryMergeColorwork';
 
 const KnittingDesignerApp = () => {
     // Redux selectors
@@ -623,6 +627,166 @@ const KnittingDesignerApp = () => {
         a.click();
         URL.revokeObjectURL(url);
     }, [pattern, colors, gridSize]);
+
+    // Global event listeners so external toolbars (like ColorworkDesignerApp) can trigger save/open
+    const dispatch = useDispatch();
+    const { GoogleDriveServiceModern: DriveService } = useDriveAuth();
+
+    useEffect(() => {
+        const onSave = async () => {
+            try {
+                // Trigger local download of the raw pattern JSON immediately so the user
+                // still receives the same export they saw before Drive integration.
+                try {
+                    handleExportPattern();
+                } catch (ex) {
+                    console.warn('Local export failed while starting Drive save', ex);
+                }
+                // Register a callback that the Library modal will call with { libraryData, fileStatus, panelName, selectedSettings }
+                const { registerCallback } = await import('@/utils/modalCallbackRegistry');
+                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName, selectedSettings }) => {
+                    try {
+                        // Build payload for colorworkPatterns array
+                        const payload = {
+                            id: `cw-${Date.now()}`,
+                            name: panelName || `Colorwork ${new Date().toLocaleString()}`,
+                            pattern,
+                            gridSize,
+                            colors,
+                            created: new Date().toISOString()
+                        };
+
+                        const svc = (DriveService && DriveService.saveLibraryToFile) ? DriveService : ((typeof window !== 'undefined' && window.GoogleDriveServiceModern) ? window.GoogleDriveServiceModern : null);
+
+                        // Merge into library object under colorworkPatterns array
+                        // Try to fetch the freshest library content before merging, fall back to modal-provided libraryData
+                        let currentLib = null;
+                        try {
+                            if (svc && svc.loadLibraryById && fileStatus && fileStatus.fileId) {
+                                currentLib = await svc.loadLibraryById(fileStatus.fileId);
+                            }
+                        } catch (ldErr) {
+                            console.warn('Failed to load library by id before merge, falling back to modal-provided libraryData', ldErr);
+                            currentLib = libraryData && typeof libraryData === 'object' ? { ...libraryData } : null;
+                        }
+
+                        // Merge using helper which handles replace-by-id/name and lastUpdated
+                        const libToSave = mergeColorworkIntoLibrary(currentLib, payload);
+
+                        // Attempt to save via service
+                        if (svc && svc.saveLibraryToFile && fileStatus && fileStatus.fileId) {
+                            try {
+                                await svc.saveLibraryToFile(fileStatus.fileId, libToSave);
+                                message.success(`Saved to Google Drive: ${fileStatus.fileName || 'library'}`);
+                                return;
+                            } catch (err) {
+                                console.warn('saveLibraryToFile failed, falling back to saveLibrary', err);
+                            }
+                        }
+
+                        // Fallback: call generic saveLibrary if available
+                        if (svc && svc.saveLibrary) {
+                            await svc.saveLibrary(currentLib);
+                            message.success('Saved to Google Drive (fallback)');
+                        } else {
+                            // Last resort: trigger a local download of the merged library as JSON
+                            const blob = new Blob([JSON.stringify(currentLib, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `colorwork-library-${Date.now()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            message.warning('Saved locally as JSON (Drive service not available)');
+                        }
+                    } catch (err) {
+                        console.error('Callback: failed to save colorwork pattern', err);
+                        message.error('Failed to save colorwork pattern: ' + String(err));
+                    }
+                });
+
+                // Open Library modal in panels context and pass callback id
+                dispatch(openModal({
+                    modalType: MODAL_TYPES.LIBRARY_SETTINGS,
+                    appContext: 'panels',
+                    data: {
+                        currentSettings: { panelsLibraryFile: 'panels-library.json', panelsFolder: '/' },
+                        userInfo: null,
+                        onSelectFileCallbackId: cbId
+                    }
+                }));
+            } catch (err) {
+                console.error('colorwork:save-as handler failed', err);
+                message.error('Failed to start save flow: ' + String(err));
+            }
+        };
+
+        const onOpen = async () => {
+            try {
+                // Register callback to receive libraryData and panelName, then open modal in 'panels' context
+                const { registerCallback } = await import('@/utils/modalCallbackRegistry');
+                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName }) => {
+                    try {
+                        if (!libraryData || !libraryData.colorworkPatterns) {
+                            message.error('Selected library does not contain colorworkPatterns');
+                            return;
+                        }
+
+                        // Determine chosen pattern
+                        let chosenName = panelName;
+                        const arr = Array.isArray(libraryData.colorworkPatterns) ? libraryData.colorworkPatterns : [];
+                        if (!chosenName) {
+                            if (arr.length === 1) chosenName = arr[0].name;
+                            else if (arr.length > 0) chosenName = arr[0].name;
+                        }
+
+                        const chosen = arr.find(p => p.name === chosenName) || arr[0];
+                        if (!chosen) {
+                            message.error('No colorwork pattern found in selected library');
+                            return;
+                        }
+
+                        // Apply pattern to editor
+                        setPattern(chosen.pattern || []);
+                        setGridSize(chosen.gridSize || { width: (chosen.pattern && chosen.pattern[0] && chosen.pattern[0].length) || 20, height: chosen.pattern ? chosen.pattern.length : 20 });
+                        setClipboard(null);
+                        setPasteMode(false);
+                        setPastePreview(null);
+                        setSelection(null);
+                        setSelectedCells(new Set());
+                        setHistory([JSON.parse(JSON.stringify(chosen.pattern || []))]);
+                        setHistoryIndex(0);
+
+                        message.success('Loaded colorwork pattern: ' + (chosen.name || 'Unnamed'));
+                    } catch (err) {
+                        console.error('Callback: failed to open colorwork pattern', err);
+                        message.error('Failed to open pattern: ' + String(err));
+                    }
+                });
+
+                dispatch(openModal({
+                    modalType: MODAL_TYPES.LIBRARY_SETTINGS,
+                    appContext: 'panels',
+                    data: {
+                        currentSettings: { panelsLibraryFile: 'panels-library.json', panelsFolder: '/' },
+                        userInfo: null,
+                        onSelectFileCallbackId: cbId,
+                        intent: 'open'
+                    }
+                }));
+            } catch (err) {
+                console.error('colorwork:open handler failed', err);
+                message.error('Failed to start open flow: ' + String(err));
+            }
+        };
+
+        window.addEventListener('colorwork:save-as', onSave);
+        window.addEventListener('colorwork:open', onOpen);
+        return () => {
+            window.removeEventListener('colorwork:save-as', onSave);
+            window.removeEventListener('colorwork:open', onOpen);
+        };
+    }, [dispatch, pattern, gridSize, colors, DriveService]);
 
     // Keyboard shortcuts
     useEffect(() => {
