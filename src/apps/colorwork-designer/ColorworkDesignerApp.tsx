@@ -1,13 +1,20 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { garments } from '../../data/garments';
 import { DriveAuthProvider } from './context/DriveAuthContext';
+import { useDropdown } from '../../components/DropdownProvider';
+import { useDispatch } from 'react-redux';
+import { openLibrarySettingsModal } from '../../reducers/modal.reducer';
+import LibraryOpenDialog from '../../components/LibraryOpenDialog';
+import LibrarySaveDialog from '../../components/LibrarySaveDialog';
+import { emitEvent } from '../../store/uiEventsSlice';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor';
 // Google sign-in now rendered by the page header; per-editor buttons removed
 import PanelShapeCreator from './PanelShapeCreator';
 import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -17,7 +24,6 @@ const { Content } = Layout;
  * Integrates with existing garment shapes and colorwork patterns
  */
 const ColorworkDesignerApp = () => {
-    const [currentView, setCurrentView] = useState('home'); // 'home', 'editor', 'shape-creator', 'colorwork-creator'
     const [savedPatterns, setSavedPatterns] = useState([]);
     const [currentProject, setCurrentProject] = useState(null);
     const [showGarmentSelector, setShowGarmentSelector] = useState(false);
@@ -72,11 +78,8 @@ const ColorworkDesignerApp = () => {
         setCurrentProject(updatedProject);
     };
 
-    const handleBackToHome = () => {
-        setCurrentView('home');
-        setCurrentProject(null);
-        setKnittingStage('settings'); // Reset stage when going back to home
-    };
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // Helper function to fix legacy projects missing panelShape data
     const fixLegacyProject = (project) => {
@@ -116,7 +119,7 @@ const ColorworkDesignerApp = () => {
                     <Card
                         hoverable
                         className="action-card"
-                        onClick={() => setCurrentView('shape-creator')}
+                        onClick={() => navigate('panel-shape-creator')}
                         style={{ height: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                     >
                         <div style={{ textAlign: 'center' }}>
@@ -131,7 +134,7 @@ const ColorworkDesignerApp = () => {
                     <Card
                         hoverable
                         className="action-card"
-                        onClick={() => setCurrentView('colorwork-creator')}
+                        onClick={() => navigate('pattern-creator')}
                         style={{ height: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                     >
                         <div style={{ textAlign: 'center' }}>
@@ -243,7 +246,6 @@ const ColorworkDesignerApp = () => {
     const renderEditorView = () => (
         <div className="colorwork-editor-wrapper">
             <div className="editor-toolbar">
-                <Button onClick={handleBackToHome}>← Back to Home</Button>
                 <Title level={3} style={{ margin: 0, flex: 1 }}>
                     Knitting Options for {currentProject?.name || 'Untitled Project'}
                 </Title>
@@ -269,46 +271,92 @@ const ColorworkDesignerApp = () => {
                 project={currentProject}
                 stage={knittingStage}
                 onSave={handleSaveProject}
-                onCancel={handleBackToHome}
                 onStageChange={(stage) => setKnittingStage(stage)}
             />
         </div>
     );
 
+    // Register header dropdown items for Colorwork Designer based on current sub-route
+    const { setMenuItems } = useDropdown();
+    const dispatch = useDispatch();
+    const [showOpenDialog, setShowOpenDialog] = useState(false);
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
+    useEffect(() => {
+        const path = location.pathname || '';
+        let items: any[] = [];
+        if (path.includes('panel-shape-creator')) {
+            // PanelShapeCreator now handles its own menu items via DropdownProvider
+            // Leave items empty to avoid conflicts
+            items = [];
+        } else if (path.includes('pattern-creator')) {
+            items = [
+                {
+                    key: 'colorwork-pattern-save',
+                    label: 'Save Pattern',
+                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'save' }))
+                },
+                {
+                    key: 'colorwork-pattern-open',
+                    label: 'Open Pattern',
+                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'open' }))
+                }
+            ];
+        } else {
+            // Default header actions when on the colorwork home
+            items = [
+                {
+                    key: 'colorwork-open-home',
+                    label: 'Open...',
+                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'open' }))
+                }
+            ];
+        }
+
+        setMenuItems(items);
+        return () => setMenuItems([]);
+    }, [setMenuItems, location.pathname, currentProject, dispatch]);
+
     return (
-            <Layout className="colorwork-designer-app">
-                <DriveAuthProvider>
-                    <Content>
-                        {currentView === 'home' && renderHomeView()}
-                        {currentView === 'editor' && renderEditorView()}
-                        {currentView === 'shape-creator' && (
+        <Layout className="colorwork-designer-app">
+            <DriveAuthProvider>
+                <Content>
+                    {/* Simple library dialogs for this app. They emit uiEvents when a file is chosen or saved */}
+                    <LibraryOpenDialog visible={showOpenDialog} onClose={() => setShowOpenDialog(false)} onOpen={(lib, fileRef) => {
+                        dispatch(emitEvent({ type: 'colorwork:library-opened', payload: { library: lib, fileRef } }));
+                        setShowOpenDialog(false);
+                    }} />
+                    <LibrarySaveDialog visible={showSaveDialog} onClose={() => setShowSaveDialog(false)} onSave={(result) => {
+                        // Emit a richer saved event containing the saved fileRef/entry when available
+                        dispatch(emitEvent({ type: 'colorwork:library-saved', payload: result || {} }));
+                        setShowSaveDialog(false);
+                    }} fileId={null} libraryData={currentProject} />
+
+                    <Routes>
+                        <Route path="/" element={renderHomeView()} />
+                        <Route path="panel-shape-creator" element={(
                             <div className="panel-shape-creator" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                                    <Button onClick={handleBackToHome}>← Back to Home</Button>
                                     <Title level={3} style={{ margin: 0, flex: 1 }}>Panel Shape Creator</Title>
-                                                    {/* sign-in handled by page header; per-editor toolbar buttons removed */}
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
                                     <PanelShapeCreator />
                                 </div>
                             </div>
-                        )}
-                        {currentView === 'colorwork-creator' && (
+                        )} />
+                        <Route path="pattern-creator" element={(
                             <div className="colorwork-pattern-creator" style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                                    <Button onClick={handleBackToHome}>← Back to Home</Button>
                                     <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
-                                    {/* sign-in handled by page header; per-editor toolbar buttons removed */}
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
-                                    {/* Embed the same UX as /crafts/colorwork-designer */}
                                     <KnittingDesignerApp />
                                 </div>
                             </div>
-                        )}
-                    </Content>
-                </DriveAuthProvider>
-            </Layout>
+                        )} />
+                    </Routes>
+                </Content>
+            </DriveAuthProvider>
+        </Layout>
     );
 };
 

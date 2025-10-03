@@ -5,11 +5,11 @@ import { HomeOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { unpinChord } from '@/store/chordsSlice';
 import ChordChart from '@/apps/songs/components/ChordChart';
-import RecipesGoogleSignInButton from '@/apps/recipes/components/GoogleSignInButton';
-import SongsGoogleSignInButton from '@/apps/songs/components/GoogleSignInButton';
-import ColorworkGoogleSignInButton from '@/apps/colorwork-designer/components/GoogleSignInButton';
+import GoogleAuthButton from './GoogleAuthButton';
 import { RootState } from '@/types';
+import { openLibrarySettingsModal } from '../reducers/modal.reducer';
 import '@/styles/Layout.css';
+import { DropdownProvider } from './DropdownProvider';
 
 interface LayoutProps {
   children: ReactNode;
@@ -34,9 +34,9 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     '/crafts': 'Projects',
     '/crafts/recipes': 'Recipes',
     '/crafts/tabs': 'Music Tabs',
-    '/crafts/knitting': 'Knitting',
-    '/crafts/unified-designer': 'Unified Designer',
-    '/crafts/colorwork-designer': 'Colorwork Designer'
+    '/crafts/knitting-pattern-designer': 'Knitting',
+    '/crafts/knitting-pattern-designer/panel-shape-creator': 'Panel Designer',
+    '/crafts/knitting-pattern-designer/pattern-creator': 'Colorwork Designer'
   };
 
   const pathSnippets = location.pathname.split('/').filter((i: any) => i);
@@ -103,116 +103,97 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     <div className={`app-container ${isCraftsPage ? 'crafts-layout' : 'professional-layout'}`}>
       {/* Only show header for crafts pages */}
       {isCraftsPage && (
-        <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm }}>
+        <DropdownProvider>
+          {/* Limit dark theme to header/navigation only */}
           <header className="main-header">
-            <div className="header-content">
-              <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
-                <Breadcrumb style={{ margin: 0 }}>
-                  {breadcrumbItems.map((item, idx: number) => (
-                    <Breadcrumb.Item key={item.path}>
-                      <Link to={item.path} style={{ color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center' }}>
-                        {idx === 0 ? <HomeOutlined style={{ fontSize: '20px' }} /> : null}
-                        {idx === 0 ? null : item.breadcrumbName}
-                      </Link>
-                    </Breadcrumb.Item>
-                  ))}
-                </Breadcrumb>
+            <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm }}>
+              <div className="header-content">
+                <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
+                  <Breadcrumb style={{ margin: 0 }}>
+                    {breadcrumbItems.map((item, idx: number) => (
+                      <Breadcrumb.Item key={item.path}>
+                        <Link to={item.path} style={{ color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center' }}>
+                          {idx === 0 ? <HomeOutlined style={{ fontSize: '20px' }} /> : null}
+                          {idx === 0 ? null : item.breadcrumbName}
+                        </Link>
+                      </Breadcrumb.Item>
+                    ))}
+                  </Breadcrumb>
+                </div>
+
+                {/* Right-side header area: unified Google login button that shows app-specific dropdowns */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+                  {/* Global Google Auth Button (contains Library Settings in dropdown) */}
+                  <GoogleAuthButton />
+                </div>
+
               </div>
-            
-              {/* Right-side header area: unified Google login button that shows app-specific dropdowns */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-              {(() => {
-                const noop = () => {};
-                const signOut = async () => {
-                  try {
-                    const w: any = typeof window !== 'undefined' ? window : {};
-                    if (w.GoogleDriveServiceModern && w.GoogleDriveServiceModern.signOut) {
-                      await w.GoogleDriveServiceModern.signOut();
-                    }
-                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e: unknown) { /* swallow */ }
-                  } catch (err: unknown) {
-                    // swallow
-                  }
-                };
+            </ConfigProvider>
+          </header>
 
-                const emitSignInSuccess = (tokenResponse: any, appName: string) => {
+          {/* Listen for global open-library-settings events and map to Redux modal */}
+            {/* This is outside of header markup but runs while Layout is mounted */}
+            {(() => {
+              // hook into window events via a one-off component-like effect
+              try {
+                const listener = (ev: any) => {
                   try {
-                    window.dispatchEvent(new CustomEvent('app:google-signin-success', { detail: { app: appName, tokenResponse } }));
-                  } catch (e: unknown) { /* swallow */ }
+                    const app = (function(p: string) {
+                      if (p.startsWith('/crafts/recipes')) return 'recipes';
+                      if (p.startsWith('/crafts/tabs')) return 'songs';
+                      if (p.startsWith('/crafts/colorwork-designer') || p.startsWith('/crafts/unified-designer') || p.startsWith('/crafts/knitting')) return 'colorwork';
+                      return 'songs';
+                    })(location.pathname);
+                    dispatch(openLibrarySettingsModal(app, {}));
+                  } catch (e) { /* swallow */ }
                 };
-                const emitSignInError = (error: any, appName: string) => {
-                  try {
-                    window.dispatchEvent(new CustomEvent('app:google-signin-error', { detail: { app: appName, error } }));
-                  } catch (e: unknown) { /* swallow */ }
-                };
+                if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+                  window.addEventListener('app:open-library-settings', listener);
+                }
+              } catch (e) { /* swallow */ }
+              return null;
+            })()}
 
-                const appNameFromPath = (path: string) => {
-                  if (path.startsWith('/crafts/recipes')) return 'recipes';
-                  if (path.startsWith('/crafts/tabs')) return 'songs';
-                  if (path.startsWith('/crafts/colorwork-designer') || path.startsWith('/crafts/unified-designer') || path.startsWith('/crafts/knitting')) return 'colorwork';
-                  return 'songs';
-                };
-
-                if (location.pathname.startsWith('/crafts/recipes')) {
-                  const app = 'recipes';
-                  return <RecipesGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} />;
-                }
-                if (location.pathname.startsWith('/crafts/tabs')) {
-                  const app = 'songs';
-                  return <SongsGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} />;
-                }
-                if (location.pathname.startsWith('/crafts/colorwork-designer') || location.pathname.startsWith('/crafts/unified-designer') || location.pathname.startsWith('/crafts/knitting')) {
-                  const openHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e: unknown) { /* swallow */ }
-                  };
-                  const saveAsHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e: unknown) { /* swallow */ }
-                  };
-                  const app = 'colorwork';
-                  return <ColorworkGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} onOpen={openHandler} onSaveAs={saveAsHandler} />;
-                }
-                return <SongsGoogleSignInButton onSuccess={noop} onError={noop} onSignOut={signOut} />;
-              })()}
+                {/* Mobile navigation - will be visible only when toggled on mobile and on crafts pages */}
+            <div className={`mobile-navigation-container ${menuOpen ? 'open' : ''}`}>
+              <nav className="main-navigation">
+                <ul className="nav-list">
+                  <li className={isActive('/')}> 
+                    <Link to="/" onClick={() => setMenuOpen(false)}>Professional</Link>
+                  </li>
+                  <li className={isActive('/crafts/recipes')}>
+                    <Link to="/crafts/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
+                  </li>
+                  <li className={isActive('/crafts/tabs')}>
+                    <Link to="/crafts/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
+                  </li>
+                </ul>
+              </nav>
             </div>
 
-          </div>
-        </header>
-        </ConfigProvider>
+            <main className={`content-container ${isCraftsPage ? 'crafts-content' : 'professional-content'}`}>
+              {children}
+            </main>
+
+            {/* Always show the pinned chords footer if chords are selected */}
+            {pinnedChordsFooter}
+
+            {/* Only show the main footer for crafts pages */}
+            {footer || (
+              <footer className="ant-layout-footer app-footer dark-footer css-ra95ns">
+                Wade Ahlstrom © {new Date().getFullYear()}
+              </footer>
+            )}
+
+          </DropdownProvider>
       )}
 
-      {/* Mobile navigation - will be visible only when toggled on mobile and on crafts pages */}
-      {isCraftsPage && (
-        <div className={`mobile-navigation-container ${menuOpen ? 'open' : ''}`}>
-          <nav className="main-navigation">
-            <ul className="nav-list">
-              <li className={isActive('/')}>
-                <Link to="/" onClick={() => setMenuOpen(false)}>Professional</Link>
-              </li>
-              <li className={isActive('/crafts/recipes')}>
-                <Link to="/crafts/recipes" onClick={() => setMenuOpen(false)}>Recipes</Link>
-              </li>
-              <li className={isActive('/crafts/tabs')}>
-                <Link to="/crafts/tabs" onClick={() => setMenuOpen(false)}>Music Tabs</Link>
-              </li>
-              
-            </ul>
-          </nav>
-        </div>
+      {/* If not on crafts pages just render children */}
+      {!isCraftsPage && (
+        <main className={`content-container ${isCraftsPage ? 'crafts-content' : 'professional-content'}`}>
+          {children}
+        </main>
       )}
-
-      <main className={`content-container ${isCraftsPage ? 'crafts-content' : 'professional-content'}`}>
-        {children}
-      </main>
-
-      {/* Always show the pinned chords footer if chords are selected */}
-      {pinnedChordsFooter}
-
-      {/* Only show the main footer for crafts pages */}
-      {isCraftsPage && (footer || (
-        <footer className="ant-layout-footer app-footer dark-footer css-ra95ns">
-          Wade Ahlstrom © {new Date().getFullYear()}
-        </footer>
-      ))}
     </div>
   );
 };

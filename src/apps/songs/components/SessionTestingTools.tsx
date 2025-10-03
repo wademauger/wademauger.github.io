@@ -241,15 +241,15 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
           <Tag color="orange">DEV ONLY</Tag>
         </Space>
       }
-      style={{ marginBottom: 16 }}
+      className="session-testing-card"
     >
       <Collapse ghost>
         <Panel header="🔧 Session Testing Controls" key="1">
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" className="session-testing-space">
             
             {/* Session Info */}
             <Card size="small" title="Current Session Status">
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space direction="vertical" className="session-status-space">
                 <Text>
                   <strong>Token:</strong> {sessionInfo.tokenPreview}
                 </Text>
@@ -291,7 +291,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
 
             {/* Session Manipulation Controls */}
             <Card size="small" title="Session Manipulation">
-              <Space wrap>
+                <Space wrap>
                 <Button 
                   type="primary" 
                   danger
@@ -354,20 +354,15 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
                 </Button>
               }
             >
-              <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+              <div className="session-log-container">
                 {logs.length === 0 ? (
                   <Text type="secondary">No logs yet...</Text>
                 ) : (
                   logs.map((log: any) => (
                     <div 
                       key={log.id} 
-                      style={{ 
-                        marginBottom: 8, 
-                        padding: 8, 
-                        borderLeft: `3px solid ${getLogTypeColor(log.type)}`,
-                        backgroundColor: '#fafafa',
-                        fontSize: '12px'
-                      }}
+                      className="session-log-entry"
+                      style={{ borderLeft: `3px solid ${getLogTypeColor(log.type)}` }}
                     >
                       <Text type="secondary">[{log.timestamp}]</Text>{' '}
                       <Text>{log.message}</Text>
@@ -381,13 +376,13 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
               message="Instructions"
               description={
                 <div>
-                  <Paragraph style={{ marginBottom: 8 }}>
+                  <Paragraph className="session-instructions-paragraph">
                     1. <strong>Expire Session:</strong> Use "Expire Now" or "Expire in 5s" to test expired session detection
                   </Paragraph>
-                  <Paragraph style={{ marginBottom: 8 }}>
+                  <Paragraph className="session-instructions-paragraph">
                     2. <strong>Test API:</strong> Use "Test Token" to check if expired sessions trigger 401 errors
                   </Paragraph>
-                  <Paragraph style={{ marginBottom: 0 }}>
+                  <Paragraph className="session-instructions-paragraph last">
                     3. <strong>Simulate User Action:</strong> Tests the complete flow of expired session detection and cleanup
                   </Paragraph>
                 </div>

@@ -137,15 +137,19 @@ const RecipeLibraryModal = ({
     try {
       // Save settings FIRST so the service knows what file to load
       await saveSettings();
-      
-      // Load the library data using the specific file ID if available
+
+      // If a specific file ID was chosen, tell the service to select it (persists prefs)
       if (fileStatus.fileId) {
-        await GoogleDriveRecipeService.loadLibraryById(fileStatus.fileId);
-      } else {
-        // Fallback to regular load if no fileId
-        await GoogleDriveRecipeService.loadLibraryData();
+        await GoogleDriveRecipeService.selectLibraryFile(fileStatus.fileId);
       }
-      
+
+      // Load canonical library via centralized thunk
+      const { dispatch } = require('react-redux');
+      // We can't call useDispatch here (outside React hooks), so import store dispatcher via module
+      const store = require('../store').default;
+      const lib = await store.dispatch(require('../store/librarySlice').loadFullLibrary()).unwrap();
+      // Update recipes reducer via direct dispatch
+      store.dispatch(require('../reducers/recipes.reducer').setDriveRecipes(lib.recipes || []));
       message.success('Recipe library loaded successfully!');
       onClose();
     } catch (error: unknown) {
@@ -163,10 +167,11 @@ const RecipeLibraryModal = ({
       
       // Create new library file
       await GoogleDriveRecipeService.createNewLibrary(settings.recipesLibraryFile, settings.recipesFolder);
-      
-      // Save settings
       await saveSettings();
-      
+
+      const store = require('../store').default;
+      const lib = await store.dispatch(require('../store/librarySlice').loadFullLibrary()).unwrap();
+      store.dispatch(require('../reducers/recipes.reducer').setDriveRecipes(lib.recipes || []));
       message.success('New recipe library created successfully!');
       onClose();
     } catch (error: unknown) {
@@ -190,10 +195,11 @@ const RecipeLibraryModal = ({
         settings.recipesFolder,
         settings.recipesLibraryFile
       );
-      
-      // Save settings
       await saveSettings();
-      
+
+      const store = require('../store').default;
+      const lib = await store.dispatch(require('../store/librarySlice').loadFullLibrary()).unwrap();
+      store.dispatch(require('../reducers/recipes.reducer').setDriveRecipes(lib.recipes || []));
       message.success('Recipe library moved successfully!');
       onClose();
     } catch (error: unknown) {

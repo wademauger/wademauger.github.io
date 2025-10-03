@@ -9,6 +9,14 @@
   min-height: 100vh; /* Minimum full viewport height */
 }
 
+.full-width-select {
+  width: 100% !important;
+}
+
+.ug-toggle-btn { margin-bottom: 0.5rem; }
+
+.cancel-btn { margin-left: 0.5rem; }
+
 .song-editor-header {
   display: flex;
   justify-content: space-between;

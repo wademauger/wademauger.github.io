@@ -495,28 +495,20 @@ const ChordChart = ({ chord, instrument, small = false }) => {
 
   return (
     <div 
-      className={`chord-chart ${small ? 'small' : ''}`}
+      className={`chord-chart ${small ? 'small' : ''} ${fingeringInfo.total > 1 ? 'has-alternatives' : ''}`}
       onContextMenu={handleRightClick}
-      style={{ cursor: fingeringInfo.total > 1 ? 'pointer' : 'default' }}
       title={fingeringInfo.total > 1 ? 'Right-click to cycle through fingering alternatives' : ''}
     >
       {renderChordDiagram()}
       {/* Generated chord indicator for piano chords */}
       {instrument === 'piano' && !CHORD_DATA.piano[chord] && (
-        <div style={{ textAlign: 'center', color: '#666', fontStyle: 'italic', fontSize: small ? '8px' : '10px' }}>
-          *
-        </div>
+        <div className="generated-chord-indicator">*</div>
       )}
       <div className="chord-name">
         {chord}
         {/* Show fingering indicator if there are multiple fingerings available */}
         {fingeringInfo.total > 1 && (
-          <div style={{ 
-            fontSize: small ? '6px' : '8px', 
-            color: '#666', 
-            marginTop: '2px',
-            fontWeight: 'normal'
-          }}>
+          <div className="fingering-info">
             ({fingeringInfo.current}/{fingeringInfo.total})
           </div>
         )}

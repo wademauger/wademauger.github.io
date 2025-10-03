@@ -1,21 +1,32 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { useDispatch } from 'react-redux';
 import GoogleDriveServiceModern from '../../songs/services/GoogleDriveServiceModern';
+import { setAuth, clearAuth } from '@/store/authSlice';
 
-const DriveAuthContext = createContext(null);
+type DriveAuthContextValue = {
+  isSignedIn: boolean;
+  userInfo: { userName: string | null; userEmail: string | null; userPicture: string | null } | null;
+  handleTokenResponse: (tokenResponse: any) => Promise<void>;
+  signOut: () => void;
+  GoogleDriveServiceModern: any;
+} | null;
 
-export const DriveAuthProvider = ({ children }) => {
-  const [isSignedIn, setIsSignedIn] = useState(!!GoogleDriveServiceModern.isSignedIn);
-  const [userInfo, setUserInfo] = useState({ userName: GoogleDriveServiceModern.userName, userEmail: GoogleDriveServiceModern.userEmail, userPicture: GoogleDriveServiceModern.userPicture });
+const DriveAuthContext = createContext<DriveAuthContextValue>(null);
+
+export const DriveAuthProvider = ({ children }: { children: ReactNode }) => {
+  const dispatch = useDispatch();
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(!!GoogleDriveServiceModern.isSignedIn);
+  const [userInfo, setUserInfo] = useState<{ userName: string | null; userEmail: string | null; userPicture: string | null } | null>({ userName: GoogleDriveServiceModern.userName, userEmail: GoogleDriveServiceModern.userEmail, userPicture: GoogleDriveServiceModern.userPicture });
 
   // Handler that the Google sign-in button will call with the token response
   // The GoogleDriveServiceModern exposes `handleOAuthToken` for @react-oauth/google responses
-  const handleTokenResponse = useCallback(async (tokenResponse) => {
+  const handleTokenResponse = useCallback(async (tokenResponse: any) => {
     try {
       if (typeof GoogleDriveServiceModern.handleOAuthToken === 'function') {
         await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
-      } else if (typeof GoogleDriveServiceModern.handleTokenResponse === 'function') {
+      } else if (typeof (GoogleDriveServiceModern as any).handleTokenResponse === 'function') {
         // Backwards compatibility if a different method name exists
-        await GoogleDriveServiceModern.handleTokenResponse(tokenResponse);
+        await (GoogleDriveServiceModern as any).handleTokenResponse(tokenResponse);
       } else {
         console.warn('DriveAuthProvider: no token handler found on GoogleDriveServiceModern');
       }
@@ -44,6 +55,7 @@ export const DriveAuthProvider = ({ children }) => {
     } finally {
       setIsSignedIn(false);
       setUserInfo(null);
+      try { dispatch(clearAuth()); } catch {}
       try {
         if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
           window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: false, userInfo: null } }));
@@ -68,9 +80,21 @@ export const DriveAuthProvider = ({ children }) => {
   // Ensure the Drive service knows the configured client ID so it can lazily
   // initialize GAPI/GIS when required. This does not auto-initialize the
   // services (which require network access), it only provides the client ID.
+  // Use a runtime-safe lookup to avoid referencing `import.meta` directly which
+  // can throw in some test/SSR environments.
   useEffect(() => {
     try {
-      const cid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      let cid: string | undefined;
+      try {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : undefined');
+        cid = fn();
+      } catch {
+        // Fallback to test shim or process.env
+        // @ts-ignore
+        cid = (globalThis && (globalThis.__IMPORT_META_ENV__ || {}).VITE_GOOGLE_CLIENT_ID) || (process && process.env && process.env.VITE_GOOGLE_CLIENT_ID);
+      }
+
       if (cid && cid !== 'development-fallback') {
         GoogleDriveServiceModern.CLIENT_ID = cid;
       }
@@ -85,7 +109,16 @@ export const DriveAuthProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const cid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      let cid: string | undefined;
+      try {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : undefined');
+        cid = fn();
+      } catch {
+        // @ts-ignore
+        cid = (globalThis && (globalThis.__IMPORT_META_ENV__ || {}).VITE_GOOGLE_CLIENT_ID) || (process && process.env && process.env.VITE_GOOGLE_CLIENT_ID);
+      }
+
       if (cid && cid !== 'development-fallback') {
         // Ensure CLIENT_ID is set
         GoogleDriveServiceModern.CLIENT_ID = cid;
@@ -101,7 +134,86 @@ export const DriveAuthProvider = ({ children }) => {
     }
   }, []);
 
-  const value = {
+  // On mount, try to restore a saved session so UI can display user info
+  // immediately without waiting for a fresh sign-in.
+  useEffect(() => {
+    // If a session is stored, attempt to initialize Google services and
+    // validate the token so the UI has a usable, validated session. This
+    // prevents subsequent calls (e.g. folder/file listing) from triggering
+    // automatic re-auth that fails because GIS/GAPI weren't initialized.
+    (async () => {
+      try {
+        // Ensure CLIENT_ID is available for initialization (runtime-safe lookup)
+        let cid: string | undefined;
+        try {
+          // eslint-disable-next-line no-new-func
+          const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : undefined');
+          cid = fn();
+        } catch {
+          // @ts-ignore
+          cid = (globalThis && (globalThis.__IMPORT_META_ENV__ || {}).VITE_GOOGLE_CLIENT_ID) || (process && process.env && process.env.VITE_GOOGLE_CLIENT_ID);
+        }
+
+        if (cid && cid !== 'development-fallback') {
+          GoogleDriveServiceModern.CLIENT_ID = cid;
+        }
+
+        // Try to restore session from localStorage
+        const restored = GoogleDriveServiceModern.restoreSession && GoogleDriveServiceModern.restoreSession();
+        if (!restored) return;
+
+        // If we restored a session, ensure services are initialized before
+        // validating the token. initialize() is safe to call multiple times.
+        try {
+          if (cid && cid !== 'development-fallback') {
+            await GoogleDriveServiceModern.initialize(cid);
+          } else {
+            // Attempt a background initialize if no CLIENT_ID; this may noop
+            // in test/non-browser environments.
+            if (typeof GoogleDriveServiceModern.initialize === 'function') {
+              await GoogleDriveServiceModern.initialize(GoogleDriveServiceModern.CLIENT_ID || undefined);
+            }
+          }
+        } catch (initErr) {
+          console.warn('DriveAuthProvider: Google service initialization failed (non-fatal):', initErr);
+        }
+
+        // Validate token (this will also call loadUserProfile on success)
+        try {
+          const valid = await GoogleDriveServiceModern.validateToken();
+          const ui = { userName: GoogleDriveServiceModern.userName, userEmail: GoogleDriveServiceModern.userEmail, userPicture: GoogleDriveServiceModern.userPicture };
+          setIsSignedIn(!!GoogleDriveServiceModern.isSignedIn && !!valid);
+          setUserInfo(ui);
+          try {
+            if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
+              window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: !!GoogleDriveServiceModern.isSignedIn, userInfo: ui } }));
+            }
+          } catch (e: unknown) {
+            console.warn('DriveAuthProvider: failed to dispatch drive:auth-changed on restore', e);
+          }
+
+          // Propagate to Redux global auth state
+          try {
+            dispatch(setAuth({ isSignedIn: !!GoogleDriveServiceModern.isSignedIn && !!valid, userInfo: ui }));
+          } catch (e) {
+            // non-fatal
+          }
+        } catch (valErr) {
+          console.warn('DriveAuthProvider: token validation failed (will clear session):', valErr);
+          // Ensure inconsistent or expired sessions don't linger
+          try { GoogleDriveServiceModern.clearSession && GoogleDriveServiceModern.clearSession(); } catch {}
+          setIsSignedIn(false);
+          setUserInfo({ userName: null, userEmail: null, userPicture: null });
+          try { dispatch(clearAuth()); } catch {}
+        }
+      } catch (e) {
+        // Non-fatal; don't block app render
+        console.warn('DriveAuthProvider: unexpected error during restore/init:', e);
+      }
+    })();
+  }, []);
+
+  const value: DriveAuthContextValue = {
     isSignedIn,
     userInfo,
     handleTokenResponse,

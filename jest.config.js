@@ -6,9 +6,11 @@ module.exports = {
   verbose: true,
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+    '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
+    '\\.(svg)$': '<rootDir>/__mocks__/svgMock.js',
+    "@emotion/unitless": "<rootDir>/__mocks__/@emotion_unitless.js"
   },
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest'
+    '^.+\\.(ts|tsx|js|jsx)$': '<rootDir>/jest-transform-import-meta.js'
   }
 };

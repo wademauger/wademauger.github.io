@@ -61,18 +61,14 @@ const SortableLyricLine = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
-    position: 'relative',
-    backgroundColor: isPendingDelete ? '#f5f5f5' : 'transparent',
-    color: isPendingDelete ? '#999' : 'inherit',
-    pointerEvents: isPendingDelete ? 'none' : 'auto'
+    opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1)
   };
 
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
-      className="lyric-line"
+      className={`lyric-line ${isPendingDelete ? 'pending-delete' : ''}`}
       onMouseEnter={() => setHoveredLineIndex(index)}
       onMouseLeave={() => setHoveredLineIndex(null)}
     >
@@ -83,56 +79,31 @@ const SortableLyricLine = ({
           onCancel={handleCancelEdit}
         />
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="lyric-content" style={{ flex: 1 }}>
+        <div className="lyric-line-row">
+          <div className="lyric-content">
             {renderLyricLine(line)}
           </div>
           {isPendingSave && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '4px 8px',
-              backgroundColor: '#e6f7ff',
-              border: '1px solid #91d5ff',
-              borderRadius: '4px',
-              color: '#1890ff'
-            }}>
+            <div className="pending-badge pending-save">
               <Spin size="small" />
-              <span style={{ fontSize: '12px' }}>Saving...</span>
+              <span className="pending-text">Saving...</span>
             </div>
           )}
           {isPendingDelete && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '4px 8px',
-              backgroundColor: '#fff2f0',
-              border: '1px solid #ffccc7',
-              borderRadius: '4px',
-              color: '#cf1322'
-            }}>
+            <div className="pending-badge pending-delete-badge">
               <Spin size="small" />
-              <span style={{ fontSize: '12px' }}>Deleting...</span>
+              <span className="pending-text">Deleting...</span>
             </div>
           )}
           {hoveredLineIndex === index && editingEnabled && !isPendingDelete && (
-            <div className="lyric-controls" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="lyric-controls">
               <button 
                 className="control-button edit" 
                 onClick={(e: any) => {
                   e.stopPropagation();
                   handleEditLine(index);
                 }}
-                style={{
-                  padding: '4px 6px',
-                  border: '1px solid #ccc',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
+                
                 title="Edit this line"
               >
                 <FaPencilAlt />
@@ -143,15 +114,7 @@ const SortableLyricLine = ({
                   e.stopPropagation();
                   handleInsertAfter(index);
                 }}
-                style={{
-                  padding: '4px 6px',
-                  border: '1px solid #ccc',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#5cb85c'
-                }}
+                
                 title="Insert new line after this line"
               >
                 <FaPlus />
@@ -162,15 +125,7 @@ const SortableLyricLine = ({
                   e.stopPropagation();
                   handleDeleteLine(index);
                 }}
-                style={{
-                  padding: '4px 6px',
-                  border: '1px solid #ccc',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#d9534f'
-                }}
+                
                 title="Delete this line"
               >
                 <FaTrash />
@@ -179,22 +134,6 @@ const SortableLyricLine = ({
                 {...(isDragDisabled ? {} : attributes)}
                 {...(isDragDisabled ? {} : listeners)}
                 className="drag-handle"
-                style={{
-                  padding: '4px 6px',
-                  border: '1px solid #ddd',
-                  backgroundColor: isDragDisabled ? '#e9e9e9' : '#f0f0f0',
-                  borderRadius: '3px',
-                  cursor: isDragDisabled ? 'not-allowed' : 'grab',
-                  fontSize: '12px',
-                  color: isDragDisabled ? '#999' : '#666',
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isDragDisabled ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
-                  opacity: isDragDisabled ? 0.6 : 1
-                }}
-                onMouseDown={isDragDisabled ? undefined : (e: any) => e.currentTarget.style.cursor = 'grabbing'}
-                onMouseUp={isDragDisabled ? undefined : (e: any) => e.currentTarget.style.cursor = 'grab'}
                 title={isDragDisabled ? 'Drag disabled during update' : 'Drag to reorder'}
               >
                 {isThisLinePending ? (
@@ -731,25 +670,23 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   return (
-    <div className="song-detail" style={{ width: '100%', minHeight: 'fit-content' }}>      
+    <div className="song-detail">      
       {/* Chord section */}
-      <div className="chords-section">
-        <div className="chords-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, justifyContent: 'center' }}>
+        <div className="chords-section">
+        <div className="chords-header">
+          <div className="chords-header-left">
             <button
               className="transpose-btn"
               title="Transpose Down"
               onClick={handleTransposeDown}
-              style={{ fontSize: '1.2em', padding: '0.2em 0.6em' }}
             >
               -
             </button>
-            <span style={{ minWidth: 40, textAlign: 'center' }}>Transpose: {localTranspose > 0 ? `+${localTranspose}` : localTranspose} semitones</span>
+            <span className="transpose-label">Transpose: {localTranspose > 0 ? `+${localTranspose}` : localTranspose} semitones</span>
             <button
               className="transpose-btn"
               title="Transpose Up"
               onClick={handleTransposeUp}
-              style={{ fontSize: '1.2em', padding: '0.2em 0.6em' }}
             >
               +
             </button>
@@ -757,26 +694,18 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
               className="save-transpose-btn"
               onClick={handleSaveTranspose}
                 disabled={localTranspose === 0 || isSavingTranspose}
-              style={{ 
-                marginLeft: '1em', 
-                padding: '0.2em 0.8em', 
-                  opacity: localTranspose !== 0 && editingEnabled && !isSavingTranspose ? 1 : 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5em'
-              }}
             >
               {isSavingTranspose && <Spin size="small" />}
               Save Transposed Lyrics
             </button>
           </div>
-          <div className="instrument-selector" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <label htmlFor="instrument-select" style={{ marginRight: 0 }}>Instrument:</label>
+          <div className="instrument-selector">
+            <label htmlFor="instrument-select" className="instrument-label">Instrument:</label>
             <select
               id="instrument-select"
               value={instrument}
               onChange={(e: any) => dispatch(setInstrument(e.target.value))}
-              style={{ minWidth: 120 }}
+              className="instrument-select"
             >
               <option value="ukulele">Ukulele</option>
               <option value="guitar">Guitar</option>
@@ -800,64 +729,34 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       </div>
       
       {/* Lyrics section */}
-      <div className="lyrics-section">
+          <div className="lyrics-section">
         <div className="lyrics-container">
           {/* Song metadata */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0 }}>{song.title}</h3>
-                <i style={{ margin: 0 }}>{artist.name}</i>
+          <div className="song-header-row">
+            <div className="song-header-main">
+              <div className="song-header-titles">
+                <h3 className="song-header-title">{song.title}</h3>
+                <i className="song-header-artist">{artist.name}</i>
                 {song.album && song.album.title && (
-                  <span style={{ margin: 0, color: '#666', fontSize: '0.9em' }}>
+                  <span className="song-header-meta">
                     • {song.album.title}
                   </span>
                 )}
               </div>
             </div>
-            
+
             {/* Edit buttons */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignSelf: 'flex-start' }}>
+            <div className="song-header-actions">
               {editingEnabled && !isEditingWholeSong && (
                 <>
                   <button 
                     className="edit-whole-song-btn"
                     onClick={handleEditWholeSong}
-                    style={{ 
-                      padding: '0.5em 1em', 
-                      fontSize: '0.9em',
-                      backgroundColor: '#4285f4',
-                      color: 'white',
-                      border: '1px solid #3367d6',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5em',
-                      transition: 'background-color 0.2s ease'
-                    }}
-                    onMouseEnter={(e: any) => e.target.style.backgroundColor = '#3367d6'}
-                    onMouseLeave={(e: any) => e.target.style.backgroundColor = '#4285f4'}
                   >
                     <FaEdit /> Edit Whole Song
                   </button>
                   <button 
                     className="delete-song-btn"
-                    style={{ 
-                      padding: '0.5em 1em', 
-                      fontSize: '0.9em',
-                      backgroundColor: '#dc3545',
-                      color: 'white',
-                      border: '1px solid #c82333',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5em',
-                      transition: 'background-color 0.2s ease'
-                    }}
-                    onMouseEnter={(e: any) => e.target.style.backgroundColor = '#c82333'}
-                    onMouseLeave={(e: any) => e.target.style.backgroundColor = '#dc3545'}
                     onClick={() => {
                       Modal.confirm({
                         title: 'Delete song?',
@@ -873,23 +772,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                 </>
               )}
               {isEditingWholeSong && (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="save-cancel-row">
                   <button 
                     className="save-whole-song-btn"
                     onClick={handleSaveWholeSong}
                     disabled={isSavingWholeSong}
-                    style={{ 
-                      padding: '0.5em 1em', 
-                      fontSize: '0.9em',
-                      backgroundColor: '#28a745',
-                      color: 'white',
-                      border: '1px solid #218838',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5em'
-                    }}
                   >
                     {isSavingWholeSong ? <Spin size="small" /> : <FaClipboard />}
                     Save
@@ -897,15 +784,6 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                   <button 
                     className="cancel-whole-song-btn"
                     onClick={handleCancelWholeSong}
-                    style={{ 
-                      padding: '0.5em 1em', 
-                      fontSize: '0.9em',
-                      backgroundColor: '#6c757d',
-                      color: 'white',
-                      border: '1px solid #5a6268',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
                   >
                     Cancel
                   </button>
@@ -918,15 +796,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
             <textarea
               value={wholeSongText}
               onChange={(e: any) => setWholeSongText(e.target.value)}
-              style={{
-                width: '100%',
-                height: '60vh',
-                fontFamily: 'monospace',
-                fontSize: '14px',
-                padding: '10px',
-                border: '1px solid #ccc',
-                borderRadius: '4px'
-              }}
+              className="whole-song-textarea"
             />
           ) : (
             <DndContext
@@ -974,23 +844,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
           )}
           
           {editingEnabled && !isEditingWholeSong && (
-            <div style={{ marginTop: '1rem' }}>
+            <div className="add-line-row">
               <button 
                 className="add-line-btn"
                 onClick={() => handleInsertAfter((optimisticLyrics || lyricsArray).length - 1)}
                 disabled={isPendingAnyOperation || pendingDeleteLines.size > 0}
-                style={{
-                  padding: '0.5em 1em',
-                  fontSize: '0.9em',
-                  backgroundColor: '#17a2b8',
-                  color: 'white',
-                  border: '1px solid #138496',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5em'
-                }}
               >
                 <FaPlus /> Add Line
               </button>

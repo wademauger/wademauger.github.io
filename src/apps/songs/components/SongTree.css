@@ -55,6 +55,28 @@
   color: #666;
 }
 
+.song-tree {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: white;
+}
+
+.song-tree-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.tree-artist-name { margin-left: 8px; }
+.tree-album-title { margin-left: 8px; }
+.tree-count { margin-left: auto; font-size: 12px; color: #666; }
+.tree-songs { margin-left: 20px; }
+.tree-albums { margin-left: 20px; }
+.tree-song-text { margin-left: 16px; }
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .song-tree {

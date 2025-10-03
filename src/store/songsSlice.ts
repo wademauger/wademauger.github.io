@@ -1,15 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import googleDriveService from '../apps/songs/services/GoogleDriveServiceModern';
+import { loadFullLibrary, saveFullLibrary } from './librarySlice';
 
 // Async thunk for loading library from Google Drive
 export const loadLibraryFromDrive = createAsyncThunk(
   'songs/loadLibraryFromDrive',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      const library = await googleDriveService.loadLibrary();
-      return library;
+      const lib = await dispatch(loadFullLibrary()).unwrap();
+      return lib;
     } catch (error: unknown) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error instanceof Error ? error.message : String(error));
     }
   }
 );
@@ -17,90 +18,81 @@ export const loadLibraryFromDrive = createAsyncThunk(
 // Async thunk for updating a song
 export const updateSong = createAsyncThunk(
   'songs/updateSong',
-  async ({
-    artistName,
-    albumTitle,
-    songTitle,
-    updatedSongData,
-    newArtistName,
-    newAlbumTitle,
-    newSongTitle,
-    isGoogleDriveConnected
-  }, { getState, rejectWithValue }) => {
+  async (params: any, { getState, dispatch, rejectWithValue }) => {
+    const {
+      artistName,
+      albumTitle,
+      songTitle,
+      updatedSongData,
+      newArtistName,
+      newAlbumTitle,
+      newSongTitle,
+      isGoogleDriveConnected
+    } = params;
+
     try {
       const state = getState();
-      // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      // Check if metadata has changed (song is moving to different artist/album/title)
       const metadataChanged = (
         newArtistName && newArtistName !== artistName ||
         newAlbumTitle && newAlbumTitle !== albumTitle ||
         newSongTitle && newSongTitle !== songTitle
       );
 
-      if (isGoogleDriveConnected) {
-        if (metadataChanged) {
-          // Need to move the song - delete from old location and add to new location
-          const targetArtist = newArtistName || artistName;
-          const targetAlbum = newAlbumTitle || albumTitle;
-          const targetTitle = newSongTitle || songTitle;
-
-          // First, get the current song data
-          const artist = library.artists.find((a: any) => a.name === artistName);
-          const album = artist?.albums.find((a: any) => a.title === albumTitle);
-          const song = album?.songs.find((s: any) => s.title === songTitle);
-
-          if (!song) {
-            throw new Error('Original song not found');
-          }
-
-          // Create the song data for the new location
-          const songDataForNewLocation = {
-            ...song,
-            ...updatedSongData,
-            title: targetTitle,
-            updatedAt: new Date().toISOString()
-          };
-
-          // Add song to new location
-          await googleDriveService.addSong(library, targetArtist, targetAlbum, songDataForNewLocation);
-
-          // Delete from old location (reload library first to get the updated version)
-          const updatedLibraryAfterAdd = await googleDriveService.loadLibrary();
-          await googleDriveService.deleteSong(updatedLibraryAfterAdd, artistName, albumTitle, songTitle);
-
-          // Return the final updated library
-          const finalLibrary = await googleDriveService.loadLibrary();
-          return {
-            library: finalLibrary,
-            artistName: targetArtist,
-            albumTitle: targetAlbum,
-            songTitle: targetTitle,
-            metadataChanged: true
-          };
-        } else {
-          // Normal update - no metadata change
-          await googleDriveService.updateSong(library, artistName, albumTitle, songTitle, updatedSongData);
-          const updatedLibrary = await googleDriveService.loadLibrary();
-          return { library: updatedLibrary, artistName, albumTitle, songTitle };
-        }
-      } else {
-        // For local updates, we'll handle this in the reducer
-        return {
-          updatedSongData,
-          artistName,
-          albumTitle,
-          songTitle,
-          newArtistName,
-          newAlbumTitle,
-          newSongTitle,
-          metadataChanged,
-          isLocal: true
-        };
+      if (!isGoogleDriveConnected) {
+        return { updatedSongData, artistName, albumTitle, songTitle, newArtistName, newAlbumTitle, newSongTitle, metadataChanged, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      // Apply update locally to the cloned library so we can persist whole payload via saveFullLibrary
+      const artist = library.artists.find((a: any) => a.name === artistName);
+      const album = artist?.albums.find((a: any) => a.title === albumTitle);
+      const songIndex = album ? album.songs.findIndex((s: any) => s.title === songTitle) : -1;
+      if (!artist || !album || songIndex === -1) {
+        throw new Error('Original song not found');
+      }
+
+      const currentSong = album.songs[songIndex];
+
+      if (metadataChanged) {
+        const targetArtist = newArtistName || artistName;
+        const targetAlbum = newAlbumTitle || albumTitle;
+        const targetTitle = newSongTitle || songTitle;
+
+        // Find or create target artist/album
+        let targetArtistObj = library.artists.find((a: any) => a.name === targetArtist);
+        if (!targetArtistObj) { targetArtistObj = { name: targetArtist, albums: [] }; library.artists.push(targetArtistObj); }
+        let targetAlbumObj = targetArtistObj.albums.find((a: any) => a.title === targetAlbum);
+        if (!targetAlbumObj) { targetAlbumObj = { title: targetAlbum, songs: [] }; targetArtistObj.albums.push(targetAlbumObj); }
+
+        const newSongData = { ...currentSong, ...updatedSongData, title: targetTitle, updatedAt: new Date().toISOString() };
+        targetAlbumObj.songs.push(newSongData);
+
+        // Remove original
+        album.songs.splice(songIndex, 1);
+      } else {
+        // Normal update
+        const newSongData = { ...currentSong, ...updatedSongData, updatedAt: new Date().toISOString() };
+        album.songs[songIndex] = newSongData;
+      }
+
+      // Persist full library
+      await dispatch(saveFullLibrary(library)).unwrap();
+
+      return {
+        library,
+        artistName,
+        albumTitle,
+        songTitle,
+        updatedSongData,
+        newArtistName,
+        newAlbumTitle,
+        newSongTitle,
+        metadataChanged,
+        isLocal: false
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -108,23 +100,29 @@ export const updateSong = createAsyncThunk(
 // Async thunk for adding a song
 export const addSong = createAsyncThunk(
   'songs/addSong',
-  async ({ artistName, albumTitle, songData, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, albumTitle, songData, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
-      // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.addSong(library, artistName, albumTitle, songData);
-        // Return the updated library from Google Drive
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName, albumTitle, songTitle: songData.title };
-      } else {
-        // For local updates, we'll handle this in the reducer
+      if (!isGoogleDriveConnected) {
         return { songData, artistName, albumTitle, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      // Find or create artist/album in cloned library
+      let artist = library.artists.find((a: any) => a.name === artistName);
+      if (!artist) { artist = { name: artistName, albums: [] }; library.artists.push(artist); }
+      let album = artist.albums.find((a: any) => a.title === albumTitle);
+      if (!album) { album = { title: albumTitle, songs: [] }; artist.albums.push(album); }
+
+      const newSong = { ...songData, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      album.songs.push(newSong);
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+
+      return { library, artistName, albumTitle, songTitle: newSong.title };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -132,23 +130,25 @@ export const addSong = createAsyncThunk(
 // Async thunk for adding an empty artist
 export const addArtist = createAsyncThunk(
   'songs/addArtist',
-  async ({ artistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
-      // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.addArtist(library, artistName);
-        // Return the updated library from Google Drive
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName };
-      } else {
-        // For local updates, we'll handle this in the reducer
+      if (!isGoogleDriveConnected) {
         return { artistName, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      // Add artist locally and persist
+      library.artists = library.artists || [];
+      if (!library.artists.find((a: any) => a.name === artistName)) {
+        library.artists.push({ name: artistName, albums: [] });
+      }
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, artistName };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -156,23 +156,27 @@ export const addArtist = createAsyncThunk(
 // Async thunk for adding an empty album
 export const addAlbum = createAsyncThunk(
   'songs/addAlbum',
-  async ({ artistName, albumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
-      // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.addAlbum(library, artistName, albumTitle);
-        // Return the updated library from Google Drive
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName, albumTitle };
-      } else {
-        // For local updates, we'll handle this in the reducer
+      if (!isGoogleDriveConnected) {
         return { artistName, albumTitle, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      // Find or create artist
+      let artist = library.artists.find((a: any) => a.name === artistName);
+      if (!artist) { artist = { name: artistName, albums: [] }; library.artists.push(artist); }
+
+      if (!artist.albums.find((al: any) => al.title === albumTitle)) {
+        artist.albums.push({ title: albumTitle, songs: [] });
+      }
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, artistName, albumTitle };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -180,23 +184,35 @@ export const addAlbum = createAsyncThunk(
 // Async thunk for deleting a song
 export const deleteSong = createAsyncThunk(
   'songs/deleteSong',
-  async ({ artistName, albumTitle, songTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, albumTitle, songTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
-      // Create a deep clone to pass a plain JS object to the service
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.deleteSong(library, artistName, albumTitle, songTitle);
-        // Return the updated library from Google Drive
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName, albumTitle, songTitle };
-      } else {
-        // For local updates, we'll handle this in the reducer
+      if (!isGoogleDriveConnected) {
         return { artistName, albumTitle, songTitle, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      const artist = library.artists.find((a: any) => a.name === artistName);
+      if (!artist) throw new Error('Artist not found');
+      const album = artist.albums.find((a: any) => a.title === albumTitle);
+      if (!album) throw new Error('Album not found');
+
+      album.songs = album.songs.filter((s: any) => s.title !== songTitle);
+
+      // Cleanup empty album/artist
+      if (album.songs.length === 0) {
+        artist.albums = artist.albums.filter((a: any) => a.title !== albumTitle);
+      }
+      if (artist.albums.length === 0) {
+        library.artists = library.artists.filter((a: any) => a.name !== artistName);
+      }
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+
+      return { library, artistName, albumTitle, songTitle };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -204,20 +220,23 @@ export const deleteSong = createAsyncThunk(
 // Async thunk for updating an artist
 export const updateArtist = createAsyncThunk(
   'songs/updateArtist',
-  async ({ oldArtistName, newArtistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ oldArtistName, newArtistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.updateArtist(library, oldArtistName, newArtistName);
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, oldArtistName, newArtistName };
-      } else {
+      if (!isGoogleDriveConnected) {
         return { oldArtistName, newArtistName, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      const artist = library.artists.find((a: any) => a.name === oldArtistName);
+      if (!artist) throw new Error('Artist not found');
+      artist.name = newArtistName;
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, oldArtistName, newArtistName };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -225,20 +244,25 @@ export const updateArtist = createAsyncThunk(
 // Async thunk for updating an album
 export const updateAlbum = createAsyncThunk(
   'songs/updateAlbum',
-  async ({ artistName, oldAlbumTitle, newAlbumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, oldAlbumTitle, newAlbumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.updateAlbum(library, artistName, oldAlbumTitle, newAlbumTitle);
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName, oldAlbumTitle, newAlbumTitle };
-      } else {
+      if (!isGoogleDriveConnected) {
         return { artistName, oldAlbumTitle, newAlbumTitle, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      const artist = library.artists.find((a: any) => a.name === artistName);
+      if (!artist) throw new Error('Artist not found');
+      const album = artist.albums.find((a: any) => a.title === oldAlbumTitle);
+      if (!album) throw new Error('Album not found');
+      album.title = newAlbumTitle;
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, artistName, oldAlbumTitle, newAlbumTitle };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -246,20 +270,21 @@ export const updateAlbum = createAsyncThunk(
 // Async thunk for deleting an artist
 export const deleteArtist = createAsyncThunk(
   'songs/deleteArtist',
-  async ({ artistName, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.deleteArtist(library, artistName);
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName };
-      } else {
+      if (!isGoogleDriveConnected) {
         return { artistName, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      library.artists = library.artists.filter((a: any) => a.name !== artistName);
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, artistName };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -267,20 +292,28 @@ export const deleteArtist = createAsyncThunk(
 // Async thunk for deleting an album
 export const deleteAlbum = createAsyncThunk(
   'songs/deleteAlbum',
-  async ({ artistName, albumTitle, isGoogleDriveConnected }, { getState, rejectWithValue }) => {
+  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
 
-      if (isGoogleDriveConnected) {
-        await googleDriveService.deleteAlbum(library, artistName, albumTitle);
-        const updatedLibrary = await googleDriveService.loadLibrary();
-        return { library: updatedLibrary, artistName, albumTitle };
-      } else {
+      if (!isGoogleDriveConnected) {
         return { artistName, albumTitle, isLocal: true };
       }
-    } catch (error: unknown) {
-      return rejectWithValue(error.message);
+
+      const artist = library.artists.find((a: any) => a.name === artistName);
+      if (!artist) throw new Error('Artist not found');
+      artist.albums = artist.albums.filter((a: any) => a.title !== albumTitle);
+
+      // Cleanup artist if empty
+      if (!artist.albums || artist.albums.length === 0) {
+        library.artists = library.artists.filter((a: any) => a.name !== artistName);
+      }
+
+      await dispatch(saveFullLibrary(library)).unwrap();
+      return { library, artistName, albumTitle };
+    } catch (error: any) {
+      return rejectWithValue(error.message || String(error));
     }
   }
 );
@@ -359,6 +392,11 @@ const songsSlice = createSlice({
     },
     setLibrary: (state, action) => {
       // Normalize all albums and songs in the library
+      try {
+        console.log('songsSlice.setLibrary called — incoming artists=', (action.payload && action.payload.artists) ? action.payload.artists.length : 0);
+      } catch (e) {
+        // ignore
+      }
       const normalizedLibrary = {
         ...action.payload,
         artists: action.payload.artists.map((artist: any) => ({
@@ -370,6 +408,9 @@ const songsSlice = createSlice({
         }))
       };
       state.library = normalizedLibrary;
+      try {
+        console.log('songsSlice.setLibrary applied — resulting artists=', state.library.artists.length);
+      } catch (e) {}
     },
     loadMockLibrary: (state: any) => {
       const mockLibrary = {

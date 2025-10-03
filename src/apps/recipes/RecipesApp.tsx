@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { App } from 'antd';
+import { useDropdown } from '../../components/DropdownProvider';
 import RecipeList from './components/RecipeList';
 import RecipeDetail from './components/RecipeDetail';
 import NewRecipeForm from './components/NewRecipeForm';
-import LibraryModal from '../../components/LibraryModal';
 import GoogleDriveRecipeService from './services/GoogleDriveRecipeService';
+import { loadFullLibrary, saveFullLibrary } from '../../store/librarySlice';
 import {
   setEditingEnabled,
   setGoogleDriveConnection,
@@ -65,6 +66,19 @@ const RecipesApp = () => {
     editingEnabled 
   } = useSelector(state => state.recipes);
 
+  // Connect to library store for auto-population
+  const libraryEntries = useSelector((state: any) => state.library?.entries || []);
+
+  // Auto-populate recipes when library data changes
+  useEffect(() => {
+    const recipes = libraryEntries.filter((entry: any) => entry.type === 'recipe');
+    if (recipes.length > 0) {
+      console.log('Auto-populating recipes from library entries:', recipes.length);
+      dispatch(setDriveRecipes(recipes));
+      // Also update local state
+      setRecipes(recipes);
+    }
+  }, [libraryEntries, dispatch]);
 
   // Handle editing toggle
   const handleEditingToggle = (enabled) => {
@@ -108,24 +122,21 @@ const RecipesApp = () => {
   const loadRecipesFromDrive = async () => {
     try {
       dispatch(setLoading(true));
-      const library = await driveService.loadRecipeLibrary();
-      dispatch(setDriveRecipes(library.recipes || []));
-      message.success(`Recipes loaded from Google Drive - Found ${library.recipes?.length || 0} recipes`);
-    } catch (error: unknown) {
-      console.error('Failed to load recipes from Google Drive:', error);
-      
-      if (error.message === 'NO_LIBRARY_FOUND') {
-        // No library file found - show friendly message without auto-creation
+      const lib = await dispatch(loadFullLibrary()).unwrap();
+      dispatch(setDriveRecipes(lib.recipes || []));
+      message.success(`Recipes loaded from Google Drive - Found ${lib.recipes?.length || 0} recipes`);
+    } catch (error: any) {
+      console.error('Failed to load recipes from Google Drive via librarySlice:', error);
+      const errMsg = error && (error.message || error) ? (error.message || error) : String(error);
+      if (errMsg === 'NO_LIBRARY_FOUND') {
         dispatch(setError('No recipe library found'));
         message.info('No recipe library found. Use Library Settings to create or select one.');
-        dispatch(setDriveRecipes([])); // Set empty array instead of error state
-      } else if (error.message === 'MULTIPLE_LIBRARIES_FOUND') {
-        // Multiple libraries found - show selector
+        dispatch(setDriveRecipes([]));
+      } else if (errMsg === 'MULTIPLE_LIBRARIES_FOUND') {
         dispatch(setError('Multiple libraries found'));
         setShowLibrarySelector(true);
         message.info('Multiple recipe libraries found. Please select which one to use.');
       } else {
-        // Other errors
         dispatch(setError('Failed to load recipes from Google Drive'));
         message.error('Failed to load recipes from Google Drive');
       }
@@ -235,6 +246,18 @@ const RecipesApp = () => {
     };
   }, []);
 
+  // Register header dropdown items for Recipes app
+  const { setMenuItems } = useDropdown();
+  useEffect(() => {
+    const items = [
+      // Library Settings handled by top-level GoogleAuthButton
+      // Recipes auto-populate from library, no manual open/save needed
+    ];
+
+    setMenuItems(items);
+    return () => setMenuItems([]);
+  }, [setMenuItems, dispatch]);
+
   // Handle creating a new recipe
   const handleCreateNewRecipe = () => {
     console.log('� NEW RECIPE BUTTON CLICKED - handleCreateNewRecipe called');
@@ -338,7 +361,7 @@ const RecipesApp = () => {
       dispatch(setLoading(true));
       const library = await driveService.selectLibraryFile(file.id);
       dispatch(setDriveRecipes(library.recipes || []));
-      message.success(`Selected library "${file.name}" with ${library.recipes?.length || 0} recipes`);
+  message.success(`Selected library "${file.name}"`);
       setShowLibrarySelector(false);
     } catch (error: unknown) {
       console.error('Failed to select library file:', error);
@@ -547,9 +570,8 @@ const RecipesApp = () => {
         isLoading={isLoading}
       />
 
-      {/* Library Settings Modal */}
-  {console.log('🎨 RENDER: About to render LibraryModal with visible:', isLibrarySettingsModalOpen)}
-  <LibraryModal />
+      {/* Library Settings handled by top-level GoogleAuthButton */}
+      {/* Recipes auto-populate from library */}
     </div>
   );
 };

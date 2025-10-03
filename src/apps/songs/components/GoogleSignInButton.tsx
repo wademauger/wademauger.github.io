@@ -29,7 +29,7 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled = false, isSignedIn =
       label: (
         <div>
           <div><strong>{userInfo?.name}</strong></div>
-          <div style={{ fontSize: '12px', color: '#666' }}>{userInfo?.email}</div>
+          <div className="google-user-email">{userInfo?.email}</div>
         </div>
       ),
       disabled: true

@@ -42,7 +42,10 @@ class GoogleDriveServiceModern {
     this.userPicture = null;
     this.LIBRARY_FILENAME = 'song-tabs-library.json'; // Default filename
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-    this.SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.metadata.readonly';
+  // Include OpenID / userinfo scopes so we can call the userinfo endpoint and
+  // populate the user's name/email/picture for the UI. Keep Drive scopes as well
+  // so file operations continue to work.
+  this.SCOPES = 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.metadata.readonly';
     this.CLIENT_ID = null; // Set this from your environment
     this.gapiInited = false;
     this.gisInited = false;
@@ -63,6 +66,9 @@ class GoogleDriveServiceModern {
       SONGS_FOLDER_PATH: 'songs_folderPath'
     };
     
+    // Clean up legacy settings from localStorage
+    this.cleanLegacySettings();
+    
     // Try to restore session from localStorage
     this.restoreSession();
     // Feature flag: whether to use HTTP upload fallback after gapi.files.update
@@ -80,6 +86,61 @@ class GoogleDriveServiceModern {
   }
 
   /**
+   * Clean up legacy per-app settings from localStorage
+   * This ensures we only use the unified library system
+   */
+  cleanLegacySettings() {
+    try {
+      // Clean from the user-specific settings object
+      const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
+      const saved = localStorage.getItem(userKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const legacyKeys = [
+          'songsLibraryFile', 'songsFolder', 
+          'recipesLibraryFile', 'recipesFolder', 
+          'panelsLibraryFile', 'panelsFolder',
+          'locationPath', 'namespace', 'panelName'
+        ];
+        
+        let needsUpdate = false;
+        legacyKeys.forEach(key => {
+          if (key in parsed) {
+            console.log(`🧹 Cleaning legacy setting from storage: ${key}`);
+            delete parsed[key];
+            needsUpdate = true;
+          }
+        });
+        
+        if (needsUpdate) {
+          localStorage.setItem(userKey, JSON.stringify(parsed));
+          console.log('✅ Legacy settings cleaned from localStorage');
+        }
+      }
+      
+      // Also clean individual localStorage keys
+      const individualLegacyKeys = [
+        'googleDrive_songsLibraryFile',
+        'googleDrive_songsFolder',
+        'googleDrive_recipesLibraryFile',
+        'googleDrive_recipesFolder',
+        'googleDrive_panelsLibraryFile',
+        'googleDrive_panelsFolder'
+      ];
+      
+      individualLegacyKeys.forEach(key => {
+        if (localStorage.getItem(key)) {
+          console.log(`🧹 Removing individual legacy key: ${key}`);
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (error: unknown) {
+      console.warn('Failed to clean legacy settings:', error);
+    }
+  }
+
+  /**
    * Get user-specific Google Drive settings
    */
   getSettings() {
@@ -87,19 +148,29 @@ class GoogleDriveServiceModern {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
       const saved = localStorage.getItem(userKey);
       const defaults = {
-        songsLibraryFile: 'song-tabs-library.json',
-        recipesLibraryFile: 'recipe-library.json',
-        songsFolder: '/',
-        recipesFolder: '/'
+        libraryLibraryFile: 'library.json',
+        libraryFolder: '/'
       };
-      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Filter out legacy settings - only keep unified library settings
+        const allowedKeys = ['libraryLibraryFile', 'libraryFolder'];
+        const filtered: Record<string, any> = {};
+        allowedKeys.forEach(key => {
+          if (parsed[key] !== undefined) {
+            filtered[key] = parsed[key];
+          }
+        });
+        return { ...defaults, ...filtered };
+      }
+      
+      return defaults;
     } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return {
-        songsLibraryFile: 'song-tabs-library.json',
-        recipesLibraryFile: 'recipe-library.json',
-        songsFolder: '/',
-        recipesFolder: '/'
+        libraryLibraryFile: 'library.json',
+        libraryFolder: '/'
       };
     }
   }
@@ -110,13 +181,37 @@ class GoogleDriveServiceModern {
   updateSettings(settings) {
     try {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
+      
+      // Legacy keys to remove
+      const legacyKeys = [
+        'songsLibraryFile', 'songsFolder', 
+        'recipesLibraryFile', 'recipesFolder', 
+        'panelsLibraryFile', 'panelsFolder',
+        'locationPath', 'namespace', 'panelName'
+      ];
+      
+      // Start with current settings, remove legacy keys
       const currentSettings = this.getSettings();
-      const updatedSettings = { ...currentSettings, ...settings };
+      const cleanedSettings = { ...currentSettings };
+      legacyKeys.forEach(key => delete cleanedSettings[key]);
+      
+      // Merge in new settings (only keep unified library settings)
+      const allowedKeys = ['libraryLibraryFile', 'libraryFolder'];
+      const newSettings: Record<string, any> = {};
+      Object.keys(settings).forEach(key => {
+        if (allowedKeys.includes(key)) {
+          newSettings[key] = settings[key];
+        } else if (!legacyKeys.includes(key)) {
+          console.warn(`🧹 Ignoring unknown setting: ${key}`);
+        }
+      });
+      
+      const updatedSettings = { ...cleanedSettings, ...newSettings };
       localStorage.setItem(userKey, JSON.stringify(updatedSettings));
       
       // Update the current library filename if it was changed
-      if (settings.songsLibraryFile) {
-        this.LIBRARY_FILENAME = settings.songsLibraryFile;
+      if (settings.libraryLibraryFile) {
+        this.LIBRARY_FILENAME = settings.libraryLibraryFile;
       }
       
       console.log('Google Drive settings updated:', updatedSettings);
@@ -132,11 +227,21 @@ class GoogleDriveServiceModern {
    */
   getLibraryFilename() {
     const settings = this.getSettings();
-    return settings.songsLibraryFile || 'song-tabs-library.json';
+    // Use unified library settings only
+    return settings.libraryLibraryFile || 'library.json';
   }
 
   /**
-   * Get cached user preferences for songs library
+   * Get the current library folder based on user settings
+   */
+  getLibraryFolder() {
+    const settings = this.getSettings();
+    // Use unified library settings only
+    return settings.libraryFolder || '/';
+  }
+
+  /**
+   * Get cached user preferences for library
    * Returns user's last used settings for file and folder
    */
   getUserPreferences() {
@@ -154,8 +259,8 @@ class GoogleDriveServiceModern {
     
     // Return defaults if no saved preferences
     return {
-      songsLibraryFile: 'song-tabs-library.json',
-      songsFolder: '/',
+      libraryLibraryFile: 'library.json',
+      libraryFolder: '/',
       lastUsed: null
     };
   }
@@ -318,41 +423,6 @@ class GoogleDriveServiceModern {
     }
   }
 
-  async initialize(clientId) {
-    this.CLIENT_ID = clientId;
-    
-    try {
-      // Load Google APIs JavaScript client
-      await this.loadGoogleAPIs();
-      
-      // Initialize both GAPI and GIS
-      await Promise.all([
-        this.initializeGapi(),
-        this.initializeGis()
-      ]);
-
-      // If we have a restored session, set up the token for gapi
-      if (this.isSignedIn && this.accessToken) {
-        gapi.client.setToken({
-          access_token: this.accessToken
-        });
-        console.log('Restored session set up for gapi client');
-        
-        // Validate the restored session
-        const isValidSession = await this.validateToken();
-        if (!isValidSession) {
-          console.log('Restored session is invalid, user will need to sign in again');
-        }
-      }
-
-      console.log('Google Drive service initialized successfully');
-      return true;
-    } catch (error: unknown) {
-      console.error('Failed to initialize Google Drive service:', error);
-      throw error;
-    }
-  }
-
   async loadGoogleAPIs() {
     return new Promise((resolve, reject) => {
       // Load Google APIs JavaScript client if not already loaded
@@ -366,7 +436,66 @@ class GoogleDriveServiceModern {
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load Google APIs JavaScript client'));
       document.head.appendChild(script);
-    });
+      });
+    }
+
+  async initialize(clientId) {
+    try {
+      // If caller didn't pass a clientId, use the same approach as App.tsx
+      const safeGetImportMetaClientId = () => {
+        try {
+          // Direct access - same as App.tsx uses successfully
+          const result = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+          console.log('🔧 safeGetImportMetaClientId: import.meta.env result (masked):', result ? `${String(result).slice(0,6)}...${String(result).slice(-4)}` : result);
+          return result;
+        } catch (e) {
+          console.log('🔧 safeGetImportMetaClientId: direct access failed, trying fallbacks:', e.message);
+          // Try fallbacks for test environments
+          try {
+            // @ts-ignore
+            const fallback = (globalThis && globalThis.__IMPORT_META_ENV__ && globalThis.__IMPORT_META_ENV__.VITE_GOOGLE_CLIENT_ID) || (typeof process !== 'undefined' && process.env && process.env.VITE_GOOGLE_CLIENT_ID) || undefined;
+            console.log('🔧 safeGetImportMetaClientId: fallback result (masked):', fallback ? `${String(fallback).slice(0,6)}...${String(fallback).slice(-4)}` : fallback);
+            return fallback;
+          } catch (e2) {
+            console.log('🔧 safeGetImportMetaClientId: all methods failed:', e2.message);
+            return undefined;
+          }
+        }
+      };
+
+      console.log('🔧 GoogleDriveServiceModern.initialize: clientId parameter (masked):', clientId ? `${String(clientId).slice(0,6)}...${String(clientId).slice(-4)}` : clientId);
+      const envClientId = safeGetImportMetaClientId();
+      console.log('🔧 GoogleDriveServiceModern.initialize: env CLIENT_ID (masked):', envClientId ? `${String(envClientId).slice(0,6)}...${String(envClientId).slice(-4)}` : envClientId);
+      
+      this.CLIENT_ID = clientId || envClientId || null;
+      console.log('\ud83d\udd27 GoogleDriveServiceModern.initialize called. CLIENT_ID provided (masked):', this.CLIENT_ID ? `${String(this.CLIENT_ID).slice(0,6)}...${String(this.CLIENT_ID).slice(-4)}` : null);
+
+      if (!this.CLIENT_ID) {
+        // Don't throw here; mark service as not configured and return early. Callers can check isConfigured.
+        console.warn('\u26a0\ufe0f GoogleDriveServiceModern.initialize: CLIENT_ID not provided. Google services will remain uninitialized.');
+        this.configured = false;
+        this.inited = false;
+        return;
+      }
+
+      this.configured = true;
+
+      // Load gapi and gis libraries
+      await this.loadGoogleAPIs();
+
+      // Initialize gapi (for Drive API) and GIS (for token client)
+      await this.initializeGapi();
+      await this.initializeGis();
+
+      this.inited = true;
+      console.log('\ud83d\udd27 GoogleDriveServiceModern: initialize completed. States =>', { gapiInited: this.gapiInited, gisInited: this.gisInited });
+    } catch (error) {
+      console.error('Failed to initialize Google Drive service: ', error);
+      // Keep inited=false so callers know service is not ready
+      this.inited = false;
+      // Re-throw so callers that expect initialize to throw still see the error when a client id was present
+      if (this.CLIENT_ID) throw error;
+    }
   }
 
   async initializeGapi() {
@@ -379,7 +508,7 @@ class GoogleDriveServiceModern {
             });
             this.gapiInited = true;
             resolve();
-          } catch (error: unknown) {
+          } catch (error) {
             reject(error);
           }
         },
@@ -409,7 +538,7 @@ class GoogleDriveServiceModern {
   }
 
   setupTokenClient() {
-    console.log('🔐 Setting up token client with scopes:', this.SCOPES);
+    console.log('🔐 Setting up GoogleDriveServiceModern token client with scopes:', this.SCOPES);
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.CLIENT_ID,
       scope: this.SCOPES,
@@ -437,7 +566,7 @@ class GoogleDriveServiceModern {
           this.saveSession(); // Still save session even if profile load fails
         });
         
-        console.log('Authentication successful');
+        console.log('GoogleDriveServiceModern authentication successful');
       }
     });
     
@@ -584,7 +713,7 @@ class GoogleDriveServiceModern {
     
     if (!this.accessToken) {
       console.warn('✗ No access token available for loading user profile');
-      return;
+      document.head.appendChild(script);
     }
 
     try {
@@ -988,8 +1117,34 @@ class GoogleDriveServiceModern {
 
     try {
       const libraryFilename = this.getLibraryFilename();
+      const libraryFolder = this.getLibraryFolder();
+      
+      // Build search query - if folder is specified and not root, include it in the search
+      let query = `name='${libraryFilename}' and trashed=false`;
+      
+      // If a specific folder is configured (not root '/'), try to find the folder first
+      if (libraryFolder && libraryFolder !== '/' && libraryFolder !== 'root') {
+        console.log(`Searching for library file in folder: ${libraryFolder}`);
+        // First, find the folder by name - strip leading slash from path
+        const folderName = libraryFolder.startsWith('/') ? libraryFolder.substring(1) : libraryFolder;
+        const folderResponse = await gapi.client.drive.files.list({
+          q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          fields: 'files(id, name)'
+        });
+        
+        const folders = folderResponse.result.files;
+        if (folders && folders.length > 0) {
+          const folderId = folders[0].id;
+          query = `name='${libraryFilename}' and '${folderId}' in parents and trashed=false`;
+          console.log(`Found folder ${folderName} with ID ${folderId}`);
+        } else {
+          console.warn(`Folder ${folderName} not found, searching all files`);
+        }
+      }
+      
+      console.log(`Searching for library file with query: ${query}`);
       const response = await gapi.client.drive.files.list({
-        q: `name='${libraryFilename}' and trashed=false`,
+        q: query,
         fields: 'files(id, name, modifiedTime)'
       });
 
@@ -1117,7 +1272,28 @@ class GoogleDriveServiceModern {
       const response = await gapi.client.drive.files.get({ fileId: libraryFile.id, alt: 'media' });
 
       const library = JSON.parse(response.body);
-      console.log('Library loaded successfully');
+
+      // Create a concise preview for logs: if object small, show full; otherwise show keys or first items
+      const makePreview = (obj: any) => {
+        try {
+          if (obj == null) return String(obj);
+          if (typeof obj === 'string') return obj.length > 200 ? obj.substring(0, 200) + '... (truncated)' : obj;
+          if (Array.isArray(obj)) {
+            if (obj.length <= 5) return JSON.stringify(obj);
+            return JSON.stringify(obj.slice(0, 5)) + `... (and ${obj.length - 5} more items)`;
+          }
+          if (typeof obj === 'object') {
+            const keys = Object.keys(obj);
+            if (keys.length <= 10) return JSON.stringify(obj);
+            return `Object with keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...': ''}`;
+          }
+          return String(obj);
+        } catch (e) {
+          return '[unpreviewable]';
+        }
+      };
+
+      console.log('Library loaded successfully — preview:', makePreview(library));
       return library;
     } catch (error: unknown) {
       console.error('Error loading library:', error);
@@ -2218,8 +2394,28 @@ class GoogleDriveServiceModern {
 
       // If rawBody is a string, parse it as JSON; if it's already an object, use it
       const libraryData = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
-      console.log('Library loaded successfully from file ID:', fileId);
-      
+
+      const makePreview = (obj: any) => {
+        try {
+          if (obj == null) return String(obj);
+          if (typeof obj === 'string') return obj.length > 200 ? obj.substring(0, 200) + '... (truncated)' : obj;
+          if (Array.isArray(obj)) {
+            if (obj.length <= 5) return JSON.stringify(obj);
+            return JSON.stringify(obj.slice(0, 5)) + `... (and ${obj.length - 5} more items)`;
+          }
+          if (typeof obj === 'object') {
+            const keys = Object.keys(obj);
+            if (keys.length <= 10) return JSON.stringify(obj);
+            return `Object with keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...': ''}`;
+          }
+          return String(obj);
+        } catch (e) {
+          return '[unpreviewable]';
+        }
+      };
+
+      console.log('Library loaded successfully from file ID:', fileId, 'preview:', makePreview(libraryData));
+
       return libraryData;
     } catch (error: unknown) {
       console.error('Error loading library by ID:', error);
@@ -2301,7 +2497,33 @@ class GoogleDriveServiceModern {
             this.clearSession();
             this.isSignedIn = false;
             this.accessToken = null;
-            
+
+            // Ensure Google services are initialized (gapi/gis). If they are
+            // not initialized yet, try to initialize them using the configured
+            // CLIENT_ID or a runtime-safe lookup. This prevents signIn() from
+            // immediately throwing "Google services not initialized".
+            if (!this.gapiInited || !this.gisInited) {
+              try {
+                let cid = this.CLIENT_ID;
+                if (!cid) {
+                  try {
+                    // eslint-disable-next-line no-new-func
+                    const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : undefined');
+                    // @ts-ignore
+                    cid = fn();
+                  } catch {
+                    // @ts-ignore
+                    cid = (globalThis && (globalThis.__IMPORT_META_ENV__ || {}).VITE_GOOGLE_CLIENT_ID) || (process && process.env && process.env.VITE_GOOGLE_CLIENT_ID);
+                  }
+                }
+
+                await this.initialize(cid);
+              } catch (initErr) {
+                console.warn('withAutoAuth: Google service initialization failed during re-auth attempt', initErr);
+                throw new Error('Google services not initialized');
+              }
+            }
+
             // Trigger the authentication flow
             await this.signIn();
             
@@ -2397,6 +2619,36 @@ const googleDriveServiceModern = new GoogleDriveServiceModern();
 if (typeof window !== 'undefined') {
   window.GoogleDriveServiceModern = googleDriveServiceModern;
   window.debugGoogleDrive = () => googleDriveServiceModern.debugCurrentState();
+}
+
+// Try to pick up VITE_GOOGLE_CLIENT_ID at module load time using a safe accessor.
+// This helps when callers accidentally call initialize(null) — we can populate
+// the CLIENT_ID from import.meta.env or test shims before any runtime calls.
+try {
+  let cid: string | undefined;
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function('return (typeof import !== "undefined" && import.meta && import.meta.env) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : undefined');
+    cid = fn();
+  } catch (e) {
+    // Fallback to injected __IMPORT_META_ENV__ or process.env in test environments
+    // @ts-ignore
+    cid = (globalThis && (globalThis.__IMPORT_META_ENV__ || {}).VITE_GOOGLE_CLIENT_ID) || (typeof process !== 'undefined' && process.env && process.env.VITE_GOOGLE_CLIENT_ID);
+  }
+
+  if (cid && cid !== 'development-fallback') {
+    googleDriveServiceModern.CLIENT_ID = cid;
+    // Initialize in background but don't block module load; swallow errors
+    (async () => {
+      try {
+        await googleDriveServiceModern.initialize(cid as string);
+      } catch (err) {
+        // Non-fatal: already logged inside initialize
+      }
+    })();
+  }
+} catch (e) {
+  // non-fatal
 }
 
 export default googleDriveServiceModern;

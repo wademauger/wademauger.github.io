@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Space, Switch, Spin } from 'antd';
+import './styles/AppNavigation.css';
 import SongsGoogleSignInButton from '../apps/songs/components/GoogleSignInButton';
 import RecipesGoogleSignInButton from '../apps/recipes/components/GoogleSignInButton';
 
@@ -43,14 +44,9 @@ const AppNavigation = ({
   return (
     <div className={`app-navigation ${className}`} style={style}>
       <div className="app-header">
-        <div className="header-controls" style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          width: '100%'
-        }}>
+        <div className="header-controls">
           {/* Left Section - Controls and Actions */}
-          <div className="left-section" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '0 0 auto' }}>
+          <div className="left-section">
             {/* Left Content Area */}
             {leftContent}
             
@@ -103,14 +99,7 @@ const AppNavigation = ({
           </div>
 
           {/* Center Section - Library Info */}
-          <div className="center-section" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            textAlign: 'center',
-            flex: '1 1 auto',
-            minWidth: 0
-          }}>
+          <div className="center-section">
             {/* Library Info Section */}
             {libraryInfo && (
               <div className="library-status-header">
@@ -142,7 +131,7 @@ const AppNavigation = ({
           </div>
 
           {/* Right Section - Authentication and Right Content */}
-          <div className="right-section" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '0 0 auto' }}>
+          <div className="right-section">
             {/* Right Content Area (header now contains the Google sign-in control) */}
             {rightContent}
           </div>

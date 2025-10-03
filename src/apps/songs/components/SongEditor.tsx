@@ -520,7 +520,7 @@ const SongEditor = ({
                   showSearch
                   allowClear
                   loading={isLoadingArtists}
-                  style={{ width: '100%' }}
+                  className="full-width-select"
                   filterOption={false} // Disable built-in filtering since we handle it with API
                   onSearch={setSongArtist} // Update the value as user types
                   notFoundContent={isLoadingArtists ? 'Searching...' : 'No artists found'}
@@ -557,7 +557,7 @@ const SongEditor = ({
                   showSearch
                   allowClear
                   loading={isLoadingAlbums}
-                  style={{ width: '100%' }}
+                  className="full-width-select"
                   filterOption={false} // Disable built-in filtering
                   onSearch={setSongAlbum} // Allow custom input
                   notFoundContent={isLoadingAlbums ? 'Loading albums...' : 'No albums found'}
@@ -594,7 +594,7 @@ const SongEditor = ({
                   showSearch
                   allowClear
                   loading={isLoadingTracks}
-                  style={{ width: '100%' }}
+                  className="full-width-select"
                   filterOption={false} // Disable built-in filtering
                   onSearch={setSongTitle} // Allow custom input
                   notFoundContent={isLoadingTracks ? 'Loading tracks...' : 'No tracks found'}
@@ -637,7 +637,7 @@ const SongEditor = ({
                 type="default"
                 onClick={() => setShowConversion(!showConversion)}
                 size="small"
-                style={{ marginBottom: '0.5rem' }}
+                className="ug-toggle-btn"
               >
                 {showConversion ? '▼ Hide UG Converter' : '▶ Convert from Ultimate Guitar'}
               </Button>
@@ -717,7 +717,7 @@ const SongEditor = ({
         </div>
 
         {/* Right: Preview */}
-        <div className={`preview-pane${chordPalette.length > 0 ? ' has-chord-ribbon' : ''}`}>
+  <div className={`preview-pane${chordPalette.length > 0 ? ' has-chord-ribbon' : ''}`}>
           <h3>Preview</h3>
           {renderPreview()}
         </div>
@@ -738,7 +738,7 @@ const SongEditor = ({
         <Button
           icon={<FaTimes />}
           onClick={handleCancel}
-          style={{ marginLeft: '0.5rem' }}
+          className="cancel-btn"
           size="large"
         >
           Cancel

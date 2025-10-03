@@ -112,65 +112,28 @@ const AlbumArt = ({ artist, album, size = 150 }) => {
 
   if (loading) {
     return (
-      <div style={{
-        width: size,
-        height: size,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px',
-        border: '1px solid #ddd'
-      }}>
-        <div style={{ color: '#999' }}>Loading...</div>
+      <div className="album-art-placeholder" style={{ width: size, height: size }}>
+        <div className="album-art-loading-text">Loading...</div>
       </div>
     );
   }
 
   if (error || !albumData?.albumArt) {
     return (
-      <div style={{
-        width: size,
-        height: size,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px',
-        border: '1px solid #ddd',
-        flexDirection: 'column',
-        padding: '10px',
-        textAlign: 'center'
-      }}>
-        <div style={{ 
-          fontSize: '24px', 
-          color: '#ddd',
-          marginBottom: '8px'
-        }}>♪</div>
-        <div style={{ 
-          fontSize: '12px', 
-          color: '#999',
-          lineHeight: '1.3'
-        }}>
-          No album art found
-        </div>
+      <div className="album-art-placeholder album-art-missing" style={{ width: size, height: size }}>
+        <div className="album-art-icon">♪</div>
+        <div className="album-art-text">No album art found</div>
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="album-art-wrapper" style={{ width: size, height: size }}>
       <img
         src={albumData.albumArt}
         alt={`${albumData.albumName} album art`}
-        style={{
-          width: size,
-          height: size,
-          objectFit: 'cover',
-          borderRadius: '8px',
-          border: '1px solid #ddd',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}
+        className="album-art-image"
+        style={{ width: size, height: size }}
         onError={(e: any) => {
           e.target.style.display = 'none';
           setError('Image failed to load');
