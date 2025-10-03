@@ -6,7 +6,7 @@ import { PanelDiagram } from '@/components/PanelDiagram';
 import { useDriveAuth } from './context/DriveAuthContext';
 import { Panel } from '@/models/Panel';
 import { message } from 'antd';
-import { LibrarySettingsModal, OpenModal, SaveAsModal } from '@/components/modals';
+import { OpenModal, SaveAsModal } from '@/components/modals';
 import { useDropdown } from '@/components/DropdownProvider';
 
 
@@ -179,7 +179,6 @@ export default function PanelShapeCreator() {
   const [selectedShortRowId, setSelectedShortRowId] = useState(null);
 
   // Modal visibility state
-  const [showSettings, setShowSettings] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [showSaveAs, setShowSaveAs] = useState(false);
 
@@ -258,12 +257,6 @@ export default function PanelShapeCreator() {
   // Register dropdown menu items
   useEffect(() => {
     const items = [
-      {
-        key: 'panel-settings',
-        label: 'Library Settings...',
-        icon: <SettingOutlined />,
-        onClick: () => setShowSettings(true)
-      },
       {
         key: 'panel-save-as',
         label: 'Save As...',
@@ -477,13 +470,6 @@ export default function PanelShapeCreator() {
         </Space>
 
         {/* Library Modals */}
-        <LibrarySettingsModal
-          visible={showSettings}
-          jsonKey="panels"
-          displayLabel="Panel"
-          onClose={() => setShowSettings(false)}
-        />
-
         <OpenModal
           visible={showOpen}
           jsonKey="panels"

@@ -94,7 +94,7 @@ function AppInner() {
         <Route path="/crafts/knitting-pattern-designer/*" element={
           <Suspense fallback={<LoadingSpinner />}>
             <Layout>
-              <KnittingDesignerApp />
+              <ColorworkDesignerApp />
             </Layout>
           </Suspense>
         } />
@@ -131,7 +131,7 @@ function AppInner() {
         <Route path="/knitting/*" element={
           <Suspense fallback={<LoadingSpinner />}>
             <Layout>
-              <KnittingDesignerApp />
+              <ColorworkDesignerApp />
             </Layout>
           </Suspense>
         } />

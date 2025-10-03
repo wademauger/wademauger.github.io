@@ -14,6 +14,7 @@ const HomePage = () => {
   let recipeCount = 0;
   let songCount = 0;
   let panelCount = 0;
+  let colorworkCount = 0;
 
   if (fullLib) {
     if (fullLib.recipes && typeof fullLib.recipes === 'object') {
@@ -29,6 +30,10 @@ const HomePage = () => {
     if (fullLib.panels && typeof fullLib.panels === 'object') {
       panelCount = Object.keys(fullLib.panels).length;
     }
+    if (fullLib.colorworkPatterns) {
+      if (Array.isArray(fullLib.colorworkPatterns)) colorworkCount = fullLib.colorworkPatterns.length;
+      else if (typeof fullLib.colorworkPatterns === 'object') colorworkCount = Object.keys(fullLib.colorworkPatterns).length;
+    }
   } else {
     // Fallback: compute counts by type from entries
     const counts = entries.reduce((acc: any, e: any) => {
@@ -40,6 +45,8 @@ const HomePage = () => {
     recipeCount = counts['recipe'] || 0;
     songCount = counts['song'] || 0;
     panelCount = counts['panel'] || 0;
+    // Fallback: count colorwork patterns from entries if present
+    colorworkCount = counts['colorworkPatterns'] || counts['colorwork'] || counts['colorworkPattern'] || 0;
   }
 
   return (
@@ -77,8 +84,9 @@ const HomePage = () => {
           </div>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? 'magenta' : 'gray'}>
-          <div className="app-card">
+        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? 'volcano' : 'gray'}>
+          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? 'magenta' : 'gray'} style={{ top: 40 }}>
+            <div className="app-card">
             <h2>Knitting Pattern Designer</h2>
             <p>
               Create machine knitting patterns for almost any project. Design a garment in one size, then knit it
@@ -90,8 +98,10 @@ const HomePage = () => {
               </svg>
             </div>
             <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Pattern Wizard</Link>
-          </div>
+            </div>
+          </Badge.Ribbon>
         </Badge.Ribbon>
+        
       </div>
     </div>
   );

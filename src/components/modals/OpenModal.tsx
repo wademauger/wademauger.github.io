@@ -68,12 +68,27 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
         return;
       }
 
-      // Get library file settings
-      const settings = service.getSettings();
-      const fileName = settings[`${jsonKey}LibraryFile`] || `${jsonKey}-library.json`;
-      const folderPath = settings[`${jsonKey}Folder`] || '/';
+      // Get library file settings. Prefer unified service-level settings when available.
+      let fileName: string | undefined;
+      let folderPath: string | undefined;
+
+      try {
+        if (typeof service.getLibraryFilename === 'function') {
+          fileName = service.getLibraryFilename();
+        }
+        if (typeof service.getLibraryFolder === 'function') {
+          folderPath = service.getLibraryFolder();
+        }
+      } catch (e) { /* ignore and fallback */ }
+
+      // Fallback to legacy per-jsonKey settings if unified methods not present
+      if (!fileName || !folderPath) {
+        const settings: any = typeof service.getSettings === 'function' ? service.getSettings() : {};
+        fileName = fileName || settings[`${jsonKey}LibraryFile`] || `${jsonKey}-library.json`;
+        folderPath = folderPath || settings[`${jsonKey}Folder`] || '/';
+      }
+
       const fullPath = folderPath === '/' ? `/${fileName}` : `${folderPath}/${fileName}`;
-      
       setLibraryPath(fullPath);
       console.log(`📚 OpenModal (${jsonKey}): Loading from: ${fullPath}`);
 
