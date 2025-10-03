@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { openLibrarySettingsModal } from '../../reducers/modal.reducer';
 import LibraryOpenDialog from '../../components/LibraryOpenDialog';
 import LibrarySaveDialog from '../../components/LibrarySaveDialog';
+import { OpenModal } from '@/components/modals';
 import { emitEvent } from '../../store/uiEventsSlice';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor';
 // Google sign-in now rendered by the page header; per-editor buttons removed
@@ -281,6 +282,7 @@ const ColorworkDesignerApp = () => {
     const dispatch = useDispatch();
     const [showOpenDialog, setShowOpenDialog] = useState(false);
     const [showSaveDialog, setShowSaveDialog] = useState(false);
+    const [showPatternOpen, setShowPatternOpen] = useState(false);
     useEffect(() => {
         const path = location.pathname || '';
         let items: any[] = [];
@@ -298,7 +300,7 @@ const ColorworkDesignerApp = () => {
                 {
                     key: 'colorwork-pattern-open',
                     label: 'Open Pattern',
-                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'open' }))
+                    onClick: () => setShowPatternOpen(true)
                 }
             ];
         } else {
@@ -354,6 +356,21 @@ const ColorworkDesignerApp = () => {
                             </div>
                         )} />
                     </Routes>
+
+                    {/* Open Pattern modal for Colorwork Pattern Creator */}
+                    <OpenModal
+                        visible={showPatternOpen}
+                        jsonKey="colorworkPatterns"
+                        displayLabel="Pattern"
+                        onOpen={(pattern) => {
+                            try {
+                                // Dispatch a UI event so other parts of the app can react
+                                dispatch(emitEvent({ type: 'colorwork:pattern-opened', payload: pattern }));
+                            } catch (e) { /* swallow */ }
+                            setShowPatternOpen(false);
+                        }}
+                        onClose={() => setShowPatternOpen(false)}
+                    />
                 </Content>
             </DriveAuthProvider>
         </Layout>

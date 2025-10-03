@@ -12,6 +12,7 @@ import './styles/KnittingDesignerApp.css';
 import { openModal, MODAL_TYPES } from '@/reducers/modal.reducer';
 import { useDriveAuth } from '../colorwork-designer/context/DriveAuthContext';
 import mergeColorworkIntoLibrary from '@/utils/libraryMergeColorwork';
+import { RootState } from '@/types';
 
 const KnittingDesignerApp = () => {
     // Redux selectors
@@ -631,6 +632,30 @@ const KnittingDesignerApp = () => {
     // Global event listeners so external toolbars (like ColorworkDesignerApp) can trigger save/open
     const dispatch = useDispatch();
     const { GoogleDriveServiceModern: DriveService } = useDriveAuth();
+
+    // Listen for UI events dispatched from other apps (e.g., pattern-opened)
+    const lastUiEvent = useSelector((state: RootState) => (state as any).uiEvents?.lastEvent || null);
+
+    useEffect(() => {
+        if (!lastUiEvent) return;
+        try {
+            if (lastUiEvent.type === 'colorwork:pattern-opened') {
+                const chosen = lastUiEvent.payload;
+                if (chosen && chosen.pattern) {
+                    setPattern(chosen.pattern || []);
+                    setGridSize(chosen.gridSize || { width: (chosen.pattern && chosen.pattern[0] && chosen.pattern[0].length) || 20, height: chosen.pattern ? chosen.pattern.length : 20 });
+                    setClipboard(null);
+                    setPasteMode(false);
+                    setPastePreview(null);
+                    setSelection(null);
+                    setSelectedCells(new Set());
+                    setHistory([JSON.parse(JSON.stringify(chosen.pattern || []))]);
+                    setHistoryIndex(0);
+                    message.success('Loaded colorwork pattern: ' + (chosen.name || 'Unnamed'));
+                }
+            }
+        } catch (e) { /* swallow */ }
+    }, [lastUiEvent]);
 
     useEffect(() => {
         const onSave = async () => {
