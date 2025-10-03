@@ -39,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     '/crafts/colorwork-designer': 'Colorwork Designer'
   };
 
-  const pathSnippets = location.pathname.split('/').filter(i => i);
+  const pathSnippets = location.pathname.split('/').filter((i: any) => i);
   const breadcrumbItems = [
     {
       path: '/',
@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
   // Build breadcrumb for crafts and deeper routes
   if (pathSnippets.length > 0) {
     let accumulated = '';
-    pathSnippets.forEach((_, idx) => {
+    pathSnippets.forEach((_, idx: number) => {
       accumulated += `/${pathSnippets[idx]}`;
       const name = breadcrumbNameMap[accumulated] || pathSnippets[idx];
       breadcrumbItems.push({ path: accumulated, breadcrumbName: name });
@@ -85,7 +85,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
       height: '150px'
     }}>
       <div className="ant-flex css-ra95ns ant-flex-wrap-wrap ant-flex-justify-center ant-flex-gap-small">
-        {pinnedChords.map(chord => (
+        {pinnedChords.map((chord: any) => (
           <div key={chord} style={{ cursor: 'pointer', display: 'inline-block', transform: 'scale(0.75)', transformOrigin: 'top left', position: 'relative' }} onClick={() => handleUnpinChord(chord)}>
             <div className="chord-chart">
               <ChordChart
@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
             <div className="header-content">
               <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
                 <Breadcrumb style={{ margin: 0 }}>
-                  {breadcrumbItems.map((item, idx) => (
+                  {breadcrumbItems.map((item, idx: number) => (
                     <Breadcrumb.Item key={item.path}>
                       <Link to={item.path} style={{ color: 'rgba(255,255,255,0.9)', display: 'inline-flex', alignItems: 'center' }}>
                         {idx === 0 ? <HomeOutlined style={{ fontSize: '20px' }} /> : null}
@@ -129,8 +129,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                     if (w.GoogleDriveServiceModern && w.GoogleDriveServiceModern.signOut) {
                       await w.GoogleDriveServiceModern.signOut();
                     }
-                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e) { /* swallow */ }
-                  } catch (err) {
+                    try { window.dispatchEvent(new CustomEvent('app:google-signout', { detail: { app: appNameFromPath(location.pathname) } })); } catch (e: unknown) { /* swallow */ }
+                  } catch (err: unknown) {
                     // swallow
                   }
                 };
@@ -138,12 +138,12 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                 const emitSignInSuccess = (tokenResponse: any, appName: string) => {
                   try {
                     window.dispatchEvent(new CustomEvent('app:google-signin-success', { detail: { app: appName, tokenResponse } }));
-                  } catch (e) { /* swallow */ }
+                  } catch (e: unknown) { /* swallow */ }
                 };
                 const emitSignInError = (error: any, appName: string) => {
                   try {
                     window.dispatchEvent(new CustomEvent('app:google-signin-error', { detail: { app: appName, error } }));
-                  } catch (e) { /* swallow */ }
+                  } catch (e: unknown) { /* swallow */ }
                 };
 
                 const appNameFromPath = (path: string) => {
@@ -163,10 +163,10 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                 }
                 if (location.pathname.startsWith('/crafts/colorwork-designer') || location.pathname.startsWith('/crafts/unified-designer') || location.pathname.startsWith('/crafts/knitting')) {
                   const openHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e) { /* swallow */ }
+                    try { window.dispatchEvent(new CustomEvent('colorwork:open')); } catch (e: unknown) { /* swallow */ }
                   };
                   const saveAsHandler = () => {
-                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e) { /* swallow */ }
+                    try { window.dispatchEvent(new CustomEvent('colorwork:save-as')); } catch (e: unknown) { /* swallow */ }
                   };
                   const app = 'colorwork';
                   return <ColorworkGoogleSignInButton onSuccess={(tr: any) => emitSignInSuccess(tr, app)} onError={(err: any) => emitSignInError(err, app)} onSignOut={signOut} onOpen={openHandler} onSaveAs={saveAsHandler} />;

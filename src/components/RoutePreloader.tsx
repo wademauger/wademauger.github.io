@@ -1,19 +1,10 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
-const RoutePreloader: React.FC = () => {
+const RoutePreloader = () => {
   useEffect(() => {
-    // Preload chunks for likely next routes when user hovers over navigation links
-    const prefetchChunk = (chunkName: string): void => {
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = chunkName;
-      document.head.appendChild(link);
-    };
-
     // Add hover listeners to navigation links
-    const handleMouseEnter = (e: Event): void => {
-      const target = e.target as HTMLAnchorElement;
-      const href = target.getAttribute('href');
+    const handleMouseEnter = (e: any) => {
+      const href = e.target.getAttribute('href');
       if (href && (href.startsWith('/crafts') || href.includes('#/crafts'))) {
         // Prefetch the Layout component and related chunks
         import('../components/Layout');
@@ -21,7 +12,7 @@ const RoutePreloader: React.FC = () => {
         if (href.includes('recipes')) {
           import('../apps/recipes/RecipesApp');
         } else if (href.includes('songs') || href.includes('tabs')) {
-          import('../apps/songs/SongTabsAppModern.jsx');
+          import('../apps/songs/SongTabsAppModern.tsx');
         } else if (href.includes('knitting')) {
           // Knitting app preloading can be added here if needed
         }
@@ -29,14 +20,14 @@ const RoutePreloader: React.FC = () => {
     };
 
     // Add listeners to all navigation links (both hash and non-hash)
-    const links = document.querySelectorAll<HTMLAnchorElement>('a[href^="/crafts"], a[href*="#/crafts"]');
-    links.forEach(link => {
+    const links = document.querySelectorAll('a[href^="/crafts"], a[href*="#/crafts"]');
+    links.forEach((link: any) => {
       link.addEventListener('mouseenter', handleMouseEnter);
     });
 
     // Cleanup
     return () => {
-      links.forEach(link => {
+      links.forEach((link: any) => {
         link.removeEventListener('mouseenter', handleMouseEnter);
       });
     };

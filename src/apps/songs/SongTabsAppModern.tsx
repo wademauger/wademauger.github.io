@@ -1,8 +1,7 @@
-// Simplified SongTabsApp.tsx using TreeSelect and modal for adding songs with Redux state management
+// Simplified SongTabsApp.js using TreeSelect and modal for adding songs with Redux state management
 import React, { useEffect, useCallback, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { pinChord, loadChordFingerings } from '@/store/chordsSlice';
-import type { Artist, Album, Song } from '@/types';
+import { useDispatch, useSelector } from 'react-redux';
+import { pinChord, loadChordFingerings } from '../../store/chordsSlice';
 import {
   loadLibraryFromDrive,
   updateSong,
@@ -15,33 +14,21 @@ import {
   addArtist,
   addAlbum,
   deleteSong
-} from '@/store/songsSlice';
+} from '../../store/songsSlice';
+import AppNavigation from '../../components/AppNavigation';
+import SongDetail from './components/SongDetail';
 import AlbumArt from './components/AlbumArt';
 import SongEditor from './components/SongEditor';
 import SongListTest from './components/SongListTest';
-import GoogleSignInButton from './components/GoogleSignInButton';
-import SessionTestingTools from './components/SessionTestingTools';
 import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 import './styles/SongTabsApp.css';
-import { Button, Spin, App, Popconfirm } from 'antd';
+import { Button, App, Popconfirm } from 'antd';
 
-interface TokenResponse {
-  access_token: string;
-  expires_in: number;
-  scope: string;
-  token_type: string;
-}
-
-const SongTabsApp: React.FC = () => {
+const SongTabsApp = () => {
   const { message } = App.useApp();
 
-  // Developer flag to enable session testing tools
-  // Set this to true when you need to test session expiry scenarios
-  // The testing tools will only appear in development mode when this flag is true
-  const ENABLE_SESSION_TESTING = false; // Change to true to enable testing tools
-
   // Redux state
-  const dispatch = useAppDispatch();
+  const dispatch = useDispatch();
   const {
     library,
     selectedSong,
@@ -49,24 +36,17 @@ const SongTabsApp: React.FC = () => {
     userInfo,
     isLoading,
     error
-  } = useAppSelector((state) => state.songs) as {
-    library: any;
-    selectedSong: Song | null;
-    isGoogleDriveConnected: boolean;
-    userInfo: any;
-    isLoading: boolean;
-    error: string | null;
-  };
+  } = useSelector(state => state.songs);
 
   // Local component state for UI interactions only
-  const [isEditingSong, setIsEditingSong] = useState<boolean>(false);
-  const [isCreatingNewSong, setIsCreatingNewSong] = useState<boolean>(false);
+  const [isEditingSong, setIsEditingSong] = useState(false);
+  const [isCreatingNewSong, setIsCreatingNewSong] = useState(false);
 
   // Helper function to count total songs in library
   const getTotalSongsCount = useCallback(() => {
     if (!library || !library.artists) return 0;
-    return library.artists.reduce((total: number, artist: Artist) => {
-      return total + (artist.albums || []).reduce((albumTotal: number, album: Album) => {
+    return library.artists.reduce((total, artist: any) => {
+      return total + artist.albums.reduce((albumTotal, album: any) => {
         return albumTotal + (album.songs ? album.songs.length : 0);
       }, 0);
     }, 0);
@@ -79,9 +59,10 @@ const SongTabsApp: React.FC = () => {
 
   const handleLoadLibraryFromDrive = useCallback(async () => {
     try {
-  await dispatch(loadLibraryFromDrive()).unwrap();
-    } catch (error: any) {
-  // Error handled below and user-friendly message shown via Ant Design message
+      await dispatch(loadLibraryFromDrive()).unwrap();
+      console.log('Library loaded from Google Drive');
+    } catch (error: unknown) {
+      console.error('Failed to load library from Google Drive:', error);
 
       // Detailed error analysis
       let errorMessage = 'Failed to load library from Google Drive';
@@ -108,11 +89,16 @@ const SongTabsApp: React.FC = () => {
         errorMessage = `Error: ${error.message}`;
       }
 
-      // Detailed error information intentionally not logged to console in production.
+      console.error('Detailed error info:', {
+        errorType: typeof error,
+        errorMessage: error?.message || error,
+        errorStack: error?.stack,
+        timestamp: new Date().toISOString()
+      });
 
       // Check if this is an authentication error
       if (isAuthError(error) || errorMessage.includes('sign in') || errorMessage.includes('authentication')) {
-  message.error(errorMessage);
+        message.error(errorMessage);
         dispatch(setGoogleDriveConnection(false));
         dispatch(setUserInfo(null));
       } else {
@@ -125,15 +111,15 @@ const SongTabsApp: React.FC = () => {
   }, [dispatch, message]);
 
   // Simplified song update handler using Redux
-  const handleSongUpdate = async (updatedSongData: any) => {
-    if (!selectedSong || !selectedSong.artist || !selectedSong.album) return;
+  const handleSongUpdate = async (updatedSongData) => {
+    if (!selectedSong) return;
 
     try {
       const artistName = selectedSong.artist.name;
       const albumTitle = selectedSong.album.title; // Use consistent property name
       const songTitle = selectedSong.title;
 
-      await dispatch((updateSong as any)({
+      await dispatch(updateSong({
         artistName,
         albumTitle,
         songTitle,
@@ -142,8 +128,8 @@ const SongTabsApp: React.FC = () => {
       })).unwrap();
 
       message.success('Song updated successfully');
-    } catch (error: any) {
-  // Error displayed to user via message.error
+    } catch (error: unknown) {
+      console.error('Failed to update song:', error);
 
       // Check if this is an authentication error
       if (isAuthError(error)) {
@@ -159,8 +145,8 @@ const SongTabsApp: React.FC = () => {
   };
 
   // Handler for song updates from the editor (exits editing mode on success)
-  const handleSongEditorSave = async (updatedSongData: any, newMetadata: any = null) => {
-    if (!selectedSong || !selectedSong.artist || !selectedSong.album) return;
+  const handleSongEditorSave = async (updatedSongData, newMetadata = null) => {
+    if (!selectedSong) return;
 
     try {
       // Use original metadata unless new metadata is provided
@@ -168,7 +154,7 @@ const SongTabsApp: React.FC = () => {
       const albumTitle = newMetadata?.album || selectedSong.album.title;
       const songTitle = updatedSongData.title || selectedSong.title;
 
-      await dispatch((updateSong as any)({
+      await dispatch(updateSong({
         artistName: selectedSong.artist.name, // Original location for deletion
         albumTitle: selectedSong.album.title, // Original location for deletion
         songTitle: selectedSong.title, // Original song title for deletion
@@ -181,8 +167,8 @@ const SongTabsApp: React.FC = () => {
 
       message.success('Song updated successfully');
       setIsEditingSong(false); // Exit editing mode after successful save
-    } catch (error: any) {
-  // Error displayed to user via message.error
+    } catch (error: unknown) {
+      console.error('Failed to update song:', error);
 
       // Check if this is an authentication error
       if (isAuthError(error)) {
@@ -216,14 +202,14 @@ const SongTabsApp: React.FC = () => {
             name: signInStatus.userName,
             picture: signInStatus.userPicture
           }));
-          // Restored user session; proceed to load library from Drive
+          console.log('Restored user session for:', signInStatus.userEmail);
           await handleLoadLibraryFromDrive();
         } else {
-          // No valid session found; use mock library
+          console.debug('No valid session found, using mock library');
           handleLoadMockLibrary();
         }
-      } catch (error) {
-        // Initialization failed; fall back to mock library (error shown to user elsewhere if needed)
+      } catch (error: unknown) {
+        console.error('Failed to initialize Google Drive:', error);
         handleLoadMockLibrary();
       }
     };
@@ -232,7 +218,7 @@ const SongTabsApp: React.FC = () => {
   }, [dispatch, handleLoadLibraryFromDrive, handleLoadMockLibrary]);
 
   // Google Drive handlers
-  const handleGoogleSignInSuccess = async (tokenResponse: TokenResponse) => {
+  const handleGoogleSignInSuccess = async (tokenResponse) => {
     try {
       await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
       const signInStatus = GoogleDriveServiceModern.getSignInStatus();
@@ -245,14 +231,14 @@ const SongTabsApp: React.FC = () => {
       }));
 
       await handleLoadLibraryFromDrive();
-    } catch (error) {
-      // Sign-in failure handled via user message
+    } catch (error: unknown) {
+      console.error('Google Sign-In failed:', error);
       message.error('Failed to connect to Google Drive. Please try again.');
     }
   };
 
-  const handleGoogleSignInError = (error: any) => {
-    // Sign-in error displayed to user
+  const handleGoogleSignInError = (error) => {
+    console.error('Google Sign-In error:', error);
     message.error('Failed to sign in with Google. Please try again.');
   };
 
@@ -262,54 +248,32 @@ const SongTabsApp: React.FC = () => {
       dispatch(setGoogleDriveConnection(false));
       dispatch(setUserInfo(null));
       handleLoadMockLibrary();
-    } catch (error) {
-      // Sign-out failure not logged to console
+    } catch (error: unknown) {
+      console.error('Failed to sign out:', error);
+    }
+  };
+
+  // Handle Google Drive settings changes
+  const handleSettingsChange = async (settings) => {
+    try {
+      GoogleDriveServiceModern.updateSettings(settings);
+      message.success('Google Drive settings updated successfully');
+      
+      // Optionally reload the library with new settings
+      if (isGoogleDriveConnected) {
+        await handleLoadLibraryFromDrive();
+      }
+    } catch (error: unknown) {
+      console.error('Failed to update settings:', error);
+      message.error('Failed to update Google Drive settings');
     }
   };
 
   // Ref for lyrics section in SongEditor
-  const lyricsSectionRef = React.useRef<HTMLDivElement>(null);
-
-  // Listen for header-emitted auth events so header control can drive app auth handlers
-  React.useEffect(() => {
-    const onSigninSuccess = (ev: any) => {
-      try {
-        const d = ev && ev.detail;
-        if (!d) return;
-        // Only process events for this app
-        if (d.app && d.app !== 'songs') return;
-        handleGoogleSignInSuccess(d.tokenResponse);
-      } catch (e) { /* swallow */ }
-    };
-    const onSigninError = (ev: any) => {
-      try {
-        const d = ev && ev.detail;
-        if (!d) return;
-        if (d.app && d.app !== 'songs') return;
-        handleGoogleSignInError(d.error);
-      } catch (e) { /* swallow */ }
-    };
-    const onSignout = (ev: any) => {
-      try {
-        const d = ev && ev.detail;
-        if (!d) return;
-        if (d.app && d.app !== 'songs') return;
-        handleGoogleSignOut();
-      } catch (e) { /* swallow */ }
-    };
-
-    window.addEventListener('app:google-signin-success', onSigninSuccess as any);
-    window.addEventListener('app:google-signin-error', onSigninError as any);
-    window.addEventListener('app:google-signout', onSignout as any);
-    return () => {
-      window.removeEventListener('app:google-signin-success', onSigninSuccess as any);
-      window.removeEventListener('app:google-signin-error', onSigninError as any);
-      window.removeEventListener('app:google-signout', onSignout as any);
-    };
-  }, [handleGoogleSignInSuccess, handleGoogleSignInError, handleGoogleSignOut]);
+  const lyricsSectionRef = React.useRef(null);
 
   // Handle song selection from SongList
-  const handleSongSelect = React.useCallback((songData: any, artistName: string, albumTitle: string) => {
+  const handleSongSelect = React.useCallback((songData, artistName, albumTitle: any) => {
     if (songData && artistName && albumTitle) {
       // Create normalized song object for Redux
       const normalizedSong = {
@@ -340,7 +304,7 @@ const SongTabsApp: React.FC = () => {
   }, [dispatch]);
 
   // Helper function to check if error is authentication-related
-  const isAuthError = (error: any): boolean => {
+  const isAuthError = (error) => {
     if (!error) return false;
     const message = error.message || error || '';
     const authErrorPatterns = [
@@ -356,13 +320,13 @@ const SongTabsApp: React.FC = () => {
       'token_expired',
       'Request had invalid authentication credentials'
     ];
-    return authErrorPatterns.some(pattern =>
+    return authErrorPatterns.some((pattern: any) =>
       message.toLowerCase().includes(pattern.toLowerCase())
     );
   };
 
   // Handle chord pinning
-  const handlePinChord = (chord: string) => {
+  const handlePinChord = (chord) => {
     dispatch(pinChord(chord));
   };
 
@@ -372,42 +336,34 @@ const SongTabsApp: React.FC = () => {
   };
 
   // Handle new song creation using SongEditor
-  const handleCreateNewSong = async (newSongData: any) => {
+  const handleCreateNewSong = async (newSongData) => {
     try {
       const { title, artist, album, lyrics } = newSongData;
 
-      // First ensure the artist exists. Use the thunk result (unwrap) which returns the
-      // updated library from Drive so we don't rely on the stale `library` closure.
-      const existingArtist = library.artists?.find((a: Artist) => a.name === artist);
-      let updatedLibraryAfterArtist = null;
+      // First ensure the artist exists
+      const existingArtist = library.artists?.find((a: any) => a.name === artist);
 
       if (!existingArtist) {
-        const artistResult = await dispatch((addArtist as any)({
+        await dispatch(addArtist({
           artistName: artist,
           isGoogleDriveConnected
         })).unwrap();
-        updatedLibraryAfterArtist = artistResult && artistResult.library ? artistResult.library : null;
       }
 
-      // Then ensure the album exists. Prefer checking the most-recent library returned
-      // by the previous operation (if any), otherwise fall back to the current selector value.
-      const libraryToCheckForAlbum = updatedLibraryAfterArtist || library;
-      const artistAfterAdd = libraryToCheckForAlbum.artists?.find((a: Artist) => a.name === artist) || existingArtist;
-      const existingAlbum = artistAfterAdd?.albums?.find((a: Album) => a.title === album);
+      // Then ensure the album exists
+      const artistAfterAdd = library.artists?.find((a: any) => a.name === artist) || existingArtist;
+      const existingAlbum = artistAfterAdd?.albums?.find((a: any) => a.title === album);
 
-      let updatedLibraryAfterAlbum = null;
       if (!existingAlbum) {
-        const albumResult = await dispatch((addAlbum as any)({
+        await dispatch(addAlbum({
           artistName: artist,
           albumTitle: album,
           isGoogleDriveConnected
         })).unwrap();
-        updatedLibraryAfterAlbum = albumResult && albumResult.library ? albumResult.library : null;
       }
 
-      // Finally, add the song. Again prefer the most-recent library snapshot.
-      const libraryToAddSong = updatedLibraryAfterAlbum || updatedLibraryAfterArtist || library;
-      await dispatch((addSong as any)({
+      // Finally, add the song
+      await dispatch(addSong({
         artistName: artist,
         albumTitle: album,
         songData: {
@@ -421,16 +377,6 @@ const SongTabsApp: React.FC = () => {
 
       // Reload library to get updated data
       const finalLibrary = await dispatch(loadLibraryFromDrive()).unwrap();
-      // Debug: log final library structure to help diagnose missing entries
-      // (Kept lightweight to avoid flooding console)
-      try {
-        console.log('Debug: finalLibrary after create:', {
-          artistsCount: finalLibrary.artists ? finalLibrary.artists.length : 0,
-          sampleArtistNames: (finalLibrary.artists || []).slice(0,5).map((a: any) => a.name)
-        });
-      } catch (e) {
-        console.warn('Failed to log finalLibrary debug info', e);
-      }
 
       // Auto-select the new song
       const newArtist = finalLibrary.artists?.find((a: any) => a.name === artist);
@@ -445,20 +391,18 @@ const SongTabsApp: React.FC = () => {
       setIsCreatingNewSong(false);
 
       message.success('Song created successfully!');
-    } catch (error) {
-      // Creation failure shown to user
+    } catch (error: unknown) {
+      console.error('Failed to create song:', error);
       message.error('Failed to create song. Please try again.');
     }
   };
 
   // Handle song deletion
   const handleDeleteSong = async () => {
-    if (!selectedSong?.artist?.name || !selectedSong?.album?.title || !selectedSong?.title) return;
-    
     try {
-      await dispatch((deleteSong as any)({
-        artistName: selectedSong.artist.name,
-        albumTitle: selectedSong.album.title,
+      await dispatch(deleteSong({
+        artistName: selectedSong.artist?.name,
+        albumTitle: selectedSong.album?.title,
         songTitle: selectedSong.title,
         isGoogleDriveConnected
       })).unwrap();
@@ -467,8 +411,8 @@ const SongTabsApp: React.FC = () => {
       dispatch(setSelectedSong(null));
       
       message.success('Song deleted successfully!');
-    } catch (error) {
-      // Deletion failed; show user-friendly message
+    } catch (error: unknown) {
+      console.error('Failed to delete song:', error);
       message.error('Failed to delete song. Please try again.');
     }
   };
@@ -514,7 +458,7 @@ const SongTabsApp: React.FC = () => {
                   marginBottom: '1rem',
                   gap: '1rem'
                 }}>
-                  <AlbumArt artist={selectedSong.artist?.name || ''} album={selectedSong.album?.title || ''} />
+                  <AlbumArt artist={selectedSong.artist?.name} album={selectedSong.album?.title} />
 
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -532,8 +476,8 @@ const SongTabsApp: React.FC = () => {
                               height: 'auto',
                               fontSize: '16px'
                             }}
-                            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#1890ff'}
-                            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#666'}
+                            onMouseEnter={(e: any) => e.target.style.color = '#1890ff'}
+                            onMouseLeave={(e: any) => e.target.style.color = '#666'}
                             title="Edit Song"
                           >
                             ✏️
@@ -556,8 +500,8 @@ const SongTabsApp: React.FC = () => {
                                 height: 'auto',
                                 fontSize: '16px'
                               }}
-                              onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#ff4d4f'}
-                              onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#666'}
+                              onMouseEnter={(e: any) => e.target.style.color = '#ff4d4f'}
+                              onMouseLeave={(e: any) => e.target.style.color = '#666'}
                               title="Delete Song"
                             >
                               🗑️
@@ -592,17 +536,14 @@ const SongTabsApp: React.FC = () => {
                 </div>
 
                 <div style={{ width: '100%', minHeight: 'fit-content' }}>
-                  {/* <SongDetail
+                  <SongDetail
                     song={selectedSong}
                     artist={selectedSong.artist}
                     album={selectedSong.album}
                     editingEnabled={false}
                     onUpdateSong={handleSongUpdate}
                     onPinChord={handlePinChord}
-                  /> */}
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                    Song detail view temporarily disabled during TypeScript migration.
-                  </div>
+                  />
                 </div>
               </div>
             )}
@@ -627,8 +568,7 @@ const SongTabsApp: React.FC = () => {
               onCancel={() => setIsCreatingNewSong(false)}
               isGoogleDriveConnected={isGoogleDriveConnected}
               isNewSong={true}
-              library={library as any}
-              lyricsRef={null}
+              library={library}
             />
           </div>
         )}
@@ -643,42 +583,38 @@ const SongTabsApp: React.FC = () => {
             minHeight: selectedSong ? '300px' : '500px'
           }}>
             {/* Library Header with Count and Google Drive Button */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem'
-            }}>
-              <div>
-                <h3 style={{ margin: 0 }}>Song Library</h3>
-                {isLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                    <Spin size="small" />
-                    <span style={{ color: '#666', fontSize: '0.9rem' }}>Loading songs...</span>
-                  </div>
-                ) : (
-                  <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                    {getTotalSongsCount()} {getTotalSongsCount() === 1 ? 'song' : 'songs'} in library
-                  </p>
-                )}
-              </div>
-
-              {/* Add Song button only; Google sign-in is provided by the page header */}
-              <div className="google-drive-section">
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                  <Button
-                    type="primary"
-                    onClick={openNewSongEditor}
-                    style={{
-                      backgroundColor: '#4CAF50',
-                      borderColor: '#4CAF50'
-                    }}
-                  >
-                    + Add New Song
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <AppNavigation
+              appName="Songs"
+              isGoogleDriveConnected={isGoogleDriveConnected}
+              userInfo={userInfo}
+              onSignIn={handleGoogleSignInSuccess}
+              onSignOut={handleGoogleSignOut}
+              onSettingsChange={handleSettingsChange}
+              primaryAction={isGoogleDriveConnected ? {
+                label: '+ Add New Song',
+                onClick: openNewSongEditor,
+                style: {
+                  backgroundColor: '#4CAF50',
+                  borderColor: '#4CAF50'
+                }
+              } : null}
+              libraryInfo={{
+                title: 'Songs',
+                emoji: '🎵',
+                count: getTotalSongsCount(),
+                isLoading: isLoading
+              }}
+              googleSignInProps={{
+                onError: handleGoogleSignInError,
+                disabled: isLoading
+              }}
+              style={{
+                background: 'transparent',
+                padding: 0,
+                margin: 0
+              }}
+              className="songs-navigation"
+            />
 
             <SongListTest
               library={library}
@@ -704,19 +640,6 @@ const SongTabsApp: React.FC = () => {
         )}
       </div>
 
-      {/* Session Testing Tools - Development Only 
-          To enable: Set ENABLE_SESSION_TESTING to true at the top of this component */}
-      {/* Temporarily disabled SessionTestingTools due to Ant Design/MUI conflicts
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ marginTop: '2rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
-          <SessionTestingTools 
-            googleDriveService={GoogleDriveServiceModern}
-            enabled={ENABLE_SESSION_TESTING}
-          />
-        </div>
-      )}
-      */}
-
       {/* Display Redux errors */}
       {error && (
         <div style={{ color: 'red', marginTop: '1rem' }}>
@@ -735,7 +658,7 @@ const SongTabsApp: React.FC = () => {
 };
 
 // Wrap component with App provider for message API
-const SongTabsAppWithProvider: React.FC = () => (
+const SongTabsAppWithProvider = () => (
   <App>
     <SongTabsApp />
   </App>
