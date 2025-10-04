@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -11,13 +12,28 @@ import RoutePreloader from '@/components/RoutePreloader';
 import ProfessionalLanding from '@/components/ProfessionalLanding';
 
 // Lazy load apps for better performance
-const HomePage = lazy(() => import('./pages/HomePage'));
-const RecipesApp = lazy(() => import('./apps/recipes/RecipesApp'));
-const SongTabsApp = lazy(() => import('./apps/songs/SongTabsAppModern'));
-const KnittingDesignerApp = lazy(() => import('./apps/knitting-designer/KnittingDesignerApp'));
-const ColorworkDesignerApp = lazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'));
-const UnifiedDesignerApp = lazy(() => import('./apps/unified-designer/UnifiedDesignerApp'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+// Helper to instrument lazy-loaded modules so we can see which module fails at runtime
+const debugLazy = (importer: () => Promise<any>, name: string) => {
+  return lazy(async () => {
+    try {
+      const mod = await importer();
+      // Log the keys to help identify missing default exports or unexpected shapes
+      try { console.log('[debugLazy] loaded', name, Object.keys(mod)); } catch (e) { /* ignore */ }
+      return mod;
+    } catch (err) {
+      console.error('[debugLazy] failed loading', name, err);
+      throw err;
+    }
+  });
+};
+
+const HomePage = debugLazy(() => import('./pages/HomePage'), 'HomePage');
+const RecipesApp = debugLazy(() => import('./apps/recipes/RecipesApp'), 'RecipesApp');
+const SongTabsApp = debugLazy(() => import('./apps/songs/SongTabsAppModern'), 'SongTabsApp');
+const KnittingDesignerApp = debugLazy(() => import('./apps/knitting-designer/KnittingDesignerApp'), 'KnittingDesignerApp');
+const ColorworkDesignerApp = debugLazy(() => import('./apps/colorwork-designer/ColorworkDesignerApp'), 'ColorworkDesignerApp');
+const UnifiedDesignerApp = debugLazy(() => import('./apps/unified-designer/UnifiedDesignerApp'), 'UnifiedDesignerApp');
+const NotFound = debugLazy(() => import('./pages/NotFound'), 'NotFound');
 
 function AppInner() {
   const dispatch = useDispatch();
@@ -177,9 +193,13 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <AppInner />
+          <ErrorBoundary>
+            <AppInner />
+          </ErrorBoundary>
         </QueryClientProvider>
       </Provider>
     </GoogleOAuthProvider>
   );
-}export default App;
+}
+
+export default App;

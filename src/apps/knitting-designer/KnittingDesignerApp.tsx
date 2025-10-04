@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { message, Modal } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -13,8 +14,22 @@ import { openModal, MODAL_TYPES } from '@/reducers/modal.reducer';
 import { useDriveAuth } from '../colorwork-designer/context/DriveAuthContext';
 import mergeColorworkIntoLibrary from '@/utils/libraryMergeColorwork';
 import { RootState } from '@/types';
+import ModeToggle from './components/ModeToggle';
+import WizardView from './components/WizardView';
+import WorkspaceView from './components/WorkspaceView';
+import { selectUiMode, setUiMode, updatePatternData } from '@/store/knittingDesignSlice';
 
-const KnittingDesignerApp = () => {
+// Lightweight selection types used by the app during incremental typing
+type RectSelection = { startRow: number; endRow: number; startCol: number; endCol: number };
+type CellSelection = { row: number; col: number };
+type Selection = RectSelection | CellSelection | RectSelection[] | null;
+
+// Type guard usable across handlers
+const isRectSelection = (s: any): s is RectSelection => s && typeof s.startRow === 'number' && typeof s.startCol === 'number' && typeof s.endRow === 'number' && typeof s.endCol === 'number';
+
+const KnittingDesignerApp: React.FC = () => {
+    const location = useLocation();
+    const dispatch = useDispatch();
     // Redux selectors
     const activeColorId = useSelector(selectActiveColorId);
     const colors = useSelector(selectColorPalette); // Legacy format for existing code
@@ -25,6 +40,20 @@ const KnittingDesignerApp = () => {
     // Current active color (for painting)
     const activeColor = activeColorId;
     const backgroundColorId = useSelector(selectBackgroundColorId);
+
+    // Initialize from route state if provided (navigation from ColorworkDesignerApp)
+    useEffect(() => {
+            try {
+                const state: any = (location && (location as any).state) || {};
+                // If a project object was passed during navigation, merge it into patternData
+                if (state.project) {
+                    const project = state.project;
+                    dispatch(updatePatternData({ data: project } as any));
+                }
+            } catch (e) {
+                // non-fatal
+            }
+    }, [location]);
 
     // Grid state
     const [gridSize, setGridSize] = useState({ width: 20, height: 20 });
@@ -45,23 +74,23 @@ const KnittingDesignerApp = () => {
     });
 
     // Selection state - now supports individual cells and rectangles
-    const [selection, setSelection] = useState(null); // Can be rectangles or individual cells
-    const [selectedCells, setSelectedCells] = useState(new Set()); // Set of "row,col" strings
+    const [selection, setSelection] = useState<Selection>(null); // Can be rectangles or individual cells
+    const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set()); // Set of "row,col" strings
 
     // Clipboard state
-    const [clipboard, setClipboard] = useState(null);
-    const [pasteMode, setPasteMode] = useState(false);
-    const [pastePreview, setPastePreview] = useState(null);
+    const [clipboard, setClipboard] = useState<any[] | null>(null);
+    const [pasteMode, setPasteMode] = useState<boolean>(false);
+    const [pastePreview, setPastePreview] = useState<any | null>(null);
 
     // History for undo/redo
-    const [history, setHistory] = useState([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
+    const [history, setHistory] = useState<any[]>([]);
+    const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
     // Helper functions for selection management
-    const cellKey = (row, col) => `${row},${col}`;
+    const cellKey = (row: number, col: number) => `${row},${col}`;
 
     // Save current state to history - defined early to avoid hoisting issues
-    const saveToHistory = useCallback((newPattern) => {
+    const saveToHistory = useCallback((newPattern: any): void => {
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push(JSON.parse(JSON.stringify(newPattern)));
         setHistory(newHistory);
@@ -69,16 +98,19 @@ const KnittingDesignerApp = () => {
     }, [history, historyIndex]);
 
     // Selection manipulation functions - work with rectangular selections only
-    const duplicateSelection = useCallback(() => {
+    const duplicateSelection = useCallback((): void => {
         if (!selection) return;
 
         const newPattern = [...pattern];
-        let newSelection = [];
+    let newSelection: any[] = [];
 
         // Handle rectangular selection
+        const isRectSelection = (s: any): s is RectSelection => s && typeof s.startRow === 'number' && typeof s.startCol === 'number' && typeof s.endRow === 'number' && typeof s.endCol === 'number';
+
         const selections = Array.isArray(selection) ? selection : [selection];
 
-        selections.forEach((sel: any) => {
+        selections.forEach((sel: RectSelection | CellSelection) => {
+            if (!isRectSelection(sel)) return; // only handle rectangular selections here
             const offsetCol = sel.endCol - sel.startCol + 2;
 
             for (let row = sel.startRow; row <= sel.endRow; row++) {
@@ -96,7 +128,7 @@ const KnittingDesignerApp = () => {
             }
 
             // Create new selection area for the duplicated region
-            const newSelectionArea = {
+            const newSelectionArea: RectSelection = {
                 startRow: sel.startRow,
                 endRow: sel.endRow,
                 startCol: sel.startCol + offsetCol,
@@ -114,18 +146,19 @@ const KnittingDesignerApp = () => {
 
         // Update selection to show the new duplicated areas
         if (newSelection.length > 0) {
-            setSelection(newSelection.length === 1 ? newSelection[0] : newSelection);
+            const updatedSel: RectSelection | RectSelection[] = newSelection.length === 1 ? newSelection[0] : newSelection;
+            setSelection(updatedSel as Selection);
         }
         // Clear individual excluded cells since we have new selection areas
         setSelectedCells(new Set());
     }, [selection, selectedCells, pattern, gridSize, saveToHistory]);
 
     // rotateCounterclockwise: boolean. false => rotate right (clockwise), true => rotate left (counter-clockwise).
-    const rotateSelection = useCallback((rotateCounterclockwise = false) => {
+    const rotateSelection = useCallback((rotateCounterclockwise: boolean = false): void => {
         if (!selection) return;
 
         const newPattern = [...pattern];
-        let newSelection = [];
+    let newSelection: any[] = [];
 
         // Handle rectangular selection
         const selections = Array.isArray(selection) ? selection : [selection];
@@ -135,7 +168,7 @@ const KnittingDesignerApp = () => {
             const centerCol = (sel.startCol + sel.endCol) / 2;
 
             // Store original colors for cells that are not individually unselected
-            const originalColors = {};
+            const originalColors: Record<string, any> = {};
             for (let row = sel.startRow; row <= sel.endRow; row++) {
                 for (let col = sel.startCol; col <= sel.endCol; col++) {
                     const isIndividuallyUnselected = selectedCells.has(cellKey(row, col));
@@ -221,11 +254,11 @@ const KnittingDesignerApp = () => {
         setSelectedCells(new Set());
     }, [selection, selectedCells, pattern, gridSize, saveToHistory, backgroundColorId, activeColorId]);
 
-    const reflectSelection = useCallback((direction) => {
+    const reflectSelection = useCallback((direction: string) => {
         if (!selection) return;
 
         const newPattern = [...pattern];
-        let newSelection = [];
+    let newSelection: any[] = [];
 
         // Handle rectangular selection
         const selections = Array.isArray(selection) ? selection : [selection];
@@ -235,7 +268,7 @@ const KnittingDesignerApp = () => {
             const centerCol = (sel.startCol + sel.endCol) / 2;
 
             // Store original colors for cells that are not excluded
-            const originalColors = {};
+            const originalColors: Record<string, any> = {};
             for (let row = sel.startRow; row <= sel.endRow; row++) {
                 for (let col = sel.startCol; col <= sel.endCol; col++) {
                     const isExcluded = selectedCells.has(cellKey(row, col));
@@ -322,7 +355,7 @@ const KnittingDesignerApp = () => {
     }, [history.length, backgroundColorId, activeColorId]);
 
     // Apply symmetry to pattern
-    const applySymmetry = useCallback((newPattern, row, col, color) => {
+    const applySymmetry = useCallback((newPattern: any, row: number, col: number, color: any) => {
         const height = newPattern.length;
         const width = newPattern[0].length;
 
@@ -368,12 +401,12 @@ const KnittingDesignerApp = () => {
     }, [symmetry]);
 
     // Handle symmetry change
-    const handleSymmetryChange = useCallback((newSymmetry) => {
+    const handleSymmetryChange = useCallback((newSymmetry: any) => {
         setSymmetry(newSymmetry);
     }, []);
 
     // Resize grid
-    const handleGridResize = useCallback((newSize) => {
+    const handleGridResize = useCallback((newSize: { width: number; height: number }) => {
         const defaultFill = backgroundColorId || activeColorId || 'MC';
         const newPattern = Array(newSize.height).fill(null).map((_, row: any) =>
             Array(newSize.width).fill(null).map((_, col) => {
@@ -393,7 +426,7 @@ const KnittingDesignerApp = () => {
     }, [pattern, saveToHistory, backgroundColorId, activeColorId]);
 
     // Handle stitch clicks
-    const handleStitchClick = useCallback((row, col, event: any) => {
+    const handleStitchClick = useCallback((row: number, col: number, event: any) => {
         if (pasteMode && clipboard) {
             // Handle paste - skip null cells
             const newPattern = [...pattern];
@@ -454,7 +487,7 @@ const KnittingDesignerApp = () => {
     }, [pattern, activeTool, activeColor, pasteMode, clipboard, saveToHistory, applySymmetry, selection, selectedCells, cellKey]);
 
     // Handle area selection with support for irregular shapes
-    const handleAreaSelect = useCallback((startRow, startCol, endRow, endCol, modifierKey) => {
+    const handleAreaSelect = useCallback((startRow: number, startCol: number, endRow: number, endCol: number, modifierKey?: string) => {
         const minRow = Math.min(startRow, endRow);
         const maxRow = Math.max(startRow, endRow);
         const minCol = Math.min(startCol, endCol);
@@ -472,10 +505,17 @@ const KnittingDesignerApp = () => {
             if (selection) {
                 // If selection is already an array, add to it
                 if (Array.isArray(selection)) {
-                    setSelection([...selection, newSelection]);
+                    setSelection([...(selection as RectSelection[]), newSelection]);
                 } else {
                     // Convert single selection to array and add new selection
-                    setSelection([selection, newSelection]);
+                    // If it's a rect, wrap it; if it's a cell selection, convert to a 1x1 rect
+                    if ((selection as any).startRow !== undefined) {
+                        setSelection([selection as RectSelection, newSelection]);
+                    } else {
+                        const cell = selection as CellSelection;
+                        const cellRect: RectSelection = { startRow: cell.row, endRow: cell.row, startCol: cell.col, endCol: cell.col };
+                        setSelection([cellRect, newSelection]);
+                    }
                 }
             } else {
                 // No existing selection, just set the new one
@@ -509,6 +549,7 @@ const KnittingDesignerApp = () => {
             // Find the bounding box of all selections
             let minRow = Infinity, maxRow = -Infinity, minCol = Infinity, maxCol = -Infinity;
             selections.forEach((sel: any) => {
+                if (!isRectSelection(sel)) return;
                 minRow = Math.min(minRow, sel.startRow);
                 maxRow = Math.max(maxRow, sel.endRow);
                 minCol = Math.min(minCol, sel.startCol);
@@ -522,6 +563,7 @@ const KnittingDesignerApp = () => {
                     let isInSelection = false;
                     // Check if this cell is in any of the selected areas
                     selections.forEach((sel: any) => {
+                        if (!isRectSelection(sel)) return;
                         if (row >= sel.startRow && row <= sel.endRow && col >= sel.startCol && col <= sel.endCol) {
                             isInSelection = true;
                         }
@@ -568,6 +610,7 @@ const KnittingDesignerApp = () => {
             const selections = Array.isArray(selection) ? selection : [selection];
 
             selections.forEach((sel: any) => {
+                if (!isRectSelection(sel)) return;
                 for (let row = sel.startRow; row <= sel.endRow; row++) {
                     newPattern[row] = [...newPattern[row]];
                     for (let col = sel.startCol; col <= sel.endCol; col++) {
@@ -630,7 +673,7 @@ const KnittingDesignerApp = () => {
     }, [pattern, colors, gridSize]);
 
     // Global event listeners so external toolbars (like ColorworkDesignerApp) can trigger save/open
-    const dispatch = useDispatch();
+    const uiMode = useSelector(selectUiMode) as 'wizard' | 'workspace';
     const { GoogleDriveServiceModern: DriveService } = useDriveAuth();
 
     // Listen for UI events dispatched from other apps (e.g., pattern-opened)
@@ -660,18 +703,15 @@ const KnittingDesignerApp = () => {
     useEffect(() => {
         const onSave = async () => {
             try {
-                // Trigger local download of the raw pattern JSON immediately so the user
-                // still receives the same export they saw before Drive integration.
                 try {
                     handleExportPattern();
                 } catch (ex: unknown) {
                     console.warn('Local export failed while starting Drive save', ex);
                 }
-                // Register a callback that the Library modal will call with { libraryData, fileStatus, panelName, selectedSettings }
+
                 const { registerCallback } = await import('@/utils/modalCallbackRegistry');
-                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName, selectedSettings }) => {
+                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName, selectedSettings }: any) => {
                     try {
-                        // Build payload for colorworkPatterns array
                         const payload = {
                             id: `cw-${Date.now()}`,
                             name: panelName || `Colorwork ${new Date().toLocaleString()}`,
@@ -681,10 +721,8 @@ const KnittingDesignerApp = () => {
                             created: new Date().toISOString()
                         };
 
-                        const svc = (DriveService && DriveService.saveLibraryToFile) ? DriveService : ((typeof window !== 'undefined' && window.GoogleDriveServiceModern) ? window.GoogleDriveServiceModern : null);
+                        const svc = (DriveService && DriveService.saveLibraryToFile) ? DriveService : ((typeof window !== 'undefined' && (window as any).GoogleDriveServiceModern) ? (window as any).GoogleDriveServiceModern : null);
 
-                        // Merge into library object under colorworkPatterns array
-                        // Try to fetch the freshest library content before merging, fall back to modal-provided libraryData
                         let currentLib = null;
                         try {
                             if (svc && svc.loadLibraryById && fileStatus && fileStatus.fileId) {
@@ -695,10 +733,8 @@ const KnittingDesignerApp = () => {
                             currentLib = libraryData && typeof libraryData === 'object' ? { ...libraryData } : null;
                         }
 
-                        // Merge using helper which handles replace-by-id/name and lastUpdated
                         const libToSave = mergeColorworkIntoLibrary(currentLib, payload);
 
-                        // Attempt to save via service
                         if (svc && svc.saveLibraryToFile && fileStatus && fileStatus.fileId) {
                             try {
                                 await svc.saveLibraryToFile(fileStatus.fileId, libToSave);
@@ -709,12 +745,10 @@ const KnittingDesignerApp = () => {
                             }
                         }
 
-                        // Fallback: call generic saveLibrary if available
                         if (svc && svc.saveLibrary) {
                             await svc.saveLibrary(currentLib);
                             message.success('Saved to Google Drive (fallback)');
                         } else {
-                            // Last resort: trigger a local download of the merged library as JSON
                             const blob = new Blob([JSON.stringify(currentLib, null, 2)], { type: 'application/json' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -730,7 +764,6 @@ const KnittingDesignerApp = () => {
                     }
                 });
 
-                // Open Library modal in panels context and pass callback id
                 dispatch(openModal({
                     modalType: MODAL_TYPES.LIBRARY_SETTINGS,
                     appContext: 'panels',
@@ -748,18 +781,16 @@ const KnittingDesignerApp = () => {
 
         const onOpen = async () => {
             try {
-                // Register callback to receive libraryData and panelName, then open modal in 'panels' context
                 const { registerCallback } = await import('@/utils/modalCallbackRegistry');
-                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName }) => {
+                const cbId = registerCallback(async ({ libraryData, fileStatus, panelName }: any) => {
                     try {
                         if (!libraryData || !libraryData.colorworkPatterns) {
                             message.error('Selected library does not contain colorworkPatterns');
                             return;
                         }
 
-                        // Determine chosen pattern
-                        let chosenName = panelName;
                         const arr = Array.isArray(libraryData.colorworkPatterns) ? libraryData.colorworkPatterns : [];
+                        let chosenName = panelName;
                         if (!chosenName) {
                             if (arr.length === 1) chosenName = arr[0].name;
                             else if (arr.length > 0) chosenName = arr[0].name;
@@ -771,7 +802,6 @@ const KnittingDesignerApp = () => {
                             return;
                         }
 
-                        // Apply pattern to editor
                         setPattern(chosen.pattern || []);
                         setGridSize(chosen.gridSize || { width: (chosen.pattern && chosen.pattern[0] && chosen.pattern[0].length) || 20, height: chosen.pattern ? chosen.pattern.length : 20 });
                         setClipboard(null);

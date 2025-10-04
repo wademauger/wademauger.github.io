@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "noResolve": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "files": [
+    "src/apps/knitting-designer/KnittingDesignerApp.tsx",
+    "src/store/knittingDesignSlice.ts",
+    "src/@types/knitting-designer-shims.d.ts"
+  ]
+}

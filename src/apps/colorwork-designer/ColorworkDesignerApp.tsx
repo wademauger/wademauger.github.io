@@ -1,6 +1,6 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, lazy, Suspense } from 'react';
 import './ColorworkDesignerApp.css';
-import { Layout, Typography, Button, Space, Card, Row, Col, Modal, List, Avatar } from 'antd';
+import { Layout, Typography, Button, Space, Card, Row, Col } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { garments } from '../../data/garments';
 import { DriveAuthProvider } from './context/DriveAuthContext';
@@ -14,7 +14,9 @@ import { emitEvent } from '../../store/uiEventsSlice';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor';
 // Google sign-in now rendered by the page header; per-editor buttons removed
 import PanelShapeCreator from './PanelShapeCreator';
-import KnittingDesignerApp from '../knitting-designer/KnittingDesignerApp';
+// Lazy-load the knitting designer and wizard to avoid circular import evaluation at module load time
+const KnittingDesignerApp = lazy(() => import('../knitting-designer/KnittingDesignerApp'));
+const WizardView = lazy(() => import('../knitting-designer/components/WizardView'));
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -25,18 +27,21 @@ const { Content } = Layout;
  * Integrates with existing garment shapes and colorwork patterns
  */
 const ColorworkDesignerApp = () => {
-    const [savedPatterns, setSavedPatterns] = useState([]);
-    const [currentProject, setCurrentProject] = useState(null);
-    const [showGarmentSelector, setShowGarmentSelector] = useState(false);
-    const [knittingStage, setKnittingStage] = useState('settings'); // 'settings' or 'knitting'
-    const editorRef = useRef(null);
+    // Lightweight local types for incremental work
+    const [savedPatterns, setSavedPatterns] = useState<any[]>([]);
+    const [currentProject, setCurrentProject] = useState<any | null>(null);
+    // removed local modal flow; navigation will be used instead
+    const [knittingStage, setKnittingStage] = useState<string>('settings'); // 'settings' or 'knitting'
+    const editorRef = useRef<any>(null);
+    // Cast the imported editor to any to avoid prop-type friction during the focused pass
+    const AnyColorworkPanelEditor: any = ColorworkPanelEditor;
     const recentProjects = useMemo(() => ([
         { id: 1, name: 'Raglan Sweater Front', garment: 'cozy-raglan-sweater', panel: 'Front', lastModified: '2 hours ago' },
         { id: 2, name: 'Hat Crown', garment: 'seam-top-hat', panel: 'Hat', lastModified: '1 day ago' }
     ]), []);
 
     // Handle selecting a garment panel to knit
-    const handleKnitPanel = (garment, panelName, panelShape) => {
+    const handleKnitPanel = (garment: any, panelName: any, panelShape: any) => {
         const project = {
             id: Date.now(),
             name: `${garment.title} - ${panelName}`,
@@ -46,21 +51,23 @@ const ColorworkDesignerApp = () => {
             colorwork: null,
             instructions: []
         };
-        setCurrentProject(project);
-        setCurrentView('editor');
-        setShowGarmentSelector(false);
+            setCurrentProject(project);
+            // Navigate to the pattern-designer route so the Knitting Designer (and Wizard) are rendered.
+            // Pass the selected project in location.state so the editor can read it if needed.
+            navigate('colorwork-pattern-designer', { state: { project } });
     };
 
     // Removed unused handleNewProject function
 
-    const handleLoadProject = (project) => {
+    const handleLoadProject = (project: any) => {
         // Fix legacy projects that might be missing panelShape data
         const fixedProject = fixLegacyProject(project);
         setCurrentProject(fixedProject);
-        setCurrentView('editor');
+        // Open the pattern creator route for the loaded project
+        navigate('colorwork-pattern-designer', { state: { project: fixedProject } });
     };
 
-    const handleSaveProject = (projectData) => {
+    const handleSaveProject = (projectData: any) => {
         const updatedProject = {
             ...currentProject,
             ...projectData,
@@ -83,7 +90,7 @@ const ColorworkDesignerApp = () => {
     const location = useLocation();
 
     // Helper function to fix legacy projects missing panelShape data
-    const fixLegacyProject = (project) => {
+    const fixLegacyProject = (project: any) => {
         // If the project already has panelShape data, return it as-is
         if (project.panelShape) {
             return project;
@@ -126,7 +133,7 @@ const ColorworkDesignerApp = () => {
                         <div style={{ textAlign: 'center' }}>
                             <PlusOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
                             <Title level={4}>Create Panel Shape</Title>
-                            <Text type="secondary">Design custom trapezoid shapes for your knitting project</Text>
+                            <Text type="secondary">Design custom shapes for your knitting project</Text>
                         </div>
                     </Card>
                 </Col>
@@ -135,7 +142,7 @@ const ColorworkDesignerApp = () => {
                     <Card
                         hoverable
                         className="action-card"
-                        onClick={() => navigate('pattern-creator')}
+                        onClick={() => navigate('colorwork-pattern-designer')}
                         style={{ height: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                     >
                         <div style={{ textAlign: 'center' }}>
@@ -150,13 +157,13 @@ const ColorworkDesignerApp = () => {
                     <Card
                         hoverable
                         className="action-card"
-                        onClick={() => setShowGarmentSelector(true)}
+                        onClick={() => navigate('pattern-wizard')}
                         style={{ height: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                     >
                         <div style={{ textAlign: 'center' }}>
                             <ThunderboltOutlined style={{ fontSize: '48px', color: '#faad14', marginBottom: '16px' }} />
-                            <Title level={4}>Knit a Panel</Title>
-                            <Text type="secondary">Select from existing garment shapes to start knitting</Text>
+                            <Title level={4}>Make a Knitting Pattern</Title>
+                            <Text type="secondary">Create a plan to knit your project</Text>
                         </div>
                     </Card>
                 </Col>
@@ -204,43 +211,7 @@ const ColorworkDesignerApp = () => {
                 </div>
             )}
 
-            {/* Garment Selection Modal */}
-            <Modal
-                title="Select a Garment Panel to Knit"
-                open={showGarmentSelector}
-                onCancel={() => setShowGarmentSelector(false)}
-                footer={null}
-                width={800}
-            >
-                <List
-                    itemLayout="vertical"
-                    dataSource={garments}
-                    renderItem={(garment) => (
-                        <List.Item key={garment.permalink}>
-                            <List.Item.Meta
-                                avatar={<Avatar style={{ backgroundColor: '#1890ff' }}>{garment.title[0]}</Avatar>}
-                                title={garment.title}
-                                description={garment.description}
-                            />
-                            <div>
-                                <Text strong>Available panels:</Text>
-                                <Space wrap style={{ marginTop: 8 }}>
-                                    {Object.entries(garment.shapes).map(([panelName, panelShape]) => (
-                                        <Button
-                                            key={panelName}
-                                            onClick={() => handleKnitPanel(garment, panelName, panelShape)}
-                                            type="primary"
-                                            ghost
-                                        >
-                                            {panelName}
-                                        </Button>
-                                    ))}
-                                </Space>
-                            </div>
-                        </List.Item>
-                    )}
-                />
-            </Modal>
+            {/* Garment selection modal removed - navigation to colorwork-pattern-designer route now used */}
         </div>
     );
 
@@ -265,14 +236,14 @@ const ColorworkDesignerApp = () => {
                 )}
             </div>
             
-            <ColorworkPanelEditor
+                <AnyColorworkPanelEditor
                 ref={editorRef}
                 initialPanel={currentProject?.panel}
                 initialColorwork={currentProject?.colorwork}
                 project={currentProject}
                 stage={knittingStage}
                 onSave={handleSaveProject}
-                onStageChange={(stage) => setKnittingStage(stage)}
+                    onStageChange={(stage: any) => setKnittingStage(stage)}
             />
         </div>
     );
@@ -290,7 +261,7 @@ const ColorworkDesignerApp = () => {
             // PanelShapeCreator now handles its own menu items via DropdownProvider
             // Leave items empty to avoid conflicts
             items = [];
-        } else if (path.includes('pattern-creator')) {
+        } else if (path.includes('colorwork-pattern-designer')) {
             items = [
                 {
                     key: 'colorwork-pattern-save',
@@ -345,16 +316,26 @@ const ColorworkDesignerApp = () => {
                                 </div>
                             </div>
                         )} />
-                        <Route path="pattern-creator" element={(
-                            <div className="colorwork-pattern-creator" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Route path="colorwork-pattern-designer" element={(
+                            <div className="colorwork-pattern-designer" style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                                    <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Creator</Title>
+                                    <Title level={3} style={{ margin: 0, flex: 1 }}>Colorwork Pattern Designer</Title>
                                 </div>
                                 <div style={{ flex: 1, minHeight: 0 }}>
-                                    <KnittingDesignerApp />
-                                </div>
-                            </div>
-                        )} />
+                                            <KnittingDesignerApp />
+                                        </div>
+                                    </div>
+                                )} />
+                                <Route path="pattern-wizard" element={(
+                                    <div className="pattern-wizard" style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                                            <Title level={3} style={{ margin: 0, flex: 1 }}>Pattern Wizard</Title>
+                                        </div>
+                                        <div style={{ flex: 1, minHeight: 0 }}>
+                                            <WizardView />
+                                        </div>
+                                    </div>
+                                )} />
                     </Routes>
 
                     {/* Open Pattern modal for Colorwork Pattern Creator */}

@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import GoogleDriveServiceModern from '../apps/songs/services/GoogleDriveServiceModern';
+// NOTE: GoogleDriveServiceModern performs browser-localStorage and window/gapi
+// initialization which can throw or cause heavy side-effects when evaluated at
+// module load time. To avoid breaking lazy-loading of `librarySlice` (see
+// Vite/HMR "module record has unexpected status: New" errors), we import the
+// service dynamically inside thunks so the service module is only evaluated
+// when actually needed at runtime.
 
 // Local storage key for persisted library file reference
 const LIBRARY_FILE_KEY = 'app:libraryFileReference';
@@ -50,6 +55,7 @@ export const setLibraryFileAndPersist = createAsyncThunk('library/setLibraryFile
 export const loadLibrary = createAsyncThunk('library/loadLibrary', async (_, thunkAPI) => {
   try {
     // Delegate to the service which handles creating the file if missing
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     const lib = await GoogleDriveServiceModern.loadLibrary();
     // Normalize entries: expect an object with collections (songs, recipes, panels)
     // Flatten into an entries array where each entry has { id, type, title, ... }
@@ -81,6 +87,7 @@ export const loadLibrary = createAsyncThunk('library/loadLibrary', async (_, thu
 // Return the full library object as produced by the Drive service
 export const loadFullLibrary = createAsyncThunk('library/loadFullLibrary', async (_, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     const lib = await GoogleDriveServiceModern.loadLibrary();
     return lib;
   } catch (err: any) {
@@ -91,6 +98,7 @@ export const loadFullLibrary = createAsyncThunk('library/loadFullLibrary', async
 // Load a specific library file by id (returns full library object)
 export const loadFullLibraryById = createAsyncThunk('library/loadFullLibraryById', async (fileId: string, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     const lib = await GoogleDriveServiceModern.loadLibraryById(fileId);
     return lib;
   } catch (err: any) {
@@ -101,6 +109,7 @@ export const loadFullLibraryById = createAsyncThunk('library/loadFullLibraryById
 // Probe Drive for a file by filename and folder (returns probe result or null)
 export const findLibraryFile = createAsyncThunk('library/findLibraryFile', async ({ filename, folder }: { filename: string; folder: string }, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     if (GoogleDriveServiceModern.findFile) {
       const probe = await GoogleDriveServiceModern.findFile(filename, folder);
       return probe;
@@ -114,6 +123,7 @@ export const findLibraryFile = createAsyncThunk('library/findLibraryFile', async
 // Ask the underlying service to create or update a library file (useful for namespace inserts)
 export const createOrUpdateLibraryFile = createAsyncThunk('library/createOrUpdateLibraryFile', async (opts: any, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     if (GoogleDriveServiceModern.createOrUpdateLibraryFile) {
       const res = await GoogleDriveServiceModern.createOrUpdateLibraryFile(opts);
       return res;
@@ -129,6 +139,7 @@ export const saveFullLibrary = createAsyncThunk('library/saveFullLibrary', async
   try {
     const state: any = thunkAPI.getState();
     const fileRef: LibraryFileRef | null = state.library?.selectedFile || null;
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     if (fileRef && fileRef.id) {
       await GoogleDriveServiceModern.saveLibraryToFile(fileRef.id, libraryData);
     } else {
@@ -143,6 +154,7 @@ export const saveFullLibrary = createAsyncThunk('library/saveFullLibrary', async
 // Save a full library object to a specific file id
 export const saveFullLibraryToFile = createAsyncThunk('library/saveFullLibraryToFile', async ({ fileId, libraryData }: { fileId: string; libraryData: any }, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     await GoogleDriveServiceModern.saveLibraryToFile(fileId, libraryData);
     return libraryData;
   } catch (err: any) {
@@ -162,11 +174,13 @@ export const saveEntry = createAsyncThunk('library/saveEntry', async ({ entry, t
       // Build a minimal library object and call saveLibrary
       const payload: any = { lastUpdated: new Date().toISOString() };
       payload[type === 'song' ? 'songs' : type === 'recipe' ? 'recipes' : 'panels'] = { [entry.id || entry.permalink || Date.now()]: entry };
+      const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
       await GoogleDriveServiceModern.saveLibrary(payload);
       return entry;
     }
 
     // Load current library, patch the entry into correct namespace, then save to file
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     const currentLib = await GoogleDriveServiceModern.loadLibrary();
     const ns = type === 'song' ? 'songs' : type === 'recipe' ? 'recipes' : 'panels';
     currentLib[ns] = currentLib[ns] || {};
@@ -181,6 +195,7 @@ export const saveEntry = createAsyncThunk('library/saveEntry', async ({ entry, t
 // Open (fetch) a specific entry by id and type
 export const openEntry = createAsyncThunk('library/openEntry', async ({ id, type }: { id: string; type: string }, thunkAPI) => {
   try {
+    const { default: GoogleDriveServiceModern } = await import('../apps/songs/services/GoogleDriveServiceModern');
     const lib = await GoogleDriveServiceModern.loadLibrary();
     const ns = type === 'song' ? 'songs' : type === 'recipe' ? 'recipes' : 'panels';
     if (!lib || !lib[ns]) return null;
@@ -318,5 +333,5 @@ const librarySlice = createSlice({
   }
 });
 
-export const { clearLibraryError, clearEntries } = librarySlice.actions;
+export const { setFullLibrary, clearLibraryError, clearEntries } = librarySlice.actions;
 export default librarySlice.reducer;

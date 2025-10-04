@@ -36,7 +36,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     '/crafts/tabs': 'Music Tabs',
     '/crafts/knitting-pattern-designer': 'Knitting',
     '/crafts/knitting-pattern-designer/panel-shape-creator': 'Panel Designer',
-    '/crafts/knitting-pattern-designer/pattern-creator': 'Colorwork Designer'
+    '/crafts/knitting-pattern-designer/pattern-wizard': 'Pattern Wizard',
+    '/crafts/knitting-pattern-designer/colorwork-pattern-designer': 'Colorwork Designer'
   };
 
   const pathSnippets = location.pathname.split('/').filter((i: any) => i);

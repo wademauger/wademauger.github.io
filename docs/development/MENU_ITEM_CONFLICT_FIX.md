@@ -68,7 +68,7 @@ if (path.includes('panel-shape-creator')) {
   // PanelShapeCreator now handles its own menu items via DropdownProvider
   // Leave items empty to avoid conflicts
   items = [];
-} else if (path.includes('pattern-creator')) {
+} else if (path.includes('pattern-designer')) {
   // ... pattern creator items
 }
 ```
@@ -80,7 +80,7 @@ if (path.includes('panel-shape-creator')) {
 | Component | Path | Responsible For |
 |-----------|------|----------------|
 | **PanelShapeCreator** | `/colorwork-designer/panel-shape-creator` | ✅ All panel editor menu items (Library Settings, Save, Save As, Open) |
-| **ColorworkDesignerApp** | `/colorwork-designer/pattern-creator` | ✅ Pattern creator menu items |
+| **ColorworkDesignerApp** | `/colorwork-designer/pattern-designer` | ✅ Pattern creator menu items |
 | **ColorworkDesignerApp** | `/colorwork-designer/` (home) | ✅ Home page menu items |
 
 ### Menu Item Flow
@@ -130,7 +130,7 @@ This is fine - different pages can use different modal implementations. The key 
   7. ✅ Should see list of panels (not debug output)
 
 - [ ] **Pattern Creator page** (verify not broken):
-  1. Navigate to `/colorwork-designer/pattern-creator`
+  1. Navigate to `/colorwork-designer/pattern-designer`
   2. Check dropdown menu still works
 
 - [ ] **Home page** (verify not broken):

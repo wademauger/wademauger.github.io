@@ -1,9 +1,45 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+// Minimal focused types for the knitting design slice to unblock feature work.
+// These intentionally use shallow `any` for deeply nested structures to keep
+// changes minimal and safe during incremental migration.
+// Shallow focused types to avoid broad refactors during incremental pass
+export type PatternColorwork = {
+  type?: string;
+  color?: string;
+  initialized?: boolean;
+  savedPatterns?: { [id: string]: any };
+  workingPatterns?: { [key: string]: any };
+  complexPatterns?: { [id: string]: any };
+  garmentSequence?: any[];
+  activeWorkingPattern?: any;
+  [key: string]: any;
+};
+
+export type PatternData = {
+  [section: string]: any; // allow shallow indexing for pattern sections (colorwork, sizing, gauge, etc.)
+  colorwork?: PatternColorwork;
+};
+
+export type KnittingDesignState = {
+  currentStep: number;
+  isKnittingMode: boolean;
+  uiMode: 'wizard' | 'workspace';
+  patternData: PatternData;
+  sessionId: string | null;
+  lastSaved: string | null;
+  isDirty: boolean;
+};
 
 // Initial state for the knitting design app
-const initialState = {
+// typed as `any` to avoid very noisy, deep structural type inference across
+// the app during this incremental work. We'll replace with a stricter type
+// when the surrounding codebase is migrated consistently to TS types.
+const initialState: KnittingDesignState = {
   currentStep: 0,
   isKnittingMode: false,
+  // UI mode controls whether user sees the Guided Wizard or the Advanced Workspace
+  uiMode: 'workspace', // 'wizard' | 'workspace'
   patternData: {
     name: '',
     description: '',
@@ -64,18 +100,18 @@ const knittingDesignSlice = createSlice({
   name: 'knittingDesign',
   initialState,
   reducers: {
-    setCurrentStep: (state, action) => {
+    setCurrentStep: (state: KnittingDesignState, action: PayloadAction<number>) => {
       state.currentStep = action.payload;
       state.isDirty = true;
     },
     
-    setKnittingMode: (state, action) => {
+    setKnittingMode: (state: KnittingDesignState, action: PayloadAction<boolean>) => {
       state.isKnittingMode = action.payload;
       state.isDirty = true;
     },
     
-    updatePatternData: (state, action) => {
-      const { section, data } = action.payload;
+    updatePatternData: (state: KnittingDesignState, action: PayloadAction<{ section?: string; data: any }>) => {
+      const { section, data } = action.payload || {};
       if (section) {
         state.patternData[section] = { ...state.patternData[section], ...data };
       } else {
@@ -84,7 +120,7 @@ const knittingDesignSlice = createSlice({
       state.isDirty = true;
     },
     
-    nextStep: (state: any) => {
+  nextStep: (state: KnittingDesignState) => {
       // Always have 7 steps with pattern editor as step 2
       const maxSteps = 6; // 0-6, so 7 total steps
       
@@ -95,7 +131,7 @@ const knittingDesignSlice = createSlice({
       }
     },
     
-    previousStep: (state: any) => {
+  previousStep: (state: KnittingDesignState) => {
       if (state.currentStep > 0) {
         // Simple reverse progression
         state.currentStep -= 1;
@@ -103,7 +139,7 @@ const knittingDesignSlice = createSlice({
       }
     },
     
-    jumpToStep: (state, action) => {
+  jumpToStep: (state: KnittingDesignState, action: PayloadAction<number>) => {
       const targetStep = action.payload;
       const maxSteps = 6; // 0-6, so 7 total steps
       
@@ -113,17 +149,17 @@ const knittingDesignSlice = createSlice({
       }
     },
     
-    loadSession: (state, action) => {
-      const { patternData, currentStep, sessionId } = action.payload;
+    loadSession: (state: KnittingDesignState, action: PayloadAction<{ patternData?: any; currentStep?: number; sessionId?: string }>) => {
+      const { patternData, currentStep, sessionId } = action.payload || {};
       state.patternData = patternData || initialState.patternData;
       state.currentStep = currentStep || 0;
-      state.sessionId = sessionId;
+      state.sessionId = sessionId || state.sessionId;
       state.isDirty = false;
       state.lastSaved = new Date().toISOString();
     },
     
-    saveSession: (state, action) => {
-      state.sessionId = action.payload.sessionId || state.sessionId;
+    saveSession: (state: KnittingDesignState, action: PayloadAction<{ sessionId?: string }>) => {
+      state.sessionId = action.payload?.sessionId || state.sessionId;
       state.lastSaved = new Date().toISOString();
       state.isDirty = false;
     },
@@ -132,43 +168,50 @@ const knittingDesignSlice = createSlice({
       return { ...initialState, sessionId: generateSessionId() };
     },
     
-    markClean: (state: any) => {
+    markClean: (state: KnittingDesignState) => {
       state.isDirty = false;
     },
 
     // Colorwork actions
-    updateColorwork: (state, action) => {
+    updateColorwork: (state: KnittingDesignState, action: PayloadAction<any>) => {
       state.patternData.colorwork = { ...state.patternData.colorwork, ...action.payload };
       state.isDirty = true;
     },
 
-    savePattern: (state, action) => {
+    savePattern: (state: KnittingDesignState, action: PayloadAction<any>) => {
       const pattern = action.payload;
-      state.patternData.colorwork.savedPatterns[pattern.id] = pattern;
+      const cw = (state.patternData.colorwork = state.patternData.colorwork || {} as any);
+      cw.savedPatterns = cw.savedPatterns || {};
+      cw.savedPatterns[pattern.id] = pattern;
       state.isDirty = true;
     },
 
-    deletePattern: (state, action) => {
+    deletePattern: (state: KnittingDesignState, action: PayloadAction<string>) => {
       const patternId = action.payload;
-      delete state.patternData.colorwork.savedPatterns[patternId];
+      if (state.patternData.colorwork && state.patternData.colorwork.savedPatterns) {
+        delete state.patternData.colorwork.savedPatterns[patternId];
+      }
       state.isDirty = true;
     },
 
-    setActiveWorkingPattern: (state, action) => {
+    setActiveWorkingPattern: (state: KnittingDesignState, action: PayloadAction<{ type: string; pattern: any }>) => {
       const { type, pattern } = action.payload;
-      state.patternData.colorwork.activeWorkingPattern = { type, pattern };
+      const cw = (state.patternData.colorwork = state.patternData.colorwork || {} as any);
+      cw.activeWorkingPattern = { type, pattern };
       state.isDirty = true;
     },
 
-    createComplexPattern: (state, action) => {
+    createComplexPattern: (state: KnittingDesignState, action: PayloadAction<any>) => {
       const pattern = action.payload;
-      state.patternData.colorwork.complexPatterns[pattern.id] = pattern;
+      const cw = (state.patternData.colorwork = state.patternData.colorwork || {} as any);
+      cw.complexPatterns = cw.complexPatterns || {};
+      cw.complexPatterns[pattern.id] = pattern;
       state.isDirty = true;
     },
 
-    updateComplexPattern: (state, action) => {
+    updateComplexPattern: (state: KnittingDesignState, action: PayloadAction<{ id: string; updates: any }>) => {
       const { id, updates } = action.payload;
-      if (state.patternData.colorwork.complexPatterns[id]) {
+      if (state.patternData.colorwork && state.patternData.colorwork.complexPatterns && state.patternData.colorwork.complexPatterns[id]) {
         state.patternData.colorwork.complexPatterns[id] = {
           ...state.patternData.colorwork.complexPatterns[id],
           ...updates
@@ -177,20 +220,25 @@ const knittingDesignSlice = createSlice({
       }
     },
 
-    deleteComplexPattern: (state, action) => {
+    deleteComplexPattern: (state: KnittingDesignState, action: PayloadAction<string>) => {
       const patternId = action.payload;
-      delete state.patternData.colorwork.complexPatterns[patternId];
+      if (state.patternData.colorwork && state.patternData.colorwork.complexPatterns) {
+        delete state.patternData.colorwork.complexPatterns[patternId];
+      }
       state.isDirty = true;
     },
 
-    addToGarmentSequence: (state, action) => {
+    addToGarmentSequence: (state: KnittingDesignState, action: PayloadAction<any>) => {
       const sequenceItem = action.payload;
-      state.patternData.colorwork.garmentSequence.push(sequenceItem);
+      const cw = (state.patternData.colorwork = state.patternData.colorwork || {} as any);
+      cw.garmentSequence = cw.garmentSequence || [];
+      cw.garmentSequence.push(sequenceItem);
       state.isDirty = true;
     },
 
-    updateGarmentSequence: (state, action) => {
+    updateGarmentSequence: (state: KnittingDesignState, action: PayloadAction<{ id: string; updates: any }>) => {
       const { id, updates } = action.payload;
+      if (!state.patternData.colorwork || !state.patternData.colorwork.garmentSequence) return;
       const index = state.patternData.colorwork.garmentSequence.findIndex((item: any) => item.id === id);
       if (index !== -1) {
         state.patternData.colorwork.garmentSequence[index] = {
@@ -201,12 +249,21 @@ const knittingDesignSlice = createSlice({
       }
     },
 
-    removeFromGarmentSequence: (state, action) => {
+    removeFromGarmentSequence: (state: KnittingDesignState, action: PayloadAction<string>) => {
       const itemId = action.payload;
+      if (!state.patternData.colorwork || !state.patternData.colorwork.garmentSequence) return;
       state.patternData.colorwork.garmentSequence = state.patternData.colorwork.garmentSequence.filter(
-        item => item.id !== itemId
+        (item: any) => item.id !== itemId
       );
       state.isDirty = true;
+    }
+    ,
+    setUiMode: (state: KnittingDesignState, action: PayloadAction<'wizard' | 'workspace'>) => {
+      const mode = action.payload;
+      if (mode === 'wizard' || mode === 'workspace') {
+        state.uiMode = mode;
+        state.isDirty = true;
+      }
     }
   }
 });
@@ -219,6 +276,7 @@ const generateSessionId = () => {
 export const {
   setCurrentStep,
   setKnittingMode,
+  setUiMode,
   updatePatternData,
   nextStep,
   previousStep,
@@ -248,6 +306,7 @@ export const selectIsKnittingMode = (state: any) => state.knittingDesign.isKnitt
 export const selectIsDirty = (state: any) => state.knittingDesign.isDirty;
 export const selectSessionId = (state: any) => state.knittingDesign.sessionId;
 export const selectLastSaved = (state: any) => state.knittingDesign.lastSaved;
+export const selectUiMode = (state: any) => state.knittingDesign.uiMode;
 
 // Complex selectors
 export const selectCurrentStepInfo = (state: any) => {
