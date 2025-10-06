@@ -36,7 +36,7 @@ class GoogleDriveRecipeService {
     this.userEmail = null;
     this.userName = null;
     this.userPicture = null;
-    this.LIBRARY_FILENAME = 'recipe-library.json'; // Default filename
+    this.LIBRARY_FILENAME = 'library.json'; // Default filename
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
     this.SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.metadata.readonly';
     this.CLIENT_ID = null; // Set this from your environment
@@ -71,8 +71,8 @@ class GoogleDriveRecipeService {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
       const saved = localStorage.getItem(userKey);
       const defaults = {
-        songsLibraryFile: 'song-tabs-library.json',
-        recipesLibraryFile: 'recipe-library.json',
+        songsLibraryFile: 'library.json',
+        recipesLibraryFile: 'library.json',
         songsFolder: '/',
         recipesFolder: '/'
       };
@@ -80,8 +80,8 @@ class GoogleDriveRecipeService {
     } catch (error: unknown) {
       console.warn('Failed to load Google Drive settings:', error);
       return {
-        songsLibraryFile: 'song-tabs-library.json',
-        recipesLibraryFile: 'recipe-library.json',
+        songsLibraryFile: 'library.json',
+        recipesLibraryFile: 'library.json',
         songsFolder: '/',
         recipesFolder: '/'
       };
@@ -116,7 +116,7 @@ class GoogleDriveRecipeService {
    */
   getLibraryFilename() {
     const settings = this.getSettings();
-    return settings.recipesLibraryFile || 'recipe-library.json';
+    return settings.recipesLibraryFile || 'library.json';
   }
 
   /**
@@ -138,7 +138,7 @@ class GoogleDriveRecipeService {
     
     // Return defaults if no saved preferences
     return {
-      recipesLibraryFile: 'recipe-library.json',
+      recipesLibraryFile: 'library.json',
       recipesFolder: '/',
       lastUsed: null
     };

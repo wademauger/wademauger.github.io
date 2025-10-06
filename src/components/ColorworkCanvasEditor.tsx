@@ -4,6 +4,8 @@ import { ZoomInOutlined, ZoomOutOutlined, ExpandOutlined, DragOutlined, PlusOutl
 import { ColorworkPattern } from '../models/ColorworkPattern';
 import { Gauge } from '../models/Gauge';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useSelector } from 'react-redux';
+import { selectColorworkPatterns } from '../store/librarySlice';
 import './ColorworkCanvasEditor.css';
 
 const { Text } = Typography;
@@ -81,15 +83,50 @@ const ColorworkCanvasEditor = ({
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
     const hasInitialized = useRef(false);
+    
+    // Get colorwork patterns from the library
+    const libraryPatterns = useSelector(selectColorworkPatterns);
+    
+    // Debug: Log library patterns when they change
+    useEffect(() => {
+        console.log('📚 Library patterns loaded:', libraryPatterns);
+    }, [libraryPatterns]);
 
-    // Pattern creation functions (same as original)
-    const availablePatterns = {
-        'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{ color: '#ffffff' }] } },
-        'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{ color: '#ffffff', rows: 2 }, { color: '#000000', rows: 2 }], width: 4 } },
-        'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
-        'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{ color: '#ffffff' }, { color: '#000000' }] } },
-        'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } }
-    };
+    // Pattern creation functions (same as original) - now includes library patterns
+    const availablePatterns = useMemo(() => {
+        const basePatterns = {
+            'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{ color: '#ffffff' }] } },
+            'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{ color: '#ffffff', rows: 2 }, { color: '#000000', rows: 2 }], width: 4 } },
+            'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
+            'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{ color: '#ffffff' }, { color: '#000000' }] } },
+            'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } }
+        };
+
+        // Add library patterns as 'custom' type
+        // libraryPatterns is an object with pattern IDs as keys
+        if (libraryPatterns && typeof libraryPatterns === 'object') {
+            Object.entries(libraryPatterns).forEach(([patternId, libPattern]: [string, any]) => {
+                const key = `custom-${patternId}`;
+                basePatterns[key] = {
+                    name: libPattern.name || patternId,
+                    type: 'custom',
+                    customPattern: libPattern.pattern, // The actual grid data
+                    customColors: libPattern.colors, // The color palette
+                    defaultConfig: {
+                        pattern: libPattern.pattern,
+                        colors: libPattern.colors || {}
+                    }
+                };
+            });
+        }
+
+        return basePatterns;
+    }, [libraryPatterns]);
+    
+    // Debug: Log available patterns when they change
+    useEffect(() => {
+        console.log('🎨 Available patterns:', Object.keys(availablePatterns), availablePatterns);
+    }, [availablePatterns]);
 
     const [collapsedLayers, setCollapsedLayers] = useState(new Set()); // Track collapsed layers
 
@@ -369,7 +406,8 @@ const ColorworkCanvasEditor = ({
                 if (colorInfo) {
                     // Use per-layer color mapping if available, otherwise use pattern default
                     const layerColor = layer.settings.colorMapping?.[colorId] || colorInfo.color;
-                    if (layerColor) {
+                    // Only apply color if it's not transparent (allows layers below to show through)
+                    if (layerColor && layerColor !== 'transparent') {
                         grid[row][stitch] = layerColor;
                     }
                 }
@@ -1041,7 +1079,8 @@ const ColorworkCanvasEditor = ({
 
     // Memoized pattern key finder to prevent recalculation
     const getPatternKeyForLayer = useCallback((layer) => {
-        return layer.patternType || 'checkerboard';
+        // Return the stored pattern key if it exists, otherwise fall back to patternType
+        return layer.patternKey || layer.patternType || 'checkerboard';
     }, []);
 
     const removePatternLayer = useCallback((layerId) => {
@@ -1076,6 +1115,7 @@ const ColorworkCanvasEditor = ({
                         ...layer,
                         pattern,
                         patternType,
+                        patternKey, // Store the full pattern key (e.g., "custom-123")
                         patternConfig: config,
                         settings: {
                             ...layer.settings,
@@ -1086,7 +1126,7 @@ const ColorworkCanvasEditor = ({
                 return layer;
             })
         );
-    }, [onLayersChange]);
+    }, [onLayersChange, availablePatterns]);
 
     const handlePatternConfigChange = useCallback((layerId, newConfig) => {
         onLayersChange(prevLayers =>
@@ -1840,6 +1880,47 @@ function generatePattern(type, config, targetDimension = null) {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
         return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });
+    } else if (type === 'custom') {
+        // Custom pattern from library - use the saved pattern data directly
+        if (config.pattern && Array.isArray(config.pattern)) {
+            // Convert colors from library format to ColorworkPattern format
+            const colorMap = {};
+            const libraryColors = config.colors || {};
+            
+            // Check if colors are already in the right format (with id, label, color)
+            // or if they're in the simple format (just hex colors)
+            Object.entries(libraryColors).forEach(([colorId, colorValue]: [string, any]) => {
+                // Special handling for "CCX" - treat as transparent
+                if (colorId === 'CCX') {
+                    colorMap[colorId] = { 
+                        id: colorId, 
+                        label: 'Transparent', 
+                        color: 'transparent' 
+                    };
+                } else if (typeof colorValue === 'string') {
+                    // Simple format: { "MC": "#ffffff" }
+                    colorMap[colorId] = { 
+                        id: colorId, 
+                        label: colorId, 
+                        color: colorValue 
+                    };
+                } else if (colorValue && typeof colorValue === 'object' && colorValue.color) {
+                    // Already in the right format: { "MC": { id: "MC", label: "Main", color: "#fff" } }
+                    colorMap[colorId] = colorValue;
+                } else {
+                    // Fallback
+                    colorMap[colorId] = { 
+                        id: colorId, 
+                        label: colorId, 
+                        color: '#ffffff' 
+                    };
+                }
+            });
+            
+            return new ColorworkPattern(0, 0, config.pattern, colorMap, {});
+        }
+        // Fallback to solid if pattern data is missing
+        return createSolidPattern([{ color: '#ffffff' }]);
     } else if (type === 'solid') {
         return createSolidPattern(config.colors || [{ color: '#ffffff' }]);
     } else if (type === 'checkerboard') {

@@ -700,6 +700,22 @@ const KnittingDesignerApp: React.FC = () => {
         } catch (e) { /* swallow */ }
     }, [lastUiEvent]);
 
+    // Listen for pattern data requests from ColorworkDesignerApp
+    useEffect(() => {
+        const handlePatternDataRequest = () => {
+            // Send the current pattern data back to ColorworkDesignerApp
+            const patternData = {
+                pattern,
+                gridSize,
+                colors
+            };
+            window.dispatchEvent(new CustomEvent('colorwork:pattern-data', { detail: patternData }));
+        };
+
+        window.addEventListener('colorwork:request-pattern-data', handlePatternDataRequest);
+        return () => window.removeEventListener('colorwork:request-pattern-data', handlePatternDataRequest);
+    }, [pattern, gridSize, colors]);
+
     useEffect(() => {
         const onSave = async () => {
             try {
@@ -768,7 +784,7 @@ const KnittingDesignerApp: React.FC = () => {
                     modalType: MODAL_TYPES.LIBRARY_SETTINGS,
                     appContext: 'panels',
                     data: {
-                        currentSettings: { panelsLibraryFile: 'panels-library.json', panelsFolder: '/' },
+                        currentSettings: { panelsLibraryFile: 'library.json', panelsFolder: '/' },
                         userInfo: null,
                         onSelectFileCallbackId: cbId
                     }
@@ -823,7 +839,7 @@ const KnittingDesignerApp: React.FC = () => {
                     modalType: MODAL_TYPES.LIBRARY_SETTINGS,
                     appContext: 'panels',
                     data: {
-                        currentSettings: { panelsLibraryFile: 'panels-library.json', panelsFolder: '/' },
+                        currentSettings: { panelsLibraryFile: 'library.json', panelsFolder: '/' },
                         userInfo: null,
                         onSelectFileCallbackId: cbId,
                         intent: 'open'

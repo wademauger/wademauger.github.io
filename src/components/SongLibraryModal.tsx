@@ -21,7 +21,7 @@ const SongLibraryModal = ({
 
   // Default settings for songs
   const defaultSettings = {
-    songsLibraryFile: 'song-tabs-library.json',
+    songsLibraryFile: 'library.json',
     songsFolder: '/',
     ...currentSettings
   };
@@ -396,7 +396,7 @@ const SongLibraryModal = ({
           >
             <Input 
               prefix={<FileOutlined />}
-              placeholder="song-tabs-library.json"
+              placeholder="library.json"
             />
           </Form.Item>
 

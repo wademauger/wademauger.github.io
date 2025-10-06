@@ -13,7 +13,7 @@ class GoogleDriveService {
     this.tokenClient = null;
     this.accessToken = null;
     this.userEmail = null;
-    this.LIBRARY_FILENAME = 'song-tabs-library.json';
+    this.LIBRARY_FILENAME = 'library.json';
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
     this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
   }

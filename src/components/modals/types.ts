@@ -17,19 +17,21 @@ export interface LibrarySettingsModalProps {
 
 export interface SaveAsModalProps<T = any> {
   visible: boolean;
-  jsonKey: string; // e.g., 'panels', 'songs', 'recipes'
+  jsonKey: string; // e.g., 'panels', 'songs', 'recipes', 'colorworkPatterns'
   displayLabel: string; // e.g., 'Panel', 'Song', 'Recipe'
   entityData: T; // The data to save
   onSave: (name: string, entity: T) => Promise<void>;
   onClose: () => void;
+  settingsKey?: string; // Optional: use different settings key than jsonKey (e.g., 'panels' for 'colorworkPatterns')
 }
 
 export interface OpenModalProps<T = any> {
   visible: boolean;
-  jsonKey: string; // e.g., 'panels', 'songs', 'recipes'
+  jsonKey: string; // e.g., 'panels', 'songs', 'recipes', 'colorworkPatterns'
   displayLabel: string; // e.g., 'Panel', 'Song', 'Recipe'
   onOpen: (entity: T) => void;
   onClose: () => void;
+  settingsKey?: string; // Optional: use different settings key than jsonKey (e.g., 'panels' for 'colorworkPatterns')
 }
 
 export interface LibraryEntity {

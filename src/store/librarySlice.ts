@@ -334,4 +334,9 @@ const librarySlice = createSlice({
 });
 
 export const { setFullLibrary, clearLibraryError, clearEntries } = librarySlice.actions;
+
+// Selectors
+export const selectFullLibrary = (state: any) => state.library?.fullLibrary;
+export const selectColorworkPatterns = (state: any) => state.library?.fullLibrary?.colorworkPatterns || {};
+
 export default librarySlice.reducer;

@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { openLibrarySettingsModal } from '../../reducers/modal.reducer';
 import LibraryOpenDialog from '../../components/LibraryOpenDialog';
 import LibrarySaveDialog from '../../components/LibrarySaveDialog';
-import { OpenModal } from '@/components/modals';
+import { OpenModal, SaveAsModal } from '@/components/modals';
 import { emitEvent } from '../../store/uiEventsSlice';
 import ColorworkPanelEditor from '../../components/ColorworkPanelEditor';
 // Google sign-in now rendered by the page header; per-editor buttons removed
@@ -254,6 +254,21 @@ const ColorworkDesignerApp = () => {
     const [showOpenDialog, setShowOpenDialog] = useState(false);
     const [showSaveDialog, setShowSaveDialog] = useState(false);
     const [showPatternOpen, setShowPatternOpen] = useState(false);
+    const [showPatternSaveAs, setShowPatternSaveAs] = useState(false);
+    const [currentPatternData, setCurrentPatternData] = useState<any>(null);
+
+    // Listen for pattern data from KnittingDesignerApp
+    useEffect(() => {
+        const handlePatternData = (event: any) => {
+            const { pattern, gridSize, colors } = event.detail;
+            setCurrentPatternData({ pattern, gridSize, colors });
+            setShowPatternSaveAs(true);
+        };
+
+        window.addEventListener('colorwork:pattern-data', handlePatternData);
+        return () => window.removeEventListener('colorwork:pattern-data', handlePatternData);
+    }, []);
+
     useEffect(() => {
         const path = location.pathname || '';
         let items: any[] = [];
@@ -266,7 +281,10 @@ const ColorworkDesignerApp = () => {
                 {
                     key: 'colorwork-pattern-save',
                     label: 'Save Pattern',
-                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'save' }))
+                    onClick: () => {
+                        // Request pattern data from KnittingDesignerApp
+                        window.dispatchEvent(new Event('colorwork:request-pattern-data'));
+                    }
                 },
                 {
                     key: 'colorwork-pattern-open',
@@ -342,6 +360,7 @@ const ColorworkDesignerApp = () => {
                     <OpenModal
                         visible={showPatternOpen}
                         jsonKey="colorworkPatterns"
+                        settingsKey="panels"
                         displayLabel="Pattern"
                         onOpen={(pattern) => {
                             try {
@@ -351,6 +370,23 @@ const ColorworkDesignerApp = () => {
                             setShowPatternOpen(false);
                         }}
                         onClose={() => setShowPatternOpen(false)}
+                    />
+
+                    {/* Save Pattern modal for Colorwork Pattern Creator */}
+                    <SaveAsModal
+                        visible={showPatternSaveAs}
+                        jsonKey="colorworkPatterns"
+                        settingsKey="panels"
+                        displayLabel="Pattern"
+                        entityData={currentPatternData}
+                        onSave={async (name: string, patternData: any) => {
+                            console.log(`Pattern "${name}" saved successfully`);
+                            // The SaveAsModal already saved to Google Drive
+                        }}
+                        onClose={() => {
+                            setShowPatternSaveAs(false);
+                            setCurrentPatternData(null);
+                        }}
                     />
                 </Content>
             </DriveAuthProvider>

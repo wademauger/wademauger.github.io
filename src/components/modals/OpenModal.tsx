@@ -26,7 +26,8 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
   jsonKey,
   displayLabel,
   onOpen,
-  onClose
+  onClose,
+  settingsKey
 }: OpenModalProps<T>) => {
   const [loading, setLoading] = useState(false);
   const [entities, setEntities] = useState<T[]>([]);
@@ -68,7 +69,8 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
         return;
       }
 
-      // Get library file settings. Prefer unified service-level settings when available.
+      // Get library file settings - use settingsKey if provided, otherwise use jsonKey
+      const keyForSettings = settingsKey || jsonKey;
       let fileName: string | undefined;
       let folderPath: string | undefined;
 
@@ -84,13 +86,17 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
       // Fallback to legacy per-jsonKey settings if unified methods not present
       if (!fileName || !folderPath) {
         const settings: any = typeof service.getSettings === 'function' ? service.getSettings() : {};
-        fileName = fileName || settings[`${jsonKey}LibraryFile`] || `${jsonKey}-library.json`;
-        folderPath = folderPath || settings[`${jsonKey}Folder`] || '/';
+        fileName = fileName || settings[`${keyForSettings}LibraryFile`] || `library.json`;
+        folderPath = folderPath || settings[`${keyForSettings}Folder`] || '/';
       }
 
       const fullPath = folderPath === '/' ? `/${fileName}` : `${folderPath}/${fileName}`;
       setLibraryPath(fullPath);
-      console.log(`📚 OpenModal (${jsonKey}): Loading from: ${fullPath}`);
+      console.log(`📚 OpenModal (${jsonKey}): Loading from: ${fullPath}`, {
+        settingsKey: keyForSettings,
+        fileName,
+        folderPath
+      });
 
       // Find and load the library file
       const fileResult = await service.findFile(fileName, folderPath);

@@ -29,7 +29,8 @@ export const SaveAsModal = <T extends Record<string, any> = any>({
   displayLabel,
   entityData,
   onSave,
-  onClose
+  onClose,
+  settingsKey
 }: SaveAsModalProps<T>) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -60,13 +61,18 @@ export const SaveAsModal = <T extends Record<string, any> = any>({
         return;
       }
 
-      // Get library file settings
-      const settings = service.getSettings();
-      const fileName = settings[`${jsonKey}LibraryFile`] || `${jsonKey}-library.json`;
-      const folderPath = settings[`${jsonKey}Folder`] || '/';
+      // Get library file settings - use settingsKey if provided, otherwise use jsonKey
+      const keyForSettings = settingsKey || jsonKey;
+      const settings: any = service.getSettings();
+      const fileName = settings[`${keyForSettings}LibraryFile`] || `library.json`;
+      const folderPath = settings[`${keyForSettings}Folder`] || '/';
       const fullPath = folderPath === '/' ? `/${fileName}` : `${folderPath}/${fileName}`;
 
-      console.log(`📚 SaveAsModal (${jsonKey}): Saving "${entityName}" to: ${fullPath}`);
+      console.log(`📚 SaveAsModal (${jsonKey}): Saving "${entityName}" to: ${fullPath}`, {
+        settingsKey: keyForSettings,
+        fileName,
+        folderPath
+      });
 
       // Find or create the library file
       let fileId: string | null = null;

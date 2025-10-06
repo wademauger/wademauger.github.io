@@ -53,7 +53,7 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
       const fileKey = `${jsonKey}LibraryFile`;
       const folderKey = `${jsonKey}Folder`;
       
-      const fileName = settings[fileKey] || `${jsonKey}-library.json`;
+      const fileName = settings[fileKey] || `library.json`;
       const folderPath = settings[folderKey] || '/';
 
       form.setFieldsValue({
@@ -66,7 +66,7 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
       console.error('Error loading settings:', error);
       // Set defaults if loading fails
       form.setFieldsValue({
-        fileName: `${jsonKey}-library.json`,
+        fileName: `library.json`,
         folderPath: '/'
       });
     }

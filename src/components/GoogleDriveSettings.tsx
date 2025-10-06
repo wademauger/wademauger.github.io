@@ -21,8 +21,8 @@ const GoogleDriveSettings = ({
 
   // Default file locations
   const defaultSettings = {
-    songsLibraryFile: 'song-tabs-library.json',
-    recipesLibraryFile: 'recipe-library.json',
+    songsLibraryFile: 'library.json',
+    recipesLibraryFile: 'library.json',
     songsFolder: '/', // Root folder
     recipesFolder: '/', // Root folder
     ...currentSettings
@@ -318,7 +318,7 @@ const GoogleDriveSettings = ({
           >
             <Input 
               prefix={<FileOutlined />}
-              placeholder="song-tabs-library.json"
+              placeholder="library.json"
             />
           </Form.Item>
 
@@ -349,7 +349,7 @@ const GoogleDriveSettings = ({
           >
             <Input 
               prefix={<FileOutlined />}
-              placeholder="recipe-library.json"
+              placeholder="library.json"
             />
           </Form.Item>
 

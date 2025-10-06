@@ -63,19 +63,19 @@ const LibraryModalInner = () => {
   const getDefaultSettings = () => {
     if (appContext === 'songs') {
       return {
-        songsLibraryFile: 'song-tabs-library.json',
+        songsLibraryFile: 'library.json',
         songsFolder: '/',
         ...modalData?.currentSettings
       };
     } else if (appContext === 'recipes') {
       return {
-        recipesLibraryFile: 'recipe-library.json',
+        recipesLibraryFile: 'library.json',
         recipesFolder: '/',
         ...modalData?.currentSettings
       };
     } else if (appContext === 'panels') {
       return {
-        panelsLibraryFile: 'panels-library.json',
+        panelsLibraryFile: 'library.json',
         panelsFolder: '/',
         ...modalData?.currentSettings
       };
@@ -928,7 +928,7 @@ const LibraryModalInner = () => {
                 rules={[{ required: true, message: 'Please enter a filename' }]}
               >
                 <Input 
-                  placeholder={`${appContext}-library.json`}
+                  placeholder={`library.json`}
                   suffix={
                     <Button 
                       type="text" 

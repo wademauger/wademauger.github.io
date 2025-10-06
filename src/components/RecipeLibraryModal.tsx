@@ -22,7 +22,7 @@ const RecipeLibraryModal = ({
 
   // Default settings for recipes
   const defaultSettings = {
-    recipesLibraryFile: 'recipe-library.json',
+    recipesLibraryFile: 'library.json',
     recipesFolder: '/',
     ...currentSettings
   };
@@ -399,7 +399,7 @@ const RecipeLibraryModal = ({
           >
             <Input 
               prefix={<FileOutlined />}
-              placeholder="recipe-library.json"
+              placeholder="library.json"
             />
           </Form.Item>
 

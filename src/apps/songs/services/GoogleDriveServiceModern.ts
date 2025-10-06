@@ -40,7 +40,7 @@ class GoogleDriveServiceModern {
     this.userEmail = null;
     this.userName = null;
     this.userPicture = null;
-    this.LIBRARY_FILENAME = 'song-tabs-library.json'; // Default filename
+    this.LIBRARY_FILENAME = 'library.json'; // Default filename
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
   // Include OpenID / userinfo scopes so we can call the userinfo endpoint and
   // populate the user's name/email/picture for the UI. Keep Drive scopes as well
@@ -876,7 +876,8 @@ class GoogleDriveServiceModern {
 
       // If the object directly has a panels or colorworkPatterns namespace, preserve them
       if (lib && ( (lib.panels && typeof lib.panels === 'object') || Array.isArray(lib.colorworkPatterns) )) {
-        const out = {};
+        // Preserve all keys from the original library to avoid data loss
+        const out = { ...lib };
         if (lib.panels && typeof lib.panels === 'object') out.panels = lib.panels;
         if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
         out.lastUpdated = lib.lastUpdated || new Date().toISOString();
@@ -892,7 +893,8 @@ class GoogleDriveServiceModern {
       // attempt to find anything that resembles panels and store under panels key.
       if (lib && typeof lib === 'object') {
         if (lib.panels || Array.isArray(lib.colorworkPatterns)) {
-          const out = {};
+          // Preserve all keys from the original library to avoid data loss
+          const out = { ...lib };
           if (lib.panels) out.panels = lib.panels;
           if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
           out.lastUpdated = lib.lastUpdated || new Date().toISOString();
