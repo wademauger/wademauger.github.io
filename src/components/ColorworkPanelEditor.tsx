@@ -238,6 +238,13 @@ const ColorworkPanelEditor = forwardRef(({
         }));
     };
 
+    const handleRowBack = () => {
+        setKnittingProgress(prev => ({
+            ...prev,
+            currentRow: Math.max(prev.currentRow - 1, 0)
+        }));
+    };
+
     // Render functions for different stages
     const renderSettingsView = () => (
         <div className="colorwork-settings-view">
@@ -258,6 +265,7 @@ const ColorworkPanelEditor = forwardRef(({
             instructions={instructions}
             knittingProgress={knittingProgress}
             onRowComplete={handleRowComplete}
+            onRowBack={handleRowBack}
             onBackToSettings={handleBackToSettings}
         />
     );
