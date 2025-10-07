@@ -3,6 +3,8 @@
 
 /* global gapi, google */
 
+import { userProfileCache } from '../../../utils/userProfileCache';
+
 class GoogleDriveRecipeService {
   isSignedIn: boolean;
   tokenClient: any;
@@ -440,6 +442,21 @@ class GoogleDriveRecipeService {
     
     if (!this.accessToken) {
       console.warn('✗ No access token available for loading user profile');
+      
+      // Try to restore from cache if we have an email
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          this.userName = cached.name;
+          this.userPicture = cached.picture;
+          console.log('✓ Recipe user profile restored from cache:', {
+            email: this.userEmail,
+            name: this.userName,
+            hasPicture: !!this.userPicture
+          });
+          return;
+        }
+      }
       return;
     }
 
@@ -459,6 +476,9 @@ class GoogleDriveRecipeService {
         this.userName = userInfo.name;
         this.userPicture = userInfo.picture;
         
+        // Cache the profile for future use
+        userProfileCache.storeProfile(this.userEmail, this.userName, this.userPicture);
+        
         console.log('✓ Recipe user profile loaded successfully:', { 
           email: this.userEmail, 
           name: this.userName,
@@ -466,9 +486,37 @@ class GoogleDriveRecipeService {
         });
       } else {
         console.warn('✗ Failed to load recipe user profile:', response.status, response.statusText);
+        
+        // Fall back to cached profile if available
+        if (this.userEmail) {
+          const cached = userProfileCache.getProfile(this.userEmail);
+          if (cached) {
+            this.userName = cached.name;
+            this.userPicture = cached.picture;
+            console.log('✓ Recipe user profile restored from cache after fetch failure:', {
+              email: this.userEmail,
+              name: this.userName,
+              hasPicture: !!this.userPicture
+            });
+          }
+        }
       }
     } catch (error: unknown) {
       console.warn('✗ Error loading recipe user profile:', error);
+      
+      // Fall back to cached profile if available
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          this.userName = cached.name;
+          this.userPicture = cached.picture;
+          console.log('✓ Recipe user profile restored from cache after error:', {
+            email: this.userEmail,
+            name: this.userName,
+            hasPicture: !!this.userPicture
+          });
+        }
+      }
     }
     
     console.log('=== RECIPE USER PROFILE LOAD COMPLETE ===');
@@ -515,6 +563,11 @@ class GoogleDriveRecipeService {
         if (this.userName) localStorage.setItem(this.SESSION_KEYS.USER_NAME, this.userName);
         if (this.userPicture) localStorage.setItem(this.SESSION_KEYS.USER_PICTURE, this.userPicture);
         
+        // Also cache user profile for fallback when API calls fail
+        if (this.userEmail) {
+          userProfileCache.storeProfile(this.userEmail, this.userName, this.userPicture);
+        }
+        
         console.log('Recipe session saved to localStorage for user:', this.userEmail);
       }
     } catch (error: unknown) {
@@ -539,6 +592,20 @@ class GoogleDriveRecipeService {
           this.userEmail = localStorage.getItem(this.SESSION_KEYS.USER_EMAIL);
           this.userName = localStorage.getItem(this.SESSION_KEYS.USER_NAME);
           this.userPicture = localStorage.getItem(this.SESSION_KEYS.USER_PICTURE);
+          
+          // If we have email but missing name/picture, try to restore from cache
+          if (this.userEmail && (!this.userName || !this.userPicture)) {
+            const cached = userProfileCache.getProfile(this.userEmail);
+            if (cached) {
+              if (!this.userName && cached.name) {
+                this.userName = cached.name;
+              }
+              if (!this.userPicture && cached.picture) {
+                this.userPicture = cached.picture;
+              }
+              console.log('Recipe session user info augmented from cache');
+            }
+          }
           
           console.log('Recipe session restored from localStorage for user:', this.userEmail);
           return true;

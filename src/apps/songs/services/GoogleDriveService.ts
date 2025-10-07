@@ -1,4 +1,6 @@
 // singleton Google Drive service
+import { userProfileCache } from '../../../utils/userProfileCache';
+
 class GoogleDriveService {
   isSignedIn: boolean;
   tokenClient: any;
@@ -197,6 +199,14 @@ class GoogleDriveService {
     // Don't attempt to load profile if we don't have a valid access token
     if (!this.accessToken) {
       console.debug('No access token available for loading user profile');
+      
+      // Try to restore from cache if we have an email
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          console.log('User profile restored from cache');
+        }
+      }
       return;
     }
 
@@ -213,8 +223,21 @@ class GoogleDriveService {
       const userInfo = await response.json();
       this.userEmail = userInfo.email;
       localStorage.setItem('gdrive_user_email', this.userEmail);
+      
+      // Cache the profile
+      userProfileCache.storeProfile(this.userEmail, userInfo.name, userInfo.picture);
     } catch (error: unknown) {
       console.error('Failed to load user profile:', error);
+      
+      // Fall back to cached profile if available
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          console.log('User profile restored from cache after error');
+          return; // Don't throw error if we have cached data
+        }
+      }
+      
       this.handleAuthError(error);
     }
   }
@@ -544,6 +567,13 @@ class GoogleDriveService {
     }
     if (this.userEmail) {
       localStorage.setItem('gdrive_user_email', this.userEmail);
+      
+      // Also cache user profile for fallback
+      const cached = userProfileCache.getProfile(this.userEmail);
+      if (cached || this.userEmail) {
+        // Store whatever we have
+        userProfileCache.storeProfile(this.userEmail, cached?.name, cached?.picture);
+      }
     }
   }
 
@@ -562,6 +592,12 @@ class GoogleDriveService {
     }
     if (email) {
       this.userEmail = email;
+      
+      // Try to restore additional user info from cache
+      const cached = userProfileCache.getProfile(email);
+      if (cached) {
+        console.log('Restored user profile from cache');
+      }
     }
     return this.isSignedIn;
   }

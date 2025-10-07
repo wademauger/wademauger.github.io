@@ -5,6 +5,7 @@
 
 import GoogleDriveErrorHandler from '../../../utils/GoogleDriveErrorHandler';
 import libFormat from '../../../utils/libraryFormat';
+import { userProfileCache } from '../../../utils/userProfileCache';
 
 class GoogleDriveServiceModern {
   isSignedIn: boolean;
@@ -719,7 +720,22 @@ class GoogleDriveServiceModern {
     
     if (!this.accessToken) {
       console.warn('✗ No access token available for loading user profile');
-      document.head.appendChild(script);
+      
+      // Try to restore from cache if we have an email
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          this.userName = cached.name;
+          this.userPicture = cached.picture;
+          console.log('✓ User profile restored from cache:', {
+            email: this.userEmail,
+            name: this.userName,
+            hasPicture: !!this.userPicture
+          });
+          return;
+        }
+      }
+      return;
     }
 
     try {
@@ -738,6 +754,9 @@ class GoogleDriveServiceModern {
         this.userName = userInfo.name;
         this.userPicture = userInfo.picture;
         
+        // Cache the profile for future use
+        userProfileCache.storeProfile(this.userEmail, this.userName, this.userPicture);
+        
         console.log('✓ User profile loaded successfully:', { 
           email: this.userEmail, 
           name: this.userName,
@@ -745,9 +764,37 @@ class GoogleDriveServiceModern {
         });
       } else {
         console.warn('✗ Failed to load user profile:', response.status, response.statusText);
+        
+        // Fall back to cached profile if available
+        if (this.userEmail) {
+          const cached = userProfileCache.getProfile(this.userEmail);
+          if (cached) {
+            this.userName = cached.name;
+            this.userPicture = cached.picture;
+            console.log('✓ User profile restored from cache after fetch failure:', {
+              email: this.userEmail,
+              name: this.userName,
+              hasPicture: !!this.userPicture
+            });
+          }
+        }
       }
     } catch (error: unknown) {
       console.warn('✗ Error loading user profile:', error);
+      
+      // Fall back to cached profile if available
+      if (this.userEmail) {
+        const cached = userProfileCache.getProfile(this.userEmail);
+        if (cached) {
+          this.userName = cached.name;
+          this.userPicture = cached.picture;
+          console.log('✓ User profile restored from cache after error:', {
+            email: this.userEmail,
+            name: this.userName,
+            hasPicture: !!this.userPicture
+          });
+        }
+      }
     }
     
     console.log('=== USER PROFILE LOAD COMPLETE ===');
@@ -849,6 +896,53 @@ class GoogleDriveServiceModern {
   }
 
   /**
+   * Check if the current token is about to expire or already expired.
+   * Returns true if token needs refresh, false if still valid.
+   * This is a lightweight check that doesn't make API calls.
+   */
+  isTokenExpired() {
+    const tokenExpiry = localStorage.getItem(this.SESSION_KEYS.TOKEN_EXPIRY);
+    if (!tokenExpiry) {
+      return !this.accessToken; // If no expiry stored, expired if no token
+    }
+
+    const expiryTime = parseInt(tokenExpiry);
+    const now = Date.now();
+    
+    // Consider token expired if within 2 minutes of expiry (proactive refresh)
+    const bufferMs = 2 * 60 * 1000;
+    return now >= (expiryTime - bufferMs);
+  }
+
+  /**
+   * Ensure we have a valid token before making API calls.
+   * This method checks if the token is expired and attempts to validate/refresh if needed.
+   * Should be called before any API operation.
+   */
+  async ensureValidToken() {
+    // Quick check: do we even have a token?
+    if (!this.accessToken) {
+      console.log('ensureValidToken: No access token available');
+      return false;
+    }
+
+    // Check if token is expired or about to expire
+    if (this.isTokenExpired()) {
+      console.log('ensureValidToken: Token is expired or about to expire, validating...');
+      const isValid = await this.validateToken();
+      if (!isValid) {
+        console.log('ensureValidToken: Token validation failed');
+        return false;
+      }
+      console.log('ensureValidToken: Token validated successfully');
+      return true;
+    }
+
+    // Token should still be valid
+    return true;
+  }
+
+  /**
    * Normalize incoming library payloads so we only persist the minimal
    * expected shape to Drive. This strips out any wrapper fields that might
    * have been introduced (for example objects that look like { result, body, headers, status })
@@ -931,6 +1025,11 @@ class GoogleDriveServiceModern {
     if (this.userName) localStorage.setItem(this.SESSION_KEYS.USER_NAME, this.userName);
     if (this.userPicture) localStorage.setItem(this.SESSION_KEYS.USER_PICTURE, this.userPicture);
     
+    // Also cache user profile for fallback when API calls fail
+    if (this.userEmail) {
+      userProfileCache.storeProfile(this.userEmail, this.userName, this.userPicture);
+    }
+    
     console.log('Session saved to localStorage');
   }
 
@@ -951,6 +1050,20 @@ class GoogleDriveServiceModern {
           this.userEmail = localStorage.getItem(this.SESSION_KEYS.USER_EMAIL);
           this.userName = localStorage.getItem(this.SESSION_KEYS.USER_NAME);
           this.userPicture = localStorage.getItem(this.SESSION_KEYS.USER_PICTURE);
+          
+          // If we have email but missing name/picture, try to restore from cache
+          if (this.userEmail && (!this.userName || !this.userPicture)) {
+            const cached = userProfileCache.getProfile(this.userEmail);
+            if (cached) {
+              if (!this.userName && cached.name) {
+                this.userName = cached.name;
+              }
+              if (!this.userPicture && cached.picture) {
+                this.userPicture = cached.picture;
+              }
+              console.log('Session user info augmented from cache');
+            }
+          }
           
           console.log('Session restored from localStorage for user:', this.userEmail);
           return true;
@@ -2478,6 +2591,17 @@ class GoogleDriveServiceModern {
       this.authRetryAttempts.delete(retryKey);
       
       console.log(`🔄 Executing operation: ${operationName}`);
+      
+      // Proactively check if token is expired or about to expire
+      if (this.accessToken && this.isTokenExpired()) {
+        console.log(`⚠️ Token is expired or about to expire before ${operationName}, validating...`);
+        const isValid = await this.ensureValidToken();
+        if (!isValid) {
+          console.log(`❌ Token validation failed before ${operationName}, will retry with re-auth`);
+          throw new Error('Token expired and validation failed');
+        }
+        console.log(`✅ Token validated successfully before ${operationName}`);
+      }
       
       // Try to execute the operation
       const result = await operation.apply(this, args);
