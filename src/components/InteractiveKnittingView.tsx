@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Row, Col, Space, Typography, Progress, Tag, Divider } from 'antd';
-import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
+import { Card, Button, Row, Col, Space, Typography, Progress, Tag, Divider, Radio, Alert } from 'antd';
+import { LeftOutlined, RightOutlined, CheckOutlined, WarningOutlined } from '@ant-design/icons';
 import RowByRowInstructions from './RowByRowInstructions';
 import { ColorworkStitchPlanService } from '../models/ColorworkStitchPlanService';
 
@@ -14,10 +14,12 @@ const InteractiveKnittingView = ({
     instructions = [],
     knittingProgress,
     onRowComplete,
+    onRowBack,
     onBackToSettings
 }) => {
     const [enhancedStitchPlan, setEnhancedStitchPlan] = useState(null);
     const [currentRowInstructions, setCurrentRowInstructions] = useState(null);
+    const [colorworkDisplayMode, setColorworkDisplayMode] = useState('repeating'); // 'repeating' or 'fullRow'
 
     useEffect(() => {
         if (combinedPattern) {
@@ -49,9 +51,8 @@ const InteractiveKnittingView = ({
     }, [enhancedStitchPlan, knittingProgress.currentRow]);
 
     const handlePreviousRow = () => {
-        if (knittingProgress.currentRow > 0) {
-            // Move back to previous row (but don't mark it incomplete)
-            // This is just for navigation
+        if (knittingProgress.currentRow > 0 && onRowBack) {
+            onRowBack();
         }
     };
 
@@ -59,6 +60,21 @@ const InteractiveKnittingView = ({
         if (knittingProgress.currentRow < instructions.length - 1) {
             onRowComplete(knittingProgress.currentRow);
         }
+    };
+
+    // Helper function to check if a row has shaping
+    const hasShaping = (rowIndex) => {
+        if (!enhancedStitchPlan || rowIndex === 0) return false;
+        
+        const currentRow = enhancedStitchPlan.rows[rowIndex];
+        const previousRow = enhancedStitchPlan.rows[rowIndex - 1];
+        
+        if (!currentRow || !previousRow) return false;
+        
+        const currentTotal = currentRow.leftStitchesInWork + currentRow.rightStitchesInWork;
+        const previousTotal = previousRow.leftStitchesInWork + previousRow.rightStitchesInWork;
+        
+        return currentTotal !== previousTotal;
     };
 
     const progressPercent = Math.round((knittingProgress.completedRows.length / instructions.length) * 100);
@@ -107,6 +123,18 @@ const InteractiveKnittingView = ({
                         >
                             {currentRowInstructions && (
                                 <Space direction="vertical" style={{ width: '100%' }}>
+                                    {/* Shaping Warning */}
+                                    {hasShaping(knittingProgress.currentRow) && (
+                                        <Alert
+                                            message="Shaping Row"
+                                            description="This row requires increases or decreases"
+                                            type="warning"
+                                            showIcon
+                                            icon={<WarningOutlined />}
+                                            style={{ marginBottom: 8 }}
+                                        />
+                                    )}
+
                                     {/* Shaping Instructions */}
                                     <div>
                                         <Text strong>Shaping:</Text>
@@ -121,7 +149,17 @@ const InteractiveKnittingView = ({
                                     {/* Colorwork Instructions */}
                                     {currentRowInstructions.getColorworkInstructions && currentRowInstructions.getColorworkInstructions() && (
                                         <div>
-                                            <Text strong>Colorwork:</Text>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                                <Text strong>Colorwork:</Text>
+                                                <Radio.Group 
+                                                    size="small" 
+                                                    value={colorworkDisplayMode}
+                                                    onChange={(e) => setColorworkDisplayMode(e.target.value)}
+                                                >
+                                                    <Radio.Button value="repeating">Pattern</Radio.Button>
+                                                    <Radio.Button value="fullRow">Full Row</Radio.Button>
+                                                </Radio.Group>
+                                            </div>
                                             <div style={{ marginTop: 8 }}>
                                                 <Space wrap>
                                                     {currentRowInstructions.getColorworkInstructions().map((segment, index: number) => (
@@ -143,10 +181,13 @@ const InteractiveKnittingView = ({
                                                 
                                                 {/* Visual color bar */}
                                                 <div style={{ marginTop: 12 }}>
-                                                    <Text strong style={{ fontSize: '12px' }}>Pattern:</Text>
+                                                    <Text strong style={{ fontSize: '12px' }}>
+                                                        {colorworkDisplayMode === 'repeating' ? 'Pattern Preview:' : 'Full Row Pattern:'}
+                                                    </Text>
                                                     <ColorworkRowBar 
                                                         colorworkInstructions={currentRowInstructions.getColorworkInstructions()}
                                                         totalStitches={currentRowInstructions.leftStitchesInWork + currentRowInstructions.rightStitchesInWork}
+                                                        displayMode={colorworkDisplayMode}
                                                     />
                                                 </div>
                                             </div>
@@ -254,12 +295,16 @@ const InteractiveKnittingView = ({
 /**
  * ColorworkRowBar - Visual representation of a single row's colorwork pattern
  */
-const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
+const ColorworkRowBar = ({ colorworkInstructions, totalStitches, displayMode = 'repeating' }) => {
     if (!colorworkInstructions || colorworkInstructions.length === 0) {
         return null;
     }
 
-    const stitchWidth = Math.max(2, Math.min(8, 300 / totalStitches));
+    // For repeating mode, show pattern with edges (limited width)
+    // For fullRow mode, show entire row in scrollable container
+    const isFullRow = displayMode === 'fullRow';
+    
+    const stitchWidth = isFullRow ? Math.max(2, Math.min(8, 300 / totalStitches)) : Math.max(4, Math.min(12, 300 / totalStitches));
     const barWidth = totalStitches * stitchWidth;
     const barHeight = 20;
 
@@ -282,19 +327,35 @@ const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
         return rect;
     });
 
+    const svgElement = (
+        <svg 
+            width={barWidth} 
+            height={barHeight}
+            style={{ 
+                border: '1px solid #ddd', 
+                borderRadius: '4px',
+                display: 'block'
+            }}
+        >
+            {segments}
+        </svg>
+    );
+
     return (
         <div style={{ marginTop: 8 }}>
-            <svg 
-                width={barWidth} 
-                height={barHeight}
-                style={{ 
-                    border: '1px solid #ddd', 
+            {isFullRow ? (
+                <div style={{ 
+                    overflowX: 'auto', 
+                    maxWidth: '100%',
+                    border: '1px solid #ddd',
                     borderRadius: '4px',
-                    display: 'block'
-                }}
-            >
-                {segments}
-            </svg>
+                    padding: '4px'
+                }}>
+                    {svgElement}
+                </div>
+            ) : (
+                svgElement
+            )}
         </div>
     );
 };
@@ -312,8 +373,8 @@ const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
     
     return (
         <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-            <Text strong style={{ fontSize: '12px' }}>Panel Shape (Row {currentRow + 1} highlighted)</Text>
-            <div style={{ marginTop: 8 }}>
+            <Text strong style={{ fontSize: '12px' }}>Panel Shape (Row {currentRow + 1} highlighted in red)</Text>
+            <div style={{ marginTop: 8, position: 'relative' }}>
                 {rows.map((row, index: number) => {
                     const totalStitches = row.leftStitchesInWork + row.rightStitchesInWork;
                     const widthPercent = (totalStitches / maxStitches) * 100;
@@ -322,7 +383,7 @@ const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
                     if (completedRows.includes(index)) {
                         backgroundColor = '#52c41a'; // Completed - green
                     } else if (index === currentRow) {
-                        backgroundColor = '#1890ff'; // Current - blue
+                        backgroundColor = '#ffe6e6'; // Current - light red background
                     }
                     
                     return (
@@ -334,17 +395,34 @@ const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
                                 backgroundColor,
                                 margin: '1px auto',
                                 borderRadius: '3px',
-                                border: index === currentRow ? '2px solid #1890ff' : 'none'
+                                border: index === currentRow ? '2px solid #ff0000' : 'none', // Red border for current row
+                                position: 'relative'
                             }}
                             title={`Row ${index + 1}: ${totalStitches} stitches`}
-                        />
+                        >
+                            {/* Red line overlay for current row */}
+                            {index === currentRow && (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: 0,
+                                        right: 0,
+                                        height: '2px',
+                                        backgroundColor: '#ff0000',
+                                        transform: 'translateY(-50%)',
+                                        zIndex: 1
+                                    }}
+                                />
+                            )}
+                        </div>
                     );
                 })}
             </div>
             <div style={{ marginTop: 8, fontSize: '10px' }}>
                 <Space>
                     <span style={{ color: '#52c41a' }}>● Completed</span>
-                    <span style={{ color: '#1890ff' }}>● Current</span>
+                    <span style={{ color: '#ff0000' }}>● Current</span>
                     <span style={{ color: '#f0f0f0' }}>● Remaining</span>
                 </Space>
             </div>
