@@ -110,6 +110,21 @@ const WizardView: React.FC = () => {
     return Object.keys(panelCounts).filter(k => (panelCounts[k] || 0) > 0);
   }, [panelCounts]);
 
+  const getPanelLabelForKey = useCallback((panelKey: string) => {
+    if (!panelKey) return '';
+    const match = panelList.find(p => p.key === panelKey);
+    if (match) {
+      return `${match.garmentTitle} — ${match.panelName}`;
+    }
+    const [, panelName = 'Panel'] = panelKey.split('::');
+    return panelName;
+  }, [panelList]);
+
+  const handlePreviewKeyChange = useCallback((nextKey: string | null) => {
+    setSelectedPanelKey(nextKey);
+    dispatch(updatePatternData({ section: 'panels', data: { previewPanelKey: nextKey } }) as any);
+  }, [dispatch]);
+
   // Ensure selectedPanelKey stays valid when selection changes
   useEffect(() => {
     // If the user has a persisted preview selection in redux and it's still available, respect it.
@@ -431,7 +446,9 @@ const WizardView: React.FC = () => {
                     {...({ 
                       initialPanel, 
                       previewKey: selectedPanelKey,
-                      allSelectedPanelKeys: selectedPanels 
+                      allSelectedPanelKeys: selectedPanels,
+                      getPanelLabel: getPanelLabelForKey,
+                      onRequestPreviewKeyChange: handlePreviewKeyChange 
                     } as any)} 
                   />;
                 })()

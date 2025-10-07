@@ -167,7 +167,7 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
         >
           <Input
             prefix={<FileOutlined />}
-            placeholder={`${jsonKey}-library.json`}
+            placeholder={`library.json`}
             autoComplete="off"
           />
         </Form.Item>

@@ -6,8 +6,24 @@ export function useLibraryQuery() {
   return useQuery({
     queryKey: ['library', 'full'],
     queryFn: async () => {
-      const lib = await GoogleDriveServiceModern.loadLibrary();
-      return lib;
+      console.log('🚀 useLibraryQuery: Starting library fetch...');
+      try {
+        const lib = await GoogleDriveServiceModern.loadLibrary();
+        console.log('📚 useLibraryQuery: Library loaded successfully:', {
+          hasArtists: !!(lib?.artists),
+          artistCount: lib?.artists?.length || 0,
+          totalSongs: lib?.artists ? lib.artists.reduce((total, artist) => {
+            return total + (artist.albums || []).reduce((albumTotal, album) => {
+              return albumTotal + (album.songs || []).length;
+            }, 0);
+          }, 0) : 0,
+          libraryStructure: lib ? Object.keys(lib) : []
+        });
+        return lib;
+      } catch (error) {
+        console.error('❌ useLibraryQuery: Failed to load library:', error);
+        throw error;
+      }
     },
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false

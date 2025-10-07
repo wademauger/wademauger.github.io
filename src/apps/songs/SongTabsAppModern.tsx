@@ -87,20 +87,36 @@ const SongTabsApp = () => {
 
   useEffect(() => {
     try {
-      console.log('SongTabsApp fullLibrary effect — fullLibrary present=', !!fullLibrary, 'songs store has artists=', !!(library.artists && library.artists.length));
+      console.log('🔄 SongTabsApp fullLibrary effect triggered:', {
+        fullLibraryPresent: !!fullLibrary,
+        fullLibraryHasArtists: !!(fullLibrary?.artists),
+        fullLibraryArtistCount: fullLibrary?.artists?.length || 0,
+        reduxLibraryHasArtists: !!(library?.artists),
+        reduxLibraryArtistCount: library?.artists?.length || 0,
+        fullLibraryStructure: fullLibrary ? Object.keys(fullLibrary) : [],
+        reduxLibraryStructure: library ? Object.keys(library) : []
+      });
 
       if (fullLibrary && fullLibrary.artists && Array.isArray(fullLibrary.artists)) {
         const newJson = JSON.stringify(fullLibrary.artists);
         if (lastAppliedLibraryJsonRef.current === newJson) {
           // Already applied this exact library - nothing to do
-          console.log('Full library already applied to songs store (no-op)');
+          console.log('📋 Full library already applied to songs store (no-op)');
           return;
         }
 
         const existingCount = library?.artists?.length || 0;
         const newCount = fullLibrary.artists.length;
 
-        console.log('Overwriting songs store from Drive library — existingArtists=', existingCount, 'newArtists=', newCount);
+        console.log('🔄 Overwriting Redux songs store from Drive library:', {
+          existingArtists: existingCount,
+          newArtists: newCount,
+          firstFewArtists: fullLibrary.artists.slice(0, 3).map(a => ({ 
+            name: a.name, 
+            albumCount: a.albums?.length || 0,
+            totalSongs: (a.albums || []).reduce((total, album) => total + (album.songs || []).length, 0)
+          }))
+        });
 
         // Overwrite the Redux songs store so the UI reflects the Drive file immediately.
         dispatch(setLibrary({ artists: fullLibrary.artists }));
@@ -110,16 +126,24 @@ const SongTabsApp = () => {
         // will reflect the newly-loaded Drive JSON.
         try {
           dispatch(setFullLibrary(fullLibrary));
+          console.log('📚 Successfully set full library into library slice');
         } catch (e) {
-          console.warn('Failed to set full library into library slice:', e);
+          console.warn('⚠️ Failed to set full library into library slice:', e);
         }
 
         // Remember what we applied so we don't re-apply identical data repeatedly.
         lastAppliedLibraryJsonRef.current = newJson;
 
-        console.log('✅ Songs store overwritten from fullLibrary (Drive)');
+        console.log('✅ Songs store successfully overwritten from fullLibrary (Drive)');
       } else if (fullLibrary) {
-        console.log('fullLibrary present but no artists array found:', fullLibrary);
+        console.log('⚠️ fullLibrary present but no artists array found:', {
+          fullLibrary,
+          hasArtists: !!(fullLibrary?.artists),
+          artistsType: typeof fullLibrary?.artists,
+          isArray: Array.isArray(fullLibrary?.artists)
+        });
+      } else {
+        console.log('❌ No fullLibrary data available yet');
       }
     } catch (err) {
       console.error('Error applying fullLibrary to songs store:', err);
@@ -303,12 +327,24 @@ const SongTabsApp = () => {
           // Avoid dispatching `loadFullLibrary()` here to prevent duplicate loads
           // and race conditions that overwrite the songs store unexpectedly.
         } else {
-          console.debug('No valid session found, using mock library');
-          handleLoadMockLibrary();
+          console.debug('No valid session found, checking if library already loaded...');
+          // Only load mock library if we don't already have real data
+          if (!fullLibrary || !fullLibrary.artists || fullLibrary.artists.length === 0) {
+            console.debug('No existing library data, using mock library');
+            handleLoadMockLibrary();
+          } else {
+            console.debug('Real library data already available, skipping mock library');
+          }
         }
       } catch (error: unknown) {
         console.error('Failed to initialize Google Drive:', error);
-        handleLoadMockLibrary();
+        // Only load mock library if we don't already have real data
+        if (!fullLibrary || !fullLibrary.artists || fullLibrary.artists.length === 0) {
+          console.debug('No existing library data, using mock library as fallback');
+          handleLoadMockLibrary();
+        } else {
+          console.debug('Real library data already available, skipping mock library fallback');
+        }
       }
     };
 

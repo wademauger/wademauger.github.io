@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { App } from 'antd';
 import { useDropdown } from '../../components/DropdownProvider';
@@ -50,9 +50,17 @@ const RecipesApp = () => {
   const [driveService] = useState(() => GoogleDriveRecipeService);
   const recipeDetailRef = useRef(null); // Ref for scrolling to recipe detail
   
-  const urlPermalink = useParams().recipeId;
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  // Extract recipe permalink from URL path
+  const urlPermalink = useMemo(() => {
+    const path = location.pathname || '';
+    // Extract everything after '/crafts/recipes/' or '/recipes/'
+    const recipesMatch = path.match(/\/(?:crafts\/)?recipes\/(.+)/);
+    return recipesMatch ? recipesMatch[1] : null;
+  }, [location.pathname]);
   const { message } = App.useApp();
   
   // Get state from Redux
@@ -445,7 +453,7 @@ const RecipesApp = () => {
       console.log('🔄 No urlPermalink, clearing active recipe');
       setActiveRecipe(null);
     }
-  }, [urlPermalink, driveRecipes]); // Added driveRecipes as dependency
+  }, [urlPermalink, driveRecipes, filteredRecipes]); // Added driveRecipes and filteredRecipes as dependencies
 
   const handleFontSizeChange = (newSize) => {
     setFontSize(newSize);

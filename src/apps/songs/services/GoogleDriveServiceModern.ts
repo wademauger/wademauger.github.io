@@ -1277,31 +1277,65 @@ class GoogleDriveServiceModern {
       if (this.accessToken && typeof gapi !== 'undefined' && gapi.client) {
         try { gapi.client.setToken({ access_token: this.accessToken }); } catch  { /* ignore */ }
       }
+      console.log('🔍 GoogleDriveServiceModern: Fetching library content from file:', {
+        fileId: libraryFile.id,
+        fileName: libraryFile.name,
+        mimeType: libraryFile.mimeType
+      });
+
       const response = await gapi.client.drive.files.get({ fileId: libraryFile.id, alt: 'media' });
+
+      console.log('📥 GoogleDriveServiceModern: Raw response received:', {
+        status: response.status,
+        hasBody: !!response.body,
+        bodyLength: response.body?.length || 0,
+        bodyPreview: response.body ? response.body.substring(0, 200) + (response.body.length > 200 ? '...' : '') : null
+      });
 
       const library = JSON.parse(response.body);
 
-      // Create a concise preview for logs: if object small, show full; otherwise show keys or first items
-      const makePreview = (obj: any) => {
-        try {
-          if (obj == null) return String(obj);
-          if (typeof obj === 'string') return obj.length > 200 ? obj.substring(0, 200) + '... (truncated)' : obj;
-          if (Array.isArray(obj)) {
-            if (obj.length <= 5) return JSON.stringify(obj);
-            return JSON.stringify(obj.slice(0, 5)) + `... (and ${obj.length - 5} more items)`;
+      // Enhanced library analysis for debugging
+      const analyzeLibrary = (lib: any) => {
+        if (!lib) return { type: 'null/undefined', value: lib };
+        
+        const analysis = {
+          type: typeof lib,
+          keys: lib && typeof lib === 'object' ? Object.keys(lib) : [],
+          hasArtists: !!(lib?.artists),
+          artistsType: typeof lib?.artists,
+          artistsIsArray: Array.isArray(lib?.artists),
+          artistCount: lib?.artists?.length || 0
+        };
+
+        if (lib?.artists && Array.isArray(lib.artists) && lib.artists.length > 0) {
+          analysis.firstArtist = {
+            name: lib.artists[0]?.name,
+            hasAlbums: !!(lib.artists[0]?.albums),
+            albumCount: lib.artists[0]?.albums?.length || 0
+          };
+          
+          if (lib.artists[0]?.albums && lib.artists[0].albums.length > 0) {
+            analysis.firstAlbum = {
+              title: lib.artists[0].albums[0]?.title,
+              hasSongs: !!(lib.artists[0].albums[0]?.songs),
+              songCount: lib.artists[0].albums[0]?.songs?.length || 0
+            };
           }
-          if (typeof obj === 'object') {
-            const keys = Object.keys(obj);
-            if (keys.length <= 10) return JSON.stringify(obj);
-            return `Object with keys: ${keys.slice(0, 10).join(', ')}${keys.length > 10 ? '...': ''}`;
-          }
-          return String(obj);
-        } catch (e) {
-          return '[unpreviewable]';
+
+          // Count total songs
+          analysis.totalSongs = lib.artists.reduce((total, artist) => {
+            return total + (artist.albums || []).reduce((albumTotal, album) => {
+              return albumTotal + (album.songs || []).length;
+            }, 0);
+          }, 0);
         }
+
+        return analysis;
       };
 
-      console.log('Library loaded successfully — preview:', makePreview(library));
+      const libraryAnalysis = analyzeLibrary(library);
+      console.log('📚 GoogleDriveServiceModern: Library parsed and analyzed:', libraryAnalysis);
+
       return library;
     } catch (error: unknown) {
       console.error('Error loading library:', error);

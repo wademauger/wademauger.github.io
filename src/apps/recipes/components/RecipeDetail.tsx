@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Input, message, Button } from 'antd';
+import { Input, message, Button, Popconfirm } from 'antd';
 import { FaPlus, FaTrash, FaGripVertical, FaEdit } from 'react-icons/fa';
 import { PlusOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { updateDriveRecipe } from '../../../reducers/recipes.reducer';
 import IngredientDivider from './IngredientDivider';
+import RecipeControls from './RecipeControls';
 import {
   DndContext,
   closestCenter,
@@ -1443,16 +1444,6 @@ const RecipeDetail = ({
           )}
         </div>
       </div>
-      
-      {/* AI Chat Component */}
-      <RecipeAIChat
-        isOpen={showAIChat}
-        onClose={() => setShowAIChat(false)}
-        recipe={recipe}
-        onUpdateRecipe={saveRecipeChanges}
-        editingEnabled={editingEnabled && !isDraft}
-        userInfo={userInfo}
-      />
     </div>
   );
 };

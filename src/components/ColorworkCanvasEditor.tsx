@@ -73,8 +73,8 @@ const ColorworkCanvasEditor = ({
     shape,
     patternLayers = [],
     gauge = null,
-    onLayersChange = () => { },
-    onGaugeChange = () => { }
+    onLayersChange = (..._args: any[]) => { },
+    onGaugeChange = (..._args: any[]) => { }
 }) => {
     const canvasRef = useRef(null);
     const [zoom, setZoom] = useState(1);
