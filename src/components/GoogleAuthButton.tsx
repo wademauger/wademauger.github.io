@@ -9,6 +9,7 @@ import { LibrarySettingsModal } from '@/components/modals';
 import { RootState } from '@/types';
 import { setAuth, clearAuth } from '@/store/authSlice';
 import { useDropdown } from './DropdownProvider';
+import { userProfileCache } from '../utils/userProfileCache';
 
 const { Text } = Typography;
 
@@ -195,7 +196,26 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const globalSvc = (typeof window !== 'undefined' && (window as any).GoogleDriveServiceModern) ? (window as any).GoogleDriveServiceModern : null;
   
   const signed = !!(ctxIsSignedIn || authState?.isSignedIn || (svc && svc.isSignedIn) || (globalSvc && globalSvc.isSignedIn) || isSignedInProp || signedNow);
-  const info = ctxUserInfo || authState?.userInfo || (svc && (svc.userName || svc.userPicture) ? { userName: svc.userName, userPicture: svc.userPicture } : ((globalSvc && (globalSvc.userName || globalSvc.userPicture)) ? { userName: globalSvc.userName, userPicture: globalSvc.userPicture } : userInfoProp));
+  
+  // Get user info from multiple sources, with fallback to cache
+  let info = ctxUserInfo || authState?.userInfo || (svc && (svc.userName || svc.userPicture) ? { userName: svc.userName, userEmail: svc.userEmail, userPicture: svc.userPicture } : ((globalSvc && (globalSvc.userName || globalSvc.userPicture)) ? { userName: globalSvc.userName, userEmail: globalSvc.userEmail, userPicture: globalSvc.userPicture } : userInfoProp));
+  
+  // If we're signed in but missing user info, try to restore from cache
+  if (signed && (!info || (!info.userName && !info.userPicture))) {
+    // Try to get email from service or state
+    const email = svc?.userEmail || globalSvc?.userEmail || authState?.userInfo?.userEmail || info?.userEmail;
+    if (email) {
+      const cached = userProfileCache.getProfile(email);
+      if (cached) {
+        info = {
+          ...info,
+          userName: info?.userName || cached.name,
+          userEmail: email,
+          userPicture: info?.userPicture || cached.picture
+        };
+      }
+    }
+  }
 
   // Reset signedNow state when we detect logout via other means (Redux, context)
   useEffect(() => {
