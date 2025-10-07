@@ -20,6 +20,7 @@ const ColorworkPanelEditor = forwardRef(({
     initialColorwork = null,
     project = null,
     previewKey = null, // Panel key for storing/retrieving pattern layers
+    allSelectedPanelKeys = [], // All selected panel keys for applying patterns to multiple panels
     stage, // optional controlled stage from parent: 'settings' | 'knitting'
     onStageChange = null
 }, ref) => {
@@ -238,9 +239,42 @@ const ColorworkPanelEditor = forwardRef(({
         }));
     };
 
+    // Apply current pattern layers to all selected panels
+    const handleApplyToAllPanels = () => {
+        if (!previewKey || !allSelectedPanelKeys || allSelectedPanelKeys.length === 0) {
+            return;
+        }
+
+        // Get current pattern layers from local state
+        const currentLayers = patternLayers;
+
+        // Apply to all other selected panels (excluding the current one)
+        allSelectedPanelKeys.forEach((panelKey) => {
+            if (panelKey !== previewKey) {
+                dispatch(updatePanelPatternLayers({ panelKey, layers: currentLayers }));
+            }
+        });
+    };
+
     // Render functions for different stages
     const renderSettingsView = () => (
         <div className="colorwork-settings-view">
+            {allSelectedPanelKeys && allSelectedPanelKeys.length > 1 && (
+                <div style={{ marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
+                    <Space>
+                        <Button 
+                            type="primary" 
+                            onClick={handleApplyToAllPanels}
+                            disabled={!previewKey}
+                        >
+                            Apply Pattern to All {allSelectedPanelKeys.length} Panels
+                        </Button>
+                        <Text type="secondary">
+                            This will copy the current colorwork pattern to all selected panels
+                        </Text>
+                    </Space>
+                </div>
+            )}
             <ColorworkCanvasEditor
                 shape={panelConfig.shape}
                 patternLayers={patternLayers}

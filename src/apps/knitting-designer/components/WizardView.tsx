@@ -426,7 +426,14 @@ const WizardView: React.FC = () => {
                   };
                   // Use selectedPanelKey as the key, pattern layers are now in Redux so won't be lost
                   // ColorworkPanelEditor props are not strictly typed here; cast to any
-                  return <ColorworkPanelEditor key={selectedPanelKey || 'none'} {...({ initialPanel, previewKey: selectedPanelKey } as any)} />;
+                  return <ColorworkPanelEditor 
+                    key={selectedPanelKey || 'none'} 
+                    {...({ 
+                      initialPanel, 
+                      previewKey: selectedPanelKey,
+                      allSelectedPanelKeys: selectedPanels 
+                    } as any)} 
+                  />;
                 })()
               ) : (
                 <div style={{ padding: '20px 0', color: '#666' }}>Select a panel above to preview and layer colorwork.</div>
