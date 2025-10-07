@@ -244,24 +244,30 @@ const ColorworkCanvasEditor = ({
 
     const renderColorworkLayersToCanvasCentered = (ctx, patternLayers, shape, x, y, displayWidth, displayHeight, scale, gauge, fullPanelDimensions = null) => {
         // Use the full panel dimensions instead of just the top-level shape
-        const widthInches = fullPanelDimensions ? (fullPanelDimensions.maxX - fullPanelDimensions.minX) : Math.max(shape.baseA, shape.baseB);
-        const heightInches = fullPanelDimensions ? (fullPanelDimensions.maxY - fullPanelDimensions.minY) : shape.height;
+        const baseWidthInches = fullPanelDimensions ? (fullPanelDimensions.maxX - fullPanelDimensions.minX) : Math.max(shape.baseA, shape.baseB);
+        const baseHeightInches = fullPanelDimensions ? (fullPanelDimensions.maxY - fullPanelDimensions.minY) : shape.height;
 
-        // Calculate stitch and row counts based on gauge
+        // Apply scaling factor to get actual panel size in inches
+        const scalingFactor = gauge.scalingFactor || 1;
+        const widthInches = baseWidthInches * scalingFactor;
+        const heightInches = baseHeightInches * scalingFactor;
+
+        // Calculate stitch and row counts based on gauge and scaled dimensions
         const stitchesPerInch = gauge.stitchesPerFourInches / 4;
         const rowsPerInch = gauge.rowsPerFourInches / 4;
 
         const totalStitches = Math.round(widthInches * stitchesPerInch);
         const totalRows = Math.round(heightInches * rowsPerInch);
 
-        // Calculate pixel size for each stitch/row to match the ruler scale
-        // The scale factor maps shape inches to screen pixels, so:
-        // - 1 inch of shape = scale pixels on screen
-        // - 1 stitch = scale pixels / stitches per inch
-        const stitchPixelWidth = scale / stitchesPerInch;
-        const rowPixelHeight = scale / rowsPerInch;
+        // Calculate pixel size for each stitch/row
+        // We need to fit totalStitches into displayWidth pixels
+        // displayWidth is the actual screen space available
+        const stitchPixelWidth = displayWidth / totalStitches;
+        const rowPixelHeight = displayHeight / totalRows;
 
         // Create a combined pattern grid for all layers with centered origin
+        // Pattern repeats stay at their original stitch size, but we have more/fewer total stitches
+        // due to the scaled panel dimensions, so pattern appears relatively larger/smaller
         const combinedGrid = createCombinedGridCentered(totalStitches, totalRows, patternLayers, displayWidth, displayHeight);
 
         // Render the combined grid to canvas
@@ -915,9 +921,12 @@ const ColorworkCanvasEditor = ({
 
         // Calculate actual dimensions in inches for the rulers
         let actualDimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        calculateTrapezoidDimensions(shape, 1, 0, 0, actualDimensions); // Scale=1 for true dimensions
-        const actualWidthInches = actualDimensions.maxX - actualDimensions.minX;
-        const actualHeightInches = actualDimensions.maxY - actualDimensions.minY;
+        calculateTrapezoidDimensions(shape, 1, 0, 0, actualDimensions); // Scale=1 for base dimensions
+        
+        // Apply gauge scaling factor to get true dimensions
+        const gaugeScalingFactor = gauge?.scalingFactor || 1;
+        const actualWidthInches = (actualDimensions.maxX - actualDimensions.minX) * gaugeScalingFactor;
+        const actualHeightInches = (actualDimensions.maxY - actualDimensions.minY) * gaugeScalingFactor;
 
         // Draw rulers after restoring context (so they're drawn in screen space)
         const adjustedCenterX = (canvasSize.width - rulerOffsetX) / 2 + pan.x + rulerOffsetX;
@@ -1494,19 +1503,49 @@ const ColorworkCanvasEditor = ({
                                                                                             : `Element ${index + 1}`
                                                                                         }
                                                                                     </Text>
-                                                                                    <Button 
-                                                                                        size="small" 
-                                                                                        danger 
-                                                                                        onClick={() => {
-                                                                                            const newElements = (layer.patternConfig.elements || []).filter((_: any, i: number) => i !== index);
-                                                                                            handlePatternConfigChange(layer.id, { 
-                                                                                                ...layer.patternConfig, 
-                                                                                                elements: newElements 
-                                                                                            });
-                                                                                        }}
-                                                                                    >
-                                                                                        Remove
-                                                                                    </Button>
+                                                                                    <Space size="small">
+                                                                                        <Button 
+                                                                                            size="small" 
+                                                                                            disabled={index === 0}
+                                                                                            onClick={() => {
+                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                [newElements[index - 1], newElements[index]] = [newElements[index], newElements[index - 1]];
+                                                                                                handlePatternConfigChange(layer.id, { 
+                                                                                                    ...layer.patternConfig, 
+                                                                                                    elements: newElements 
+                                                                                                });
+                                                                                            }}
+                                                                                        >
+                                                                                            ↑
+                                                                                        </Button>
+                                                                                        <Button 
+                                                                                            size="small" 
+                                                                                            disabled={index === (layer.patternConfig.elements || []).length - 1}
+                                                                                            onClick={() => {
+                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                [newElements[index], newElements[index + 1]] = [newElements[index + 1], newElements[index]];
+                                                                                                handlePatternConfigChange(layer.id, { 
+                                                                                                    ...layer.patternConfig, 
+                                                                                                    elements: newElements 
+                                                                                                });
+                                                                                            }}
+                                                                                        >
+                                                                                            ↓
+                                                                                        </Button>
+                                                                                        <Button 
+                                                                                            size="small" 
+                                                                                            danger 
+                                                                                            onClick={() => {
+                                                                                                const newElements = (layer.patternConfig.elements || []).filter((_: any, i: number) => i !== index);
+                                                                                                handlePatternConfigChange(layer.id, { 
+                                                                                                    ...layer.patternConfig, 
+                                                                                                    elements: newElements 
+                                                                                                });
+                                                                                            }}
+                                                                                        >
+                                                                                            Remove
+                                                                                        </Button>
+                                                                                    </Space>
                                                                                 </div>
                                                                                 
                                                                                 <Select
@@ -1554,7 +1593,7 @@ const ColorworkCanvasEditor = ({
 
                                                                                 {element.elementType === 'stripes' && element.stripeConfig && (
                                                                                     <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid #e8e8e8' }}>
-                                                                                        <Text style={{ fontSize: '10px', display: 'block', marginBottom: 4 }}>Stripe Colors:</Text>
+                                                                                        <Text style={{ fontSize: '10px', display: 'block', marginBottom: 4 }}>Stripe width (sts):</Text>
                                                                                         {element.stripeConfig.colors.map((stripe: any, sIndex: number) => (
                                                                                             <div key={sIndex} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
                                                                                                 <InputNumber
@@ -1850,6 +1889,74 @@ const ColorworkCanvasEditor = ({
                                                                                         </Select>
                                                                                     </div>
                                                                                 )}
+
+                                                                                {/* Element-specific color assignment */}
+                                                                                {(() => {
+                                                                                    // Generate a preview pattern to extract color information
+                                                                                    let elementColors = [];
+                                                                                    
+                                                                                    if (element.elementType === 'stripes' && element.stripeConfig) {
+                                                                                        elementColors = element.stripeConfig.colors.map((stripe: any, sIndex: number) => ({
+                                                                                            id: `stripe-${sIndex}`,
+                                                                                            label: element.stripeConfig.colors.length > 1 ? `Color ${sIndex + 1}` : 'Color',
+                                                                                            defaultColor: stripe.color
+                                                                                        }));
+                                                                                    } else if (element.elementType === 'shape' && element.shapeKey && availablePatterns[element.shapeKey]) {
+                                                                                        const patternInfo = availablePatterns[element.shapeKey];
+                                                                                        const customPattern = generatePattern(element.shapeKey, patternInfo.defaultConfig || {});
+                                                                                        
+                                                                                        // Only show colors that are actually used in the pattern grid
+                                                                                        const usedColors = customPattern.getColorsUsed?.() || [];
+                                                                                        const usedColorIds = new Set(usedColors.map((c: any) => c.id));
+                                                                                        
+                                                                                        elementColors = Object.entries(customPattern.colors)
+                                                                                            .filter(([colorId]) => usedColorIds.has(colorId) && colorId !== 'transparent')
+                                                                                            .map(([colorId, colorInfo]: [string, any]) => ({
+                                                                                                id: colorId,
+                                                                                                label: colorInfo.label,
+                                                                                                defaultColor: colorInfo.color
+                                                                                            }));
+                                                                                    }
+                                                                                    
+                                                                                    if (elementColors.length > 0) {
+                                                                                        return (
+                                                                                            <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px solid #e8e8e8' }}>
+                                                                                                <Text style={{ fontSize: '10px', fontWeight: 'bold', display: 'block', marginBottom: 6 }}>Colors:</Text>
+                                                                                                {elementColors.map((colorInfo: any) => (
+                                                                                                    <div key={colorInfo.id} style={{ 
+                                                                                                        marginBottom: 4, 
+                                                                                                        display: 'grid', 
+                                                                                                        gridTemplateColumns: '1fr auto',
+                                                                                                        alignItems: 'center', 
+                                                                                                        gap: 8 
+                                                                                                    }}>
+                                                                                                        <Text style={{ fontSize: '10px' }}>{colorInfo.label}</Text>
+                                                                                                        <ColorPicker
+                                                                                                            value={element.colorMapping?.[colorInfo.id] || colorInfo.defaultColor}
+                                                                                                            onChange={(newColor) => {
+                                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                newElements[index] = { 
+                                                                                                                    ...element, 
+                                                                                                                    colorMapping: {
+                                                                                                                        ...(element.colorMapping || {}),
+                                                                                                                        [colorInfo.id]: newColor.toHexString()
+                                                                                                                    }
+                                                                                                                };
+                                                                                                                handlePatternConfigChange(layer.id, { 
+                                                                                                                    ...layer.patternConfig, 
+                                                                                                                    elements: newElements 
+                                                                                                                });
+                                                                                                            }}
+                                                                                                            showText={false}
+                                                                                                            size="small"
+                                                                                                        />
+                                                                                                    </div>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        );
+                                                                                    }
+                                                                                    return null;
+                                                                                })()}
                                                                             </div>
                                                                         ))}
                                                                         <Button 
@@ -1952,25 +2059,33 @@ const ColorworkCanvasEditor = ({
                                                                         const usedColors = layer.pattern.getColorsUsed?.() || [];
                                                                         const usedColorIds = new Set(usedColors.map((c: any) => c.id));
                                                                         
-                                                                        return Object.entries(layer.pattern.colors)
-                                                                            .filter(([colorId]) => usedColorIds.has(colorId) && colorId !== 'transparent')
-                                                                            .map(([colorId, colorInfo]) => (
-                                                                                <div key={colorId} style={{ 
-                                                                                    marginBottom: 4, 
-                                                                                    display: 'grid', 
-                                                                                    gridTemplateColumns: '1fr auto',
-                                                                                    alignItems: 'center', 
-                                                                                    gap: 8 
-                                                                                }}>
-                                                                                    <Text style={textStyle11}>{colorInfo.label}</Text>
-                                                                                    <ColorPicker
-                                                                                        value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
-                                                                                        onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
-                                                                                        showText={false}
-                                                                                        size="small"
-                                                                                    />
-                                                                                </div>
-                                                                            ));
+                                                                        const filteredEntries = Object.entries(layer.pattern.colors)
+                                                                            .filter(([colorId]) => {
+                                                                                // If getColorsUsed returned results, filter by them
+                                                                                // Otherwise show all non-transparent colors
+                                                                                if (usedColors.length > 0) {
+                                                                                    return usedColorIds.has(colorId) && colorId !== 'transparent';
+                                                                                }
+                                                                                return colorId !== 'transparent';
+                                                                            });
+                                                                        
+                                                                        return filteredEntries.map(([colorId, colorInfo]) => (
+                                                                            <div key={colorId} style={{ 
+                                                                                marginBottom: 4, 
+                                                                                display: 'grid', 
+                                                                                gridTemplateColumns: '1fr auto',
+                                                                                alignItems: 'center', 
+                                                                                gap: 8 
+                                                                            }}>
+                                                                                <Text style={textStyle11}>{colorInfo.label}</Text>
+                                                                                <ColorPicker
+                                                                                    value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
+                                                                                    onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
+                                                                                    showText={false}
+                                                                                    size="small"
+                                                                                />
+                                                                            </div>
+                                                                        ));
                                                                     })()}
                                                                 </div>
                                                             </div>
@@ -2509,11 +2624,16 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
                 const label = stripeColors.length > 1 
                     ? `Stripes-${elemIndex + 1} C${sIndex + 1}`
                     : `Stripes-${elemIndex + 1}`;
+                
+                // Use element's color mapping if it exists, otherwise use default color
+                const effectiveColor = element.colorMapping && element.colorMapping[`stripe-${sIndex}`]
+                    ? element.colorMapping[`stripe-${sIndex}`]
+                    : stripe.color || '#ffffff';
                     
                 colorMap[colorId] = {
                     id: colorId,
                     label: label,
-                    color: stripe.color || '#ffffff'
+                    color: effectiveColor
                 };
                 stripeColorMapping[sIndex] = colorId;
                 colorIndex++;
@@ -2565,14 +2685,20 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
             }];
             const implicitRowPattern = createRowPattern(rowElements, availablePatternsRef);
             
-            // Map row pattern colors to unified color map
+            // Map row pattern colors to unified color map, using element's color mapping if available
             const rowColorMapping = {};
             Object.entries(implicitRowPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
                 const colorId = `c${colorIndex}`;
+                
+                // Use element's color mapping if it exists
+                const effectiveColor = element.colorMapping && element.colorMapping[origColorId]
+                    ? element.colorMapping[origColorId]
+                    : colorInfo.color;
+                
                 colorMap[colorId] = {
                     id: colorId,
                     label: colorInfo.label,
-                    color: colorInfo.color
+                    color: effectiveColor
                 };
                 rowColorMapping[origColorId] = colorId;
                 colorIndex++;

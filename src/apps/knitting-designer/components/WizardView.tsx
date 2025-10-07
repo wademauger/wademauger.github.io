@@ -376,7 +376,7 @@ const WizardView: React.FC = () => {
                     shape: shape || null,
                     gauge: normalizedGauge
                   };
-                  // Force remount when selectedPanelKey changes by using it as a key.
+                  // Use selectedPanelKey as the key, pattern layers are now in Redux so won't be lost
                   // ColorworkPanelEditor props are not strictly typed here; cast to any
                   return <ColorworkPanelEditor key={selectedPanelKey || 'none'} {...({ initialPanel, previewKey: selectedPanelKey } as any)} />;
                 })()

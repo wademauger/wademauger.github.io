@@ -1,11 +1,12 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { ColorworkPattern } from '../models/ColorworkPattern';
 import { PanelColorworkComposer } from '../models/PanelColorworkComposer';
 import { InstructionGenerator } from '../models/InstructionGenerator';
 import { Trapezoid } from '../models/Trapezoid';
 import { Panel } from '../models/Panel';
 import { Gauge } from '../models/Gauge';
+import { updatePanelPatternLayers } from '../store/knittingDesignSlice';
 import ColorworkCanvasEditor from './ColorworkCanvasEditor';
 import InteractiveKnittingView from './InteractiveKnittingView';
 import './ColorworkPanelEditor.css';
@@ -18,9 +19,12 @@ const ColorworkPanelEditor = forwardRef(({
     initialPanel = null,
     initialColorwork = null,
     project = null,
+    previewKey = null, // Panel key for storing/retrieving pattern layers
     stage, // optional controlled stage from parent: 'settings' | 'knitting'
     onStageChange = null
 }, ref) => {
+    const dispatch = useDispatch();
+    
     // Workflow state: allow controlled via prop, fallback to internal state
     const [internalStage, setInternalStage] = useState('settings');
     const currentStage = stage ?? internalStage;
@@ -60,9 +64,14 @@ const ColorworkPanelEditor = forwardRef(({
         return ['#cfcfcf'];
     }, [reduxColorsArray]);
 
-    // Pattern layers state for complex colorwork compositions
-    const [patternLayers, setPatternLayers] = useState(() => {
-        // Default to a solid background that repeats in both directions
+    // Get pattern layers from Redux, keyed by previewKey (panel identifier)
+    const reduxPatternLayers = useSelector((state: any) => {
+        if (!previewKey) return null;
+        return state?.knittingDesign?.patternData?.panels?.patternLayers?.[previewKey];
+    });
+
+    // Initialize pattern layers from Redux or use default
+    const getDefaultPatternLayers = () => {
         const defaultSolid = new ColorworkPattern(
             0, 0,
             [
@@ -92,7 +101,27 @@ const ColorworkPanelEditor = forwardRef(({
                 }
             }
         ];
+    };
+
+    // Pattern layers state - use Redux if available, otherwise local state
+    const [patternLayers, setPatternLayersLocal] = useState(() => {
+        return reduxPatternLayers || getDefaultPatternLayers();
     });
+    
+    // Update pattern layers function that syncs to Redux
+    const setPatternLayers = (newLayers: any) => {
+        setPatternLayersLocal(newLayers);
+        if (previewKey) {
+            dispatch(updatePanelPatternLayers({ panelKey: previewKey, layers: newLayers }));
+        }
+    };
+    
+    // Sync from Redux when previewKey or reduxPatternLayers change
+    useEffect(() => {
+        if (reduxPatternLayers) {
+            setPatternLayersLocal(reduxPatternLayers);
+        }
+    }, [previewKey, reduxPatternLayers]);
 
     // State for combination settings (stable identity)
     const combinationSettings = useMemo(() => ({
@@ -114,7 +143,7 @@ const ColorworkPanelEditor = forwardRef(({
         generateCombinedPattern();
     }, [panelConfig, colorworkPattern, combinationSettings, patternColors]);
 
-    // When project changes (e.g., load/open), reinitialize panel configuration
+    // When project or initialPanel changes, update panel configuration
     useEffect(() => {
         const shape = convertToTrapezoid(project?.panelShape || initialPanel?.shape) || createDefaultShape();
         setPanelConfig(prev => ({
@@ -123,7 +152,7 @@ const ColorworkPanelEditor = forwardRef(({
             gauge: initialPanel?.gauge || prev.gauge,
             sizeModifier: initialPanel?.sizeModifier || prev.sizeModifier
         }));
-    }, [project?.id]);
+    }, [project?.id, initialPanel?.gauge, initialPanel?.shape, initialPanel?.sizeModifier]);
 
     const generateCombinedPattern = () => {
         if (!panelConfig.shape || !colorworkPattern) {

@@ -58,8 +58,11 @@ const initialState: KnittingDesignState = {
       standardSize: 'M'
     },
     gauge: {
-      stitchesPerInch: 4,
-      rowsPerInch: 6,
+      stitchesPerInch: 4.75,
+      rowsPerInch: 7.5,
+      stitchesPerFourInches: 19,
+      rowsPerFourInches: 30,
+      scaleFactor: 1,
       yarnWeight: 'worsted',
       needleSize: 'US 8',
       preset: null,
@@ -84,6 +87,12 @@ const initialState: KnittingDesignState = {
       garmentSequence: [],
       // Current editing state
       activeWorkingPattern: null
+    },
+    panels: {
+      panelsNeeded: {},
+      previewPanelKey: null,
+      // Pattern layers for each panel (keyed by panel key)
+      patternLayers: {}
     },
     preview: {
       view: 'flat',
@@ -256,8 +265,21 @@ const knittingDesignSlice = createSlice({
         (item: any) => item.id !== itemId
       );
       state.isDirty = true;
-    }
-    ,
+    },
+    
+    // Panel pattern layers actions
+    updatePanelPatternLayers: (state: KnittingDesignState, action: PayloadAction<{ panelKey: string; layers: any[] }>) => {
+      const { panelKey, layers } = action.payload;
+      if (!state.patternData.panels) {
+        state.patternData.panels = { panelsNeeded: {}, previewPanelKey: null, patternLayers: {} };
+      }
+      if (!state.patternData.panels.patternLayers) {
+        state.patternData.panels.patternLayers = {};
+      }
+      state.patternData.panels.patternLayers[panelKey] = layers;
+      state.isDirty = true;
+    },
+    
     setUiMode: (state: KnittingDesignState, action: PayloadAction<'wizard' | 'workspace'>) => {
       const mode = action.payload;
       if (mode === 'wizard' || mode === 'workspace') {
@@ -294,7 +316,8 @@ export const {
   deleteComplexPattern,
   addToGarmentSequence,
   updateGarmentSequence,
-  removeFromGarmentSequence
+  removeFromGarmentSequence,
+  updatePanelPatternLayers
 } = knittingDesignSlice.actions;
 
 export default knittingDesignSlice.reducer;
