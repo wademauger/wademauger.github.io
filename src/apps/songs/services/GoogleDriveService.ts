@@ -188,6 +188,12 @@ class GoogleDriveService {
     if (this.accessToken) {
       window.google.accounts.oauth2.revoke(this.accessToken);
     }
+    
+    // Clear profile cache for this user
+    if (this.userEmail) {
+      userProfileCache.removeProfile(this.userEmail);
+    }
+    
     this.isSignedIn = false;
     this.accessToken = null;
     this.userEmail = null;

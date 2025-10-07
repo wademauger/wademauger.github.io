@@ -189,6 +189,12 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const handleSignOut = () => {
     if (ctxSignOut) return ctxSignOut();
     if (onSignOut) return onSignOut();
+    // Fallback: dispatch clearAuth to ensure Redux state is cleared
+    try { 
+      dispatch(clearAuth()); 
+    } catch (e) { 
+      console.warn('Failed to dispatch clearAuth:', e);
+    }
   };
 
   // Check multiple sources for auth state, prioritizing context and Redux

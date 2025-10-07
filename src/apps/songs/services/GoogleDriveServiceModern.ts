@@ -649,6 +649,11 @@ class GoogleDriveServiceModern {
       }
     }
 
+    // Clear profile cache for this user
+    if (this.userEmail) {
+      userProfileCache.removeProfile(this.userEmail);
+    }
+
     // Clear local state
     this.isSignedIn = false;
     this.accessToken = null;
