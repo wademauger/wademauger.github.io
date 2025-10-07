@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Button, Avatar, Dropdown, Space, Typography } from 'antd';
 import { GoogleOutlined, UserOutlined } from '@ant-design/icons';
+import GoogleButton from 'react-google-button';
 import { useDriveAuth } from '../apps/colorwork-designer/context/DriveAuthContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { LibrarySettingsModal } from '@/components/modals';
@@ -146,19 +147,25 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const googleLogin = useGoogleLogin({
     scope,
     onSuccess: async (tokenResponse: any) => {
+      console.log('GoogleAuthButton: Login success, token response:', tokenResponse);
       try {
         if (ctxHandleToken) {
+          console.log('GoogleAuthButton: Using context handleToken');
           await ctxHandleToken(tokenResponse);
           setSignedNow(true);
         } else if (onSuccess) {
+          console.log('GoogleAuthButton: Using prop onSuccess callback');
           await onSuccess(tokenResponse);
           setSignedNow(true);
         }
+        console.log('GoogleAuthButton: Login flow completed successfully');
       } catch (err: unknown) {
+        console.error('GoogleAuthButton: Login flow failed:', err);
         if (onError) onError(err);
       }
     },
     onError: (err: any) => {
+      console.error('GoogleAuthButton: Login error:', err);
       if (onError) onError(err);
     }
   });
@@ -183,29 +190,49 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
     if (onSignOut) return onSignOut();
   };
 
-  // Prefer global Redux auth state, fall back to context/service
+  // Check multiple sources for auth state, prioritizing context and Redux
   const svc = (driveAuth && (driveAuth as any).GoogleDriveServiceModern) || ((typeof window !== 'undefined' && (window as any).GoogleDriveServiceModern) ? (window as any).GoogleDriveServiceModern : null);
   const globalSvc = (typeof window !== 'undefined' && (window as any).GoogleDriveServiceModern) ? (window as any).GoogleDriveServiceModern : null;
-  const signed = !!(authState?.isSignedIn || (svc && svc.isSignedIn) || (globalSvc && globalSvc.isSignedIn) || ctxIsSignedIn || isSignedInProp || signedNow);
-  const info = authState?.userInfo || (svc && (svc.userName || svc.userPicture) ? { userName: svc.userName, userPicture: svc.userPicture } : ((globalSvc && (globalSvc.userName || globalSvc.userPicture)) ? { userName: globalSvc.userName, userPicture: globalSvc.userPicture } : (ctxUserInfo || userInfoProp)));
+  
+  const signed = !!(ctxIsSignedIn || authState?.isSignedIn || (svc && svc.isSignedIn) || (globalSvc && globalSvc.isSignedIn) || isSignedInProp || signedNow);
+  const info = ctxUserInfo || authState?.userInfo || (svc && (svc.userName || svc.userPicture) ? { userName: svc.userName, userPicture: svc.userPicture } : ((globalSvc && (globalSvc.userName || globalSvc.userPicture)) ? { userName: globalSvc.userName, userPicture: globalSvc.userPicture } : userInfoProp));
 
+  // Reset signedNow state when we detect logout via other means (Redux, context)
   useEffect(() => {
-    if (!signed && signedNow) setSignedNow(false);
-  }, [signed, signedNow]);
+    if (!signed && signedNow) {
+      setSignedNow(false);
+    }
+    // Also reset if Redux explicitly says we're signed out
+    if (authState?.isSignedIn === false && signedNow) {
+      setSignedNow(false);
+    }
+  }, [signed, signedNow, authState?.isSignedIn]);
 
   useEffect(() => {
     const handler = (ev: any) => {
       try {
         const d = ev && ev.detail;
-        if (d && d.isSignedIn) setSignedNow(true);
-        else setSignedNow(false);
-        // Sync to Redux
+        console.log('GoogleAuthButton: received drive:auth-changed event', d);
+        
+        // Force component re-render by updating local state
+        if (d && d.isSignedIn) {
+          setSignedNow(true);
+        } else {
+          setSignedNow(false);
+        }
+        
+        // Sync to Redux for global state consistency
         try {
-          if (d && d.isSignedIn) dispatch(setAuth({ isSignedIn: true, userInfo: d.userInfo }));
-          else dispatch(clearAuth());
-        } catch (e) { /* swallow */ }
-      } catch {
-        // swallow
+          if (d && d.isSignedIn) {
+            dispatch(setAuth({ isSignedIn: true, userInfo: d.userInfo }));
+          } else {
+            dispatch(clearAuth());
+          }
+        } catch (e) { 
+          console.warn('Failed to sync auth state to Redux:', e);
+        }
+      } catch (e) {
+        console.warn('Error handling drive:auth-changed event:', e);
       }
     };
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
@@ -272,18 +299,12 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       </Space>
     </Button>
   ) : (
-    <Button
-      type="default"
-      className="nav-google-button"
-      icon={<GoogleOutlined style={{ color: '#fff' }} />}
+    <GoogleButton
       onClick={handleSignIn}
-      loading={isLoading}
-      disabled={disabled}
-      size={size as any}
-      style={{ height: 'auto', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)', color: '#fff' }}
-    >
-      {buttonText}
-    </Button>
+      disabled={disabled || isLoading || !hasValidClientId}
+      label={buttonText}
+      type="dark"
+    />
   );
   // If signed in, render the dropdown with menu items; otherwise just the sign-in button
   if (signed) {

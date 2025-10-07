@@ -634,12 +634,18 @@ class GoogleDriveServiceModern {
     }
   }
 
-  async signOut() {
+  signOut() {
     if (this.accessToken) {
       // Revoke the token
-      google.accounts.oauth2.revoke(this.accessToken, () => {
-        console.log('Token revoked');
-      });
+      try {
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+          google.accounts.oauth2.revoke(this.accessToken, () => {
+            console.log('Token revoked');
+          });
+        }
+      } catch (error: unknown) {
+        console.warn('Token revocation failed:', error);
+      }
     }
 
     // Clear local state

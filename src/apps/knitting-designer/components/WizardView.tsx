@@ -1,27 +1,65 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { InputNumber, Form, Button, Input, Divider, Select, Collapse, Space, Typography } from 'antd';
 import ColorworkPanelEditor from '../../../components/ColorworkPanelEditor';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
+import { loadFullLibrary, setFullLibrary, clearEntries } from '../../../store/librarySlice';
+import { useDriveAuth } from '../../colorwork-designer/context/DriveAuthContext';
+import { calculatePanelDimensions } from '../utils/panelDimensions';
 
 const WizardView: React.FC = () => {
   const dispatch = useDispatch();
   const patternData: any = useSelector(selectPatternData);
   const currentStep: number = useSelector(selectCurrentStep) || 0;
   const [name, setName] = useState<string>(patternData?.name || '');
+  
+  // Get authentication state
+  const { isSignedIn } = useDriveAuth();
+  
+  // Get library panels from global state
+  const libraryData: any = useSelector((state: any) => state.library?.fullLibrary);
+
+  // Load library when authentication state changes
+  useEffect(() => {
+    if (isSignedIn) {
+      dispatch(loadFullLibrary() as any);
+    } else {
+      // Clear library data when logged out
+      dispatch(setFullLibrary(null));
+      dispatch(clearEntries());
+    }
+  }, [isSignedIn, dispatch]);
 
   // Build a flat list of panels from garments with unique keys
   const panelList = useMemo(() => {
     const out: Array<{ key: string; garmentTitle: string; garmentPermalink: string; panelName: string }> = [];
+    
+    // Add panels from built-in garments
     (garments || []).forEach((g: any) => {
       const shapes = g.shapes || {};
       Object.keys(shapes).forEach((panelName) => {
         out.push({ key: `${g.permalink}::${panelName}`, garmentTitle: g.title, garmentPermalink: g.permalink, panelName });
       });
     });
+    
+    // Add panels from user's library
+    if (libraryData && libraryData.panels) {
+      Object.keys(libraryData.panels).forEach((panelId) => {
+        const panel = libraryData.panels[panelId];
+        const panelName = panel.name || panelId;
+        // Use 'library' as permalink to distinguish from garments
+        out.push({ 
+          key: `library::${panelId}`, 
+          garmentTitle: 'My Library', 
+          garmentPermalink: 'library', 
+          panelName 
+        });
+      });
+    }
+    
     return out;
-  }, []);
+  }, [libraryData]);
 
   // Initialize counts from patternData.panels.panelsNeeded or defaults to 0
   const initialCounts: Record<string, number> = (patternData && patternData.panels && patternData.panels.panelsNeeded) || {};
@@ -38,6 +76,34 @@ const WizardView: React.FC = () => {
   // Selected panel for step 3 (key from panelList: `${permalink}::${panelName}`)
   // Initialize from redux if a previewPanelKey was persisted under patternData.panels
   const [selectedPanelKey, setSelectedPanelKey] = useState<string | null>(patternData?.panels?.previewPanelKey || null);
+
+  const resolveLibraryPanel = useCallback((panels: any, panelId: string) => {
+    if (!panels) return null;
+    if (Array.isArray(panels)) {
+      return panels.find((panel: any) => panel && (panel.id === panelId || panel.name === panelId));
+    }
+    if (typeof panels === 'object') {
+      if (panels[panelId]) return panels[panelId];
+      const asArray = Object.values(panels);
+      return asArray.find((panel: any) => panel && (panel.id === panelId || panel.name === panelId)) || null;
+    }
+    return null;
+  }, []);
+
+  const getPanelShape = useCallback((panelKey: string | null) => {
+    if (!panelKey) return null;
+    const [permalink, rawPanelId = ''] = panelKey.split('::');
+
+    if (permalink === 'library') {
+      const panelData = resolveLibraryPanel(libraryData?.panels, rawPanelId);
+      if (!panelData) return null;
+      return panelData.shapes || panelData.shape || panelData.panelShape || null;
+    }
+
+    const garment = garments.find((g: any) => g.permalink === permalink);
+    const garmentShapes = garment?.shapes || {};
+    return garmentShapes ? (garmentShapes as any)[rawPanelId as any] : null;
+  }, [libraryData?.panels, resolveLibraryPanel]);
 
   // Compute currently selected panel keys (where count > 0)
   const selectedPanels = useMemo(() => {
@@ -292,59 +358,37 @@ const WizardView: React.FC = () => {
                     <div style={{ padding: '6px 12px', background: '#f5f5f5', borderRadius: 4, fontSize: 12, color: '#333' }}>
                       {selectedPanelKey && patternData?.gauge ? (() => {
                         try {
-                          const [permalink, panelName] = selectedPanelKey.split('::');
-                          const garment = garments.find((g: any) => g.permalink === permalink);
-                          const shape = garment?.shapes ? (garment.shapes as any)[panelName as any] : null;
-                          
-                          if (shape) {
-                            const scalingFactor = patternData.gauge.scaleFactor || 1.0;
-                            
-                            // Calculate panel dimensions recursively
-                            const calculateDimensions = (trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, dimensions: any = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
-                              const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
-                              const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-                              const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-                              const xBottomLeft = xOffset + (trapWidth - trap.baseA * scale) / 2;
-                              const xBottomRight = xOffset + (trapWidth + trap.baseA * scale) / 2;
-                              const yTop = yOffset;
-                              const yBottom = yOffset + trap.height * scale;
-                              
-                              dimensions.minX = Math.min(dimensions.minX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
-                              dimensions.maxX = Math.max(dimensions.maxX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
-                              dimensions.minY = Math.min(dimensions.minY, yTop, yBottom);
-                              dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
-                              
-                              if (trap.successors && trap.successors.length > 0) {
-                                const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-                                const totalSuccessorWidth = successorWidths.reduce((sum: number, w: number) => sum + w, 0);
-                                let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
-                                
-                                for (let i = trap.successors.length - 1; i >= 0; i--) {
-                                  const successor = trap.successors[i];
-                                  const successorWidth = successorWidths[i];
-                                  calculateDimensions(successor, scale, childXOffset, yTop - successor.height * scale, dimensions);
-                                  childXOffset += successorWidth;
-                                }
-                              }
-                            };
-                            
-                            const actualDimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-                            calculateDimensions(shape, scalingFactor, 0, 0, actualDimensions);
-                            
-                            const actualWidthInches = actualDimensions.maxX - actualDimensions.minX;
-                            const actualHeightInches = actualDimensions.maxY - actualDimensions.minY;
-                            
-                            const stitchesPerInch = patternData.gauge.stitchesPerFourInches / 4;
-                            const rowsPerInch = patternData.gauge.rowsPerFourInches / 4;
-                            
-                            const totalStitches = Math.round(actualWidthInches * stitchesPerInch);
-                            const totalRows = Math.round(actualHeightInches * rowsPerInch);
-                            
-                            const gaugeText = `@ ${Math.round(patternData.gauge.stitchesPerFourInches)} sts × ${Math.round(patternData.gauge.rowsPerFourInches)} rows per 4"`;
-                            const scaleText = scalingFactor === 1 ? ' ' : `, resized by ${scalingFactor}x: `;
-                            
-                            return `${totalStitches} stitches × ${totalRows} rows ${gaugeText}${scaleText}(${actualWidthInches.toFixed(1)}" × ${actualHeightInches.toFixed(1)}")`;
+                          const shape = getPanelShape(selectedPanelKey);
+                          if (!shape) return null;
+
+                          const gauge = patternData.gauge || {};
+                          const scalingFactorRaw = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
+                          const scalingFactor = Number.isFinite(scalingFactorRaw) && scalingFactorRaw > 0 ? scalingFactorRaw : 1;
+                          const dimensions = calculatePanelDimensions(shape, scalingFactor);
+                          if (!dimensions) return null;
+
+                          const stitchesPerFour = typeof gauge.stitchesPerFourInches === 'number'
+                            ? gauge.stitchesPerFourInches
+                            : (typeof gauge.stitchesPerInch === 'number' ? gauge.stitchesPerInch * 4 : 0);
+                          const rowsPerFour = typeof gauge.rowsPerFourInches === 'number'
+                            ? gauge.rowsPerFourInches
+                            : (typeof gauge.rowsPerInch === 'number' ? gauge.rowsPerInch * 4 : 0);
+
+                          if (!stitchesPerFour || !rowsPerFour) {
+                            return `@ ${Math.round(stitchesPerFour || 0)} sts × ${Math.round(rowsPerFour || 0)} rows per 4"`;
                           }
+
+                          const stitchesPerInch = stitchesPerFour / 4;
+                          const rowsPerInch = rowsPerFour / 4;
+
+                          const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
+                          const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
+
+                          const gaugeText = `@ ${Math.round(stitchesPerFour)} sts × ${Math.round(rowsPerFour)} rows per 4"`;
+                          const scaleText = scalingFactor === 1 ? '' : `, resized by ${scalingFactor}x`;
+
+                          return `${totalStitches} stitches × ${totalRows} rows ${gaugeText}${scaleText ? `${scaleText}: ` : ': '}` +
+                            `(${dimensions.widthInches.toFixed(1)}" × ${dimensions.heightInches.toFixed(1)}")`;
                         } catch (error) {
                           console.warn('Error calculating panel dimensions:', error);
                         }
@@ -358,17 +402,21 @@ const WizardView: React.FC = () => {
               {/* If a panel is selected, pass it as initialPanel to the editor */}
               {selectedPanelKey ? (
                 (() => {
-                  const [permalink, panelName] = (selectedPanelKey || '').split('::');
-                  const garment = garments.find((g: any) => g.permalink === permalink);
-                  // shapes is an object keyed by panel name; use `as any` for dynamic indexing in TS
-                  const shape = garment?.shapes ? (garment.shapes as any)[panelName as any] : null;
+                  const shape = getPanelShape(selectedPanelKey);
+
                   // Pass gauge with scale factor to the editor
                   const wizardGauge = patternData?.gauge || null;
-                  const normalizedGauge = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number' && typeof wizardGauge.rowsPerFourInches === 'number'
-                    ? { 
-                        stitchesPerFourInches: wizardGauge.stitchesPerFourInches, 
-                        rowsPerFourInches: wizardGauge.rowsPerFourInches,
-                        scalingFactor: wizardGauge.scaleFactor || 1
+                  const stitchesPerFour = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number'
+                    ? wizardGauge.stitchesPerFourInches
+                    : (wizardGauge && typeof wizardGauge.stitchesPerInch === 'number' ? wizardGauge.stitchesPerInch * 4 : undefined);
+                  const rowsPerFour = wizardGauge && typeof wizardGauge.rowsPerFourInches === 'number'
+                    ? wizardGauge.rowsPerFourInches
+                    : (wizardGauge && typeof wizardGauge.rowsPerInch === 'number' ? wizardGauge.rowsPerInch * 4 : undefined);
+                  const normalizedGauge = wizardGauge && typeof stitchesPerFour === 'number' && typeof rowsPerFour === 'number'
+                    ? {
+                        stitchesPerFourInches: stitchesPerFour,
+                        rowsPerFourInches: rowsPerFour,
+                        scalingFactor: typeof wizardGauge.scaleFactor === 'number' && wizardGauge.scaleFactor > 0 ? wizardGauge.scaleFactor : 1
                       }
                     : null;
 

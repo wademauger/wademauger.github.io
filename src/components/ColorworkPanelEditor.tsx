@@ -109,11 +109,16 @@ const ColorworkPanelEditor = forwardRef(({
     });
     
     // Update pattern layers function that syncs to Redux
-    const setPatternLayers = (newLayers: any) => {
-        setPatternLayersLocal(newLayers);
-        if (previewKey) {
-            dispatch(updatePanelPatternLayers({ panelKey: previewKey, layers: newLayers }));
-        }
+    const setPatternLayers = (nextLayers: any) => {
+        setPatternLayersLocal((currentLayers: any[]) => {
+            const resolvedLayers = typeof nextLayers === 'function' ? nextLayers(currentLayers) : nextLayers;
+
+            if (previewKey) {
+                dispatch(updatePanelPatternLayers({ panelKey: previewKey, layers: resolvedLayers }));
+            }
+
+            return resolvedLayers;
+        });
     };
     
     // Sync from Redux when previewKey or reduxPatternLayers change

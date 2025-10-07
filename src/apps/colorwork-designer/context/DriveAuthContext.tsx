@@ -21,23 +21,37 @@ export const DriveAuthProvider = ({ children }: { children: ReactNode }) => {
   // Handler that the Google sign-in button will call with the token response
   // The GoogleDriveServiceModern exposes `handleOAuthToken` for @react-oauth/google responses
   const handleTokenResponse = useCallback(async (tokenResponse: any) => {
+    console.log('DriveAuthProvider: handleTokenResponse called with:', tokenResponse);
     try {
       if (typeof GoogleDriveServiceModern.handleOAuthToken === 'function') {
+        console.log('DriveAuthProvider: Calling GoogleDriveServiceModern.handleOAuthToken');
         await GoogleDriveServiceModern.handleOAuthToken(tokenResponse);
       } else if (typeof (GoogleDriveServiceModern as any).handleTokenResponse === 'function') {
         // Backwards compatibility if a different method name exists
+        console.log('DriveAuthProvider: Using legacy handleTokenResponse method');
         await (GoogleDriveServiceModern as any).handleTokenResponse(tokenResponse);
       } else {
         console.warn('DriveAuthProvider: no token handler found on GoogleDriveServiceModern');
       }
+      console.log('DriveAuthProvider: Service sign-in successful, updating state');
       setIsSignedIn(!!GoogleDriveServiceModern.isSignedIn);
       const ui = { userName: GoogleDriveServiceModern.userName, userEmail: GoogleDriveServiceModern.userEmail, userPicture: GoogleDriveServiceModern.userPicture };
       setUserInfo(ui);
+      console.log('DriveAuthProvider: Updated local state - signed in:', !!GoogleDriveServiceModern.isSignedIn, 'userInfo:', ui);
+
+      // Dispatch Redux action for global state synchronization
+      try { 
+        dispatch(setAuth({ isSignedIn: !!GoogleDriveServiceModern.isSignedIn, userInfo: ui })); 
+        console.log('DriveAuthProvider: Dispatched setAuth to Redux');
+      } catch (e) {
+        console.warn('DriveAuthProvider: failed to dispatch setAuth', e);
+      }
 
       // Notify other parts of the app that auth changed so UI can react immediately
       try {
         if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
           window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: !!GoogleDriveServiceModern.isSignedIn, userInfo: ui } }));
+          console.log('DriveAuthProvider: Dispatched drive:auth-changed event');
         }
       } catch (e: unknown) {
         // non-fatal
@@ -47,35 +61,71 @@ export const DriveAuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('DriveAuthProvider: token handling failed', err);
       throw err;
     }
-  }, []);
+  }, [dispatch]);
 
   const signOut = useCallback(() => {
+    console.log('DriveAuthProvider: signOut called');
     try {
-      GoogleDriveServiceModern.signOut?.();
-    } finally {
-      setIsSignedIn(false);
-      setUserInfo(null);
-      try { dispatch(clearAuth()); } catch {}
-      try {
-        if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
-          window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: false, userInfo: null } }));
-        }
-      } catch (e: unknown) {
-        console.warn('DriveAuthProvider: failed to dispatch drive:auth-changed on signOut', e);
+      // Call service signOut first to ensure proper cleanup
+      if (GoogleDriveServiceModern.signOut) {
+        console.log('DriveAuthProvider: Calling GoogleDriveServiceModern.signOut');
+        GoogleDriveServiceModern.signOut();
       }
+    } catch (e: unknown) {
+      console.warn('DriveAuthProvider: service signOut failed', e);
     }
-  }, []);
+    
+    // Update local state to match service state
+    console.log('DriveAuthProvider: Updating local state to signed out');
+    setIsSignedIn(false);
+    setUserInfo(null);
+    
+    // Dispatch Redux action
+    try { 
+      dispatch(clearAuth()); 
+      console.log('DriveAuthProvider: Dispatched clearAuth to Redux');
+    } catch (e) {
+      console.warn('DriveAuthProvider: failed to dispatch clearAuth', e);
+    }
+    
+    // Notify other parts of the app
+    try {
+      if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('drive:auth-changed', { detail: { isSignedIn: false, userInfo: null } }));
+        console.log('DriveAuthProvider: Dispatched drive:auth-changed event for signOut');
+      }
+    } catch (e: unknown) {
+      console.warn('DriveAuthProvider: failed to dispatch drive:auth-changed on signOut', e);
+    }
+  }, [dispatch]);
 
   // Keep state in sync if the service mutates outside React (best-effort)
   useEffect(() => {
     const interval = setInterval(() => {
       const signed = !!GoogleDriveServiceModern.isSignedIn;
-      if (signed !== isSignedIn) setIsSignedIn(signed);
       const ui = { userName: GoogleDriveServiceModern.userName, userEmail: GoogleDriveServiceModern.userEmail, userPicture: GoogleDriveServiceModern.userPicture };
-      if (JSON.stringify(ui) !== JSON.stringify(userInfo)) setUserInfo(ui);
+      
+      // Check if state changed
+      const stateChanged = signed !== isSignedIn || JSON.stringify(ui) !== JSON.stringify(userInfo);
+      
+      if (stateChanged) {
+        setIsSignedIn(signed);
+        setUserInfo(ui);
+        
+        // Sync to Redux when we detect external changes
+        try { 
+          if (signed) {
+            dispatch(setAuth({ isSignedIn: signed, userInfo: ui })); 
+          } else {
+            dispatch(clearAuth());
+          }
+        } catch (e) {
+          console.warn('DriveAuthProvider: failed to sync auth state to Redux', e);
+        }
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSignedIn, userInfo]);
+  }, [isSignedIn, userInfo, dispatch]);
 
   // Ensure the Drive service knows the configured client ID so it can lazily
   // initialize GAPI/GIS when required. This does not auto-initialize the
