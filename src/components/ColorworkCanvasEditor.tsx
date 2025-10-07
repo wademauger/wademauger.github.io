@@ -99,7 +99,9 @@ const ColorworkCanvasEditor = ({
             'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{ color: '#ffffff', rows: 2 }, { color: '#000000', rows: 2 }], width: 4 } },
             'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
             'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{ color: '#ffffff' }, { color: '#000000' }] } },
-            'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } }
+            'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } },
+            'row': { name: 'Row', type: 'row', defaultConfig: { elements: [] } },
+            'vstack': { name: 'Vertical Stack', type: 'vstack', defaultConfig: { elements: [] } }
         };
 
         // Add library patterns as 'custom' type
@@ -1106,7 +1108,10 @@ const ColorworkCanvasEditor = ({
 
     const handlePatternChangeForLayer = useCallback((layerId, patternKey) => {
         const patternType = availablePatterns[patternKey].type;
-        const config = availablePatterns[patternKey].defaultConfig;
+        const config = {
+            ...availablePatterns[patternKey].defaultConfig,
+            patterns: availablePatterns // Pass availablePatterns for stack types
+        };
         const pattern = generatePattern(patternType, config);
         onLayersChange(prevLayers =>
             prevLayers.map((layer: any) => {
@@ -1132,7 +1137,12 @@ const ColorworkCanvasEditor = ({
         onLayersChange(prevLayers =>
             prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
-                    const newPattern = generatePattern(layer.patternType, newConfig);
+                    // Pass availablePatterns for stack types
+                    const configWithPatterns = {
+                        ...newConfig,
+                        patterns: availablePatterns
+                    };
+                    const newPattern = generatePattern(layer.patternType, configWithPatterns);
                     return {
                         ...layer,
                         patternConfig: newConfig,
@@ -1142,7 +1152,7 @@ const ColorworkCanvasEditor = ({
                 return layer;
             })
         );
-    }, [onLayersChange]);
+    }, [onLayersChange, availablePatterns]);
 
     return (
         <div className="colorwork-canvas-editor">
@@ -1459,6 +1469,413 @@ const ColorworkCanvasEditor = ({
                                                                 </div>
                                                             )}
 
+                                                            {(layer.patternType === 'row' || layer.patternType === 'vstack') && (
+                                                                <div>
+                                                                    <Text style={textStyle12}>
+                                                                        {layer.patternType === 'row' ? 'Row:' : 'Vertical Stack:'}
+                                                                    </Text>
+                                                                    <Text style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: 2, marginBottom: 8 }}>
+                                                                        {layer.patternType === 'row' 
+                                                                            ? 'Stack elements left to right. Use stripes for bands or custom shapes (with repeat count).'
+                                                                            : 'Stack elements top to bottom. Use stripes for bands, custom shapes (with repeat count), or rows for horizontal composition.'}
+                                                                    </Text>
+
+                                                                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                                                                        {(layer.patternConfig.elements || []).map((element: any, index: number) => (
+                                                                            <div key={index} style={{ border: '1px solid #d9d9d9', padding: 8, borderRadius: 4 }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                                                    <Text style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                                                                                        {element.elementType === 'stripes' 
+                                                                                            ? `Stripes ${index + 1}` 
+                                                                                            : element.elementType === 'shape' && element.shapeKey
+                                                                                            ? availablePatterns[element.shapeKey]?.name || 'Shape'
+                                                                                            : element.elementType === 'sequence'
+                                                                                            ? `Sequence ${index + 1}`
+                                                                                            : `Element ${index + 1}`
+                                                                                        }
+                                                                                    </Text>
+                                                                                    <Button 
+                                                                                        size="small" 
+                                                                                        danger 
+                                                                                        onClick={() => {
+                                                                                            const newElements = (layer.patternConfig.elements || []).filter((_: any, i: number) => i !== index);
+                                                                                            handlePatternConfigChange(layer.id, { 
+                                                                                                ...layer.patternConfig, 
+                                                                                                elements: newElements 
+                                                                                            });
+                                                                                        }}
+                                                                                    >
+                                                                                        Remove
+                                                                                    </Button>
+                                                                                </div>
+                                                                                
+                                                                                <Select
+                                                                                    value={element.elementType || 'stripes'}
+                                                                                    onChange={(value: any) => {
+                                                                                        const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                        if (value === 'stripes') {
+                                                                                            newElements[index] = {
+                                                                                                elementType: 'stripes',
+                                                                                                stripeConfig: layer.patternType === 'row' 
+                                                                                                    ? { colors: [{ color: '#ffffff', columns: 2 }] }
+                                                                                                    : { colors: [{ color: '#ffffff', rows: 2 }] }
+                                                                                            };
+                                                                                        } else if (value === 'sequence') {
+                                                                                            newElements[index] = {
+                                                                                                elementType: 'sequence',
+                                                                                                shapes: [],
+                                                                                                repeatCount: 1,
+                                                                                                alignment: 'center'
+                                                                                            };
+                                                                                        } else if (value.startsWith('custom-')) {
+                                                                                            // Direct custom pattern selection
+                                                                                            newElements[index] = {
+                                                                                                elementType: 'shape',
+                                                                                                shapeKey: value,
+                                                                                                repeatCount: 1
+                                                                                            };
+                                                                                        }
+                                                                                        handlePatternConfigChange(layer.id, { 
+                                                                                            ...layer.patternConfig, 
+                                                                                            elements: newElements 
+                                                                                        });
+                                                                                    }}
+                                                                                    size="small"
+                                                                                    style={{ width: '100%', marginBottom: 8 }}
+                                                                                >
+                                                                                    <Option value="stripes">Stripes</Option>
+                                                                                    {Object.entries(availablePatterns)
+                                                                                        .filter(([key]) => key.startsWith('custom-'))
+                                                                                        .map(([key, pattern]: [string, any]) => (
+                                                                                            <Option key={key} value={key}>{pattern.name}</Option>
+                                                                                        ))
+                                                                                    }
+                                                                                </Select>
+
+                                                                                {element.elementType === 'stripes' && element.stripeConfig && (
+                                                                                    <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid #e8e8e8' }}>
+                                                                                        <Text style={{ fontSize: '10px', display: 'block', marginBottom: 4 }}>Stripe Colors:</Text>
+                                                                                        {element.stripeConfig.colors.map((stripe: any, sIndex: number) => (
+                                                                                            <div key={sIndex} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
+                                                                                                <InputNumber
+                                                                                                    value={layer.patternType === 'row' ? stripe.columns : stripe.rows}
+                                                                                                    onChange={(value: any) => {
+                                                                                                        const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                        const newColors = [...element.stripeConfig.colors];
+                                                                                                        if (layer.patternType === 'row') {
+                                                                                                            newColors[sIndex] = { ...newColors[sIndex], columns: value || 1 };
+                                                                                                        } else {
+                                                                                                            newColors[sIndex] = { ...newColors[sIndex], rows: value || 1 };
+                                                                                                        }
+                                                                                                        newElements[index] = { ...element, stripeConfig: { colors: newColors } };
+                                                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                    }}
+                                                                                                    min={1}
+                                                                                                    size="small"
+                                                                                                    style={{ width: 50 }}
+                                                                                                />
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {element.elementType === 'shape' && element.shapeKey && (
+                                                                                    <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid #e8e8e8' }}>
+                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                                            <Text style={{ fontSize: '10px' }}>Repeat:</Text>
+                                                                                            <InputNumber
+                                                                                                value={element.repeatCount || 1}
+                                                                                                onChange={(value: any) => {
+                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                    newElements[index] = { ...element, repeatCount: value || 1 };
+                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                }}
+                                                                                                min={1}
+                                                                                                size="small"
+                                                                                                style={{ width: 60 }}
+                                                                                            />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {(element.elementType === 'vstack' || element.elementType === 'row') && (
+                                                                                    <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid #e8e8e8' }}>
+                                                                                        <Text style={{ fontSize: '10px', display: 'block', marginBottom: 4 }}>
+                                                                                            {element.elementType === 'vstack' ? 'Vertical' : 'Row'} Stack:
+                                                                                        </Text>
+                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 6 }}>
+                                                                                            <Text style={{ fontSize: '10px' }}>Repeat:</Text>
+                                                                                            <InputNumber
+                                                                                                value={element.repeatCount || 1}
+                                                                                                onChange={(value: any) => {
+                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                    newElements[index] = { ...element, repeatCount: value || 1 };
+                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                }}
+                                                                                                min={1}
+                                                                                                size="small"
+                                                                                                style={{ width: 60 }}
+                                                                                            />
+                                                                                        </div>
+                                                                                        
+                                                                                        {/* Stripes sub-elements */}
+                                                                                        {(element.elements || []).filter((el: any) => el.elementType === 'stripes').map((subElement: any, subIndex: number) => {
+                                                                                            const actualIndex = (element.elements || []).findIndex((el: any, idx: number) => 
+                                                                                                el === subElement && idx >= subIndex
+                                                                                            );
+                                                                                            return (
+                                                                                                <div key={`stripe-${subIndex}`} style={{ marginBottom: 6 }}>
+                                                                                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
+                                                                                                        <Text style={{ fontSize: '10px', color: '#666' }}>Stripes</Text>
+                                                                                                        <Button
+                                                                                                            size="small"
+                                                                                                            danger
+                                                                                                            onClick={() => {
+                                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                const newSubElements = (element.elements || []).filter((_: any, i: number) => i !== actualIndex);
+                                                                                                                newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            ×
+                                                                                                        </Button>
+                                                                                                    </div>
+                                                                                                    {subElement.stripeConfig && subElement.stripeConfig.colors.map((stripe: any, sIdx: number) => (
+                                                                                                        <div key={sIdx} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4, marginLeft: 8 }}>
+                                                                                                            <ColorPicker
+                                                                                                                value={stripe.color}
+                                                                                                                onChange={(value: any) => {
+                                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                    const newSubElements = [...(element.elements || [])];
+                                                                                                                    const newStripeConfig = { ...subElement.stripeConfig };
+                                                                                                                    newStripeConfig.colors = [...newStripeConfig.colors];
+                                                                                                                    newStripeConfig.colors[sIdx] = { ...stripe, color: value.toHexString() };
+                                                                                                                    newSubElements[actualIndex] = { ...subElement, stripeConfig: newStripeConfig };
+                                                                                                                    newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                                }}
+                                                                                                                size="small"
+                                                                                                            />
+                                                                                                            <InputNumber
+                                                                                                                value={element.elementType === 'vstack' ? stripe.rows : stripe.columns}
+                                                                                                                onChange={(value: any) => {
+                                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                    const newSubElements = [...(element.elements || [])];
+                                                                                                                    const newStripeConfig = { ...subElement.stripeConfig };
+                                                                                                                    newStripeConfig.colors = [...newStripeConfig.colors];
+                                                                                                                    if (element.elementType === 'vstack') {
+                                                                                                                        newStripeConfig.colors[sIdx] = { ...stripe, rows: value || 1 };
+                                                                                                                    } else {
+                                                                                                                        newStripeConfig.colors[sIdx] = { ...stripe, columns: value || 1 };
+                                                                                                                    }
+                                                                                                                    newSubElements[actualIndex] = { ...subElement, stripeConfig: newStripeConfig };
+                                                                                                                    newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                                }}
+                                                                                                                min={1}
+                                                                                                                size="small"
+                                                                                                                style={{ width: 50 }}
+                                                                                                            />
+                                                                                                            <Button
+                                                                                                                size="small"
+                                                                                                                danger
+                                                                                                                onClick={() => {
+                                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                    const newSubElements = [...(element.elements || [])];
+                                                                                                                    const newStripeConfig = { ...subElement.stripeConfig };
+                                                                                                                    newStripeConfig.colors = newStripeConfig.colors.filter((_: any, i: number) => i !== sIdx);
+                                                                                                                    newSubElements[actualIndex] = { ...subElement, stripeConfig: newStripeConfig };
+                                                                                                                    newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                ×
+                                                                                                            </Button>
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                    <Button
+                                                                                                        size="small"
+                                                                                                        onClick={() => {
+                                                                                                            const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                            const newSubElements = [...(element.elements || [])];
+                                                                                                            const newStripeConfig = { ...subElement.stripeConfig };
+                                                                                                            newStripeConfig.colors = [
+                                                                                                                ...newStripeConfig.colors,
+                                                                                                                element.elementType === 'vstack'
+                                                                                                                    ? { color: '#ffffff', rows: 2 }
+                                                                                                                    : { color: '#ffffff', columns: 2 }
+                                                                                                            ];
+                                                                                                            newSubElements[actualIndex] = { ...subElement, stripeConfig: newStripeConfig };
+                                                                                                            newElements[index] = { ...element, elements: newSubElements };
+                                                                                                            handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                        }}
+                                                                                                        style={{ marginLeft: 8 }}
+                                                                                                    >
+                                                                                                        + Stripe
+                                                                                                    </Button>
+                                                                                                </div>
+                                                                                            );
+                                                                                        })}
+                                                                                        
+                                                                                        {/* Shape sub-elements */}
+                                                                                        {(element.elements || []).filter((el: any) => el.elementType === 'shape').map((subElement: any, subIndex: number) => {
+                                                                                            const actualIndex = (element.elements || []).findIndex((el: any, idx: number) => 
+                                                                                                el === subElement && idx >= subIndex
+                                                                                            );
+                                                                                            return (
+                                                                                                <div key={`shape-${subIndex}`} style={{ marginBottom: 6 }}>
+                                                                                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
+                                                                                                        <Select
+                                                                                                            value={subElement.shapeKey || ''}
+                                                                                                            onChange={(value: any) => {
+                                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                const newSubElements = [...(element.elements || [])];
+                                                                                                                newSubElements[actualIndex] = { ...subElement, shapeKey: value };
+                                                                                                                newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                            }}
+                                                                                                            size="small"
+                                                                                                            style={{ flex: 1 }}
+                                                                                                        >
+                                                                                                            {Object.keys(availablePatterns).map(key => (
+                                                                                                                <Option key={key} value={key}>{availablePatterns[key].name}</Option>
+                                                                                                            ))}
+                                                                                                        </Select>
+                                                                                                        <Text style={{ fontSize: '9px' }}>x</Text>
+                                                                                                        <InputNumber
+                                                                                                            value={subElement.repeatCount || 1}
+                                                                                                            onChange={(value: any) => {
+                                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                const newSubElements = [...(element.elements || [])];
+                                                                                                                newSubElements[actualIndex] = { ...subElement, repeatCount: value || 1 };
+                                                                                                                newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                            }}
+                                                                                                            min={1}
+                                                                                                            size="small"
+                                                                                                            style={{ width: 50 }}
+                                                                                                        />
+                                                                                                        <Button
+                                                                                                            size="small"
+                                                                                                            danger
+                                                                                                            onClick={() => {
+                                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                                const newSubElements = (element.elements || []).filter((_: any, i: number) => i !== actualIndex);
+                                                                                                                newElements[index] = { ...element, elements: newSubElements };
+                                                                                                                handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            ×
+                                                                                                        </Button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            );
+                                                                                        })}
+                                                                                        
+                                                                                        <div style={{ display: 'flex', gap: 4 }}>
+                                                                                            <Button
+                                                                                                size="small"
+                                                                                                onClick={() => {
+                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                    const newSubElements = [
+                                                                                                        ...(element.elements || []),
+                                                                                                        {
+                                                                                                            elementType: 'stripes',
+                                                                                                            stripeConfig: element.elementType === 'vstack'
+                                                                                                                ? { colors: [{ color: '#ffffff', rows: 2 }] }
+                                                                                                                : { colors: [{ color: '#ffffff', columns: 2 }] }
+                                                                                                        }
+                                                                                                    ];
+                                                                                                    newElements[index] = { ...element, elements: newSubElements };
+                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                }}
+                                                                                            >
+                                                                                                + Stripes
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                size="small"
+                                                                                                onClick={() => {
+                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                    const newSubElements = [
+                                                                                                        ...(element.elements || []),
+                                                                                                        {
+                                                                                                            elementType: 'shape',
+                                                                                                            shapeKey: Object.keys(availablePatterns)[0] || '',
+                                                                                                            repeatCount: 1
+                                                                                                        }
+                                                                                                    ];
+                                                                                                    newElements[index] = { ...element, elements: newSubElements };
+                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                }}
+                                                                                            >
+                                                                                                + Shape
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {element.elementType === 'sequence' && (
+                                                                                    <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid #e8e8e8' }}>
+                                                                                        <Text style={{ fontSize: '10px', display: 'block', marginBottom: 4 }}>Shapes in sequence:</Text>
+                                                                                        <Text style={{ fontSize: '9px', color: '#999', display: 'block', marginBottom: 4 }}>
+                                                                                            (Add shapes to create a sequence)
+                                                                                        </Text>
+                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4 }}>
+                                                                                            <Text style={{ fontSize: '10px' }}>Repeat Sequence:</Text>
+                                                                                            <InputNumber
+                                                                                                value={element.repeatCount || 1}
+                                                                                                onChange={(value: any) => {
+                                                                                                    const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                    newElements[index] = { ...element, repeatCount: value || 1 };
+                                                                                                    handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                                }}
+                                                                                                min={0}
+                                                                                                size="small"
+                                                                                                style={{ width: 60 }}
+                                                                                            />
+                                                                                        </div>
+                                                                                        <Select
+                                                                                            value={element.alignment || 'center'}
+                                                                                            onChange={(value: any) => {
+                                                                                                const newElements = [...(layer.patternConfig.elements || [])];
+                                                                                                newElements[index] = { ...element, alignment: value };
+                                                                                                handlePatternConfigChange(layer.id, { ...layer.patternConfig, elements: newElements });
+                                                                                            }}
+                                                                                            size="small"
+                                                                                            style={{ width: '100%', marginTop: 4 }}
+                                                                                        >
+                                                                                            <Option value="start">{layer.patternType === 'row' ? 'Left' : 'Top'}</Option>
+                                                                                            <Option value="center">Center</Option>
+                                                                                            <Option value="end">{layer.patternType === 'row' ? 'Right' : 'Bottom'}</Option>
+                                                                                        </Select>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                        <Button 
+                                                                            size="small" 
+                                                                            onClick={() => {
+                                                                                const newElements = [
+                                                                                    ...(layer.patternConfig.elements || []), 
+                                                                                    { 
+                                                                                        elementType: 'stripes',
+                                                                                        stripeConfig: layer.patternType === 'row'
+                                                                                            ? { colors: [{ color: '#ffffff', columns: 2 }] }
+                                                                                            : { colors: [{ color: '#ffffff', rows: 2 }] }
+                                                                                    }
+                                                                                ];
+                                                                                handlePatternConfigChange(layer.id, { 
+                                                                                    ...layer.patternConfig, 
+                                                                                    elements: newElements 
+                                                                                });
+                                                                            }}
+                                                                        >
+                                                                            Add Element
+                                                                        </Button>
+                                                                    </Space>
+                                                                </div>
+                                                            )}
+
                                                             <div>
                                                                 <Text style={textStyle12}>Repeat:</Text>
                                                                 <Select
@@ -1530,18 +1947,31 @@ const ColorworkCanvasEditor = ({
                                                             <div>
                                                                 <Text style={textStyle12}>Color Assignment:</Text>
                                                                 <div style={{ marginTop: 4 }}>
-                                                                    {layer.pattern && layer.pattern.colors && Object.entries(layer.pattern.colors).map(([colorId, colorInfo]) => (
-                                                                        <div key={colorId} style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                            <Text style={textStyle11}>{colorInfo.label}:</Text>
-                                                                            <ColorPicker
-                                                                                value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
-                                                                                onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
-                                                                                showText={false}
-                                                                                size="small"
-                                                                                style={{ flex: 1 }}
-                                                                            />
-                                                                        </div>
-                                                                    ))}
+                                                                    {layer.pattern && layer.pattern.colors && (() => {
+                                                                        // Only show colors that are actually used in the pattern
+                                                                        const usedColors = layer.pattern.getColorsUsed?.() || [];
+                                                                        const usedColorIds = new Set(usedColors.map((c: any) => c.id));
+                                                                        
+                                                                        return Object.entries(layer.pattern.colors)
+                                                                            .filter(([colorId]) => usedColorIds.has(colorId) && colorId !== 'transparent')
+                                                                            .map(([colorId, colorInfo]) => (
+                                                                                <div key={colorId} style={{ 
+                                                                                    marginBottom: 4, 
+                                                                                    display: 'grid', 
+                                                                                    gridTemplateColumns: '1fr auto',
+                                                                                    alignItems: 'center', 
+                                                                                    gap: 8 
+                                                                                }}>
+                                                                                    <Text style={textStyle11}>{colorInfo.label}</Text>
+                                                                                    <ColorPicker
+                                                                                        value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
+                                                                                        onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
+                                                                                        showText={false}
+                                                                                        size="small"
+                                                                                    />
+                                                                                </div>
+                                                                            ));
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         </Space>
@@ -1637,6 +2067,8 @@ function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' 
 }
 
 function generatePattern(type, config, targetDimension = null) {
+    console.log('🎯 generatePattern called:', { type, hasConfig: !!config, configKeys: config ? Object.keys(config) : [] });
+    
     if (type === 'stripes') {
         const { colors } = config;
 
@@ -1880,7 +2312,7 @@ function generatePattern(type, config, targetDimension = null) {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
         return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });
-    } else if (type === 'custom') {
+    } else if (type === 'custom' || (typeof type === 'string' && type.startsWith('custom-'))) {
         // Custom pattern from library - use the saved pattern data directly
         if (config.pattern && Array.isArray(config.pattern)) {
             // Convert colors from library format to ColorworkPattern format
@@ -1927,7 +2359,314 @@ function generatePattern(type, config, targetDimension = null) {
         return createCheckerboardPattern(config.cellSize || 2, config.colors || [{ color: '#ffffff' }, { color: '#000000' }]);
     } else if (type === 'argyle') {
         return createArgylePattern(config.colors || [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }]);
+    } else if (type === 'row') {
+        return createRowPattern(config.elements || [], config.patterns || {});
+    } else if (type === 'vstack') {
+        return createVStackPattern(config.elements || [], config.patterns || {});
     }
+    
+    // Fallback for unknown pattern types
+    return createSolidPattern([{ color: '#ffffff' }]);
+}
+
+function createRowPattern(elements = [], availablePatternsRef = {}) {
+    console.log('🎨 createRowPattern called:', elements);
+    
+    if (!elements || elements.length === 0) {
+        return createSolidPattern([{ color: '#ffffff' }]);
+    }
+
+    // Build unified color map with element-specific labels
+    const colorMap = {};
+    let colorIndex = 0;
+    const elementData = [];
+
+    elements.forEach((element, elemIndex) => {
+        if (element.elementType === 'stripes' && element.stripeConfig) {
+            // Generate stripe pattern
+            const stripeColors = element.stripeConfig.colors || [];
+            const stripeColorMapping = {};
+            
+            stripeColors.forEach((stripe, sIndex) => {
+                const colorId = `c${colorIndex}`;
+                const label = stripeColors.length > 1 
+                    ? `Stripes-${elemIndex + 1} C${sIndex + 1}`
+                    : `Stripes-${elemIndex + 1}`;
+                    
+                colorMap[colorId] = {
+                    id: colorId,
+                    label: label,
+                    color: stripe.color || '#ffffff'
+                };
+                stripeColorMapping[sIndex] = colorId;
+                colorIndex++;
+            });
+
+            elementData.push({
+                type: 'stripes',
+                width: stripeColors.reduce((sum: number, s: any) => sum + (s.columns || 1), 0),
+                colorMapping: stripeColorMapping,
+                stripeConfig: element.stripeConfig
+            });
+        } else if (element.elementType === 'shape' && element.shapeKey && availablePatternsRef[element.shapeKey]) {
+            // Get the custom pattern
+            const patternInfo = availablePatternsRef[element.shapeKey];
+            const patternName = patternInfo.name || 'Shape';
+            const customPattern = generatePattern(element.shapeKey, patternInfo.defaultConfig || {});
+            const repeatCount = element.repeatCount || 1;
+            
+            // Map custom pattern colors to unified color map
+            const shapeColorMapping = {};
+            Object.entries(customPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
+                const colorId = `c${colorIndex}`;
+                colorMap[colorId] = {
+                    id: colorId,
+                    label: `${patternName} ${colorInfo.label}`,
+                    color: colorInfo.color
+                };
+                shapeColorMapping[origColorId] = colorId;
+                colorIndex++;
+            });
+            
+            elementData.push({
+                type: 'shape',
+                pattern: customPattern,
+                repeatCount: repeatCount,
+                colorMapping: shapeColorMapping,
+                width: customPattern.getStitchCount() * repeatCount
+            });
+        }
+    });
+
+    // For horizontal stacking, each pattern should repeat independently to fill the total width
+    // Calculate the total width needed to accommodate all elements repeating
+    const height = Math.max(...elementData.map(elem => {
+        if (elem.type === 'shape' && elem.pattern) {
+            return elem.pattern.getRowCount();
+        }
+        return 10; // Default height for stripes
+    })) || 10;
+    
+    // For width, sum up the base widths (no repetition in the width calculation)
+    const totalWidth = elementData.reduce((sum, elem) => sum + (elem.width || 4), 0);
+    
+    const grid = [];
+    for (let row = 0; row < height; row++) {
+        const rowData = [];
+        
+        elementData.forEach((elem) => {
+            if (elem.type === 'stripes') {
+                // Stripes don't repeat - just add their columns once
+                elem.stripeConfig.colors.forEach((stripe: any, sIdx: number) => {
+                    const colorId = elem.colorMapping[sIdx];
+                    const columns = stripe.columns || 1;
+                    for (let c = 0; c < columns; c++) {
+                        rowData.push(colorId);
+                    }
+                });
+            } else if (elem.type === 'shape' && elem.pattern) {
+                // Repeat the shape to fill its allocated width
+                const patternHeight = elem.pattern.getRowCount();
+                const patternWidth = elem.pattern.getStitchCount();
+                const totalRepeatWidth = patternWidth * elem.repeatCount;
+                
+                for (let col = 0; col < totalRepeatWidth; col++) {
+                    const patternRow = row % patternHeight;
+                    const patternCol = col % patternWidth;
+                    const origColorId = elem.pattern.grid[patternRow][patternCol];
+                    const unifiedColorId = elem.colorMapping[origColorId];
+                    rowData.push(unifiedColorId);
+                }
+            }
+        });
+        
+        grid.push(rowData);
+    }
+
+    return new ColorworkPattern(0, 0, grid, colorMap, { width: totalWidth, height });
+}
+
+function createVStackPattern(elements = [], availablePatternsRef = {}) {
+    console.log('🎨 createVStackPattern called:', elements);
+    
+    if (!elements || elements.length === 0) {
+        return createSolidPattern([{ color: '#ffffff' }]);
+    }
+
+    // Build unified color map with element-specific labels
+    const colorMap = {};
+    let colorIndex = 0;
+    const elementData = [];
+
+    elements.forEach((element, elemIndex) => {
+        if (element.elementType === 'stripes' && element.stripeConfig) {
+            // Generate stripe pattern
+            const stripeColors = element.stripeConfig.colors || [];
+            const stripeColorMapping = {};
+            
+            stripeColors.forEach((stripe, sIndex) => {
+                const colorId = `c${colorIndex}`;
+                const label = stripeColors.length > 1 
+                    ? `Stripes-${elemIndex + 1} C${sIndex + 1}`
+                    : `Stripes-${elemIndex + 1}`;
+                    
+                colorMap[colorId] = {
+                    id: colorId,
+                    label: label,
+                    color: stripe.color || '#ffffff'
+                };
+                stripeColorMapping[sIndex] = colorId;
+                colorIndex++;
+            });
+
+            elementData.push({
+                type: 'stripes',
+                height: stripeColors.reduce((sum: number, s: any) => sum + (s.rows || 1), 0),
+                colorMapping: stripeColorMapping,
+                stripeConfig: element.stripeConfig
+            });
+        } else if (element.elementType === 'row' && element.elements) {
+            // Recursively generate nested row pattern
+            const nestedPattern = createRowPattern(element.elements, availablePatternsRef);
+            const repeatCount = element.repeatCount || 1;
+            
+            // Map nested pattern colors to unified color map
+            const nestedColorMapping = {};
+            Object.entries(nestedPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
+                const colorId = `c${colorIndex}`;
+                colorMap[colorId] = {
+                    id: colorId,
+                    label: `Row-${elemIndex + 1} ${colorInfo.label}`,
+                    color: colorInfo.color
+                };
+                nestedColorMapping[origColorId] = colorId;
+                colorIndex++;
+            });
+            
+            elementData.push({
+                type: 'row',
+                pattern: nestedPattern,
+                repeatCount: repeatCount,
+                colorMapping: nestedColorMapping,
+                height: nestedPattern.getRowCount() * repeatCount
+            });
+        } else if (element.elementType === 'shape' && element.shapeKey && availablePatternsRef[element.shapeKey]) {
+            // Get the custom pattern - wrap in implicit row for independent repetition
+            const patternInfo = availablePatternsRef[element.shapeKey];
+            const patternName = patternInfo.name || 'Shape';
+            const customPattern = generatePattern(element.shapeKey, patternInfo.defaultConfig || {});
+            const repeatCount = element.repeatCount || 1;
+            
+            // Create an implicit row containing just this shape
+            const rowElements = [{ 
+                elementType: 'shape', 
+                shapeKey: element.shapeKey, 
+                repeatCount: repeatCount 
+            }];
+            const implicitRowPattern = createRowPattern(rowElements, availablePatternsRef);
+            
+            // Map row pattern colors to unified color map
+            const rowColorMapping = {};
+            Object.entries(implicitRowPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
+                const colorId = `c${colorIndex}`;
+                colorMap[colorId] = {
+                    id: colorId,
+                    label: colorInfo.label,
+                    color: colorInfo.color
+                };
+                rowColorMapping[origColorId] = colorId;
+                colorIndex++;
+            });
+            
+            elementData.push({
+                type: 'implicit-row',
+                pattern: implicitRowPattern,
+                colorMapping: rowColorMapping,
+                height: implicitRowPattern.getRowCount()
+            });
+        }
+    });
+
+    // Create vertically stacked pattern
+    // Calculate LCM of all pattern widths so each pattern completes fully
+    const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
+    
+    const patternWidths = elementData.map(elem => {
+        if (elem.type === 'row' && elem.pattern) {
+            return elem.pattern.getStitchCount();
+        } else if (elem.type === 'implicit-row' && elem.pattern) {
+            return elem.pattern.getStitchCount();
+        }
+        return 1; // Stripes can be any width
+    });
+    
+    // Calculate LCM of all widths
+    let width = patternWidths.reduce((acc, w) => lcm(acc, w), 1);
+    
+    // Cap at reasonable maximum to avoid huge patterns
+    if (width > 500) {
+        // If LCM is too large, just use the max width
+        width = Math.max(...patternWidths);
+    }
+    
+    // Ensure minimum width
+    width = Math.max(width, 10);
+    
+    const totalHeight = elementData.reduce((sum, elem) => sum + (elem.height || 4), 0);
+    
+    const grid: string[][] = [];
+    
+    elementData.forEach((elem) => {
+        if (elem.type === 'stripes') {
+            elem.stripeConfig.colors.forEach((stripe: any, sIdx: number) => {
+                const colorId = elem.colorMapping[sIdx];
+                const rows = stripe.rows || 1;
+                for (let r = 0; r < rows; r++) {
+                    const rowData = Array(width).fill(colorId);
+                    grid.push(rowData);
+                }
+            });
+        } else if (elem.type === 'row' && elem.pattern) {
+            // Row repeats independently across full width
+            const patternWidth = elem.pattern.getStitchCount();
+            
+            for (let rep = 0; rep < elem.repeatCount; rep++) {
+                for (let row = 0; row < elem.pattern.getRowCount(); row++) {
+                    const rowData = [];
+                    
+                    // Repeat pattern horizontally to fill width
+                    for (let col = 0; col < width; col++) {
+                        const patternCol = col % patternWidth;
+                        const origColorId = elem.pattern.grid[row][patternCol];
+                        const unifiedColorId = elem.colorMapping[origColorId];
+                        rowData.push(unifiedColorId);
+                    }
+                    
+                    grid.push(rowData);
+                }
+            }
+        } else if (elem.type === 'implicit-row' && elem.pattern) {
+            // Implicit row (shape wrapped in row) repeats independently across full width
+            const patternWidth = elem.pattern.getStitchCount();
+            
+            for (let row = 0; row < elem.pattern.getRowCount(); row++) {
+                const rowData = [];
+                
+                // Repeat pattern horizontally to fill width
+                for (let col = 0; col < width; col++) {
+                    const patternCol = col % patternWidth;
+                    const origColorId = elem.pattern.grid[row][patternCol];
+                    const unifiedColorId = elem.colorMapping[origColorId];
+                    rowData.push(unifiedColorId);
+                }
+                
+                grid.push(rowData);
+            }
+        }
+    });
+
+    return new ColorworkPattern(0, 0, grid, colorMap, { width, height: totalHeight });
 }
 
 export default ColorworkCanvasEditor;
