@@ -514,6 +514,7 @@ const SongEditor = ({
                 <label>Artist</label>
                 <Select
                   value={songArtist}
+                  data-testid="input-artist"
                   onChange={setSongArtist}
                   placeholder="Type to search for artists"
                   size="large"
@@ -551,6 +552,7 @@ const SongEditor = ({
                 <label>Album</label>
                 <Select
                   value={songAlbum}
+                  data-testid="input-album"
                   onChange={setSongAlbum}
                   placeholder="Type to search for albums"
                   size="large"
@@ -588,6 +590,7 @@ const SongEditor = ({
                 <label>Title</label>
                 <Select
                   value={songTitle}
+                  data-testid="input-title"
                   onChange={setSongTitle}
                   placeholder="Type to search for songs"
                   size="large"
@@ -732,6 +735,7 @@ const SongEditor = ({
           loading={isSaving}
           disabled={!isGoogleDriveConnected && !isNewSong}
           size="large"
+          data-testid={isNewSong ? 'create-song-submit' : 'save-changes-submit'}
         >
           {isNewSong ? 'Create Song' : 'Save Changes'}
         </Button>

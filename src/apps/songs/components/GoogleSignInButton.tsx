@@ -1,10 +1,11 @@
 import React from 'react';
 import { UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
-import GoogleAuthButton from '@/components/GoogleAuthButton';
+import GoogleSignInButtonShared from '@/components/GoogleSignInButtonShared';
 import { useDispatch } from 'react-redux';
 import { openLibrarySettingsModal } from '../../../reducers/modal.reducer';
 
-const GoogleSignInButton = ({ onSuccess, onError, disabled = false, isSignedIn = false, onSignOut, loading = false, userInfo = null }) => {
+const GoogleSignInButton = (props: any) => {
+  const { onSuccess, onError, disabled = false, isSignedIn = false, onSignOut, loading = false, userInfo = null } = props;
   const dispatch = useDispatch();
 
   const getCurrentSettings = () => {
@@ -50,7 +51,7 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled = false, isSignedIn =
   ];
 
   return (
-    <GoogleAuthButton
+    <GoogleSignInButtonShared
       onSuccess={onSuccess}
       onError={onError}
       onSignOut={onSignOut}

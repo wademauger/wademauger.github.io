@@ -1,8 +1,7 @@
 import React from 'react';
 import { Button, Space, Switch, Spin } from 'antd';
 import './styles/AppNavigation.css';
-import SongsGoogleSignInButton from '../apps/songs/components/GoogleSignInButton';
-import RecipesGoogleSignInButton from '../apps/recipes/components/GoogleSignInButton';
+// Per-app sign-in button wrappers removed in favor of the shared component.
 
 /**
  * Reusable navigation header component for apps
@@ -61,6 +60,7 @@ const AppNavigation = ({
                 }}
                 icon={primaryAction.icon}
                 onClick={primaryAction.onClick}
+                data-testid={primaryAction.label ? `primary-action-${primaryAction.label.replace(/\s+/g, '-').toLowerCase()}` : undefined}
                 loading={primaryAction.loading}
                 disabled={primaryAction.disabled}
               >

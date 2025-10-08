@@ -10,6 +10,7 @@ import { RootState } from '@/types';
 import { openLibrarySettingsModal } from '../reducers/modal.reducer';
 import '@/styles/Layout.css';
 import { DropdownProvider } from './DropdownProvider';
+import { DriveAuthProvider } from '@/apps/colorwork-designer/context/DriveAuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -104,7 +105,8 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     <div className={`app-container ${isCraftsPage ? 'crafts-layout' : 'professional-layout'}`}>
       {/* Only show header for crafts pages */}
       {isCraftsPage && (
-        <DropdownProvider>
+        <DriveAuthProvider>
+          <DropdownProvider>
           {/* Limit dark theme to header/navigation only */}
           <header className="main-header">
             <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm }}>
@@ -187,6 +189,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
             )}
 
           </DropdownProvider>
+        </DriveAuthProvider>
       )}
 
       {/* If not on crafts pages just render children */}

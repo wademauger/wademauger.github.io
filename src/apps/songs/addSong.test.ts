@@ -2,18 +2,10 @@
  * Simple test to verify that addSong creates artist if not found
  */
 
-import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 
-// Mock the service methods we don't want to actually call
-const mockService = {
-  isSignedIn: true,
-  accessToken: 'mock-token',
-  SESSION_KEYS: {
-    TOKEN_EXPIRY: 'mockExpiry'
-  },
-  saveLibrary: jest.fn().mockResolvedValue(),
-  loadLibrary: jest.fn()
-};
+// Use manual jest mock for the Drive service
+jest.mock('./services/GoogleDriveServiceModern');
+import GoogleDriveServiceModern from './services/GoogleDriveServiceModern';
 
 // Mock localStorage
 const mockLocalStorage = {
@@ -26,8 +18,15 @@ Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
 describe('GoogleDriveServiceModern addSong', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Apply mocks to the service instance
-    Object.assign(GoogleDriveServiceModern, mockService);
+    // Configure the manual mock defaults for this test file
+  GoogleDriveServiceModern.isSignedIn = true;
+  GoogleDriveServiceModern.accessToken = 'mock-token';
+  GoogleDriveServiceModern.SESSION_KEYS = { TOKEN_EXPIRY: 'mockExpiry' } as any;
+  // Ensure the mock methods are jest.fn so tests can configure resolves
+  // @ts-ignore
+  GoogleDriveServiceModern.saveLibrary = jest.fn().mockResolvedValue(undefined);
+  // @ts-ignore
+  GoogleDriveServiceModern.loadLibrary = jest.fn().mockResolvedValue(undefined as any);
   });
 
   test('should create artist and album if they do not exist', async () => {
@@ -56,8 +55,8 @@ describe('GoogleDriveServiceModern addSong', () => {
       expect(libraryData.artists[0].albums[0].songs).toHaveLength(1);
       expect(libraryData.artists[0].albums[0].songs[0].name).toBe('Test Song');
       
-      // Check that saveLibrary was called
-      expect(mockService.saveLibrary).toHaveBeenCalledWith(libraryData);
+  // Check that saveLibrary was called on the mocked service
+  expect(GoogleDriveServiceModern.saveLibrary).toHaveBeenCalledWith(libraryData);
     } catch (error: unknown) {
       console.error('Test failed with error:', error);
       throw error;

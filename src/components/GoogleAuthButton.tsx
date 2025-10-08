@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Button, Avatar, Dropdown, Space, Typography } from 'antd';
-import { GoogleOutlined, UserOutlined } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import GoogleButton from 'react-google-button';
 import { useDriveAuth } from '../apps/colorwork-designer/context/DriveAuthContext';
 import { useDispatch, useSelector } from 'react-redux';
@@ -196,6 +196,83 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   
   const signed = !!(ctxIsSignedIn || authState?.isSignedIn || (svc && svc.isSignedIn) || (globalSvc && globalSvc.isSignedIn) || isSignedInProp || signedNow);
   const info = ctxUserInfo || authState?.userInfo || (svc && (svc.userName || svc.userPicture) ? { userName: svc.userName, userPicture: svc.userPicture } : ((globalSvc && (globalSvc.userName || globalSvc.userPicture)) ? { userName: globalSvc.userName, userPicture: globalSvc.userPicture } : userInfoProp));
+  const isButtonDisabled = disabled || isLoading || !hasValidClientId;
+
+  const resolveSize = () => {
+    if (typeof size === 'number') {
+      const height = Math.max(32, size);
+      const fontScale = Math.max(13, Math.round((height / 36) * 14));
+      return { height, fontSize: fontScale, paddingX: Math.round(height * 0.45) };
+    }
+    const presets: Record<'small' | 'middle' | 'large', { height: number; fontSize: number; paddingX: number }> = {
+      small: { height: 36, fontSize: 14, paddingX: 18 },
+      middle: { height: 40, fontSize: 15, paddingX: 20 },
+      large: { height: 44, fontSize: 16, paddingX: 22 }
+    };
+    return presets[size as 'small' | 'middle' | 'large'] || presets.small;
+  };
+
+  const { height: resolvedHeight, fontSize: resolvedFontSize, paddingX } = resolveSize();
+
+  const customGoogleButton = (
+    <button
+      type="button"
+      onClick={handleSignIn}
+      disabled={isButtonDisabled}
+      aria-label={buttonText}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.65rem',
+        backgroundColor: '#fff',
+        border: '1px solid rgba(60,64,67,0.35)',
+        borderRadius: `${resolvedHeight / 2}px`,
+        padding: `0 ${paddingX}px`,
+        height: `${resolvedHeight}px`,
+        minWidth: 'min(280px, 90vw)',
+        boxShadow: isButtonDisabled ? 'none' : '0 1px 2px rgba(0,0,0,0.15)',
+        color: '#3c4043',
+        fontSize: `${resolvedFontSize}px`,
+        fontWeight: 500,
+        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+        cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
+        opacity: isButtonDisabled ? 0.7 : 1,
+        transition: 'box-shadow 0.15s ease, transform 0.15s ease'
+      }}
+      onMouseDown={(ev) => {
+        if (!isButtonDisabled) {
+          (ev.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)';
+        }
+      }}
+      onMouseUp={(ev) => {
+        (ev.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+      }}
+      onMouseLeave={(ev) => {
+        (ev.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${resolvedHeight - 12}px`,
+          height: `${resolvedHeight - 12}px`,
+          borderRadius: '50%'
+        }}
+      >
+        <svg viewBox="0 0 18 18" width={resolvedHeight - 18} height={resolvedHeight - 18} xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M9 7.5v3.6h4.99A4.98 4.98 0 0 1 9 14.5 5.5 5.5 0 0 1 9 3.5c1.49 0 2.84.57 3.87 1.5l2.74-2.74A9.01 9.01 0 1 0 9 18c4.59 0 8.42-3.42 8.99-7.84H9z" />
+          <path fill="#34A853" d="M1.64 5.27A8.98 8.98 0 0 0 0 9c0 1.4.32 2.72.9 3.89l2.74-2.74A5.47 5.47 0 0 1 3.5 9c0-.74.13-1.46.37-2.12L1.64 5.27z" />
+          <path fill="#FBBC05" d="M9 3.5c1.49 0 2.84.57 3.87 1.5l2.74-2.74A8.99 8.99 0 0 0 1.64 5.27l2.23 1.61A5.45 5.45 0 0 1 9 3.5z" />
+          <path fill="#4285F4" d="M9 18a8.99 8.99 0 0 0 6.74-2.73l-2.58-2.44c-.73.52-1.65.82-3.16.82A5.48 5.48 0 0 1 3.64 11.1L.9 13.9A8.99 8.99 0 0 0 9 18z" />
+        </svg>
+      </span>
+      <span>{buttonText}</span>
+    </button>
+  );
 
   // Reset signedNow state when we detect logout via other means (Redux, context)
   useEffect(() => {
@@ -273,21 +350,14 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const signOutMenuItem = {
     key: 'sign-out',
     label: 'Sign out',
-    onClick: () => {
-      try {
-        if (ctxSignOut) return ctxSignOut();
-        if (onSignOut) return onSignOut();
-        // Fallback: dispatch clearAuth
-        try { dispatch(clearAuth()); } catch (e) { /* swallow */ }
-      } catch (e) { /* swallow */ }
-    }
+    onClick: handleSignOut
   };
 
   const menuForSigned = [...finalMenuItems, signOutMenuItem];
 
   // Only render the dropdown when the user is signed in. When not signed in
   // show only the sign-in button (no options) because app options require auth.
-  const childButton = signed ? (
+  const childButton = (
     <Button type="default" style={{ height: 'auto', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.08)' }} size={size as any}>
       <Space>
         {info && info.userPicture ? (
@@ -298,13 +368,6 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         <Text style={{ display: 'inline' }}>{(info && (info.userName || info.userEmail || info.name)) ? (info.userName || info.userEmail || info.name) : 'Account'}</Text>
       </Space>
     </Button>
-  ) : (
-    <GoogleButton
-      onClick={handleSignIn}
-      disabled={disabled || isLoading || !hasValidClientId}
-      label={buttonText}
-      type="dark"
-    />
   );
   // If signed in, render the dropdown with menu items; otherwise just the sign-in button
   if (signed) {
@@ -339,7 +402,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 
   return (
     <>
-      {childButton}
+      {customGoogleButton}
       
       <LibrarySettingsModal
         visible={showLibrarySettings}
