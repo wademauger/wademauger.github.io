@@ -6,6 +6,7 @@ import { Gauge } from '../models/Gauge';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useSelector } from 'react-redux';
 import { selectColorworkPatterns } from '../store/librarySlice';
+import { renderPanel } from './KnittingPanelRenderer';
 import './ColorworkCanvasEditor.css';
 
 const { Text } = Typography;
@@ -100,6 +101,8 @@ const ColorworkCanvasEditor = ({
             'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
             'checkerboard': { name: 'Checkerboard', type: 'checkerboard', defaultConfig: { cellSize: 2, colors: [{ color: '#ffffff' }, { color: '#000000' }] } },
             'argyle': { name: 'Argyle', type: 'argyle', defaultConfig: { colors: [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }] } },
+            // Special non-pattern layer for drawing an inward border inside the merged panel outline
+            'border': { name: 'Border', type: 'border', defaultConfig: { thickness: 1, color: '#000000' } },
             'row': { name: 'Row', type: 'row', defaultConfig: { elements: [] } },
             'vstack': { name: 'Vertical Stack', type: 'vstack', defaultConfig: { elements: [] } }
         };
@@ -171,9 +174,10 @@ const ColorworkCanvasEditor = ({
             let fullPanelDimensions = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
             calculateTrapezoidDimensions(shape, 1, 0, 0, fullPanelDimensions);
 
+            // Skip border layers here; border is rendered separately after fill
             renderColorworkLayersToCanvasCentered(
                 ctx,
-                patternLayers,
+                (patternLayers || []).filter((l: any) => l.patternType !== 'border'),
                 shape,
                 minX, minY, maxX - minX, maxY - minY,
                 scale,
@@ -189,6 +193,46 @@ const ColorworkCanvasEditor = ({
         }
 
         ctx.restore();
+
+        // Draw gauge-scaled inward border if a border layer is present
+        const borderLayer = (patternLayers || []).find((l: any) => l.patternType === 'border');
+        if (borderLayer && gauge) {
+            const thicknessStitches = borderLayer.patternConfig?.thickness ?? 1;
+            const borderColor = borderLayer.patternConfig?.color || '#000000';
+
+            // Compute pixels per stitch/row at this render scale
+            const stitchesPerInch = (gauge.stitchesPerFourInches ?? gauge.spi ?? 0) / 4;
+            const rowsPerInch = (gauge.rowsPerFourInches ?? gauge.rpi ?? 0) / 4;
+            const inchesPerPanelUnit = gauge.scalingFactor || 1; // panel units -> inches
+            const stitchWidthPx = scale * (stitchesPerInch > 0 ? (1 / stitchesPerInch) : 0) / inchesPerPanelUnit;
+            const rowHeightPx = scale * (rowsPerInch > 0 ? (1 / rowsPerInch) : 0) / inchesPerPanelUnit;
+            const borderGauge = {
+                gaugeX: thicknessStitches * stitchWidthPx,
+                gaugeY: thicknessStitches * rowHeightPx,
+            };
+
+            // Collect trapezoid polygons (already in scaled coordinates used above)
+            const polys = allCoordinates.map((c: any) => ([
+                [c.topLeft.x, c.topLeft.y],
+                [c.topRight.x, c.topRight.y],
+                [c.bottomRight.x, c.bottomRight.y],
+                [c.bottomLeft.x, c.bottomLeft.y],
+            ]));
+
+            // Render border as a filled ring between outer shape and inward offset
+            try {
+                renderPanel(
+                    ctx as unknown as CanvasRenderingContext2D,
+                    { trapezoids: polys } as any,
+                    borderGauge as any,
+                    'transparent',
+                    borderColor
+                );
+            } catch (e) {
+                // Non-fatal; keep the rest of rendering working
+                console.warn('Border render failed:', e);
+            }
+        }
 
         // Draw unified outline
         ctx.strokeStyle = '#a1a8af';
@@ -659,9 +703,10 @@ const ColorworkCanvasEditor = ({
                 baseBHorizontalOffset: trap.baseBHorizontalOffset || 0
             };
 
+            // Skip border layers here; border is rendered after
             renderColorworkLayersToCanvasCentered(
                 ctx,
-                patternLayers,
+                (patternLayers || []).filter((l: any) => l.patternType !== 'border'),
                 trapShape,
                 xBottomLeft, yTop, xBottomRight - xBottomLeft, yBottom - yTop,
                 scale,
@@ -1310,6 +1355,36 @@ const ColorworkCanvasEditor = ({
                                                                     ))}
                                                                 </Select>
                                                             </div>
+
+                                                            {layer.patternType === 'border' && (
+                                                                <div>
+                                                                    <Text style={textStyle12}>Border Color:</Text>
+                                                                    <div style={{ margin: '6px 0 12px' }}>
+                                                                        <ColorPicker
+                                                                            value={layer.patternConfig?.color || '#000000'}
+                                                                            onChange={(newColor) => {
+                                                                                const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
+                                                                                const newConfig = { ...layer.patternConfig, color: colorValue };
+                                                                                handlePatternConfigChange(layer.id, newConfig);
+                                                                            }}
+                                                                            showText={false}
+                                                                            size="small"
+                                                                        />
+                                                                    </div>
+                                                                    <Text style={textStyle12}>Border Thickness (stitches):</Text>
+                                                                    <InputNumber
+                                                                        value={layer.patternConfig?.thickness ?? 1}
+                                                                        onChange={(value: any) => {
+                                                                            const newConfig = { ...layer.patternConfig, thickness: value ?? 1 };
+                                                                            handlePatternConfigChange(layer.id, newConfig);
+                                                                        }}
+                                                                        min={0}
+                                                                        max={20}
+                                                                        size="small"
+                                                                        style={fullWidthStyle}
+                                                                    />
+                                                                </div>
+                                                            )}
 
                                                             {layer.patternType === 'stripes' && (
                                                                 <div>

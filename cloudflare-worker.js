@@ -104,7 +104,33 @@ export default {
         });
       }
     }
-    
-    return new Response('Not found', { status: 404 });
+    // For all other requests, proxy through to origin and add a popup-friendly
+    // Cross-Origin-Opener-Policy header on HTML responses so OAuth popups can
+    // communicate (window.closed / postMessage) with the opener.
+    // This keeps the worker's API behavior while letting the site use the
+    // worker as a lightweight proxy for headers if you're fronting GitHub Pages
+    // or similar.
+    try {
+      const resp = await fetch(request);
+      // Clone headers and set COOP for HTML responses
+      const contentType = resp.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        const newHeaders = new Headers(resp.headers);
+        // Allow opener to access popups while preserving same-origin protections
+        newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+        // If you are not intentionally using COEP, do NOT set Cross-Origin-Embedder-Policy
+
+        const buffer = await resp.arrayBuffer();
+        return new Response(buffer, {
+          status: resp.status,
+          statusText: resp.statusText,
+          headers: newHeaders,
+        });
+      }
+
+      return resp;
+    } catch (err) {
+      return new Response('Not found', { status: 404 });
+    }
   },
 };

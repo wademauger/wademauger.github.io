@@ -130,11 +130,10 @@ const knittingDesignSlice = createSlice({
     },
     
   nextStep: (state: KnittingDesignState) => {
-      // Always have 7 steps with pattern editor as step 2
-      const maxSteps = 6; // 0-6, so 7 total steps
+      // Simplified 2-step workflow: setup (0) -> panels with colorwork (1)
+      const maxSteps = 1; // 0-1, so 2 total steps
       
       if (state.currentStep < maxSteps) {
-        // Simple progression - pattern editor is always step 1 (index 1)
         state.currentStep += 1;
         state.isDirty = true;
       }
@@ -279,6 +278,19 @@ const knittingDesignSlice = createSlice({
       state.patternData.panels.patternLayers[panelKey] = layers;
       state.isDirty = true;
     },
+
+    copyPanelPatternLayers: (state: KnittingDesignState, action: PayloadAction<{ sourcePanelKey: string; targetPanelKey: string }>) => {
+      const { sourcePanelKey, targetPanelKey } = action.payload;
+      if (!state.patternData.panels?.patternLayers) return;
+      
+      const sourceLayers = state.patternData.panels.patternLayers[sourcePanelKey];
+      if (sourceLayers) {
+        // Deep clone the layers to avoid reference sharing
+        const clonedLayers = JSON.parse(JSON.stringify(sourceLayers));
+        state.patternData.panels.patternLayers[targetPanelKey] = clonedLayers;
+        state.isDirty = true;
+      }
+    },
     
     setUiMode: (state: KnittingDesignState, action: PayloadAction<'wizard' | 'workspace'>) => {
       const mode = action.payload;
@@ -317,7 +329,8 @@ export const {
   addToGarmentSequence,
   updateGarmentSequence,
   removeFromGarmentSequence,
-  updatePanelPatternLayers
+  updatePanelPatternLayers,
+  copyPanelPatternLayers
 } = knittingDesignSlice.actions;
 
 export default knittingDesignSlice.reducer;
@@ -337,12 +350,7 @@ export const selectCurrentStepInfo = (state: any) => {
   
   const steps = [
     { title: 'Pattern Setup', key: 'setup' },
-    { title: 'Pattern Editor', key: 'custom' }, // Always include pattern editor as step 2
-    { title: 'Sizing', key: 'sizing' },
-    { title: 'Gauge', key: 'gauge' },
-    { title: 'Colorwork', key: 'colorwork' },
-    { title: 'Preview', key: 'preview' },
-    { title: 'Interactive Knitting', key: 'knitting' }
+    { title: 'Panel Selection & Colorwork', key: 'panels-colorwork' }
   ];
   
   return {

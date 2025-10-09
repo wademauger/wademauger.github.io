@@ -81,3 +81,21 @@ if (typeof HTMLCanvasElement !== 'undefined' && !HTMLCanvasElement.prototype.get
 		return null;
 	};
 }
+
+// Suppress known dev warning from rc-collapse used by Ant Design which logs a
+// deprecation message via console.error in development builds. Tests run under
+// NODE_ENV=test but some libs still call the same path. Filter that specific
+// warning to avoid noisy console.error output during test runs.
+const _origConsoleError = console.error;
+console.error = (...args: any[]) => {
+    try {
+        const msg = String(args[0] || '');
+        if (msg.includes("[rc-collapse] `children` will be removed in next major version")) {
+            // ignore this known deprecation warning in tests
+            return;
+        }
+    } catch (e) {
+        // fall through to original
+    }
+    _origConsoleError.apply(console, args as any);
+};

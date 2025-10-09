@@ -715,15 +715,15 @@ class GoogleDriveServiceModern {
   }
 
   async loadUserProfile() {
-    console.log('=== LOADING USER PROFILE ===');
+    console.log('GoogleDriveServiceModern.loadUserProfile: === STARTING ===');
     
     if (!this.accessToken) {
-      console.warn('✗ No access token available for loading user profile');
-      document.head.appendChild(script);
+      console.warn('GoogleDriveServiceModern.loadUserProfile: ✗ No access token available');
+      return;
     }
 
     try {
-      console.log('Making request to userinfo endpoint...');
+      console.log('GoogleDriveServiceModern.loadUserProfile: Making request to userinfo endpoint with token:', this.accessToken.substring(0, 15) + '...');
       
       // Use the userinfo endpoint to get user details
       const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -732,25 +732,30 @@ class GoogleDriveServiceModern {
         }
       });
 
+      console.log('GoogleDriveServiceModern.loadUserProfile: Response status:', response.status);
+
       if (response.ok) {
         const userInfo = await response.json();
+        console.log('GoogleDriveServiceModern.loadUserProfile: User info received:', userInfo);
+        
         this.userEmail = userInfo.email;
         this.userName = userInfo.name;
         this.userPicture = userInfo.picture;
         
-        console.log('✓ User profile loaded successfully:', { 
+        console.log('GoogleDriveServiceModern.loadUserProfile: ✓ Profile loaded successfully:', { 
           email: this.userEmail, 
           name: this.userName,
           hasPicture: !!this.userPicture
         });
       } else {
-        console.warn('✗ Failed to load user profile:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.warn('GoogleDriveServiceModern.loadUserProfile: ✗ Failed to load profile:', response.status, response.statusText, errorText);
       }
     } catch (error: unknown) {
-      console.warn('✗ Error loading user profile:', error);
+      console.error('GoogleDriveServiceModern.loadUserProfile: ✗ Error loading profile:', error);
     }
     
-    console.log('=== USER PROFILE LOAD COMPLETE ===');
+    console.log('GoogleDriveServiceModern.loadUserProfile: === COMPLETE ===');
   }
 
   async validateToken() {
@@ -1965,26 +1970,45 @@ class GoogleDriveServiceModern {
 
   // Method to handle tokens from @react-oauth/google
   async handleOAuthToken(tokenResponse) {
+    console.log('GoogleDriveServiceModern.handleOAuthToken: Starting with tokenResponse:', tokenResponse);
     try {
       // The tokenResponse from @react-oauth/google contains an access_token
       if (tokenResponse.access_token) {
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Access token received');
         this.accessToken = tokenResponse.access_token;
         this.isSignedIn = true;
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Set isSignedIn=true');
 
         // Set the token for API calls
         if (typeof gapi !== 'undefined' && gapi.client) {
           gapi.client.setToken({
             access_token: this.accessToken
           });
+          console.log('GoogleDriveServiceModern.handleOAuthToken: Token set in gapi.client');
+        } else {
+          console.warn('GoogleDriveServiceModern.handleOAuthToken: gapi or gapi.client not available yet');
         }
 
         // Load user profile
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Loading user profile...');
         await this.loadUserProfile();
+        console.log('GoogleDriveServiceModern.handleOAuthToken: User profile loaded:', {
+          email: this.userEmail,
+          name: this.userName,
+          hasPicture: !!this.userPicture
+        });
         
         // Save session after successful authentication and profile loading
         this.saveSession();
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Session saved');
         
-        console.log('OAuth token handled successfully');
+        console.log('GoogleDriveServiceModern.handleOAuthToken: ✓ OAuth token handled successfully');
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Final state:', {
+          isSignedIn: this.isSignedIn,
+          userEmail: this.userEmail,
+          userName: this.userName,
+          userPicture: this.userPicture
+        });
         return true;
       } else if (tokenResponse.code) {
         // If we receive an authorization code instead, we need to exchange it for an access token

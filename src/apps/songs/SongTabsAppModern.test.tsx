@@ -5,6 +5,8 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act } from 'react-dom/test-utils';
+import testUtils from '@/tests/testUtils';
 import { Modal, message } from 'antd';
 import { Provider } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -27,8 +29,7 @@ jest.mock('@react-oauth/google', () => ({
 // Use the centralized manual Jest mock for GoogleDriveServiceModern located at
 // src/apps/songs/services/__mocks__/GoogleDriveServiceModern.ts
 jest.mock('@/apps/songs/services/GoogleDriveServiceModern');
-// Access the mocked module so tests can reset and configure it
-const DriveMockModule: any = require('@/apps/songs/services/GoogleDriveServiceModern').default;
+const DriveMockModule: any = testUtils.getDriveMock();
 
 // Mock environment variables for Jest (import.meta is not available outside ESM)
 // Create a global object that code under test can read instead.
@@ -37,82 +38,10 @@ const DriveMockModule: any = require('@/apps/songs/services/GoogleDriveServiceMo
 globalThis.__IMPORT_META_ENV__ = globalThis.__IMPORT_META_ENV__ || {};
 globalThis.__IMPORT_META_ENV__.VITE_GOOGLE_CLIENT_ID = 'test-client-id';
 
-// Create a test store
-const createTestStore = () => configureStore({
-  reducer: {
-    chords: chordsSlice,
-    songs: songsSlice
-  }
-});
+// Reuse shared test utilities
+const { renderWithProviders, resetDriveMock, getInnerInputByTestId, findInputByLabel, findModalSubmitButton } = testUtils;
 
-// Helper function to render component with providers
-const renderWithProviders = (component: React.ReactNode) => {
-  const store = createTestStore();
-  const qc = new QueryClient();
-  return render(
-    <QueryClientProvider client={qc}>
-      <GoogleOAuthProvider clientId="test-client-id">
-        <Provider store={store}>
-          {component}
-        </Provider>
-      </GoogleOAuthProvider>
-    </QueryClientProvider>
-  );
-};
-
-// Helper to find the submit button inside the open modal dialog
-async function findModalSubmitButton(): Promise<HTMLButtonElement> {
-  // Prefer a dialog-scoped lookup when a dialog role is present
-  try {
-    const dialog = await screen.findByRole('dialog');
-    // Try to find the primary Add Song button inside the dialog
-    const btn = within(dialog).queryByRole('button', { name: /add song/i }) as HTMLButtonElement | null;
-    if (btn) return btn;
-  } catch (e) {
-    // fall through to fallback strategy
-  }
-
-  // Fallback: find all buttons named 'Add Song' and pick the one that looks like a modal primary button
-  const candidates = await screen.findAllByRole('button', { name: /add song/i });
-  for (const c of candidates) {
-    const el = c as HTMLButtonElement;
-    // AntD primary modal buttons typically have the 'ant-btn-primary' class
-    if (el.classList && el.classList.contains('ant-btn-primary')) return el;
-    // Or pick a button that lives inside an element with class 'ant-modal'
-    if (el.closest && el.closest('.ant-modal')) return el;
-  }
-
-  // Last resort: return the first candidate or throw if none found
-  if (candidates.length > 0) return candidates[0] as HTMLButtonElement;
-  throw new Error('Modal submit button not found');
-}
-
-// Helper to find an input/combobox next to a visible label (AntD renders labels without
-// explicit for/id connections, so find the label element and look for an input inside
-// the same form-group.)
-async function findInputByLabel(labelText: RegExp | string): Promise<HTMLInputElement> {
-  const label = await screen.findByText(labelText as any);
-  const parent = label.parentElement as HTMLElement | null;
-  if (!parent) throw new Error(`Label parent not found for ${labelText}`);
-  const input = parent.querySelector('input, textarea') as HTMLInputElement | null;
-  if (!input) {
-    // Try searching one level up (some structures place label and input in sibling nodes)
-    const gp = parent.parentElement as HTMLElement | null;
-    const input2 = gp?.querySelector('input, textarea') as HTMLInputElement | null;
-    if (input2) return input2;
-    throw new Error(`Input not found adjacent to label ${labelText}`);
-  }
-  return input;
-}
-
-// Helper to get the actual inner input inside an AntD select container by testid
-async function getInnerInputByTestId(testId: string): Promise<HTMLInputElement> {
-  const container = await screen.findByTestId(testId);
-  // Prefer role combobox/input inside
-  const input = container.querySelector('input[role="combobox"], input, textarea') as HTMLInputElement | null;
-  if (!input) throw new Error(`Inner input not found for ${testId}`);
-  return input;
-}
+// We re-use helpers: findModalSubmitButton, getInnerInputByTestId, findInputByLabel
 
 describe('SongTabsAppModern - Create Song Modal', () => {
   // Allow more time for UI interactions in this integration-like suite
@@ -126,9 +55,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     // Clear all mocks before each test
     jest.clearAllMocks();
     // Reset centralized Drive mock
-    if (DriveMockModule && typeof DriveMockModule.resetMockState === 'function') {
-      DriveMockModule.resetMockState();
-    }
+    resetDriveMock && resetDriveMock();
     // Spy on antd message functions so tests can assert calls rather than relying on DOM message output
     messageErrorSpy = jest.spyOn(message, 'error').mockImplementation(() => undefined as any);
     messageLoadingSpy = jest.spyOn(message, 'loading').mockImplementation(() => ({
@@ -249,7 +176,9 @@ describe('SongTabsAppModern - Create Song Modal', () => {
 
   // Try to submit without filling fields
   const submitButton = await screen.findByTestId('create-song-submit');
-  await user.click(submitButton);
+  await act(async () => {
+    await user.click(submitButton);
+  });
 
     // Should call message.error for the first missing field (validation short-circuits)
     await waitFor(() => {
@@ -427,7 +356,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     const user = userEvent.setup();
     // Render SongEditor directly and verify that cancel invokes onCancel (Modal.confirm auto-confirms)
     const onCancel = jest.fn();
-  render(<SongEditor isNewSong={true} isGoogleDriveConnected={true} library={{ artists: [] } as any} onSave={jest.fn() as any} onCancel={onCancel as any} lyricsRef={null as any} />);
+  render(<SongEditor isNewSong={true} isGoogleDriveConnected={true} song={{ title: '' } as any} artist={{ name: '' } as any} album={{ title: '' } as any} library={{ artists: [] } as any} onSave={jest.fn() as any} onCancel={onCancel as any} lyricsRef={null as any} />);
 
     // Fill out fields
     const songTitleInput = await getInnerInputByTestId('input-title');
@@ -439,7 +368,9 @@ describe('SongTabsAppModern - Create Song Modal', () => {
 
     // Click cancel - Modal.confirm is mocked to immediately call onOk which should call onCancel
     const cancelButton = await screen.findByText('Cancel');
-    await user.click(cancelButton);
+    await act(async () => {
+      await user.click(cancelButton);
+    });
 
     await waitFor(() => {
       expect(onCancel).toHaveBeenCalled();
@@ -497,7 +428,9 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     render(<SongEditor isNewSong={true} isGoogleDriveConnected={true} song={{ title: 'My Test Song' } as any} artist={{ name: 'My Test Artist' } as any} album={{ title: 'My Test Album' } as any} library={{ artists: [] } as any} onSave={pendingSave as any} onCancel={jest.fn() as any} lyricsRef={null as any} />);
 
     const submitBtn = await screen.findByTestId('create-song-submit');
-    await user.click(submitBtn);
+    await act(async () => {
+      await user.click(submitBtn);
+    });
 
     // The pendingSave should have been called
     await waitFor(() => {

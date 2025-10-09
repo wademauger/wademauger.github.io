@@ -148,19 +148,24 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
     scope,
     onSuccess: async (tokenResponse: any) => {
       console.log('GoogleAuthButton: Login success, token response:', tokenResponse);
+      console.log('GoogleAuthButton: ctxHandleToken exists?', !!ctxHandleToken, 'type:', typeof ctxHandleToken);
       try {
         if (ctxHandleToken) {
-          console.log('GoogleAuthButton: Using context handleToken');
+          console.log('GoogleAuthButton: Using context handleToken - CALLING NOW');
           await ctxHandleToken(tokenResponse);
+          console.log('GoogleAuthButton: ctxHandleToken completed');
           setSignedNow(true);
         } else if (onSuccess) {
           console.log('GoogleAuthButton: Using prop onSuccess callback');
           await onSuccess(tokenResponse);
           setSignedNow(true);
+        } else {
+          console.warn('GoogleAuthButton: No token handler available! ctxHandleToken:', ctxHandleToken, 'onSuccess:', onSuccess);
         }
         console.log('GoogleAuthButton: Login flow completed successfully');
       } catch (err: unknown) {
         console.error('GoogleAuthButton: Login flow failed:', err);
+        console.error('GoogleAuthButton: Error stack:', err instanceof Error ? err.stack : 'No stack trace');
         if (onError) onError(err);
       }
     },

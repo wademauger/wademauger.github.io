@@ -166,6 +166,49 @@ const garments = [
                 ]
             }
         }
+    },
+    // Test shapes: grouped small swatches and odd shapes collected for quick testing
+    {
+        permalink: 'test-shapes',
+        title: 'Test Shapes',
+        description: 'Collection of small swatches and odd shapes for testing (washcloth, baby blanket, scarf, gauge swatch, zero-top/bottom triangles).',
+        sizes: { 'One Size': 1 },
+        shapes: {
+            'Front': {
+                height: 3,
+                baseA: 10,
+                baseB: 10,
+                successors: [
+                    // washcloth
+                    { height: 8, baseA: 8, baseB: 8, successors: [] },
+                    // gauge swatch
+                    { height: 4, baseA: 4, baseB: 4, successors: [] }
+                ]
+            },
+            'Back': {
+                height: 3,
+                baseA: 10,
+                baseB: 10,
+                successors: [
+                    // baby blanket
+                    { height: 30, baseA: 24, baseB: 24, successors: [] },
+                    // triangle with top/baseB = 0 (point at top)
+                    { height: 10, baseA: 10, baseB: 0, successors: [] }
+                ]
+            },
+            'Sleeves (make 2)': {
+                height: 3,
+                baseA: 10,
+                baseB: 10,
+                successors: [
+                    // simple scarf
+                    { height: 60, baseA: 8, baseB: 8, successors: [] },
+                    // triangle with bottom/baseA = 0 (point at bottom)
+                    { height: 10, baseA: 0, baseB: 10, successors: [] }
+                ]
+            }
+        },
+        finishingSteps: ['Use these panels for gauge and motif testing.']
     }
 ];
 
@@ -262,11 +305,6 @@ const visualMotifs = {
         defaultColors: ['#ffffff', '#000000'],
         primaryMotif: 'Checkerboard',
         verticalRepeat: 4
-    }),
-    argyle: new VisualMotif({
-        type: 'INTARSIA',
-        defaultColors: ['#ffffff', '#000000'],
-        primaryMotif: 'Argyle'
     }),
     solidWhite: new VisualMotif({
         type: 'SOLID',

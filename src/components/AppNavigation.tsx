@@ -7,6 +7,34 @@ import './styles/AppNavigation.css';
  * Reusable navigation header component for apps
  * Provides consistent Google Drive integration, action buttons, and status display
  */
+type PrimaryAction = {
+  label?: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+  loading?: boolean;
+  style?: React.CSSProperties;
+  disabled?: boolean;
+};
+
+type AppNavigationProps = {
+  appName?: string;
+  isGoogleDriveConnected?: boolean;
+  userInfo?: any;
+  onSignIn?: (() => void) | null;
+  onSignOut?: (() => void) | null;
+  onSettingsChange?: ((...args: any[]) => void) | null;
+  googleSignInProps?: Record<string, any>;
+  primaryAction?: PrimaryAction | null;
+  actions?: Array<any>;
+  toggles?: Array<any>;
+  libraryInfo?: any;
+  leftContent?: React.ReactNode;
+  centerContent?: React.ReactNode;
+  rightContent?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+};
+
 const AppNavigation = ({
   // App identification
   appName = 'App',
@@ -20,26 +48,26 @@ const AppNavigation = ({
   googleSignInProps = {},
   
   // Primary action button
-  primaryAction = null, // { label, icon, onClick, loading, style, disabled }
+  primaryAction = null as PrimaryAction | null, // { label, icon, onClick, loading, style, disabled }
   
   // Additional action buttons
-  actions = [], // Array of button configs
+  actions = [] as Array<any>, // Array of button configs
   
   // Toggle switches
-  toggles = [], // Array of { label, checked, onChange, disabled }
+  toggles = [] as Array<any>, // Array of { label, checked, onChange, disabled }
   
   // Library/content info
-  libraryInfo = null, // { title, count, isLoading }
+  libraryInfo = null as any, // { title, count, isLoading }
   
   // Custom content areas
-  leftContent = null,
-  centerContent = null,
-  rightContent = null,
+  leftContent = null as React.ReactNode,
+  centerContent = null as React.ReactNode,
+  rightContent = null as React.ReactNode,
   
   // Styling
   className = '',
   style = {}
-}) => {
+}: AppNavigationProps) => {
   return (
     <div className={`app-navigation ${className}`} style={style}>
       <div className="app-header">

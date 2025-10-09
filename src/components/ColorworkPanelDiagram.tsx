@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { theme } from 'antd';
+import polygonClipping from 'polygon-clipping';
 
 /**
  * ColorworkPanelDiagram - Canvas-based panel diagram with high performance rendering
  * Replaces SVG DOM elements with Canvas 2D context for complex colorwork visualization
  */
 
-const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null) => {
+const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null, borderConfig = null) => {
     // Collect all trapezoid coordinates into one unified path
     const allCoordinates = [];
     collectTrapezoidCoordinates(shape, scale, xOffset, yOffset, allCoordinates);
@@ -38,11 +39,14 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
     
     ctx.clip();
 
+    // Filter out border patterns - they're rendered as stroke, not grid
+    const colorworkLayers = patternLayers ? patternLayers.filter((layer: any) => !layer.pattern?.metadata?.isBorderPattern) : [];
+
     // If pattern layers are provided, render them as background with centered origin
-    if (patternLayers && patternLayers.length > 0 && gauge) {
+    if (colorworkLayers.length > 0 && gauge) {
         renderColorworkLayersToCanvasCentered(
             ctx,
-            patternLayers,
+            colorworkLayers,
             shape,
             minX, minY, maxX - minX, maxY - minY,
             scale,
@@ -58,7 +62,7 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
 
     ctx.restore();
 
-    // Draw unified outline
+    // Draw unified outline (default gray stroke)
     ctx.strokeStyle = '#a1a8af';
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
@@ -72,6 +76,170 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
         ctx.closePath();
         ctx.stroke();
     });
+
+    // If border config provided, draw inner border using polygon union
+    if (borderConfig && borderConfig.color && borderConfig.thickness && gauge) {
+        // Calculate dimensions in inches from the shape bounding box
+        const widthInches = (maxX - minX) / scale;
+        const heightInches = (maxY - minY) / scale;
+        
+        // Calculate gauge
+        const stitchesPerInch = gauge.stitchesPerFourInches / 4;
+        const rowsPerInch = gauge.rowsPerFourInches / 4;
+        const scalingFactor = gauge.scalingFactor || 1;
+        
+        // Calculate total stitches and rows for this shape
+        const totalStitches = Math.round(widthInches * scalingFactor * stitchesPerInch);
+        const totalRows = Math.round(heightInches * scalingFactor * rowsPerInch);
+        
+        // Calculate pixel dimensions per stitch/row
+        // This matches how the pattern grid is rendered
+        const stitchWidthPixels = (maxX - minX) / totalStitches;
+        const rowHeightPixels = (maxY - minY) / totalRows;
+        
+        // Border thickness in "stitches"
+        const borderStitches = borderConfig.thickness;
+        
+        // Convert trapezoids to polygon-clipping format
+        const polygons = allCoordinates.map((coord: any) => {
+            return [[
+                [coord.topLeft.x, coord.topLeft.y],
+                [coord.topRight.x, coord.topRight.y],
+                [coord.bottomRight.x, coord.bottomRight.y],
+                [coord.bottomLeft.x, coord.bottomLeft.y],
+                [coord.topLeft.x, coord.topLeft.y]
+            ]];
+        });
+        
+        // Perform geometric union to merge all trapezoids
+        const mergedPolygons = polygonClipping.union(...polygons);
+        
+        // Draw border as filled region between outer and inner polygons
+        ctx.save();
+        ctx.fillStyle = borderConfig.color;
+        
+        mergedPolygons.forEach((polygon) => {
+            polygon.forEach((ring) => {
+                if (ring.length < 3) return;
+                
+                // Calculate inset polygon with angle-dependent offset
+                const insetRing: any[] = [];
+                
+                for (let i = 0; i < ring.length - 1; i++) {
+                    const prev = ring[(i - 1 + ring.length - 1) % (ring.length - 1)];
+                    const curr = ring[i];
+                    const next = ring[i + 1];
+                    
+                    // Calculate edge vectors
+                    const e1dx = curr[0] - prev[0];
+                    const e1dy = curr[1] - prev[1];
+                    const e1len = Math.sqrt(e1dx * e1dx + e1dy * e1dy);
+                    
+                    const e2dx = next[0] - curr[0];
+                    const e2dy = next[1] - curr[1];
+                    const e2len = Math.sqrt(e2dx * e2dx + e2dy * e2dy);
+                    
+                    if (e1len < 0.001 || e2len < 0.001) continue;
+                    
+                    // Normalized edge vectors
+                    const e1x = e1dx / e1len;
+                    const e1y = e1dy / e1len;
+                    const e2x = e2dx / e2len;
+                    const e2y = e2dy / e2len;
+                    
+                    // Perpendicular inward normals (rotate 90° counter-clockwise for inward)
+                    // For a clockwise-wound polygon, rotating 90° CCW gives inward normal
+                    const n1x = -e1y;
+                    const n1y = e1x;
+                    const n2x = -e2y;
+                    const n2y = e2x;
+                    
+                    // Calculate angles of each edge
+                    const angle1 = Math.atan2(e1y, e1x);
+                    const angle2 = Math.atan2(e2y, e2x);
+                    
+                    // Calculate offset distances based on edge angles
+                    // The perpendicular direction to an edge at angle θ is at angle θ+90°
+                    // For horizontal edge (θ≈0°): perpendicular is vertical
+                    //   -> border spans vertically, uses rowHeightPixels
+                    //   -> |sin(0°)| = 0, |cos(0°)| = 1
+                    // For vertical edge (θ≈90°): perpendicular is horizontal  
+                    //   -> border spans horizontally, uses stitchWidthPixels
+                    //   -> |sin(90°)| = 1, |cos(90°)| = 0
+                    // We need to swap sin/cos because perpendicular is rotated 90°
+                    
+                    const offset1 = borderStitches * Math.sqrt(
+                        Math.pow(Math.abs(Math.sin(angle1)) * stitchWidthPixels, 2) +
+                        Math.pow(Math.abs(Math.cos(angle1)) * rowHeightPixels, 2)
+                    );
+                    const offset2 = borderStitches * Math.sqrt(
+                        Math.pow(Math.abs(Math.sin(angle2)) * stitchWidthPixels, 2) +
+                        Math.pow(Math.abs(Math.cos(angle2)) * rowHeightPixels, 2)
+                    );
+                    
+                    // Calculate proper miter point by finding intersection of offset edges
+                    // The miter point is where the two offset edges meet
+                    
+                    // Calculate the angle bisector (average of normals)
+                    const avgNx = (n1x + n2x) / 2;
+                    const avgNy = (n1y + n2y) / 2;
+                    const avgNlen = Math.sqrt(avgNx * avgNx + avgNy * avgNy);
+                    
+                    if (avgNlen < 0.001) continue; // Degenerate case
+                    
+                    // Normalize the bisector
+                    const bisectorX = avgNx / avgNlen;
+                    const bisectorY = avgNy / avgNlen;
+                    
+                    // Calculate the angle between the two edges
+                    const dotProduct = e1x * e2x + e1y * e2y;
+                    const halfAngle = Math.acos(Math.max(-1, Math.min(1, dotProduct))) / 2;
+                    
+                    // Avoid extreme miter spikes at very acute angles
+                    const sinHalfAngle = Math.sin(halfAngle);
+                    if (Math.abs(sinHalfAngle) < 0.1) {
+                        // For very sharp corners, use a simpler average offset
+                        const avgOffset = (offset1 + offset2) / 2;
+                        insetRing.push([
+                            curr[0] + bisectorX * avgOffset,
+                            curr[1] + bisectorY * avgOffset
+                        ]);
+                    } else {
+                        // Calculate miter distance: offset / sin(half_angle)
+                        const avgOffset = (offset1 + offset2) / 2;
+                        const miterDistance = avgOffset / sinHalfAngle;
+                        
+                        insetRing.push([
+                            curr[0] + bisectorX * miterDistance,
+                            curr[1] + bisectorY * miterDistance
+                        ]);
+                    }
+                }
+                
+                // Draw the border as the area between outer and inner rings
+                if (insetRing.length >= 3) {
+                    ctx.beginPath();
+                    
+                    // Outer ring
+                    ctx.moveTo(ring[0][0], ring[0][1]);
+                    for (let i = 1; i < ring.length; i++) {
+                        ctx.lineTo(ring[i][0], ring[i][1]);
+                    }
+                    
+                    // Inner ring (reverse direction to create a hole)
+                    ctx.moveTo(insetRing[insetRing.length - 1][0], insetRing[insetRing.length - 1][1]);
+                    for (let i = insetRing.length - 2; i >= 0; i--) {
+                        ctx.lineTo(insetRing[i][0], insetRing[i][1]);
+                    }
+                    ctx.closePath();
+                    
+                    ctx.fill('evenodd');
+                }
+            });
+        });
+        
+        ctx.restore();
+    }
 };
 
 const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coordinates = []) => {
@@ -163,7 +331,35 @@ const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
         return;
     }
     
-    const patternRows = pattern.getRowCount();
+        // Special handling for border patterns - they don't use the standard repeat logic
+        if (pattern.metadata?.isBorderPattern) {
+            const thickness = pattern.metadata.borderThickness || 1;
+            const borderColorId = 1; // Border color ID
+            const colorInfo = pattern.colors[borderColorId];
+            
+            if (colorInfo) {
+                const borderColor = colorInfo.color;
+                
+                // For now, use rectangular border logic (shape-aware logic would need more context)
+                // Apply border only to edge stitches
+                for (let row = 0; row < totalRows; row++) {
+                    for (let stitch = 0; stitch < totalStitches; stitch++) {
+                        // Check if this stitch is on the border (within thickness of any edge)
+                        const isTopEdge = row < thickness;
+                        const isBottomEdge = row >= totalRows - thickness;
+                        const isLeftEdge = stitch < thickness;
+                        const isRightEdge = stitch >= totalStitches - thickness;
+                        
+                        const isBorderStitch = isTopEdge || isBottomEdge || isLeftEdge || isRightEdge;
+                        
+                        if (isBorderStitch && borderColor && borderColor !== 'transparent') {
+                            grid[row][stitch] = borderColor;
+                        }
+                    }
+                }
+            }
+            return; // Early return for border patterns
+        }    const patternRows = pattern.getRowCount();
     const patternStitches = pattern.getStitchCount();
     
     if (patternRows === 0 || patternStitches === 0) {
@@ -262,13 +458,14 @@ const renderHierarchyToCanvas = (
     dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, 
     fillColor,
     patternLayers = [],
-    gauge = null
+    gauge = null,
+    borderConfig = null
 ) => {
     // Calculate dimensions first
     calculateTrapezoidDimensions(trap, scale, xOffset, yOffset, dimensions);
 
-    // Render as unified shape with centered pattern
-    renderUnifiedShapeToCanvas(ctx, trap, scale, xOffset, yOffset, fillColor, patternLayers, gauge);
+    // Render as unified shape with centered pattern and border
+    renderUnifiedShapeToCanvas(ctx, trap, scale, xOffset, yOffset, fillColor, patternLayers, gauge, borderConfig);
 };
 
 const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
@@ -348,12 +545,23 @@ const ColorworkPanelDiagram = ({
         // Clear canvas
         ctx.clearRect(0, 0, size, size);
 
+        // Extract border configuration from pattern layers if present
+        let borderConfig = null;
+        const borderLayer = patternLayers.find((layer: any) => layer.pattern?.metadata?.isBorderPattern);
+        if (borderLayer) {
+            const borderColorId = 1; // Border color ID from pattern generation
+            const colorInfo = borderLayer.pattern.colors[borderColorId];
+            const thickness = borderLayer.pattern.metadata.borderThickness || 1;
+            const color = borderLayer.settings.colorMapping?.[borderColorId] || colorInfo?.color || '#000000';
+            borderConfig = { color, thickness };
+        }
+
         let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
         // First pass: Compute bounding box (dummy render to calculate dimensions)
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        renderHierarchyToCanvas(tempCtx, shape, 1, 0, 0, dimensions, fillColor);
+        renderHierarchyToCanvas(tempCtx, shape, 1, 0, 0, dimensions, fillColor, patternLayers, gauge, borderConfig);
 
         const width = dimensions.maxX - dimensions.minX;
         const height = dimensions.maxY - dimensions.minY;
@@ -385,7 +593,8 @@ const ColorworkPanelDiagram = ({
             dimensions, 
             fillColor,
             showPatterns ? patternLayers : [],
-            gauge
+            gauge,
+            borderConfig
         );
         
         ctx.restore();

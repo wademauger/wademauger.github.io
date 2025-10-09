@@ -76,10 +76,8 @@
 
 /* Add these styles to center and color the SVGs */
 .app-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin: 1rem 0;
+  max-height: 80px;
 }
 
 .app-svg {

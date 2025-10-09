@@ -138,7 +138,7 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
         if (colorsArray && colorsArray.length > 0) {
             return colorsArray.map((c: any) => c.color);
         }
-        return ['#cfcfcf'];
+        return ['#eae7c7'];
     }, [reduxColorsMap]);
 
     const currentPanelIndex = useMemo(() => {
@@ -189,7 +189,7 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
                 [0, 0, 0, 0],
                 [0, 0, 0, 0]
             ],
-            { 0: { id: 0, label: 'Color 1', color: '#cfcfcf' } },
+            { 0: { id: 0, label: 'Color 1', color: '#eae7c7' } },
             { width: 4, height: 4 }
         );
         return [
@@ -198,7 +198,7 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
                 name: 'Base Pattern',
                 pattern: defaultSolid,
                 patternType: 'solid',
-                patternConfig: { colors: [{ color: '#cfcfcf' }] },
+                patternConfig: { colors: [{ color: '#eae7c7' }] },
                 priority: 1,
                 settings: {
                     repeatMode: 'both',

@@ -31,6 +31,7 @@
     "json-edit-react": "^1.23.0",
     "material-ui-color-picker": "^3.5.1",
     "moment": "^2.30.1",
+    "polygon-clipping": "^0.15.7",
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.29.0",
     "react": "^18.3.1",
