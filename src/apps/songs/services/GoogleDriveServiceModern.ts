@@ -1250,6 +1250,18 @@ class GoogleDriveServiceModern {
   }
 
   async loadLibrary() {
+    // Check if user is signed in before attempting to load
+    if (!this.isSignedIn || !this.accessToken) {
+      console.log('📭 loadLibrary: User not signed in, returning empty library');
+      return { songs: [], recipes: [], panels: [] };
+    }
+    
+    // Check if Google APIs are initialized
+    if (!this.gapiInited) {
+      console.warn('⚠️ loadLibrary: Google APIs not initialized yet, returning empty library');
+      return { songs: [], recipes: [], panels: [] };
+    }
+    
     return this.withAutoAuth(this._loadLibraryInternal, 'loadLibrary');
   }
 
@@ -1979,14 +1991,51 @@ class GoogleDriveServiceModern {
         this.isSignedIn = true;
         console.log('GoogleDriveServiceModern.handleOAuthToken: Set isSignedIn=true');
 
-        // Set the token for API calls
+        // Ensure Google APIs are initialized before using them
+        console.log('GoogleDriveServiceModern.handleOAuthToken: Checking init status:', {
+          gapiInited: this.gapiInited,
+          gisInited: this.gisInited,
+          gapiExists: typeof gapi !== 'undefined',
+          gapiClientExists: typeof gapi !== 'undefined' && !!gapi.client
+        });
+        
+        if (!this.gapiInited || !this.gisInited) {
+          console.log('GoogleDriveServiceModern.handleOAuthToken: Google APIs not initialized yet, initializing now...');
+          console.log('GoogleDriveServiceModern.handleOAuthToken: CLIENT_ID on service:', this.CLIENT_ID ? `${this.CLIENT_ID.substring(0,10)}...` : 'null');
+          try {
+            // Use the CLIENT_ID that was set at module load time or pass it explicitly
+            const clientIdToUse = this.CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+            if (clientIdToUse && clientIdToUse !== 'development-fallback') {
+              console.log('GoogleDriveServiceModern.handleOAuthToken: Initializing with CLIENT_ID:', clientIdToUse.substring(0,10) + '...');
+              await this.initialize(clientIdToUse);
+              console.log('GoogleDriveServiceModern.handleOAuthToken: Google APIs initialized successfully');
+              console.log('GoogleDriveServiceModern.handleOAuthToken: After init - gapiInited:', this.gapiInited, 'gapi.client exists:', typeof gapi !== 'undefined' && !!gapi.client);
+            } else {
+              console.warn('GoogleDriveServiceModern.handleOAuthToken: No valid CLIENT_ID available for initialization');
+            }
+          } catch (initErr) {
+            console.error('GoogleDriveServiceModern.handleOAuthToken: Failed to initialize Google APIs:', initErr);
+            // Continue anyway - we can still load user profile without Drive API
+          }
+        } else {
+          console.log('GoogleDriveServiceModern.handleOAuthToken: Google APIs already initialized');
+        }
+
+        // Set the token for API calls - retry if needed
+        let tokenSetSuccess = false;
         if (typeof gapi !== 'undefined' && gapi.client) {
           gapi.client.setToken({
             access_token: this.accessToken
           });
-          console.log('GoogleDriveServiceModern.handleOAuthToken: Token set in gapi.client');
+          console.log('GoogleDriveServiceModern.handleOAuthToken: ✓ Token set in gapi.client');
+          tokenSetSuccess = true;
         } else {
-          console.warn('GoogleDriveServiceModern.handleOAuthToken: gapi or gapi.client not available yet');
+          console.warn('GoogleDriveServiceModern.handleOAuthToken: ⚠️ gapi.client not available, token not set');
+          console.warn('GoogleDriveServiceModern.handleOAuthToken: This will cause Drive API calls to fail');
+        }
+        
+        if (!tokenSetSuccess && this.gapiInited) {
+          console.error('GoogleDriveServiceModern.handleOAuthToken: ❌ INCONSISTENT STATE: gapiInited=true but gapi.client is undefined!');
         }
 
         // Load user profile
@@ -2007,7 +2056,9 @@ class GoogleDriveServiceModern {
           isSignedIn: this.isSignedIn,
           userEmail: this.userEmail,
           userName: this.userName,
-          userPicture: this.userPicture
+          userPicture: this.userPicture,
+          gapiInited: this.gapiInited,
+          gisInited: this.gisInited
         });
         return true;
       } else if (tokenResponse.code) {
