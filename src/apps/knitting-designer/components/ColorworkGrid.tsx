@@ -457,28 +457,30 @@ const ColorworkGrid = (props: ColorworkGridProps) => {
                     onSymmetryChange={onSymmetryChange}
                 />
                 <div className="svg-wrapper">
-                    <svg
-                        width={4 + (gridSize.width * 20)}
-                        height={4 + (gridSize.height * 20)}
-                        className="grid-svg"
-                    >
-                        {/* Grid lines */}
-                        {gridLines}
+                    <div className="svg-inner">
+                        <svg
+                            width={4 + (gridSize.width * 20)}
+                            height={4 + (gridSize.height * 20)}
+                            className="grid-svg"
+                        >
+                            {/* Grid lines */}
+                            {gridLines}
 
-                        {/* Stitches */}
-                        {pattern.map((row, rowIndex) =>
-                            row.map((stitch, colIndex) => renderStitch(rowIndex, colIndex, stitch))
-                        )}
+                            {/* Stitches */}
+                            {pattern.map((row, rowIndex) =>
+                                row.map((stitch, colIndex) => renderStitch(rowIndex, colIndex, stitch))
+                            )}
 
-                        {/* Selection overlay - handle rectangular selection areas */}
-                        {selectionOverlays}
+                            {/* Selection overlay - handle rectangular selection areas */}
+                            {selectionOverlays}
 
-                        {/* Current selection overlay */}
-                        {currentSelectionOverlay}
+                            {/* Current selection overlay */}
+                            {currentSelectionOverlay}
 
-                        {/* Paste preview overlay - handle irregular shapes */}
-                        {pastePreviewOverlays}
-                    </svg>
+                            {/* Paste preview overlay - handle irregular shapes */}
+                            {pastePreviewOverlays}
+                        </svg>
+                    </div>
                 </div>
 
                 {/* Status bar */}

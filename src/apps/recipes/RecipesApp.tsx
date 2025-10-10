@@ -21,12 +21,14 @@ import { closeModal, openModal } from '../../reducers/modal.reducer';
 import recipeLibrary from '../../data/recipes';
 import LibraryFileSelector from './components/LibraryFileSelector';
 import './styles/RecipesApp.css';
+import { setShowDemoDataAndPersist } from '../../store/preferencesSlice';
 
 const RecipesApp = () => {
-  const [recipes, setRecipes] = useState([]);
-  const [activeRecipe, setActiveRecipe] = useState(null);
+  const [recipes, setRecipes] = useState<any[]>([]);
+  const [activeRecipe, setActiveRecipe] = useState<any>(null);
   const [fontSize, setFontSize] = useState(100); // Font size in percentage
-  const [showDemoRecipes, setShowDemoRecipes] = useState(true); // Toggle for demo recipes
+  // Global preference: show/hide demo data
+  const showDemoRecipes = useSelector((state: any) => state.preferences?.showDemoData ?? false);
   const [showLibrarySelector, setShowLibrarySelector] = useState(false); // Library file selector modal
   
   // Get Redux modal state
@@ -48,7 +50,7 @@ const RecipesApp = () => {
   
   // Use the singleton instance instead of creating a new one
   const [driveService] = useState(() => GoogleDriveRecipeService);
-  const recipeDetailRef = useRef(null); // Ref for scrolling to recipe detail
+  const recipeDetailRef = useRef<HTMLDivElement | null>(null); // Ref for scrolling to recipe detail
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,7 +74,7 @@ const RecipesApp = () => {
     isLoading, 
     // error unused for now but available in redux state
     editingEnabled 
-  } = useSelector(state => state.recipes);
+  } = useSelector((state: any) => state.recipes);
 
   // Connect to library store for auto-population
   const libraryEntries = useSelector((state: any) => state.library?.entries || []);
@@ -89,7 +91,7 @@ const RecipesApp = () => {
   }, [libraryEntries, dispatch]);
 
   // Handle editing toggle
-  const handleEditingToggle = (enabled) => {
+  const handleEditingToggle = (enabled: any) => {
     dispatch(setEditingEnabled(enabled));
   };
 
@@ -201,7 +203,7 @@ const RecipesApp = () => {
   };
 
   // Handle Google Drive settings changes
-  const handleSettingsChange = async (settings) => {
+  const handleSettingsChange = async (settings: any) => {
     try {
       driveService.updateSettings(settings);
       message.success('Google Drive settings updated successfully');
@@ -218,7 +220,7 @@ const RecipesApp = () => {
 
   // Listen for header-emitted auth events for recipes
   React.useEffect(() => {
-    const onSigninSuccess = (ev) => {
+  const onSigninSuccess = (ev: any) => {
       try {
         const d = ev && ev.detail;
         if (!d) return;
@@ -226,16 +228,16 @@ const RecipesApp = () => {
         handleGoogleSignIn(d.tokenResponse || null);
       } catch (e: unknown) { /* swallow */ }
     };
-    const onSigninError = (ev) => {
+    const onSigninError = (ev: any) => {
       try {
         const d = ev && ev.detail;
         if (!d) return;
         if (d.app && d.app !== 'recipes') return;
-        // Report the error via existing handler
-        handleGoogleSignInError && handleGoogleSignInError(d.error);
+        // Report the error via message
+        message.error('Google sign-in failed');
       } catch (e: unknown) { /* swallow */ }
     };
-    const onSignout = (ev) => {
+    const onSignout = (ev: any) => {
       try {
         const d = ev && ev.detail;
         if (!d) return;
@@ -257,7 +259,7 @@ const RecipesApp = () => {
   // Register header dropdown items for Recipes app
   const { setMenuItems } = useDropdown();
   useEffect(() => {
-    const items = [
+    const items: any[] = [
       // Library Settings handled by top-level GoogleAuthButton
       // Recipes auto-populate from library, no manual open/save needed
     ];
@@ -271,13 +273,12 @@ const RecipesApp = () => {
     console.log('� NEW RECIPE BUTTON CLICKED - handleCreateNewRecipe called');
     console.log('�🔍 "New Recipe" button clicked');
     console.log('🔍 Google Drive connected:', isGoogleDriveConnected);
-    
+    // Always open the modal to show the Add Recipe UI; saving may require sign-in
     if (!isGoogleDriveConnected) {
-      console.log('⚠️ Not signed in to Google Drive - showing warning');
-      message.warning('Please sign in to Google Drive to create recipes');
-      return;
+      console.log('⚠️ Not signed in to Google Drive - allowing draft UI, will require sign-in to save');
+      message.info('You can draft a recipe now. Sign in to Google Drive to save it.');
     }
-    
+
     // Use Redux modal system for consistency
     console.log('🔧 Opening New Recipe modal via Redux');
     dispatch(openModal({
@@ -312,7 +313,7 @@ const RecipesApp = () => {
     
     try {
       dispatch(setLoading(true));
-      await driveService.deleteRecipe(activeRecipe.id);
+  await driveService.deleteRecipe(activeRecipe.id);
       
       // Remove from local state
       const updatedRecipes = driveRecipes.filter((r: any) => r.id !== activeRecipe.id);
@@ -322,7 +323,7 @@ const RecipesApp = () => {
       setActiveRecipe(null);
       navigate('/crafts/recipes');
       
-      message.success(`Recipe "${activeRecipe.title}" deleted successfully`);
+  message.success(`Recipe "${activeRecipe.title}" deleted successfully`);
     } catch (error: unknown) {
       console.error('Failed to delete recipe:', error);
       message.error('Failed to delete recipe. Please try again.');
@@ -332,8 +333,12 @@ const RecipesApp = () => {
   };
 
   // Handle saving a new recipe from the modal
-  const handleSaveNewRecipe = async (recipeData) => {
+  const handleSaveNewRecipe = async (recipeData: any) => {
     try {
+      if (!isGoogleDriveConnected) {
+        message.warning('Please sign in to Google Drive to save your new recipe');
+        return;
+      }
       dispatch(setLoading(true));
       const savedRecipe = await driveService.addRecipe(recipeData);
       
@@ -364,7 +369,7 @@ const RecipesApp = () => {
   };
   
   // Handle library file selection
-  const handleLibraryFileSelect = async (file) => {
+  const handleLibraryFileSelect = async (file: any) => {
     try {
       dispatch(setLoading(true));
       const library = await driveService.selectLibraryFile(file.id);
@@ -381,11 +386,12 @@ const RecipesApp = () => {
 
   // Create filtered recipes based on demo recipe toggle
   const filteredRecipes = useMemo(() => {
-    if (showDemoRecipes) {
+    // Only hide demo recipes when signed in and preference is off
+    if (showDemoRecipes || !isGoogleDriveConnected) {
       return recipeLibrary;
     } else {
       // Return same structure but with empty arrays when demo recipes are hidden
-      const emptyLibrary = {};
+      const emptyLibrary: Record<string, any[]> = {};
       Object.keys(recipeLibrary).forEach((section: any) => {
         emptyLibrary[section] = [];
       });
@@ -396,12 +402,12 @@ const RecipesApp = () => {
   useEffect(() => {
     console.log('🔍 useEffect triggered with urlPermalink:', urlPermalink);
     console.log('🔍 driveRecipes state:', driveRecipes.length, driveRecipes.map((r: any) => r.permalink));
-    setRecipes(filteredRecipes);
+  setRecipes(filteredRecipes as any);
     
     // Find recipe across all sections when URL permalink changes
     if (urlPermalink) {
       // Helper function to find a recipe by permalink across all sections and driveRecipes
-      const findRecipeByPermalink = (permalink) => {
+  const findRecipeByPermalink = (permalink: any) => {
         console.log('🔍 Looking for permalink:', permalink);
         
         // First check driveRecipes
@@ -413,10 +419,10 @@ const RecipesApp = () => {
         }
         
         // Then check filtered local recipe library for display (respects demo recipe toggle)
-        console.log('🔍 Checking filtered recipe library sections:', Object.keys(filteredRecipes));
-        for (const section in filteredRecipes) {
-          console.log(`🔍 Checking section "${section}":`, filteredRecipes[section].map((r: any) => ({ title: r.title, permalink: r.permalink })));
-          const foundRecipe = filteredRecipes[section].find((r: any) => r.permalink === permalink);
+        console.log('🔍 Checking filtered recipe library sections:', Object.keys(filteredRecipes as any));
+        for (const section in (filteredRecipes as any)) {
+          console.log(`🔍 Checking section "${section}":`, (filteredRecipes as any)[section].map((r: any) => ({ title: r.title, permalink: r.permalink })));
+          const foundRecipe = (filteredRecipes as any)[section].find((r: any) => r.permalink === permalink);
           if (foundRecipe) {
             console.log('✅ Found recipe in filtered recipe library:', foundRecipe.title);
             return foundRecipe;
@@ -427,7 +433,7 @@ const RecipesApp = () => {
         // This allows demo recipes to be accessed via URL even when toggle is off
         console.log('🔍 Recipe not found in filtered library, checking full library for URL support');
         for (const section in recipeLibrary) {
-          const foundRecipe = recipeLibrary[section].find((r: any) => r.permalink === permalink);
+          const foundRecipe = (recipeLibrary as any)[section].find((r: any) => r.permalink === permalink);
           if (foundRecipe) {
             console.log('✅ Found recipe in full recipe library (URL access):', foundRecipe.title);
             return foundRecipe;
@@ -455,11 +461,11 @@ const RecipesApp = () => {
     }
   }, [urlPermalink, driveRecipes, filteredRecipes]); // Added driveRecipes and filteredRecipes as dependencies
 
-  const handleFontSizeChange = (newSize) => {
+  const handleFontSizeChange = (newSize: any) => {
     setFontSize(newSize);
   };
 
-  const handleRecipeSelect = (recipe) => {
+  const handleRecipeSelect = (recipe: any) => {
     console.log('Recipe selected:', recipe.title, recipe.permalink);
     navigate(`/crafts/recipes/${recipe.permalink}`);
     
@@ -537,7 +543,7 @@ const RecipesApp = () => {
             editingEnabled={editingEnabled}
             onEditingToggle={handleEditingToggle}
             showDemoRecipes={showDemoRecipes}
-            onDemoRecipesToggle={setShowDemoRecipes}
+            onDemoRecipesToggle={(val: boolean) => dispatch(setShowDemoDataAndPersist(val) as any)}
             isLoading={isLoading}
             message={message}
           />
@@ -558,7 +564,7 @@ const RecipesApp = () => {
       </div>
 
       {/* New Recipe Modal */}
-      {console.log('🎨 RENDER: About to render NewRecipeForm with visible:', isNewRecipeModalOpen)}
+      {/* Render NewRecipeForm modal */}
       <NewRecipeForm
         visible={isNewRecipeModalOpen}
         onCancel={() => {

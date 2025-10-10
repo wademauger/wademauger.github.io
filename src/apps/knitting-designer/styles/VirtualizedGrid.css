@@ -1,0 +1,331 @@
+/**
+ * CSS for Virtualized Grid System
+ * 
+ * Styles for:
+ * - VirtualizedGridCell
+ * - VirtualizedColorworkGrid
+ * - EditorViewport
+ * - MiniMap
+ */
+
+/* Editor Viewport Container */
+.editor-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f5f5f5;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Virtualized Grid Container */
+.virtualized-grid-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  isolation: isolate; /* Create stacking context */
+}
+
+/* Ensure react-window Grid content is clickable */
+.virtualized-grid-container > div {
+  position: relative !important;
+  z-index: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Disable pointer events on resize observer div (z-index: -1) */
+.virtualized-grid-container > div[style*="z-index: -1"],
+.virtualized-grid-container > div[style*="z-index:-1"],
+.virtualized-grid-container div[style*="height: 400px"],
+.virtualized-grid-container div[aria-hidden="true"] {
+  pointer-events: none !important;
+}
+
+/* Ensure cells receive pointer events */
+.virtualized-grid-container svg {
+  pointer-events: auto !important;
+}
+
+/* Ensure all cell containers can receive clicks */
+.virtualized-grid-container > div > div {
+  pointer-events: auto !important;
+}
+
+/* Grid Cell States */
+.virtualized-cell {
+  transition: opacity 0.15s ease;
+}
+
+.virtualized-cell.selected {
+  stroke: #0064ff !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 5, 5;
+  fill-opacity: 0.9;
+}
+
+.virtualized-cell.hovered {
+  stroke: #ff6600 !important;
+  stroke-width: 2 !important;
+  opacity: 0.95;
+}
+
+.virtualized-cell.current-selection {
+  stroke: #ff6600 !important;
+  stroke-width: 2 !important;
+  fill-opacity: 0.85;
+}
+
+.virtualized-cell.paste-preview {
+  stroke: #00ff00 !important;
+  stroke-width: 2 !important;
+  stroke-dasharray: 3, 3;
+  fill-opacity: 0.7;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.zoom-controls button {
+  padding: 6px 14px;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.zoom-controls button:hover {
+  background: #f0f0f0;
+  border-color: #b0b0b0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-controls button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.zoom-controls span {
+  font-size: 12px;
+  text-align: center;
+  color: #333;
+  font-weight: 500;
+  padding: 2px 0;
+}
+
+/* Viewport Instructions Overlay */
+.viewport-instructions {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.viewport-instructions div {
+  white-space: nowrap;
+}
+
+/* Mini-Map Container */
+.mini-map-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+}
+
+.mini-map-container canvas {
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: grab;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.mini-map-container canvas:active {
+  cursor: grabbing;
+}
+
+.mini-map-container > div:first-child {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.mini-map-container > div:last-child {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+
+/* Performance optimizations */
+.virtualized-grid-container * {
+  will-change: transform;
+}
+
+/* Disable text selection during interactions */
+.editor-viewport,
+.virtualized-grid-container,
+.mini-map-container {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Hardware acceleration hints */
+.editor-viewport > div {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Loading state (optional) */
+.virtualized-grid-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mini-map-container {
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+  }
+  
+  .zoom-controls {
+    bottom: 10px;
+    right: 10px;
+    padding: 6px;
+  }
+  
+  .viewport-instructions {
+    font-size: 10px;
+    padding: 8px 12px;
+    top: 10px;
+    left: 10px;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .editor-viewport {
+    background: #1a1a1a;
+  }
+  
+  .mini-map-container {
+    background: rgba(30, 30, 30, 0.98);
+  }
+  
+  .mini-map-container > div:first-child {
+    color: #e0e0e0;
+  }
+  
+  .mini-map-container > div:last-child {
+    color: #a0a0a0;
+  }
+  
+  .zoom-controls {
+    background: rgba(30, 30, 30, 0.95);
+  }
+  
+  .zoom-controls button {
+    background: #2a2a2a;
+    border-color: #404040;
+    color: #e0e0e0;
+  }
+  
+  .zoom-controls button:hover {
+    background: #3a3a3a;
+    border-color: #505050;
+  }
+  
+  .zoom-controls span {
+    color: #e0e0e0;
+  }
+}
+
+/* Accessibility improvements */
+.zoom-controls button:focus,
+.mini-map-container canvas:focus {
+  outline: 2px solid #0064ff;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for scale changes */
+.editor-viewport .virtualized-grid-container {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Grid lines styling (if using SVG overlays) */
+.grid-lines line {
+  stroke: rgba(0, 0, 0, 0.1);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+/* Selection overlays */
+.selection-overlay {
+  fill: rgba(0, 100, 255, 0.15);
+  stroke: #0064ff;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+  pointer-events: none;
+}
+
+.current-selection-overlay {
+  fill: rgba(255, 165, 0, 0.2);
+  stroke: #ff6600;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.paste-preview-overlay {
+  fill: rgba(0, 255, 0, 0.15);
+  stroke: #00ff00;
+  stroke-width: 2;
+  stroke-dasharray: 3, 3;
+  pointer-events: none;
+}

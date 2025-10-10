@@ -8,6 +8,7 @@ import modalReducer from './reducers/modal.reducer';
 import authReducer from './store/authSlice';
 import libraryReducer from './store/librarySlice';
 import uiEventsReducer from './store/uiEventsSlice';
+import preferencesReducer, { initPreferencesFromStorage } from './store/preferencesSlice';
 import { initLibraryFromStorage } from './store/librarySlice';
 
 const store = configureStore({
@@ -20,7 +21,8 @@ const store = configureStore({
     colorworkGrid: colorworkGridReducer,
     library: libraryReducer,
     modal: modalReducer,
-    uiEvents: uiEventsReducer
+    uiEvents: uiEventsReducer,
+    preferences: preferencesReducer
   }
 });
 
@@ -50,6 +52,7 @@ if (process.env.NODE_ENV !== 'production') {
 try {
   // dispatch the init thunk; store.dispatch is typed to accept thunks from configureStore
   store.dispatch(initLibraryFromStorage());
+  store.dispatch(initPreferencesFromStorage());
 } catch (err) {
   // swallow errors during startup initialization to avoid breaking app load
   // (errors will be surfaced when user interacts with library features)

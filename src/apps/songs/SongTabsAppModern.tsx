@@ -45,6 +45,7 @@ const SongTabsApp = () => {
   const userInfo = useSelector((state: any) => state.songs.userInfo);
   const isLoading = useSelector((state: any) => state.songs.isLoading);
   const error = useSelector((state: any) => state.songs.error);
+  const showDemoData = useSelector((state: any) => state.preferences?.showDemoData ?? false);
 
   // Connect to library store for auto-population
   const libraryEntries = useSelector((state: any) => state.library?.entries || []);
@@ -54,8 +55,18 @@ const SongTabsApp = () => {
   // React Query: full library (preferred source of truth once migrated)
   const { data: fullLibraryQuery, isLoading: fullLibraryLoading } = useLibraryQuery();
 
-  // Prefer React Query data if available, otherwise fall back to Redux
-  const fullLibrary = fullLibraryQuery || fullLibraryRedux;
+  // Helper to detect if a library object has the structured songs data we need
+  const hasArtists = (lib: any) => !!(lib && Array.isArray(lib.artists) && lib.artists.length > 0);
+
+  // Prefer a library that actually includes artists. This avoids a timing issue
+  // where React Query may return an early placeholder (e.g. empty object or
+  // missing artists) which would otherwise override a valid Redux library that
+  // already contains artists loaded during app startup.
+  const fullLibrary = hasArtists(fullLibraryQuery)
+    ? fullLibraryQuery
+    : hasArtists(fullLibraryRedux)
+      ? fullLibraryRedux
+      : (fullLibraryQuery || fullLibraryRedux);
 
   // Local component state for UI interactions only
   const [isEditingSong, setIsEditingSong] = useState(false);
@@ -123,13 +134,41 @@ const SongTabsApp = () => {
           }))
         });
 
+        // Optionally merge demo artists when preference is enabled and user is signed in
+        let artistsToApply = fullLibrary.artists;
+        try {
+          if (showDemoData && isGoogleDriveConnected) {
+            const demoArtists = [
+              {
+                name: 'Demo Artist',
+                albums: [
+                  {
+                    title: 'Demo Album',
+                    songs: [
+                      { title: 'Morning Light', lyrics: '[C]Waking up to...', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+                      { title: 'Old River Blues', lyrics: '[G]I went down...', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+                    ]
+                  }
+                ]
+              }
+            ];
+            // Merge without duplicating existing demo artist by name
+            const existingNames = new Set((artistsToApply || []).map((a: any) => a.name));
+            const merged = [...artistsToApply, ...demoArtists.filter((a) => !existingNames.has(a.name))];
+            artistsToApply = merged;
+          }
+        } catch (e) {
+          // non-fatal merge
+        }
+
         // Overwrite the Redux songs store so the UI reflects the Drive file immediately.
-        dispatch(setLibrary({ artists: fullLibrary.artists }));
+        dispatch(setLibrary({ artists: artistsToApply }));
 
         // Also publish the full library into the library slice so apps that
         // derive counts from `state.library.entries` (for example HomePage)
         // will reflect the newly-loaded Drive JSON.
         try {
+          // Note: we keep fullLibrary as-is (without demo overlay) for fidelity
           dispatch(setFullLibrary(fullLibrary));
           console.log('📚 Successfully set full library into library slice');
         } catch (e) {
@@ -153,7 +192,7 @@ const SongTabsApp = () => {
     } catch (err) {
       console.error('Error applying fullLibrary to songs store:', err);
     }
-  }, [fullLibrary, library, dispatch]);
+  }, [fullLibrary, library, dispatch, showDemoData, isGoogleDriveConnected]);
 
   // Redux-based handlers
   const handleLoadMockLibrary = useCallback(() => {
@@ -679,6 +718,14 @@ const SongTabsApp = () => {
                 count: getTotalSongsCount(),
                 isLoading: isLoading
               }}
+              toggles={[
+                {
+                  label: 'Edit Mode',
+                  checked: !!isGoogleDriveConnected,
+                  onChange: () => {},
+                  disabled: !isGoogleDriveConnected
+                }
+              ]}
               googleSignInProps={{
                 onError: handleGoogleSignInError,
                 disabled: isLoading

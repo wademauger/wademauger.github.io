@@ -56,6 +56,19 @@ const HomePage = () => {
 
     recipeCount = counts['recipe'] || 0;
     songCount = counts['song'] || 0;
+    // If an artists entry exists in entries (added by library slice when fullLibrary has artists),
+    // derive song/album/artist counts from it to keep badge numbers accurate even without fullLibrary.
+    const artistsEntry = entries.find((e: any) => e?.type === 'artists' && Array.isArray(e.artists));
+    if (artistsEntry) {
+      try {
+        artistCount = artistsEntry.artists.length;
+        albumCount = artistsEntry.artists.reduce((total: number, artist: any) => total + (artist.albums ? artist.albums.length : 0), 0);
+        songCount = artistsEntry.artists.reduce((total: number, artist: any) => {
+          if (!artist.albums) return total;
+          return total + artist.albums.reduce((aTotal: number, album: any) => aTotal + (album.songs ? album.songs.length : 0), 0);
+        }, 0);
+      } catch {}
+    }
     // artistCount and albumCount require structured library; default to 0 in fallback
     panelCount = counts['panel'] || 0;
     // Fallback: count colorwork patterns from entries if present
@@ -113,7 +126,7 @@ const HomePage = () => {
                 alt="Knitting"
                 className="app-icon"
               />
-              <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Pattern Wizard</Link>
+              <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Knitting Pattern App</Link>
             </div>
           </Badge.Ribbon>
         </Badge.Ribbon>

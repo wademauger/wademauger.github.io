@@ -83,6 +83,9 @@ const RibbonUI = ({
   const [editingColor, setEditingColor] = useState(null);
   // Which swatch is selected for edits: 'foreground' | 'background'
   const [selectedSwatch, setSelectedSwatch] = useState('foreground');
+
+  const MIN_GRID_SIZE = 1;
+  const MAX_GRID_SIZE = 500;
   
   // Handle color selection: left-click sets the currently selected swatch (FG/BG), right-click sets background
   const handleColorSelect = (colorId) => {
@@ -387,8 +390,8 @@ const RibbonUI = ({
           <InputNumber
             value={gridSize.width}
             onChange={(width) => onGridResize({ ...gridSize, width })}
-            min={1}
-            max={100}
+            min={MIN_GRID_SIZE}
+            max={MAX_GRID_SIZE}
             size="small"
             style={{ width: '60px' }}
           />
@@ -396,8 +399,8 @@ const RibbonUI = ({
           <InputNumber
             value={gridSize.height}
             onChange={(height) => onGridResize({ ...gridSize, height })}
-            min={1}
-            max={100}
+            min={MIN_GRID_SIZE}
+            max={MAX_GRID_SIZE}
             size="small"
             style={{ width: '60px' }}
           />

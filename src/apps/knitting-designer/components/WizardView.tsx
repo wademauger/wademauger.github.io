@@ -1,15 +1,119 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { InputNumber, Form, Button, Input, Divider, Select, Collapse, Space, Typography, Card, message } from 'antd';
-import { EditOutlined, EyeOutlined, CheckOutlined, CopyOutlined } from '@ant-design/icons';
-import ColorworkPanelEditor from '../../../components/ColorworkPanelEditor';
+import { InputNumber,  // Helper to get panel shape
+  const getPanelShape = useCallback((panelKey: string) => {
+    const [permalink, panelName] = panelKey.split('::');
+    
+    if (permalink === 'library') {
+      const libraryPanel = libraryData?.panels?.[panelName];
+      if (libraryPanel?.shape) {
+        return libraryPanel.shape;
+      }
+    } else {
+      const garment = garments.find((g: any) => g.permalink === permalink);
+      if (garment?.shapes?.[panelName]) {
+        return garment.shapes[panelName];
+      }
+    }
+    
+    return null;
+  }, [libraryData]);
+
+  // Calculate panel dimensions
+  const getPanelDimensions = useCallback((panelKey: string) => {
+    const shape = getPanelShape(panelKey);
+    if (!shape || !patternData?.gauge) return null;
+
+    try {
+      const gauge = patternData.gauge;
+      const scalingFactor = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
+      const dimensions = calculatePanelDimensions(shape, scalingFactor);
+      if (!dimensions) return null;
+
+      const stitchesPerInch = gauge.stitchesPerInch || 0;
+      const rowsPerInch = gauge.rowsPerInch || 0;
+      
+      if (!stitchesPerInch || !rowsPerInch) return null;
+
+      const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
+      const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
+
+      return {
+        widthInches: dimensions.widthInches,
+        heightInches: dimensions.heightInches,
+        totalStitches,
+        totalRows
+      };
+    } catch (error) {
+      return null;
+    }
+  }, [getPanelShape, patternData]);
+
+  // Toggle colorwork editing
+  const toggleColorworkFlow = useCallback(() => {
+    if (showColorworkSection) {
+      setShowColorworkSection(false);
+      setExpandedPanelKey(null);
+    } else {
+      resetToFirstInstance();
+      setShowColorworkSection(true);
+      // Expand the first panel if available
+      if (selectedPanels.length > 0) {
+        setExpandedPanelKey(selectedPanels[0]);
+      }
+    }
+  }, [showColorworkSection, resetToFirstInstance, selectedPanels]);
+
+  // Handle opening colorwork editor for a specific panel
+  const handleEditPanelColorwork = useCallback((panelKey: string) => {
+    setExpandedPanelKey(panelKey);
+    setShowColorworkSection(true);
+    
+    // Find the first instance of this panel type
+    const firstInstance = panelInstances.find(inst => inst.key === panelKey);
+    if (firstInstance) {
+      const instanceIndex = panelInstances.findIndex(inst => inst.instanceId === firstInstance.instanceId);
+      setInstanceByIndex(instanceIndex);
+    }
+    
+    // Scroll to colorwork section
+    setTimeout(() => {
+      const colorworkSection = document.querySelector('[data-colorwork-section]');
+      if (colorworkSection) {
+        colorworkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }, [panelInstances, setInstanceByIndex]);
+
+  // Handle saving and moving to next instance
+  const handleSaveAndNext = useCallback(() => {
+    if (currentInstance) {
+      markInstanceColored(currentInstance.instanceId);
+    }
+    
+    if (currentInstanceIndex < panelInstances.length - 1) {
+      goToNextInstance();
+    } else {
+      // All instances completed
+      setShowColorworkSection(false);
+      setExpandedPanelKey(null);
+      message.success('All panel instances completed!');
+    }
+  }, [currentInstance, currentInstanceIndex, panelInstances.length, markInstanceColored, goToNextInstance]);n, Input, Divider, Select, Collapse, Space, Typography, Card, message } from 'antd';
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { PanelDiagram } from '../../../components/PanelDiagram';
-import { ColorworkPanelDiagram } from '../../../components/ColorworkPanelDiagram';
 import { useDispatch, useSelector } from 'react-redux';
-import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep, copyPanelPatternLayers } from '../../../store/knittingDesignSlice';
+import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
 import { loadFullLibrary, setFullLibrary, clearEntries } from '../../../store/librarySlice';
 import { useDriveAuth } from '../../colorwork-designer/context/DriveAuthContext';
 import { calculatePanelDimensions } from '../utils/panelDimensions';
+import { generateProjectTitle } from '../utils/ProjectTitlePlaceholderHelper';
+import { usePanelInstances, usePanelSelection, usePanelShape } from '../hooks/usePanelState';
+import PanelCard from './PanelCard';
+import ColorworkEditorSection from './ColorworkEditorSection';
+import PanelSummary from './PanelSummary';
+import { PanelMetadata } from '../types/patternWizard.types';
+import '../styles/PatternWizard.css';
 
 const WizardView: React.FC = () => {
   const dispatch = useDispatch();
@@ -17,14 +121,10 @@ const WizardView: React.FC = () => {
   const currentStep: number = useSelector(selectCurrentStep) || 0;
   const [name, setName] = useState<string>(patternData?.name || '');
   
-  // State for colorwork editing - NEW: per-instance workflow
+  // State for colorwork editing
   const [showColorworkSection, setShowColorworkSection] = useState(false);
-  const [currentColorworkPanelIndex, setCurrentColorworkPanelIndex] = useState(0);
-  const [coloredPanels, setColoredPanels] = useState<Set<string>>(new Set());
-  
-  // New state for per-instance colorwork editing
-  const [panelInstances, setPanelInstances] = useState<Array<{ key: string; instanceId: string; panelName: string }>>([]);
-  const [currentInstanceIndex, setCurrentInstanceIndex] = useState(0);
+  const [expandedPanelKey, setExpandedPanelKey] = useState<string | null>(null);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
   
   // Get authentication state
   const { isSignedIn } = useDriveAuth();
@@ -37,21 +137,25 @@ const WizardView: React.FC = () => {
     if (isSignedIn) {
       dispatch(loadFullLibrary() as any);
     } else {
-      // Clear library data when logged out
       dispatch(setFullLibrary(null));
       dispatch(clearEntries());
     }
   }, [isSignedIn, dispatch]);
 
   // Build a flat list of panels from garments with unique keys
-  const panelList = useMemo(() => {
-    const out: Array<{ key: string; garmentTitle: string; garmentPermalink: string; panelName: string }> = [];
+  const panelList = useMemo<PanelMetadata[]>(() => {
+    const out: PanelMetadata[] = [];
     
     // Add panels from built-in garments
     (garments || []).forEach((g: any) => {
       const shapes = g.shapes || {};
       Object.keys(shapes).forEach((panelName) => {
-        out.push({ key: `${g.permalink}::${panelName}`, garmentTitle: g.title, garmentPermalink: g.permalink, panelName });
+        out.push({ 
+          key: `${g.permalink}::${panelName}`, 
+          garmentTitle: g.title, 
+          garmentPermalink: g.permalink, 
+          panelName 
+        });
       });
     });
     
@@ -60,7 +164,6 @@ const WizardView: React.FC = () => {
       Object.keys(libraryData.panels).forEach((panelId) => {
         const panel = libraryData.panels[panelId];
         const panelName = panel.name || panelId;
-        // Use 'library' as permalink to distinguish from garments
         out.push({ 
           key: `library::${panelId}`, 
           garmentTitle: 'My Library', 
@@ -73,21 +176,29 @@ const WizardView: React.FC = () => {
     return out;
   }, [libraryData]);
 
-  // Initialize counts from patternData.panels.panelsNeeded or defaults to 0
-  const initialCounts: Record<string, number> = (patternData && patternData.panels && patternData.panels.panelsNeeded) || {};
-  const [panelCounts, setPanelCounts] = useState<Record<string, number>>(() => ({ ...initialCounts }));
+  // Use custom hooks for panel management
+  const {
+    panelCounts,
+    selectedPanels,
+    totalInstanceCount,
+    updatePanelCount,
+    addPanel,
+    removePanel
+  } = usePanelSelection(panelList);
 
-  const setCount = (key: string, value: number | null) => {
-    const v = value == null ? 0 : value;
-    const next = { ...panelCounts, [key]: v };
-    setPanelCounts(next);
-    // Persist to redux under section 'panels'
-    dispatch(updatePatternData({ section: 'panels', data: { panelsNeeded: next } }) as any);
-  };
-
-  // Selected panel for colorwork editing (key from panelList: `${permalink}::${panelName}`)
-  // Initialize from redux if a previewPanelKey was persisted under patternData.panels
-  const [selectedPanelKey, setSelectedPanelKey] = useState<string | null>(patternData?.panels?.previewPanelKey || null);
+  const {
+    panelInstances,
+    currentInstance,
+    currentInstanceIndex,
+    coloredInstances,
+    markInstanceColored,
+    goToNextInstance,
+    goToPreviousInstance,
+    setInstanceByIndex,
+    copyInstanceColorwork,
+    getPanelTypeStats,
+    resetToFirstInstance
+  } = usePanelInstances(selectedPanels, panelCounts, panelList);
 
   const resolveLibraryPanel = useCallback((panels: any, panelId: string) => {
     if (!panels) return null;
@@ -131,6 +242,9 @@ const WizardView: React.FC = () => {
     const [, panelName = 'Panel'] = panelKey.split('::');
     return panelName;
   }, [panelList]);
+
+  // generate a placeholder string and cache it so it doesn't change on every render
+  const cachedPlaceholderTitle = useMemo(() => generateProjectTitle(), []);
 
   // Helper functions for sequential colorwork editing
   // Helper functions for instance-based colorwork editing
@@ -374,11 +488,11 @@ const WizardView: React.FC = () => {
               {/* Title expands to fill available space */}
               <div style={{ flex: '1 1 320px', minWidth: 220 }}>
                 <label style={{ display: 'block', fontWeight: 700, marginBottom: 6 }}>Pattern name</label>
-                <Input value={name} onChange={onNameChange} />
+                <Input placeholder={cachedPlaceholderTitle} value={name} onChange={onNameChange} />
               </div>
 
               {/* Gauge block has fixed preferred width but can wrap under when narrow */}
-              <div style={{ flex: '0 0 280px', minWidth: 200, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ flex: '0 0', minWidth: 200, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 13 }}>Stitches per 4":</label>
                   <InputNumber min={1} value={patternData?.gauge?.stitchesPerFourInches} onChange={(v: number | null) => onGaugeChange('stitchesPerInch', v)} />

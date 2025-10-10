@@ -24,6 +24,8 @@ type AppNavigationProps = {
   onSignOut?: (() => void) | null;
   onSettingsChange?: ((...args: any[]) => void) | null;
   googleSignInProps?: Record<string, any>;
+  // Optional status block (legacy prop used by some callers for counts/loading text)
+  status?: any;
   primaryAction?: PrimaryAction | null;
   actions?: Array<any>;
   toggles?: Array<any>;

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Alert, message } from 'antd';
+import { Modal, Form, Input, Button, Alert, message, Switch, Space, Tooltip } from 'antd';
 import { FolderOutlined, FileOutlined } from '@ant-design/icons';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import GoogleDriveServiceModern from '../../apps/songs/services/GoogleDriveServiceModern';
 import { loadFullLibrary } from '../../store/librarySlice';
+import { setShowDemoDataAndPersist } from '../../store/preferencesSlice';
 import type { LibrarySettingsModalProps, LibrarySettings } from './types';
 
 /**
@@ -24,7 +25,6 @@ import type { LibrarySettingsModalProps, LibrarySettings } from './types';
 export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
   visible,
   jsonKey,
-  displayLabel,
   onClose,
   onSave
 }) => {
@@ -32,6 +32,7 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [service] = useState(() => GoogleDriveServiceModern);
   const dispatch = useDispatch();
+  const showDemoData = useSelector((s: any) => s.preferences?.showDemoData ?? false);
 
   // Load current settings when modal opens
   useEffect(() => {
@@ -47,14 +48,14 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
         service.restoreSession();
       }
 
-      const settings = service.getSettings();
+  const settings: Record<string, any> = service.getSettings() as any;
       
       // Map jsonKey to the appropriate settings field
       const fileKey = `${jsonKey}LibraryFile`;
       const folderKey = `${jsonKey}Folder`;
       
-      const fileName = settings[fileKey] || `library.json`;
-      const folderPath = settings[folderKey] || '/';
+  const fileName = (settings && settings[fileKey]) || `library.json`;
+  const folderPath = (settings && settings[folderKey]) || '/';
 
       form.setFieldsValue({
         fileName,
@@ -101,13 +102,13 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
         const result = await dispatch(loadFullLibrary() as any);
         
         if (loadFullLibrary.fulfilled.match(result)) {
-          message.success(`${displayLabel} library settings saved and data loaded successfully`);
+          message.success(`Library settings saved and data loaded successfully`);
         } else {
-          message.warning(`${displayLabel} library settings saved, but failed to load data: ${result.payload}`);
+          message.warning(`Library settings saved, but failed to load data: ${result.payload}`);
         }
       } catch (loadError) {
         console.warn('Failed to load library after saving settings:', loadError);
-        message.warning(`${displayLabel} library settings saved, but failed to load data`);
+        message.warning(`Library settings saved, but failed to load data`);
       }
       
       // Call onSave callback if provided
@@ -135,27 +136,41 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
   return (
     <Modal
       open={visible}
-      title={`${displayLabel} Library Settings`}
+      title={`Library Settings`}
       onCancel={handleCancel}
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           Cancel
         </Button>,
         <Button key="save" type="primary" loading={loading} onClick={handleSave}>
-          Save Settings
+          Save and Load
         </Button>
       ]}
       width={600}
     >
       <Alert
         message="Configure Google Drive Library Location"
-        description={`Specify where your ${displayLabel.toLowerCase()} library JSON file should be stored in Google Drive.`}
+        description={`Specify where your library JSON file should be stored in Google Drive.`}
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
       />
 
       <Form form={form} layout="vertical">
+        <Form.Item label="Demo Data Visibility" style={{ marginBottom: 8 }}>
+          <Space>
+            <Switch
+              checked={!!showDemoData}
+              onChange={(val: boolean) => {
+                dispatch(setShowDemoDataAndPersist(val) as any);
+              }}
+            />
+            <Tooltip title="When on, built-in demo entries are shown alongside your Drive content while signed in.">
+              <span>Show demo data when signed in</span>
+            </Tooltip>
+          </Space>
+        </Form.Item>
+
         <Form.Item
           label="Library File Name"
           name="fileName"
@@ -188,14 +203,6 @@ export const LibrarySettingsModal: React.FC<LibrarySettingsModalProps> = ({
           />
         </Form.Item>
       </Form>
-
-      <Alert
-        message="Note"
-        description="If the file doesn't exist at this location, it will be created automatically when you save data."
-        type="warning"
-        showIcon
-        style={{ marginTop: 16 }}
-      />
     </Modal>
   );
 };

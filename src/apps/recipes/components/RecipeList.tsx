@@ -21,12 +21,12 @@ const RecipeList = ({
   onDemoRecipesToggle,
   isLoading,
   message
-}) => {
-  const { driveRecipes } = useSelector(state => state.recipes);
+}: any) => {
+  const { driveRecipes } = useSelector((state: any) => state.recipes);
 
   // Local function to count total recipes
   const getTotalRecipesCount = () => {
-    const localCount = Object.values(recipes).reduce((total, sectionRecipes) => 
+    const localCount = Object.values(recipes as any).reduce((total: number, sectionRecipes: any) => 
       total + (Array.isArray(sectionRecipes) ? sectionRecipes.length : 0), 0
     );
     const driveCount = driveRecipes.length;
@@ -43,7 +43,7 @@ const RecipeList = ({
         onSignIn={onSignIn}
         onSignOut={onSignOut}
         onSettingsChange={onSettingsChange}
-        primaryAction={isGoogleDriveConnected ? {
+        primaryAction={{
           label: '🤖 New Recipe',
           icon: <PlusOutlined />,
           onClick: () => {
@@ -51,7 +51,7 @@ const RecipeList = ({
             onCreateNewRecipe();
           },
           loading: isLoading
-        } : null}
+        }}
         toggles={[
           {
             label: 'Edit Mode',

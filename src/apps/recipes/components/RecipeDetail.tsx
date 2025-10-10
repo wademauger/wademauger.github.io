@@ -630,6 +630,18 @@ const SortableNote = ({
   );
 };
 
+type RecipeDetailProps = {
+  recipe: any;
+  fontSize: number;
+  onFontSizeChange: (n: number) => void;
+  editingEnabled?: boolean;
+  isDraft?: boolean;
+  driveService?: any;
+  userInfo?: any;
+  onEditRecipe?: (() => void) | null;
+  onDeleteRecipe?: (() => void | Promise<void>) | null;
+};
+
 const RecipeDetail = ({ 
   recipe, 
   fontSize, 
@@ -640,7 +652,7 @@ const RecipeDetail = ({
   userInfo = null,
   onEditRecipe = null,
   onDeleteRecipe = null
-}) => {
+}: RecipeDetailProps) => {
   // Debug logging for recipe structure (commented out for production)
   // useEffect(() => {
   //   console.log('🍽️ RecipeDetail loaded:', { 

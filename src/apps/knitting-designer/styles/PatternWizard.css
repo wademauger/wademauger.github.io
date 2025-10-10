@@ -1,0 +1,312 @@
+/**
+ * PatternWizard.css - Styles for Pattern Wizard components
+ */
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== PanelCard ===== */
+.panel-card {
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.panel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.panel-card-expanded {
+  border-width: 2px;
+}
+
+.panel-card-completed {
+  background: linear-gradient(135deg, #f6ffed 0%, #ffffff 100%);
+}
+
+.panel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.panel-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-card-quantity {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.panel-card-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+  min-height: 120px;
+}
+
+.panel-card-no-preview {
+  width: 100px;
+  height: 100px;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #999;
+  font-size: 12px;
+}
+
+.panel-card-dimensions {
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.panel-card-progress {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+  transition: all 0.3s ease;
+}
+
+.panel-card-progress-content {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.panel-card-progress-bar {
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.panel-card-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* ===== PanelInstanceList ===== */
+.panel-instance-list {
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.panel-instance-list-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-instance-list-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-instance-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.panel-instance-item-current .panel-instance-button {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.panel-instance-button {
+  min-width: 100px;
+  font-size: 11px;
+  transition: all 0.2s ease;
+}
+
+.panel-instance-button:hover {
+  transform: translateY(-1px);
+}
+
+.panel-instance-copy-button {
+  font-size: 10px;
+  height: 20px;
+  padding: 0 6px;
+  transition: all 0.2s ease;
+}
+
+.panel-instance-copy-button:hover {
+  color: #1890ff;
+  background-color: #e6f7ff;
+}
+
+.instance-indicator {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* ===== ColorworkEditorSection ===== */
+.colorwork-editor-section {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 2px solid #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.colorwork-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.colorwork-editor-title {
+  flex: 1;
+  min-width: 200px;
+}
+
+.colorwork-editor-empty {
+  padding: 40px;
+  text-align: center;
+  color: #999;
+}
+
+.colorwork-editor-canvas {
+  margin-top: 16px;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* ===== PanelSummary ===== */
+.panel-summary {
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+.panel-summary:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.panel-summary-collapsed {
+  cursor: pointer;
+}
+
+.panel-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-summary-details {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* ===== Responsive Layout ===== */
+@media (max-width: 768px) {
+  .panel-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .panel-card-quantity {
+    align-self: flex-end;
+  }
+  
+  .colorwork-editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .panel-instance-list-items {
+    justify-content: center;
+  }
+  
+  .panel-instance-button {
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-card-preview {
+    min-height: 100px;
+  }
+  
+  .panel-card-no-preview {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .panel-instance-button {
+    min-width: 70px;
+    font-size: 10px;
+  }
+}
+
+/* ===== Grid Layouts ===== */
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .panel-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Utility Classes ===== */
+.fade-in {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.smooth-transition {
+  transition: all 0.3s ease;
+}

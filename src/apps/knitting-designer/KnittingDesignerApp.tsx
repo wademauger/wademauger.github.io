@@ -9,6 +9,7 @@ import {
 } from './store/colorworkGridSlice';
 import { selectBackgroundColorId } from './store/colorworkGridSlice';
 import ColorworkGrid from './components/ColorworkGrid';
+import ColorworkGridVirtualized from './components/ColorworkGridVirtualized';
 import './styles/KnittingDesignerApp.css';
 import { openModal, MODAL_TYPES } from '@/reducers/modal.reducer';
 import { useDriveAuth } from '../colorwork-designer/context/DriveAuthContext';
@@ -922,7 +923,7 @@ const KnittingDesignerApp: React.FC = () => {
     }, [selection, selectedCells, clipboard, handleCopy, handlePaste, handleUndo, handleRedo, handleClearSelection]);
 
     return (
-        <ColorworkGrid
+        <ColorworkGridVirtualized
             pattern={pattern}
             colors={colors}
             backgroundColorId={backgroundColorId}
