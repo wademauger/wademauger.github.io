@@ -1,0 +1,3 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["static/js/index-B9d-t28p.js","static/css/index-D_3jL854.css"])))=>i.map(i=>d[i]);
+import{aL as o,cW as i}from"./index-B9d-t28p.js";async function u(a){const{loadFullLibraryById:r}=await o(async()=>{const{loadFullLibraryById:l}=await import("./index-B9d-t28p.js").then(t=>t.cX);return{loadFullLibraryById:l}},__vite__mapDeps([0,1]));return i.dispatch(r(a)).unwrap()}async function y(){const{loadFullLibrary:a}=await o(async()=>{const{loadFullLibrary:r}=await import("./index-B9d-t28p.js").then(l=>l.cX);return{loadFullLibrary:r}},__vite__mapDeps([0,1]));return i.dispatch(a()).unwrap()}export{y as loadFullLibrary,u as loadFullLibraryById};
+//# sourceMappingURL=libraryThunks-CT-Zflvb.js.map

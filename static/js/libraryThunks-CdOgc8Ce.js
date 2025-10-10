@@ -1,3 +1,0 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["static/js/index-B5oyPn8n.js","static/css/index-D_3jL854.css"])))=>i.map(i=>d[i]);
-import{aL as o,cW as i}from"./index-B5oyPn8n.js";async function u(a){const{loadFullLibraryById:r}=await o(async()=>{const{loadFullLibraryById:l}=await import("./index-B5oyPn8n.js").then(t=>t.cX);return{loadFullLibraryById:l}},__vite__mapDeps([0,1]));return i.dispatch(r(a)).unwrap()}async function y(){const{loadFullLibrary:a}=await o(async()=>{const{loadFullLibrary:r}=await import("./index-B5oyPn8n.js").then(l=>l.cX);return{loadFullLibrary:r}},__vite__mapDeps([0,1]));return i.dispatch(a()).unwrap()}export{y as loadFullLibrary,u as loadFullLibraryById};
-//# sourceMappingURL=libraryThunks-CdOgc8Ce.js.map
