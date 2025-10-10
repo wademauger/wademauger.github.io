@@ -16,6 +16,8 @@ const HomePage = () => {
   // Derive counts from fullLibrary if present for robustness.
   let recipeCount = 0;
   let songCount = 0;
+  let artistCount = 0;
+  let albumCount = 0;
   let panelCount = 0;
   let colorworkCount = 0;
 
@@ -24,10 +26,17 @@ const HomePage = () => {
       recipeCount = Object.keys(fullLib.recipes).length;
     }
     if (fullLib.artists && Array.isArray(fullLib.artists)) {
+      // Count artists
+      artistCount = fullLib.artists.length;
       // Count songs by summing songs in each artist/album
       songCount = fullLib.artists.reduce((total: number, artist: any) => {
         if (!artist.albums) return total;
         return total + artist.albums.reduce((aTotal: number, album: any) => aTotal + (album.songs ? album.songs.length : 0), 0);
+      }, 0);
+      // Count albums across artists
+      albumCount = fullLib.artists.reduce((total: number, artist: any) => {
+        if (!artist.albums) return total;
+        return total + (Array.isArray(artist.albums) ? artist.albums.length : 0);
       }, 0);
     }
     if (fullLib.panels && typeof fullLib.panels === 'object') {
@@ -47,6 +56,7 @@ const HomePage = () => {
 
     recipeCount = counts['recipe'] || 0;
     songCount = counts['song'] || 0;
+    // artistCount and albumCount require structured library; default to 0 in fallback
     panelCount = counts['panel'] || 0;
     // Fallback: count colorwork patterns from entries if present
     colorworkCount = counts['colorworkPatterns'] || counts['colorwork'] || counts['colorworkPattern'] || 0;
@@ -55,7 +65,7 @@ const HomePage = () => {
   return (
     <div className="home-page">
       <div className="app-cards">
-        <Badge.Ribbon text={`${recipeCount} recipe${recipeCount !== 1 ? 's' : ''}`} color={recipeCount ? 'blue' : 'gray'}>
+        <Badge.Ribbon text={`${recipeCount} recipe${recipeCount !== 1 ? 's' : ''}`} color={recipeCount ? 'green' : 'gray'}>
           <div className="app-card">
             <h2>Recipes</h2>
             <p>
@@ -72,23 +82,27 @@ const HomePage = () => {
         </Badge.Ribbon>
 
         <Badge.Ribbon text={`${songCount} song${songCount !== 1 ? 's' : ''}`} color={songCount ? 'green' : 'gray'}>
-          <div className="app-card">
-            <h2>Music Tabs</h2>
-            <p>
-              Explore your collection of music tabs organized by artist and album.
-              View chord charts for various instruments.
-            </p>
-            <img
-              src={MusicIcon}
-              alt="Music"
-              className="app-icon"
-            />
-            <Link to="/crafts/tabs" className="app-link">Open Music Tabs App</Link>
-          </div>
+          <Badge.Ribbon text={`${albumCount} album${albumCount !== 1 ? 's' : ''}`} color={albumCount ? 'blue' : 'gray'} style={{ top: 45 }}>
+            <Badge.Ribbon text={`${artistCount} artist${artistCount !== 1 ? 's' : ''}`} color={artistCount ? 'purple' : 'gray'} style={{ top: 80 }}>
+              <div className="app-card">
+                <h2>Music Tabs</h2>
+                <p>
+                  Explore your collection of music tabs organized by artist and album.
+                  View chord charts for various instruments.
+                </p>
+                <img
+                  src={MusicIcon}
+                  alt="Music"
+                  className="app-icon"
+                />
+                <Link to="/crafts/tabs" className="app-link">Open Music Tabs App</Link>
+              </div>
+            </Badge.Ribbon>
+          </Badge.Ribbon>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? 'volcano' : 'gray'}>
-          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? 'magenta' : 'gray'} style={{ top: 40 }}>
+        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? 'green' : 'gray'}>
+          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? 'blue' : 'gray'} style={{ top: 45 }}>
             <div className="app-card">
               <h2>Knitting Patterns</h2>
               <p>
