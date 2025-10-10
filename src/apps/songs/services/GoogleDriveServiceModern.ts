@@ -885,12 +885,17 @@ class GoogleDriveServiceModern {
         }
       }
 
-      // If the object directly has a panels or colorworkPatterns namespace, preserve them
-      if (lib && ( (lib.panels && typeof lib.panels === 'object') || Array.isArray(lib.colorworkPatterns) )) {
+      // If the object has panels, colorworkPatterns, OR artists, preserve them all
+      if (lib && typeof lib === 'object' && (
+        (lib.panels && typeof lib.panels === 'object') || 
+        Array.isArray(lib.colorworkPatterns) ||
+        Array.isArray(lib.artists)
+      )) {
         // Preserve all keys from the original library to avoid data loss
         const out = { ...lib };
         if (lib.panels && typeof lib.panels === 'object') out.panels = lib.panels;
         if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
+        if (Array.isArray(lib.artists)) out.artists = lib.artists;
         out.lastUpdated = lib.lastUpdated || new Date().toISOString();
         return out;
       }
@@ -900,14 +905,16 @@ class GoogleDriveServiceModern {
         return { panels: lib.namespaces.panels, lastUpdated: lib.lastUpdated || new Date().toISOString() };
       }
 
-      // If the payload itself looks like the library (artists/versions), but no panels,
-      // attempt to find anything that resembles panels and store under panels key.
+      // If the payload itself looks like the library but no recognized keys,
+      // attempt to find anything that resembles panels/artists and preserve it.
       if (lib && typeof lib === 'object') {
-        if (lib.panels || Array.isArray(lib.colorworkPatterns)) {
+        // Check for any recognized data structures
+        if (lib.panels || Array.isArray(lib.colorworkPatterns) || Array.isArray(lib.artists)) {
           // Preserve all keys from the original library to avoid data loss
           const out = { ...lib };
           if (lib.panels) out.panels = lib.panels;
           if (Array.isArray(lib.colorworkPatterns)) out.colorworkPatterns = lib.colorworkPatterns;
+          if (Array.isArray(lib.artists)) out.artists = lib.artists;
           out.lastUpdated = lib.lastUpdated || new Date().toISOString();
           return out;
         }
@@ -1380,9 +1387,28 @@ class GoogleDriveServiceModern {
 
     if (!fileId) throw new Error('fileId required to save to a specific Drive file');
 
-    // Normalize the payload to ensure we only persist the expected 'panels' namespace
+    // Log what we're about to normalize
+    console.log('💾 _saveLibraryToFileInternal: Input libraryData structure:', {
+      keys: Object.keys(libraryData || {}),
+      hasArtists: Array.isArray(libraryData?.artists),
+      artistCount: libraryData?.artists?.length || 0,
+      hasPanels: !!libraryData?.panels,
+      hasColorwork: Array.isArray(libraryData?.colorworkPatterns)
+    });
+
+    // Normalize the payload to preserve all app namespaces (panels, colorworkPatterns, artists)
     const normalized = this._normalizeLibraryPayload(libraryData);
     normalized.lastUpdated = new Date().toISOString();
+    
+    // Log what was normalized
+    console.log('💾 _saveLibraryToFileInternal: Normalized payload structure:', {
+      keys: Object.keys(normalized || {}),
+      hasArtists: Array.isArray(normalized?.artists),
+      artistCount: normalized?.artists?.length || 0,
+      hasPanels: !!normalized?.panels,
+      hasColorwork: Array.isArray(normalized?.colorworkPatterns)
+    });
+    
     const bodyStr = JSON.stringify(normalized, null, 2);
     
     try {
@@ -1541,6 +1567,15 @@ class GoogleDriveServiceModern {
       }
     }
 
+    console.log('💾 _saveLibraryInternal: Saving library with structure:', {
+      keys: Object.keys(libraryData || {}),
+      hasArtists: Array.isArray(libraryData?.artists),
+      artistCount: libraryData?.artists?.length || 0,
+      hasPanels: !!libraryData?.panels,
+      hasColorwork: Array.isArray(libraryData?.colorworkPatterns),
+      artistNames: libraryData?.artists?.map((a: any) => a.name) || []
+    });
+
     try {
       let libraryFile = await this._findLibraryFileInternal();
       
@@ -1556,18 +1591,55 @@ class GoogleDriveServiceModern {
       // Update the lastUpdated timestamp
       libraryData.lastUpdated = new Date().toISOString();
 
-      // Use the simpler files.update method instead of raw request
-      const response = await gapi.client.drive.files.update({
+      // Log what we're about to save
+      const bodyToSave = JSON.stringify(libraryData, null, 2);
+      console.log('💾 _saveLibraryInternal: About to save to file:', {
         fileId: libraryFile.id,
-        media: {
-          mimeType: 'application/json',
-          body: JSON.stringify(libraryData, null, 2)
+        bodyLength: bodyToSave.length,
+        artistCount: libraryData.artists?.length || 0,
+        firstFewArtists: (libraryData.artists || []).slice(0, 3).map((a: any) => a.name),
+        lastFewArtists: (libraryData.artists || []).slice(-3).map((a: any) => a.name)
+      });
+
+      // Ensure gapi client has current access token
+      if (this.accessToken && typeof gapi !== 'undefined' && gapi.client) {
+        gapi.client.setToken({ access_token: this.accessToken });
+      }
+
+      // Use the PATCH method to update file content via the upload endpoint
+      // The files.update() method with media body doesn't reliably update content
+      const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${libraryFile.id}?uploadType=media`;
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: bodyToSave
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Failed to upload file content:', uploadResponse.status, errorText);
+        throw new Error(`Failed to upload file content: ${uploadResponse.status}`);
+      }
+
+      console.log('GoogleDriveServiceModern: File content uploaded successfully:', {
+        status: uploadResponse.status,
+        fileId: libraryFile.id
+      });
+
+      // Now update the file metadata to refresh the modifiedTime
+      const metadataResponse = await gapi.client.drive.files.update({
+        fileId: libraryFile.id,
+        resource: {
+          modifiedTime: new Date().toISOString()
         }
       });
 
-      console.log('GoogleDriveServiceModern: updated library file id=', response.result && response.result.id);
+      console.log('GoogleDriveServiceModern: updated library file id=', metadataResponse.result && metadataResponse.result.id);
       console.log('Library saved successfully');
-      return response.result;
+      return metadataResponse.result;
     } catch (error: unknown) {
       console.error('Error saving library:', error);
       throw new Error('Failed to save library to Google Drive');

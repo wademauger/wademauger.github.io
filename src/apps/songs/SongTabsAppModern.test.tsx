@@ -84,35 +84,18 @@ describe('SongTabsAppModern - Create Song Modal', () => {
     });
   });
 
-  test('Add Song button is disabled when editing is disabled', async () => {
+  test('Add Song button is visible by default', async () => {
     renderWithProviders(<SongTabsAppWithProvider />);
     
     await waitFor(() => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // The Add Song button should not be visible when editing is disabled
-    expect(screen.queryByText('Add Song')).not.toBeInTheDocument();
+    // The Add Song button should be visible without any toggles
+    expect(screen.getByText('Add Song')).toBeInTheDocument();
   });
 
-  test('Add Song button appears when editing is enabled', async () => {
-    renderWithProviders(<SongTabsAppWithProvider />);
-    
-    await waitFor(() => {
-      expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
-    });
-
-    // Enable editing mode
-    const editToggle = screen.getByRole('switch');
-    fireEvent.click(editToggle);
-
-    // Now the Add Song button should be visible
-    await waitFor(() => {
-      expect(screen.getByText('Add Song')).toBeInTheDocument();
-    });
-  });
-
-  test('clicking Add Song button opens the modal', async () => {
+  test('Add Song button opens the modal when clicked', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SongTabsAppWithProvider />);
     
@@ -120,18 +103,15 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
-  // Click Add Song button (use data-testid applied to the primary action)
-  const addSongButton = await screen.findByTestId('primary-action-add-song');
-  await user.click(addSongButton);
+    const addSongButton = await screen.findByTestId('primary-action-add-song');
+    await user.click(addSongButton);
 
     // Modal should be open (submit button present inside modal)
     const submit = await screen.findByTestId('create-song-submit');
     expect(submit).toBeInTheDocument();
   });
+
+  // Note: previous test merged into 'opens the modal when clicked'
 
   test('modal contains all required form fields', async () => {
     const user = userEvent.setup();
@@ -141,11 +121,8 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
-    const addSongButton = await screen.findByTestId('primary-action-add-song');
+  // Open modal directly via Add Song button
+  const addSongButton = await screen.findByTestId('primary-action-add-song');
   await user.click(addSongButton);
 
     // Check all form fields are present (AntD uses custom markup; check inputs next to labels)
@@ -167,10 +144,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
+  // Open modal directly via Add Song button
   const addSongButton = await screen.findByTestId('primary-action-add-song');
   await user.click(addSongButton);
 
@@ -194,10 +168,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
+  // Open modal directly via Add Song button
   const addSongButton = await screen.findByTestId('primary-action-add-song');
   await user.click(addSongButton);
 
@@ -217,10 +188,7 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
+  // Open modal directly via Add Song button
   const addSongButton = await screen.findByTestId('primary-action-add-song');
   await user.click(addSongButton);
 
@@ -291,11 +259,8 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
-    const addSongButton = await screen.findByText('Add Song');
+  // Open modal directly via Add Song button
+  const addSongButton = await screen.findByText('Add Song');
     await user.click(addSongButton);
 
   // Fill out the form
@@ -331,11 +296,8 @@ describe('SongTabsAppModern - Create Song Modal', () => {
       expect(screen.getByText(/songs in library/i)).toBeInTheDocument();
     });
 
-    // Enable editing mode and open modal
-    const editToggle = screen.getByRole('switch');
-    await user.click(editToggle);
-
-    const addSongButton = await screen.findByText('Add Song');
+  // Open modal directly via Add Song button
+  const addSongButton = await screen.findByText('Add Song');
     await user.click(addSongButton);
 
   // Fill out some form fields

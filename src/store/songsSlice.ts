@@ -77,10 +77,15 @@ export const updateSong = createAsyncThunk(
       }
 
       // Persist full library
-      await dispatch(saveFullLibrary(library)).unwrap();
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
 
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+
+      // Return the merged fullLibrary so the reducer can update state with complete data
       return {
-        library,
+        library: fullLibrary,
         artistName,
         albumTitle,
         songTitle,
@@ -118,9 +123,29 @@ export const addSong = createAsyncThunk(
       const newSong = { ...songData, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       album.songs.push(newSong);
 
-      await dispatch(saveFullLibrary(library)).unwrap();
+      // Debug: Log what we're about to merge
+      console.log('🔧 addSong: Before merge:', {
+        songsLibraryArtistCount: library.artists.length,
+        songsLibraryArtists: library.artists.map((a: any) => a.name),
+        fullLibraryExists: !!state.library?.fullLibrary,
+        fullLibraryArtistCount: state.library?.fullLibrary?.artists?.length || 0,
+        fullLibraryKeys: state.library?.fullLibrary ? Object.keys(state.library.fullLibrary) : []
+      });
 
-      return { library, artistName, albumTitle, songTitle: newSong.title };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      console.log('🔧 addSong: After merge:', {
+        mergedArtistCount: fullLibrary.artists?.length || 0,
+        mergedKeys: Object.keys(fullLibrary),
+        mergedArtists: fullLibrary.artists?.map((a: any) => a.name) || []
+      });
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName, albumTitle, songTitle: newSong.title };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -145,8 +170,13 @@ export const addArtist = createAsyncThunk(
         library.artists.push({ name: artistName, albums: [] });
       }
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, artistName };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -173,8 +203,13 @@ export const addAlbum = createAsyncThunk(
         artist.albums.push({ title: albumTitle, songs: [] });
       }
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, artistName, albumTitle };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName, albumTitle };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -208,9 +243,14 @@ export const deleteSong = createAsyncThunk(
         library.artists = library.artists.filter((a: any) => a.name !== artistName);
       }
 
-      await dispatch(saveFullLibrary(library)).unwrap();
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
 
-      return { library, artistName, albumTitle, songTitle };
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName, albumTitle, songTitle };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -233,8 +273,13 @@ export const updateArtist = createAsyncThunk(
       if (!artist) throw new Error('Artist not found');
       artist.name = newArtistName;
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, oldArtistName, newArtistName };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, oldArtistName, newArtistName };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -259,8 +304,13 @@ export const updateAlbum = createAsyncThunk(
       if (!album) throw new Error('Album not found');
       album.title = newAlbumTitle;
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, artistName, oldAlbumTitle, newAlbumTitle };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName, oldAlbumTitle, newAlbumTitle };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -281,8 +331,13 @@ export const deleteArtist = createAsyncThunk(
 
       library.artists = library.artists.filter((a: any) => a.name !== artistName);
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, artistName };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }
@@ -310,8 +365,13 @@ export const deleteAlbum = createAsyncThunk(
         library.artists = library.artists.filter((a: any) => a.name !== artistName);
       }
 
-      await dispatch(saveFullLibrary(library)).unwrap();
-      return { library, artistName, albumTitle };
+      // Merge updated artists array into full library to preserve panels, colorworkPatterns, etc.
+      const fullLibrary = JSON.parse(JSON.stringify(state.library?.fullLibrary || {}));
+      fullLibrary.artists = library.artists;
+
+      await dispatch(saveFullLibrary(fullLibrary)).unwrap();
+      // Return the merged fullLibrary so the reducer can update state with complete data
+      return { library: fullLibrary, artistName, albumTitle };
     } catch (error: any) {
       return rejectWithValue(error.message || String(error));
     }

@@ -77,8 +77,8 @@ const AppNavigation = ({
             {/* Left Content Area */}
             {leftContent}
             
-            {/* Primary Action Button */}
-            {primaryAction && isGoogleDriveConnected && (
+            {/* Primary Action Button (always show if provided) */}
+            {primaryAction && (
               <Button 
                 type="primary"
                 style={{
