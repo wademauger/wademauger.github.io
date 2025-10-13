@@ -1,108 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { InputNumber,  // Helper to get panel shape
-  const getPanelShape = useCallback((panelKey: string) => {
-    const [permalink, panelName] = panelKey.split('::');
-    
-    if (permalink === 'library') {
-      const libraryPanel = libraryData?.panels?.[panelName];
-      if (libraryPanel?.shape) {
-        return libraryPanel.shape;
-      }
-    } else {
-      const garment = garments.find((g: any) => g.permalink === permalink);
-      if (garment?.shapes?.[panelName]) {
-        return garment.shapes[panelName];
-      }
-    }
-    
-    return null;
-  }, [libraryData]);
-
-  // Calculate panel dimensions
-  const getPanelDimensions = useCallback((panelKey: string) => {
-    const shape = getPanelShape(panelKey);
-    if (!shape || !patternData?.gauge) return null;
-
-    try {
-      const gauge = patternData.gauge;
-      const scalingFactor = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
-      const dimensions = calculatePanelDimensions(shape, scalingFactor);
-      if (!dimensions) return null;
-
-      const stitchesPerInch = gauge.stitchesPerInch || 0;
-      const rowsPerInch = gauge.rowsPerInch || 0;
-      
-      if (!stitchesPerInch || !rowsPerInch) return null;
-
-      const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
-      const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
-
-      return {
-        widthInches: dimensions.widthInches,
-        heightInches: dimensions.heightInches,
-        totalStitches,
-        totalRows
-      };
-    } catch (error) {
-      return null;
-    }
-  }, [getPanelShape, patternData]);
-
-  // Toggle colorwork editing
-  const toggleColorworkFlow = useCallback(() => {
-    if (showColorworkSection) {
-      setShowColorworkSection(false);
-      setExpandedPanelKey(null);
-    } else {
-      resetToFirstInstance();
-      setShowColorworkSection(true);
-      // Expand the first panel if available
-      if (selectedPanels.length > 0) {
-        setExpandedPanelKey(selectedPanels[0]);
-      }
-    }
-  }, [showColorworkSection, resetToFirstInstance, selectedPanels]);
-
-  // Handle opening colorwork editor for a specific panel
-  const handleEditPanelColorwork = useCallback((panelKey: string) => {
-    setExpandedPanelKey(panelKey);
-    setShowColorworkSection(true);
-    
-    // Find the first instance of this panel type
-    const firstInstance = panelInstances.find(inst => inst.key === panelKey);
-    if (firstInstance) {
-      const instanceIndex = panelInstances.findIndex(inst => inst.instanceId === firstInstance.instanceId);
-      setInstanceByIndex(instanceIndex);
-    }
-    
-    // Scroll to colorwork section
-    setTimeout(() => {
-      const colorworkSection = document.querySelector('[data-colorwork-section]');
-      if (colorworkSection) {
-        colorworkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-  }, [panelInstances, setInstanceByIndex]);
-
-  // Handle saving and moving to next instance
-  const handleSaveAndNext = useCallback(() => {
-    if (currentInstance) {
-      markInstanceColored(currentInstance.instanceId);
-    }
-    
-    if (currentInstanceIndex < panelInstances.length - 1) {
-      goToNextInstance();
-    } else {
-      // All instances completed
-      setShowColorworkSection(false);
-      setExpandedPanelKey(null);
-      message.success('All panel instances completed!');
-    }
-  }, [currentInstance, currentInstanceIndex, panelInstances.length, markInstanceColored, goToNextInstance]);n, Input, Divider, Select, Collapse, Space, Typography, Card, message } from 'antd';
-import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { InputNumber, Input, Divider, Select, Collapse, Space, Typography, Card, message, Button } from 'antd';
+import { EditOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons';
 import { PanelDiagram } from '../../../components/PanelDiagram';
 import { useDispatch, useSelector } from 'react-redux';
-import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep } from '../../../store/knittingDesignSlice';
+import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep, copyPanelPatternLayers } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
 import { loadFullLibrary, setFullLibrary, clearEntries } from '../../../store/librarySlice';
 import { useDriveAuth } from '../../colorwork-designer/context/DriveAuthContext';
@@ -112,6 +13,7 @@ import { usePanelInstances, usePanelSelection, usePanelShape } from '../hooks/us
 import PanelCard from './PanelCard';
 import ColorworkEditorSection from './ColorworkEditorSection';
 import PanelSummary from './PanelSummary';
+import ColorworkPanelEditor from '../../../components/ColorworkPanelEditor';
 import { PanelMetadata } from '../types/patternWizard.types';
 import '../styles/PatternWizard.css';
 
@@ -179,12 +81,18 @@ const WizardView: React.FC = () => {
   // Use custom hooks for panel management
   const {
     panelCounts,
-    selectedPanels,
+    selectedPanels: hookSelectedPanels,
     totalInstanceCount,
     updatePanelCount,
     addPanel,
     removePanel
   } = usePanelSelection(panelList);
+
+  // Helper to set the count for a panel (wraps hook's updatePanelCount)
+  const setCount = useCallback((panelKey: string, value: number | null) => {
+    const next = typeof value === 'number' ? value : 0;
+    updatePanelCount(panelKey, next);
+  }, [updatePanelCount]);
 
   const {
     panelInstances,
@@ -198,7 +106,7 @@ const WizardView: React.FC = () => {
     copyInstanceColorwork,
     getPanelTypeStats,
     resetToFirstInstance
-  } = usePanelInstances(selectedPanels, panelCounts, panelList);
+  } = usePanelInstances(hookSelectedPanels, panelCounts, panelList);
 
   const resolveLibraryPanel = useCallback((panels: any, panelId: string) => {
     if (!panels) return null;
@@ -252,21 +160,23 @@ const WizardView: React.FC = () => {
     return panelInstances[currentInstanceIndex] || null;
   }, [panelInstances, currentInstanceIndex]);
 
+  // Local state: index of the currently-selected panel (for panel-level navigation)
+  const [currentColorworkPanelIndex, setCurrentColorworkPanelIndex] = useState(0);
+
   const getCurrentColorworkPanel = useCallback(() => {
     return selectedPanels[currentColorworkPanelIndex] || null;
   }, [selectedPanels, currentColorworkPanelIndex]);
 
-  const goToNextInstance = useCallback(() => {
-    if (currentInstanceIndex < panelInstances.length - 1) {
-      setCurrentInstanceIndex(prev => prev + 1);
-    }
-  }, [currentInstanceIndex, panelInstances.length]);
+  const advanceToNextInstanceLocal = useCallback(() => {
+    // delegate to hook navigation
+    goToNextInstance();
+  }, [goToNextInstance]);
 
-  const goToPreviousInstance = useCallback(() => {
-    if (currentInstanceIndex > 0) {
-      setCurrentInstanceIndex(prev => prev - 1);
-    }
-  }, [currentInstanceIndex]);
+
+  const advanceToPreviousInstanceLocal = useCallback(() => {
+    // delegate to hook navigation
+    goToPreviousInstance();
+  }, [goToPreviousInstance]);
 
   const goToNextPanel = useCallback(() => {
     if (currentColorworkPanelIndex < selectedPanels.length - 1) {
@@ -304,9 +214,11 @@ const WizardView: React.FC = () => {
       setShowColorworkSection(false);
     } else {
       // Generate instances for per-instance colorwork editing
-      const instances = generatePanelInstances();
-      setPanelInstances(instances);
-      setCurrentInstanceIndex(0);
+      // panelInstances are derived from the selection via the usePanelInstances hook,
+      // so no need to set them here. Instead, reset the hook-managed index and local
+      // panel index and open the editor.
+      generatePanelInstances();
+      setInstanceByIndex(0);
       setCurrentColorworkPanelIndex(0);
       setShowColorworkSection(true);
       // Scroll to colorwork section after a brief delay to let it render
@@ -319,9 +231,20 @@ const WizardView: React.FC = () => {
     }
   }, [showColorworkSection, generatePanelInstances]);
 
-  const markPanelAsColored = useCallback((panelKey: string) => {
-    setColoredPanels(prev => new Set([...prev, panelKey]));
-  }, []);
+  // Local set of colored panel instance ids (keeps parity with earlier code that
+  // expected a `coloredPanels` set). The usePanelInstances hook also tracks
+  // colored instances (coloredInstances) and exposes markInstanceColored; we can
+  // mark both places for compatibility.
+  const [coloredPanels, setColoredPanels] = useState<Set<string>>(new Set());
+  const markPanelAsColored = useCallback((instanceId: string) => {
+    setColoredPanels(prev => new Set([...Array.from(prev), instanceId]));
+    try {
+      // If the hook-provided marker exists, call it as well
+      if (typeof markInstanceColored === 'function') markInstanceColored(instanceId);
+    } catch (e) {
+      // ignore
+    }
+  }, [markInstanceColored]);
 
   const copyColorworkToCurrentPanel = useCallback((sourcePanelKey: string) => {
     const currentPanel = getCurrentColorworkPanel();
@@ -348,6 +271,7 @@ const WizardView: React.FC = () => {
   }, [dispatch]);
 
   // Ensure selectedPanelKey stays valid when selection changes
+  const [selectedPanelKey, setSelectedPanelKey] = useState<string | null>(patternData?.panels?.previewPanelKey || null);
   useEffect(() => {
     // If the user has a persisted preview selection in redux and it's still available, respect it.
     const persisted = patternData?.panels?.previewPanelKey;
@@ -710,7 +634,7 @@ const WizardView: React.FC = () => {
                                 {/* Panel header with name and add button */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                   <Typography.Text strong>{panelName}</Typography.Text>
-                                  <Button size="small" type="primary" ghost onClick={(e) => { e.stopPropagation(); setCount(key, 1); }}>
+                                  <Button size="small" type="primary" ghost onClick={(e: React.MouseEvent) => { e.stopPropagation(); setCount(key, 1); }}>
                                     Add
                                   </Button>
                                 </div>
@@ -903,7 +827,7 @@ const WizardView: React.FC = () => {
                             <Button
                               size="small"
                               type={isCurrent ? "primary" : "default"}
-                              onClick={() => setCurrentInstanceIndex(index)}
+                              onClick={() => setInstanceByIndex(index)}
                               style={{ 
                                 fontSize: 11,
                                 minWidth: 80,
@@ -985,7 +909,7 @@ const WizardView: React.FC = () => {
                         onRequestPreviewKeyChange: (instanceId: string) => {
                           const instanceIndex = panelInstances.findIndex(i => i.instanceId === instanceId);
                           if (instanceIndex >= 0) {
-                            setCurrentInstanceIndex(instanceIndex);
+                            setInstanceByIndex(instanceIndex);
                           }
                         } 
                       } as any)} 
