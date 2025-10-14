@@ -38,7 +38,7 @@
 /* General component styling shared across apps */
 .app-link {
   display: inline-block;
-  background-color: #1abc9c;
+  background-color: oklch(0.446 0.043 257.281);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
@@ -46,8 +46,4 @@
   text-align: center;
   font-weight: 500;
   transition: background-color 0.2s;
-}
-
-.app-link:hover {
-  background-color: #16a085;
 }

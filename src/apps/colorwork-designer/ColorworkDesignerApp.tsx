@@ -1,11 +1,15 @@
-import { useState, useRef, useMemo, useEffect, lazy, Suspense } from 'react';
+import { useState, useRef, useMemo, useEffect, lazy, Suspense, useCallback } from 'react';
 import './ColorworkDesignerApp.css';
 import { Layout, Typography, Button, Space, Card, Row, Col } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { garments } from '../../data/garments';
 import { DriveAuthProvider } from './context/DriveAuthContext';
 import { useDropdown } from '../../components/DropdownProvider';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { updatePatternData } from '@/store/knittingDesignSlice';
+import { selectPatternData } from '@/store/knittingDesignSlice';
+import { Input, InputNumber } from 'antd';
+import { generateProjectTitle } from '../knitting-designer/utils/ProjectTitlePlaceholderHelper';
 import { openLibrarySettingsModal } from '../../reducers/modal.reducer';
 import LibraryOpenDialog from '../../components/LibraryOpenDialog';
 import LibrarySaveDialog from '../../components/LibrarySaveDialog';
@@ -111,6 +115,79 @@ const ColorworkDesignerApp = () => {
         // The ColorworkPanelEditor will fall back to the default shape
         console.warn('Could not fix legacy project - missing garment or panel data:', project);
         return project;
+    };
+
+    // Small toolbar component that mirrors the Step 0 UI moved from WizardView
+    const PatternToolbar = () => {
+        const dispatch = useDispatch();
+        const patternData: any = useSelector(selectPatternData);
+        const [name, setName] = useState<string>(patternData?.name || '');
+
+        const cachedPlaceholderTitle = useMemo(() => generateProjectTitle(), []);
+
+        const persistGauge = useCallback((nextFields: Partial<{ stitchesPerInch: number; rowsPerInch: number; scaleFactor: number }>) => {
+            const current = (patternData && patternData.gauge) || {};
+            const merged = { ...current, ...nextFields } as { stitchesPerInch?: number; rowsPerInch?: number; scaleFactor?: number };
+            const scale = typeof merged.scaleFactor === 'number' ? merged.scaleFactor : (merged.scaleFactor ?? 1);
+            const sPerInch = typeof merged.stitchesPerInch === 'number' ? merged.stitchesPerInch : (current.stitchesPerInch || 0);
+            const rPerInch = typeof merged.rowsPerInch === 'number' ? merged.rowsPerInch : (current.rowsPerInch || 0);
+            const stitchesPerFourInches = sPerInch * 4;
+            const rowsPerFourInches = rPerInch * 4;
+
+            const toPersist = {
+                stitchesPerInch: sPerInch,
+                rowsPerInch: rPerInch,
+                scaleFactor: scale,
+                stitchesPerFourInches,
+                rowsPerFourInches
+            };
+
+            dispatch(updatePatternData({ section: 'gauge', data: toPersist }) as any);
+        }, [dispatch, patternData]);
+
+        const onGaugeChange = (field: 'stitchesPerInch' | 'rowsPerInch', value: number | null) => {
+            if (value == null) return;
+            const perInchValue = value / 4;
+            persistGauge({ [field]: perInchValue } as any);
+        };
+
+        const onScaleChange = (value: number | null) => {
+            if (value == null) return;
+            persistGauge({ scaleFactor: value });
+        };
+
+        const onNameChange = (e: any) => {
+            const v = e.target.value;
+            setName(v);
+            dispatch(updatePatternData({ section: 'meta', data: { name: v } }) as any);
+        };
+
+        return (
+            <div style={{ padding: 8, display: 'flex', gap: 12, alignItems: 'center', width: '100%' }}>
+                <div style={{ flex: '1 1 320px', minWidth: 220 }}>
+                    <label style={{ display: 'block', fontWeight: 700, marginBottom: 6 }}>Pattern name</label>
+                    <Input placeholder={cachedPlaceholderTitle} value={name} onChange={onNameChange} />
+                </div>
+
+                <div style={{ flex: '0 0', minWidth: 200, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <label style={{ fontSize: 13 }}>Stitches per 4":</label>
+                        <InputNumber min={1} value={patternData?.gauge?.stitchesPerFourInches} onChange={(v: number | null) => onGaugeChange('stitchesPerInch', v)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <label style={{ fontSize: 13 }}>Rows per 4":</label>
+                        <InputNumber min={1} value={patternData?.gauge?.rowsPerFourInches} onChange={(v: number | null) => onGaugeChange('rowsPerInch', v)} />
+                    </div>
+                </div>
+
+                <div style={{ flex: '0 0 120px', minWidth: 100, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <label style={{ fontSize: 13 }}>Scale</label>
+                        <InputNumber min={0.1} step={0.1} value={patternData?.gauge?.scaleFactor ?? 1} onChange={(v: number | null) => onScaleChange(v)} />
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const renderHomeView = () => (
@@ -347,7 +424,7 @@ const ColorworkDesignerApp = () => {
                                 <Route path="pattern-wizard" element={(
                                     <div className="pattern-wizard" style={{ display: 'flex', flexDirection: 'column' }}>
                                         <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                                            <Title level={3} style={{ margin: 0, flex: 1 }}>Pattern Wizard</Title>
+                                            <PatternToolbar />
                                         </div>
                                         <div style={{ flex: 1, minHeight: 0 }}>
                                             <WizardView />

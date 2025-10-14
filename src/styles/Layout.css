@@ -99,7 +99,7 @@ body {
 }
 
 .nav-list li.active a {
-  background-color: #1abc9c;
+  background-color: oklch(0.446 0.043 257.281);
 }
 
 /* Desktop navigation styles */

@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { InputNumber, Input, Divider, Select, Collapse, Space, Typography, Card, message, Button } from 'antd';
-import { EditOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons';
+import { InputNumber, Input, Divider, Select, Collapse, Space, Typography, Card, message, Button, Spin } from 'antd';
+import { EditOutlined, PlusOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { PanelDiagram } from '../../../components/PanelDiagram';
+import { ColorworkPanelDiagram } from '../../../components/ColorworkPanelDiagram';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep, copyPanelPatternLayers } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
-import { loadFullLibrary, setFullLibrary, clearEntries } from '../../../store/librarySlice';
+import { loadFullLibrary, setFullLibrary, clearEntries, saveFullLibrary } from '../../../store/librarySlice';
 import { useDriveAuth } from '../../colorwork-designer/context/DriveAuthContext';
 import { calculatePanelDimensions } from '../utils/panelDimensions';
 import { generateProjectTitle } from '../utils/ProjectTitlePlaceholderHelper';
@@ -19,14 +21,11 @@ import '../styles/PatternWizard.css';
 
 const WizardView: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const patternData: any = useSelector(selectPatternData);
   const currentStep: number = useSelector(selectCurrentStep) || 0;
   const [name, setName] = useState<string>(patternData?.name || '');
-  
-  // State for colorwork editing
-  const [showColorworkSection, setShowColorworkSection] = useState(false);
-  const [expandedPanelKey, setExpandedPanelKey] = useState<string | null>(null);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Get authentication state
   const { isSignedIn } = useDriveAuth();
@@ -160,77 +159,6 @@ const WizardView: React.FC = () => {
     return panelInstances[currentInstanceIndex] || null;
   }, [panelInstances, currentInstanceIndex]);
 
-  // Local state: index of the currently-selected panel (for panel-level navigation)
-  const [currentColorworkPanelIndex, setCurrentColorworkPanelIndex] = useState(0);
-
-  const getCurrentColorworkPanel = useCallback(() => {
-    return selectedPanels[currentColorworkPanelIndex] || null;
-  }, [selectedPanels, currentColorworkPanelIndex]);
-
-  const advanceToNextInstanceLocal = useCallback(() => {
-    // delegate to hook navigation
-    goToNextInstance();
-  }, [goToNextInstance]);
-
-
-  const advanceToPreviousInstanceLocal = useCallback(() => {
-    // delegate to hook navigation
-    goToPreviousInstance();
-  }, [goToPreviousInstance]);
-
-  const goToNextPanel = useCallback(() => {
-    if (currentColorworkPanelIndex < selectedPanels.length - 1) {
-      setCurrentColorworkPanelIndex(prev => prev + 1);
-    }
-  }, [currentColorworkPanelIndex, selectedPanels.length]);
-
-  const goToPreviousPanel = useCallback(() => {
-    if (currentColorworkPanelIndex > 0) {
-      setCurrentColorworkPanelIndex(prev => prev - 1);
-    }
-  }, [currentColorworkPanelIndex]);
-
-  // Generate panel instances for per-instance colorwork editing
-  const generatePanelInstances = useCallback(() => {
-    const instances: Array<{ key: string; instanceId: string; panelName: string }> = [];
-    selectedPanels.forEach(panelKey => {
-      const count = panelCounts[panelKey] || 0;
-      const panel = panelList.find(p => p.key === panelKey);
-      if (panel && count > 0) {
-        for (let i = 1; i <= count; i++) {
-          instances.push({
-            key: panelKey,
-            instanceId: `${panelKey}::instance-${i}`,
-            panelName: `${panel.panelName} #${i}`
-          });
-        }
-      }
-    });
-    return instances;
-  }, [selectedPanels, panelCounts, panelList]);
-
-  const toggleColorworkFlow = useCallback(() => {
-    if (showColorworkSection) {
-      setShowColorworkSection(false);
-    } else {
-      // Generate instances for per-instance colorwork editing
-      // panelInstances are derived from the selection via the usePanelInstances hook,
-      // so no need to set them here. Instead, reset the hook-managed index and local
-      // panel index and open the editor.
-      generatePanelInstances();
-      setInstanceByIndex(0);
-      setCurrentColorworkPanelIndex(0);
-      setShowColorworkSection(true);
-      // Scroll to colorwork section after a brief delay to let it render
-      setTimeout(() => {
-        const colorworkSection = document.querySelector('[data-colorwork-section]');
-        if (colorworkSection) {
-          colorworkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }
-  }, [showColorworkSection, generatePanelInstances]);
-
   // Local set of colored panel instance ids (keeps parity with earlier code that
   // expected a `coloredPanels` set). The usePanelInstances hook also tracks
   // colored instances (coloredInstances) and exposes markInstanceColored; we can
@@ -245,25 +173,6 @@ const WizardView: React.FC = () => {
       // ignore
     }
   }, [markInstanceColored]);
-
-  const copyColorworkToCurrentPanel = useCallback((sourcePanelKey: string) => {
-    const currentPanel = getCurrentColorworkPanel();
-    if (!currentPanel || sourcePanelKey === currentPanel) return;
-    
-    // Copy pattern layers using Redux action
-    dispatch(copyPanelPatternLayers({ 
-      sourcePanelKey, 
-      targetPanelKey: currentPanel 
-    }) as any);
-    
-    // Mark current panel as colored after copying
-    markPanelAsColored(currentPanel);
-    
-    // Show success message
-    const sourceLabel = getPanelLabelForKey(sourcePanelKey).split(' — ')[1] || getPanelLabelForKey(sourcePanelKey);
-    const targetLabel = getPanelLabelForKey(currentPanel).split(' — ')[1] || getPanelLabelForKey(currentPanel);
-    message.success(`Copied colorwork from ${sourceLabel} to ${targetLabel}`);
-  }, [dispatch, getCurrentColorworkPanel, markPanelAsColored, getPanelLabelForKey]);
 
   const handlePreviewKeyChange = useCallback((nextKey: string | null) => {
     setSelectedPanelKey(nextKey);
@@ -387,54 +296,17 @@ const WizardView: React.FC = () => {
 
   return (
     <div style={{ padding: 12 }}>
-      {/* Step progress indicator */}
-      <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#fafafa', borderRadius: 6, border: '1px solid #e8e8e8' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography.Title level={3} style={{ margin: 0 }}>
-            Knitting Pattern Designer
-          </Typography.Title>
-          <div style={{ fontSize: 14, color: '#666' }}>
-            Step {currentStep + 1} of 2: {currentStep === 0 ? 'Pattern Setup' : 'Panel Selection & Colorwork'}
-          </div>
-        </div>
-      </div>
-
       {/* Render all steps up to and including currentStep so previous steps remain editable */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Step 0: Pattern name & gauge (moved up) */}
+        {/* Step 0: Pattern name & gauge moved into the ColorworkDesigner toolbar.
+            Keep a compact placeholder here so the step ref and scrolling behavior remain identical. */}
         {currentStep >= 0 && (
           <div
             ref={el => { stepRefs.current[0] = el; return; }}
             key="step-0"
-            style={{ padding: 12, borderRadius: 6, background: '#fff' }}
+            style={{ padding: 6, borderRadius: 6, background: 'transparent' }}
           >
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              {/* Title expands to fill available space */}
-              <div style={{ flex: '1 1 320px', minWidth: 220 }}>
-                <label style={{ display: 'block', fontWeight: 700, marginBottom: 6 }}>Pattern name</label>
-                <Input placeholder={cachedPlaceholderTitle} value={name} onChange={onNameChange} />
-              </div>
-
-              {/* Gauge block has fixed preferred width but can wrap under when narrow */}
-              <div style={{ flex: '0 0', minWidth: 200, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: 13 }}>Stitches per 4":</label>
-                  <InputNumber min={1} value={patternData?.gauge?.stitchesPerFourInches} onChange={(v: number | null) => onGaugeChange('stitchesPerInch', v)} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: 13 }}>Rows per 4":</label>
-                  <InputNumber min={1} value={patternData?.gauge?.rowsPerFourInches} onChange={(v: number | null) => onGaugeChange('rowsPerInch', v)} />
-                </div>
-              </div>
-
-              {/* Scale factor */}
-              <div style={{ flex: '0 0 120px', minWidth: 100, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: 13 }}>Scale</label>
-                  <InputNumber min={0.1} step={0.1} value={patternData?.gauge?.scaleFactor ?? 1} onChange={(v: number | null) => onScaleChange(v)} />
-                </div>
-              </div>
-            </div>
+            {/* Empty placeholder - controls are now rendered in the ColorworkDesignerApp toolbar */}
           </div>
         )}
 
@@ -449,7 +321,7 @@ const WizardView: React.FC = () => {
               Select Panels for Your Project
             </Typography.Title>
             
-            {/* Panel selection with new UX */}
+            {/* Panel selection with simplified UX */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {(() => {
                 const groups: Record<string, Array<{ key: string; panelName: string }>> = {};
@@ -462,462 +334,424 @@ const WizardView: React.FC = () => {
 
                 return (
                   <div>
-                    {/* Selected panels section - always visible if any panels selected */}
-                    {selectedPanels.length > 0 && (
-                      <div style={{ marginBottom: 24 }}>
-                        <Typography.Title level={5} style={{ margin: '0 0 12px 0', color: '#1890ff' }}>
-                          Selected Panels ({selectedPanels.length} types, {Object.values(panelCounts).reduce((sum, count) => sum + (count || 0), 0)} total pieces)
-                        </Typography.Title>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                          {selectedPanels.map(key => {
-                            const panel = panelList.find(p => p.key === key);
-                            if (!panel) return null;
-                            const { panelName } = panel;
-                            const shape = getPanelShape(key);
-                            
-                            return (
-                              <Card
-                                key={key}
-                                style={{ 
-                                  borderColor: '#1890ff',
-                                  boxShadow: '0 2px 8px rgba(24, 144, 255, 0.2)' 
-                                }}
-                                bodyStyle={{ padding: 12 }}
-                              >
-                                {/* Panel header with name and quantity */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                  <Typography.Text strong>{panelName}</Typography.Text>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Typography.Text style={{ fontSize: 12, color: '#666' }}>Qty:</Typography.Text>
-                                    <InputNumber
-                                      size="small"
-                                      min={0}
-                                      max={10}
-                                      value={panelCounts[key] || 0}
-                                      onChange={(v: number | null) => setCount(key, v)}
-                                      style={{ width: 60 }}
-                                    />
-                                  </div>
-                                </div>
+                    {/* Group selector at the top */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <Typography.Title level={5} style={{ margin: 0 }}>
+                        Add panels from:
+                      </Typography.Title>
+                      <Select
+                        mode="multiple"
+                        placeholder="Choose groups..."
+                        value={activeCollapseKeys}
+                        onChange={(values: string[]) => setActiveCollapseKeys(values)}
+                        style={{ minWidth: 200, flex: 1 }}
+                        allowClear
+                        maxTagCount="responsive"
+                      >
+                        {garmentTitles.map(title => (
+                          <Select.Option key={title} value={title}>
+                            {title}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </div>
 
-                                {/* Panel preview diagram */}
-                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, minHeight: 120 }}>
-                                  {shape ? (
-                                    <PanelDiagram 
-                                      shape={shape} 
-                                      label="" 
-                                      size={100} 
-                                      padding={8}
-                                    />
+                    {/* Grid showing all panels from all selected groups */}
+                    {activeCollapseKeys.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                        {activeCollapseKeys.flatMap(groupTitle => 
+                          (groups[groupTitle] || []).map(({ key, panelName }) => ({
+                            key,
+                            panelName,
+                            groupTitle
+                          }))
+                        ).map(({ key, panelName, groupTitle }) => {
+                          const isSelected = (panelCounts[key] || 0) > 0;
+                          const count = panelCounts[key] || 0;
+                          const shape = getPanelShape(key);
+                          
+                          return (
+                            <Card
+                              key={key}
+                              style={{ 
+                                borderColor: isSelected ? '#1890ff' : undefined,
+                                boxShadow: isSelected ? '0 2px 8px rgba(24, 144, 255, 0.2)' : undefined,
+                                cursor: !isSelected ? 'pointer' : undefined,
+                                transition: 'all 0.2s'
+                              }}
+                              bodyStyle={{ padding: 12 }}
+                              hoverable={!isSelected}
+                              onClick={() => !isSelected && setCount(key, 1)}
+                            >
+                              {/* Group label when multiple groups selected */}
+                              {activeCollapseKeys.length > 1 && (
+                                <div style={{ fontSize: 10, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                  {groupTitle}
+                                </div>
+                              )}
+                              {/* Panel header with name and quantity */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <Typography.Text strong>{panelName}</Typography.Text>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <Typography.Text style={{ fontSize: 12, color: '#666' }}>Qty:</Typography.Text>
+                                  <InputNumber
+                                    size="small"
+                                    min={0}
+                                    max={10}
+                                    value={count}
+                                    onChange={(v: number | null) => setCount(key, v)}
+                                    style={{ width: 60 }}
+                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Panel preview diagram(s) - always show colorwork diagram */}
+                              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, minHeight: 120, flexWrap: 'wrap', gap: 8 }}>
+                                {shape ? (
+                                  count > 0 ? (
+                                    // Show multiple instances with their individual colorwork
+                                    Array.from({ length: count }, (_, i) => {
+                                      const instanceId = `${key}::instance-${i + 1}`;
+                                      // instancePatternData is the layers array directly, not an object with .layers property
+                                      const instancePatternLayers = patternData?.panels?.patternLayers?.[instanceId] || [];
+                                      
+                                      // Prepare gauge with scale factor for ColorworkPanelDiagram
+                                      const wizardGauge = patternData?.gauge || null;
+                                      const stitchesPerFour = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number'
+                                        ? wizardGauge.stitchesPerFourInches
+                                        : (wizardGauge && typeof wizardGauge.stitchesPerInch === 'number' ? wizardGauge.stitchesPerInch * 4 : undefined);
+                                      const rowsPerFour = wizardGauge && typeof wizardGauge.rowsPerFourInches === 'number'
+                                        ? wizardGauge.rowsPerFourInches
+                                        : (wizardGauge && typeof wizardGauge.rowsPerInch === 'number' ? wizardGauge.rowsPerInch * 4 : undefined);
+                                      const normalizedGauge = wizardGauge && typeof stitchesPerFour === 'number' && typeof rowsPerFour === 'number'
+                                        ? {
+                                            stitchesPerFourInches: stitchesPerFour,
+                                            rowsPerFourInches: rowsPerFour,
+                                            scalingFactor: typeof wizardGauge.scaleFactor === 'number' && wizardGauge.scaleFactor > 0 ? wizardGauge.scaleFactor : 1
+                                          }
+                                        : null;
+                                      
+                                      return (
+                                        <div key={instanceId} style={{ position: 'relative', display: 'inline-block' }}>
+                                          {normalizedGauge ? (
+                                            <ColorworkPanelDiagram
+                                              shape={shape}
+                                              patternLayers={instancePatternLayers}
+                                              gauge={normalizedGauge as any}
+                                              label={count > 1 ? `#${i + 1}` : ''}
+                                              size={count > 1 ? 80 : 100}
+                                              padding={6}
+                                              showPatterns={true}
+                                            />
+                                          ) : (
+                                            <div style={{ textAlign: 'center' }}>
+                                              <PanelDiagram 
+                                                shape={shape} 
+                                                label={count > 1 ? `#${i + 1}` : ''} 
+                                                size={count > 1 ? 80 : 100} 
+                                                padding={6}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })
                                   ) : (
-                                    <div style={{ 
-                                      width: 100, 
-                                      height: 100, 
-                                      backgroundColor: '#f5f5f5', 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      justifyContent: 'center',
-                                      borderRadius: 4,
-                                      color: '#999'
-                                    }}>
-                                      No Preview
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Panel dimensions and gauge info */}
-                                {shape && patternData?.gauge && (
-                                  <div style={{ fontSize: 11, color: '#666', marginBottom: 8, textAlign: 'center' }}>
-                                    {(() => {
-                                      try {
-                                        const gauge = patternData.gauge || {};
-                                        const scalingFactor = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
-                                        const dimensions = calculatePanelDimensions(shape, scalingFactor);
-                                        if (!dimensions) return null;
-
-                                        const stitchesPerInch = gauge.stitchesPerInch || 0;
-                                        const rowsPerInch = gauge.rowsPerInch || 0;
-                                        
-                                        if (!stitchesPerInch || !rowsPerInch) return null;
-
-                                        const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
-                                        const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
-
-                                        return `${totalStitches} × ${totalRows} stitches (${dimensions.widthInches.toFixed(1)}" × ${dimensions.heightInches.toFixed(1)}")`;
-                                      } catch (error) {
-                                        return null;
-                                      }
-                                    })()}
+                                    // No instances selected, show preview with gauge if available
+                                    (() => {
+                                      const wizardGauge = patternData?.gauge || null;
+                                      const stitchesPerFour = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number'
+                                        ? wizardGauge.stitchesPerFourInches
+                                        : (wizardGauge && typeof wizardGauge.stitchesPerInch === 'number' ? wizardGauge.stitchesPerInch * 4 : undefined);
+                                      const rowsPerFour = wizardGauge && typeof wizardGauge.rowsPerFourInches === 'number'
+                                        ? wizardGauge.rowsPerFourInches
+                                        : (wizardGauge && typeof wizardGauge.rowsPerInch === 'number' ? wizardGauge.rowsPerInch * 4 : undefined);
+                                      const normalizedGauge = wizardGauge && typeof stitchesPerFour === 'number' && typeof rowsPerFour === 'number'
+                                        ? {
+                                            stitchesPerFourInches: stitchesPerFour,
+                                            rowsPerFourInches: rowsPerFour,
+                                            scalingFactor: typeof wizardGauge.scaleFactor === 'number' && wizardGauge.scaleFactor > 0 ? wizardGauge.scaleFactor : 1
+                                          }
+                                        : null;
+                                      
+                                      return normalizedGauge ? (
+                                        <ColorworkPanelDiagram
+                                          shape={shape}
+                                          patternLayers={[]}
+                                          gauge={normalizedGauge as any}
+                                          label=""
+                                          size={100}
+                                          padding={8}
+                                          showPatterns={true}
+                                        />
+                                      ) : (
+                                        <PanelDiagram 
+                                          shape={shape} 
+                                          label="" 
+                                          size={100} 
+                                          padding={8}
+                                        />
+                                      );
+                                    })()
+                                  )
+                                ) : (
+                                  <div style={{ 
+                                    width: 100, 
+                                    height: 100, 
+                                    backgroundColor: '#f5f5f5', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    borderRadius: 4,
+                                    color: '#999'
+                                  }}>
+                                    No Preview
                                   </div>
                                 )}
+                              </div>
 
-                                {/* Colorwork status indicator */}
-                                {(() => {
-                                  const panelInstanceCount = panelCounts[key] || 0;
-                                  const completedInstanceCount = panelInstances.filter(inst => 
-                                    inst.key === key && coloredPanels.has(inst.instanceId)
-                                  ).length;
-                                  const allInstancesCompleted = panelInstanceCount > 0 && completedInstanceCount === panelInstanceCount;
-                                  const hasPartialProgress = completedInstanceCount > 0;
+                              {/* Panel dimensions and gauge info */}
+                              {shape && patternData?.gauge && (
+                                <div style={{ fontSize: 11, color: '#666', marginBottom: 8, textAlign: 'center' }}>
+                                  {(() => {
+                                    try {
+                                      const gauge = patternData.gauge || {};
+                                      const scalingFactor = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
+                                      const dimensions = calculatePanelDimensions(shape, scalingFactor);
+                                      if (!dimensions) return null;
 
-                                  return (
-                                    <div style={{ 
-                                      textAlign: 'center', 
-                                      padding: '4px 8px', 
-                                      borderRadius: 4, 
-                                      fontSize: 12,
-                                      backgroundColor: allInstancesCompleted ? '#f6ffed' : hasPartialProgress ? '#fff7e6' : '#fff7e6',
-                                      border: `1px solid ${allInstancesCompleted ? '#b7eb8f' : hasPartialProgress ? '#ffd591' : '#ffd591'}`,
-                                      color: allInstancesCompleted ? '#389e0d' : hasPartialProgress ? '#d48806' : '#d48806'
-                                    }}>
-                                      {showColorworkSection 
-                                        ? `${completedInstanceCount} of ${panelInstanceCount} instances colored`
-                                        : allInstancesCompleted 
-                                          ? '✓ All Instances Colored' 
-                                          : hasPartialProgress 
-                                            ? `${completedInstanceCount}/${panelInstanceCount} Colored`
-                                            : 'Needs Colorwork'
-                                      }
-                                    </div>
-                                  );
-                                })()}
-                              </Card>
-                            );
-                          })}
-                        </div>
+                                      const stitchesPerInch = gauge.stitchesPerInch || 0;
+                                      const rowsPerInch = gauge.rowsPerInch || 0;
+                                      
+                                      if (!stitchesPerInch || !rowsPerInch) return null;
+
+                                      const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
+                                      const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
+
+                                      return `${totalStitches} × ${totalRows} stitches (${dimensions.widthInches.toFixed(1)}" × ${dimensions.heightInches.toFixed(1)}")`;
+                                    } catch (error) {
+                                      return null;
+                                    }
+                                  })()}
+                                </div>
+                              )}
+
+                              {/* Instance buttons when count > 0 */}
+                              {count > 0 && (
+                                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {Array.from({ length: count }, (_, i) => {
+                                    const instanceId = `${key}::instance-${i + 1}`;
+                                    const isColored = coloredPanels.has(instanceId);
+                                    const isCurrent = currentInstance?.instanceId === instanceId;
+                                    
+                                    return (
+                                      <div key={instanceId} style={{ 
+                                        display: 'flex', 
+                                        gap: 4, 
+                                        padding: 6, 
+                                        backgroundColor: isCurrent ? '#e6f7ff' : isColored ? '#f6ffed' : '#fafafa',
+                                        borderRadius: 4,
+                                        border: `1px solid ${isCurrent ? '#91d5ff' : isColored ? '#b7eb8f' : '#d9d9d9'}`
+                                      }}>
+                                        <Typography.Text style={{ fontSize: 11, flex: 1, alignSelf: 'center' }}>
+                                          {isColored ? '✓' : '○'} Instance {i + 1}
+                                        </Typography.Text>
+                                        <Button
+                                          size="small"
+                                          type={isCurrent ? 'primary' : 'default'}
+                                          onClick={(e: React.MouseEvent) => {
+                                            e.stopPropagation();
+                                            const idx = panelInstances.findIndex(inst => inst.instanceId === instanceId);
+                                            if (idx >= 0) setInstanceByIndex(idx);
+                                          }}
+                                          style={{ fontSize: 10, height: 24, padding: '0 8px' }}
+                                        >
+                                          Edit
+                                        </Button>
+                                        {isColored && !isCurrent && currentInstance && (
+                                          <Button
+                                            size="small"
+                                            type="text"
+                                            icon={<CopyOutlined />}
+                                            title="Copy styles from this instance to the active one"
+                                            onClick={(e: React.MouseEvent) => {
+                                              e.stopPropagation();
+                                              dispatch(copyPanelPatternLayers({ 
+                                                sourcePanelKey: instanceId, 
+                                                targetPanelKey: currentInstance.instanceId 
+                                              }) as any);
+                                              markPanelAsColored(currentInstance.instanceId);
+                                              message.success(`Copied colorwork from Instance ${i + 1} to ${currentInstance.panelName}`);
+                                            }}
+                                            style={{ fontSize: 10, height: 24, padding: '0 6px' }}
+                                          >
+                                            Copy from
+                                          </Button>
+                                        )}
+                                        {isColored && (
+                                          <Button
+                                            size="small"
+                                            type="text"
+                                            onClick={(e: React.MouseEvent) => {
+                                              e.stopPropagation();
+                                              // Apply this instance's colorwork to all selected instances
+                                              panelInstances.forEach(inst => {
+                                                if (inst.instanceId !== instanceId) {
+                                                  dispatch(copyPanelPatternLayers({ 
+                                                    sourcePanelKey: instanceId, 
+                                                    targetPanelKey: inst.instanceId 
+                                                  }) as any);
+                                                  markPanelAsColored(inst.instanceId);
+                                                }
+                                              });
+                                              message.success(`Applied colorwork to all ${panelInstances.length} instances`);
+                                            }}
+                                            style={{ fontSize: 10, height: 24, padding: '0 6px' }}
+                                          >
+                                            Apply All
+                                          </Button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </Card>
+                          );
+                        })}
                       </div>
                     )}
-
-                    {/* Add panels section with group selector */}
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <Typography.Title level={5} style={{ margin: 0 }}>
-                          Add Panels from:
-                        </Typography.Title>
-                        <Select
-                          placeholder="Choose a group..."
-                          value={activeCollapseKeys[0] || undefined}
-                          onChange={(value: string) => setActiveCollapseKeys([value])}
-                          style={{ minWidth: 200 }}
-                          allowClear
-                        >
-                          {garmentTitles.map(title => (
-                            <Select.Option key={title} value={title}>
-                              {title}
-                            </Select.Option>
-                          ))}
-                        </Select>
-                      </div>
-
-                      {/* Show panels from selected group */}
-                      {activeCollapseKeys.length > 0 && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                          {groups[activeCollapseKeys[0]]?.map(({ key, panelName }) => {
-                            const isSelected = (panelCounts[key] || 0) > 0;
-                            // Skip if already selected (shown in selected section above)
-                            if (isSelected) return null;
-                            
-                            const shape = getPanelShape(key);
-                            
-                            return (
-                              <Card
-                                key={key}
-                                style={{ 
-                                  borderColor: undefined,
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s'
-                                }}
-                                bodyStyle={{ padding: 12 }}
-                                hoverable
-                                onClick={() => setCount(key, 1)}
-                              >
-                                {/* Panel header with name and add button */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                  <Typography.Text strong>{panelName}</Typography.Text>
-                                  <Button size="small" type="primary" ghost onClick={(e: React.MouseEvent) => { e.stopPropagation(); setCount(key, 1); }}>
-                                    Add
-                                  </Button>
-                                </div>
-
-                                {/* Panel preview diagram */}
-                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, minHeight: 120 }}>
-                                  {shape ? (
-                                    <PanelDiagram 
-                                      shape={shape} 
-                                      label="" 
-                                      size={100} 
-                                      padding={8}
-                                    />
-                                  ) : (
-                                    <div style={{ 
-                                      width: 100, 
-                                      height: 100, 
-                                      backgroundColor: '#f5f5f5', 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      justifyContent: 'center',
-                                      borderRadius: 4,
-                                      color: '#999'
-                                    }}>
-                                      No Preview
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Panel dimensions and gauge info */}
-                                {shape && patternData?.gauge && (
-                                  <div style={{ fontSize: 11, color: '#666', textAlign: 'center' }}>
-                                    {(() => {
-                                      try {
-                                        const gauge = patternData.gauge || {};
-                                        const scalingFactor = typeof gauge.scaleFactor === 'number' ? gauge.scaleFactor : 1;
-                                        const dimensions = calculatePanelDimensions(shape, scalingFactor);
-                                        if (!dimensions) return null;
-
-                                        const stitchesPerInch = gauge.stitchesPerInch || 0;
-                                        const rowsPerInch = gauge.rowsPerInch || 0;
-                                        
-                                        if (!stitchesPerInch || !rowsPerInch) return null;
-
-                                        const totalStitches = Math.round(dimensions.widthInches * stitchesPerInch);
-                                        const totalRows = Math.round(dimensions.heightInches * rowsPerInch);
-
-                                        return `${totalStitches} × ${totalRows} stitches (${dimensions.widthInches.toFixed(1)}" × ${dimensions.heightInches.toFixed(1)}")`;
-                                      } catch (error) {
-                                        return null;
-                                      }
-                                    })()}
-                                  </div>
-                                )}
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 );
               })()}
             </div>
             
-            {/* Selected panels summary and colorwork action */}
-            {selectedPanels.length > 0 && (
-              <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f0f8ff', borderRadius: 4, border: '1px solid #d6f7ff' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                  <div>
-                    <Typography.Text style={{ fontSize: 13, color: '#1890ff' }}>
-                      <strong>Selected panels:</strong> {selectedPanels.length} panel type{selectedPanels.length !== 1 ? 's' : ''} 
-                      {' '}({Object.values(panelCounts).reduce((sum, count) => sum + (count || 0), 0)} total pieces)
-                    </Typography.Text>
-                    <br />
-                    <Typography.Text style={{ fontSize: 12, color: '#666' }}>
-                      {showColorworkSection 
-                        ? `Instance colorwork progress: ${coloredPanels.size} of ${panelInstances.length} instances completed`
-                        : `Colorwork progress: ${coloredPanels.size} of ${selectedPanels.length} panel types have colorwork`
+            {/* Colorwork editing section - always visible */}
+            <div style={{ marginTop: 24 }}>
+              <Typography.Title level={5} style={{ margin: '0 0 16px 0' }}>
+                Colorwork Editor
+              </Typography.Title>
+              {selectedPanels.length > 0 ? (
+                <div 
+                  data-colorwork-section 
+                  style={{ 
+                    animation: 'fadeInUp 0.3s ease-out'
+                  }}
+                >
+                  <style>
+                    {`
+                      @keyframes fadeInUp {
+                        from {
+                          opacity: 0;
+                          transform: translateY(20px);
+                        }
+                        to {
+                          opacity: 1;
+                          transform: translateY(0);
+                        }
                       }
-                    </Typography.Text>
-                  </div>
-                  <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    onClick={toggleColorworkFlow}
-                  >
-                    {showColorworkSection 
-                      ? 'Hide Colorwork Editor' 
-                      : 'Edit Colorwork - Per Panel Instance'
-                    }
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Inline colorwork editing section */}
-            {showColorworkSection && selectedPanels.length > 0 && (
-              <div 
-                data-colorwork-section 
-                style={{ 
-                  marginTop: 24,
-                  animation: 'fadeInUp 0.3s ease-out'
-                }}
-              >
-                <style>
-                  {`
-                    @keyframes fadeInUp {
-                      from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                      }
-                      to {
-                        opacity: 1;
-                        transform: translateY(0);
-                      }
-                    }
-                  `}
-                </style>
-                <div style={{ 
-                  padding: 16, 
-                  backgroundColor: '#fff', 
-                  borderRadius: 8, 
-                  border: '2px solid #1890ff',
-                  boxShadow: '0 4px 12px rgba(24, 144, 255, 0.15)' 
-                }}>
-                  {/* Colorwork section header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <div>
-                      <Typography.Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-                        {(() => {
-                          const currentInstance = getCurrentColorworkInstance();
-                          return currentInstance ? (
-                            <>Edit Colorwork - {currentInstance.panelName}</>
-                          ) : (
-                            'Edit Colorwork'
-                          );
-                        })()}
-                      </Typography.Title>
-                      <Typography.Text style={{ fontSize: 13, color: '#666' }}>
-                        Panel instance {currentInstanceIndex + 1} of {panelInstances.length}
-                      </Typography.Text>
+                    `}
+                  </style>
+                  <div style={{ 
+                    padding: 16, 
+                    backgroundColor: '#fff', 
+                    borderRadius: 8, 
+                    border: '2px solid #1890ff',
+                    boxShadow: '0 4px 12px rgba(24, 144, 255, 0.15)' 
+                  }}>
+                    {/* Colorwork section header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <div>
+                        <Typography.Title level={4} style={{ margin: 0, color: '#1890ff' }}>
+                          {(() => {
+                            const currentInst = getCurrentColorworkInstance();
+                            return currentInst ? (
+                              <>Editing: {currentInst.panelName}</>
+                            ) : (
+                              'Select a panel instance to edit'
+                            );
+                          })()}
+                        </Typography.Title>
+                        {currentInstance && (
+                          <Typography.Text style={{ fontSize: 13, color: '#666' }}>
+                            Instance {currentInstanceIndex + 1} of {panelInstances.length} total
+                          </Typography.Text>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <Button 
-                        onClick={goToPreviousInstance}
-                        disabled={currentInstanceIndex === 0}
-                      >
-                        Previous Instance
-                      </Button>
-                      <Button 
-                        type="primary"
-                        onClick={() => {
-                          const currentInstance = getCurrentColorworkInstance();
-                          if (currentInstance) {
-                            // Mark this specific instance as colored
-                            markPanelAsColored(currentInstance.instanceId);
-                          }
-                          if (currentInstanceIndex < panelInstances.length - 1) {
-                            goToNextInstance();
-                          } else {
-                            // All instances completed
-                            setShowColorworkSection(false);
-                          }
-                        }}
-                      >
-                        {currentInstanceIndex === panelInstances.length - 1 ? 'Complete All Colorwork' : 'Save & Next Instance'}
-                      </Button>
-                      <Button 
-                        type="text" 
-                        onClick={() => setShowColorworkSection(false)}
-                      >
-                        Close
-                      </Button>
-                    </div>
-                  </div>
 
-                  {/* Instance navigation and copy options */}
-                  <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#fafafa', borderRadius: 6 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                      <Typography.Text style={{ fontSize: 13, marginRight: 16, fontWeight: 500 }}>
-                        <strong>Panel Instances:</strong>
-                      </Typography.Text>
-                      {panelInstances.map((instance, index) => {
-                        const isColored = coloredPanels.has(instance.instanceId);
-                        const isCurrent = index === currentInstanceIndex;
-                        
+                    {/* Colorwork editor for current instance */}
+                    {(() => {
+                      const currentInst = getCurrentColorworkInstance();
+                      if (!currentInst) {
                         return (
-                          <div key={instance.instanceId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                            <Button
-                              size="small"
-                              type={isCurrent ? "primary" : "default"}
-                              onClick={() => setInstanceByIndex(index)}
-                              style={{ 
-                                fontSize: 11,
-                                minWidth: 80,
-                                backgroundColor: isCurrent ? undefined : isColored ? '#f6ffed' : undefined,
-                                borderColor: isCurrent ? undefined : isColored ? '#b7eb8f' : undefined,
-                              }}
-                            >
-                              {isCurrent ? '● ' : isColored ? '✓ ' : '○ '}
-                              {instance.panelName}
-                            </Button>
-                            {isColored && !isCurrent && (
-                              <Button
-                                size="small"
-                                type="text"
-                                icon={<CopyOutlined />}
-                                onClick={() => {
-                                  const currentInstance = getCurrentColorworkInstance();
-                                  if (currentInstance) {
-                                    // Copy colorwork from this instance to current instance
-                                    dispatch(copyPanelPatternLayers({ 
-                                      sourcePanelKey: instance.instanceId, 
-                                      targetPanelKey: currentInstance.instanceId 
-                                    }) as any);
-                                    
-                                    // Mark current instance as colored after copying
-                                    markPanelAsColored(currentInstance.instanceId);
-                                    message.success(`Copied colorwork from ${instance.panelName} to ${currentInstance.panelName}`);
-                                  }
-                                }}
-                                style={{ fontSize: 10, height: 20, padding: '0 6px' }}
-                              >
-                                Copy
-                              </Button>
-                            )}
+                          <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>
+                            <Typography.Text style={{ fontSize: 14 }}>
+                              Use the "Edit" buttons in the panel cards above to select an instance to edit
+                            </Typography.Text>
                           </div>
                         );
-                      })}
-                    </div>
-                  </div>
+                      }
 
-                  {/* Colorwork editor for current instance */}
-                  {(() => {
-                    const currentInstance = getCurrentColorworkInstance();
-                    if (!currentInstance) return null;
-
-                    const shape = getPanelShape(currentInstance.key);
-                    
-                    // Pass gauge with scale factor to the editor
-                    const wizardGauge = patternData?.gauge || null;
-                    const stitchesPerFour = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number'
-                      ? wizardGauge.stitchesPerFourInches
-                      : (wizardGauge && typeof wizardGauge.stitchesPerInch === 'number' ? wizardGauge.stitchesPerInch * 4 : undefined);
-                    const rowsPerFour = wizardGauge && typeof wizardGauge.rowsPerFourInches === 'number'
-                      ? wizardGauge.rowsPerFourInches
-                      : (wizardGauge && typeof wizardGauge.rowsPerInch === 'number' ? wizardGauge.rowsPerInch * 4 : undefined);
-                    const normalizedGauge = wizardGauge && typeof stitchesPerFour === 'number' && typeof rowsPerFour === 'number'
-                      ? {
-                          stitchesPerFourInches: stitchesPerFour,
-                          rowsPerFourInches: rowsPerFour,
-                          scalingFactor: typeof wizardGauge.scaleFactor === 'number' && wizardGauge.scaleFactor > 0 ? wizardGauge.scaleFactor : 1
-                        }
-                      : null;
-
-                    const initialPanel = {
-                      shape: shape || null,
-                      gauge: normalizedGauge
-                    };
-                    
-                    return <ColorworkPanelEditor 
-                      key={`${currentInstance.instanceId}-${currentInstanceIndex}`} 
-                      {...({ 
-                        initialPanel, 
-                        previewKey: currentInstance.instanceId,
-                        allSelectedPanelKeys: panelInstances.map(inst => inst.instanceId),
-                        getPanelLabel: (instanceId: string) => {
-                          const inst = panelInstances.find(i => i.instanceId === instanceId);
-                          return inst ? inst.panelName : instanceId;
-                        },
-                        onRequestPreviewKeyChange: (instanceId: string) => {
-                          const instanceIndex = panelInstances.findIndex(i => i.instanceId === instanceId);
-                          if (instanceIndex >= 0) {
-                            setInstanceByIndex(instanceIndex);
+                      const shape = getPanelShape(currentInst.key);
+                      
+                      // Pass gauge with scale factor to the editor
+                      const wizardGauge = patternData?.gauge || null;
+                      const stitchesPerFour = wizardGauge && typeof wizardGauge.stitchesPerFourInches === 'number'
+                        ? wizardGauge.stitchesPerFourInches
+                        : (wizardGauge && typeof wizardGauge.stitchesPerInch === 'number' ? wizardGauge.stitchesPerInch * 4 : undefined);
+                      const rowsPerFour = wizardGauge && typeof wizardGauge.rowsPerFourInches === 'number'
+                        ? wizardGauge.rowsPerFourInches
+                        : (wizardGauge && typeof wizardGauge.rowsPerInch === 'number' ? wizardGauge.rowsPerInch * 4 : undefined);
+                      const normalizedGauge = wizardGauge && typeof stitchesPerFour === 'number' && typeof rowsPerFour === 'number'
+                        ? {
+                            stitchesPerFourInches: stitchesPerFour,
+                            rowsPerFourInches: rowsPerFour,
+                            scalingFactor: typeof wizardGauge.scaleFactor === 'number' && wizardGauge.scaleFactor > 0 ? wizardGauge.scaleFactor : 1
                           }
-                        } 
-                      } as any)} 
-                    />;
-                  })()}
+                        : null;
+
+                      const initialPanel = {
+                        shape: shape || null,
+                        gauge: normalizedGauge
+                      };
+                      
+                      return <ColorworkPanelEditor 
+                        key={`${currentInst.instanceId}-${currentInstanceIndex}`} 
+                        {...({ 
+                          initialPanel, 
+                          previewKey: currentInst.instanceId,
+                          allSelectedPanelKeys: panelInstances.map(inst => inst.instanceId),
+                          getPanelLabel: (instanceId: string) => {
+                            const inst = panelInstances.find(i => i.instanceId === instanceId);
+                            return inst ? inst.panelName : instanceId;
+                          },
+                          onRequestPreviewKeyChange: (instanceId: string) => {
+                            const instanceIdx = panelInstances.findIndex(i => i.instanceId === instanceId);
+                            if (instanceIdx >= 0) {
+                              setInstanceByIndex(instanceIdx);
+                            }
+                          } 
+                        } as any)} 
+                      />;
+                    })()}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{ 
+                  padding: 40, 
+                  textAlign: 'center', 
+                  backgroundColor: '#fafafa', 
+                  borderRadius: 8,
+                  border: '1px dashed #d9d9d9'
+                }}>
+                  <Typography.Text style={{ fontSize: 14, color: '#999' }}>
+                    No panels selected. Choose panels from the groups above to begin editing colorwork.
+                  </Typography.Text>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -940,12 +774,88 @@ const WizardView: React.FC = () => {
           <Button 
             type="default"
             style={{ marginLeft: 8 }}
-            onClick={() => {
-              // Navigate to interactive knitting or pattern generation
-              console.log('Ready for knitting with panels:', selectedPanels);
+            disabled={isSaving}
+            icon={isSaving ? <LoadingOutlined /> : undefined}
+            onClick={async () => {
+              setIsSaving(true);
+              try {
+                // Build knitting project JSON with deep copy of all data
+                const projectId = `project-${Date.now()}`;
+                
+                // Collect all unique patterns used across all panel instances
+                const usedPatterns: Record<string, any> = {};
+                panelInstances.forEach(instance => {
+                  const panelPatternLayers = patternData?.panels?.patternLayers?.[instance.instanceId] || [];
+                  panelPatternLayers.forEach((layer: any) => {
+                    // Check if this layer uses a custom pattern from the library
+                    if (layer.patternKey && layer.patternKey.startsWith('custom-')) {
+                      const patternId = layer.patternKey.replace('custom-', '');
+                      // Get the pattern from library if not already collected
+                      if (!usedPatterns[patternId] && libraryData?.colorworkPatterns?.[patternId]) {
+                        usedPatterns[patternId] = libraryData.colorworkPatterns[patternId];
+                      }
+                    }
+                  });
+                });
+                
+                const knittingProject = {
+                  id: projectId,
+                  name: name || cachedPlaceholderTitle,
+                  createdAt: new Date().toISOString(),
+                  gauge: {
+                    stitchesPerInch: patternData?.gauge?.stitchesPerInch || 0,
+                    rowsPerInch: patternData?.gauge?.rowsPerInch || 0,
+                    stitchesPerFourInches: patternData?.gauge?.stitchesPerFourInches || 0,
+                    rowsPerFourInches: patternData?.gauge?.rowsPerFourInches || 0,
+                    scaleFactor: patternData?.gauge?.scaleFactor || 1
+                  },
+                  panels: panelInstances.map(instance => {
+                    const shape = getPanelShape(instance.key);
+                    // Get colorwork pattern layers from redux state (stored directly as array, not as object.layers)
+                    const panelPatternLayers = patternData?.panels?.patternLayers?.[instance.instanceId] || [];
+                    return {
+                      instanceId: instance.instanceId,
+                      panelKey: instance.key,
+                      panelName: instance.panelName,
+                      shape: JSON.parse(JSON.stringify(shape || {})),
+                      colorworkLayers: JSON.parse(JSON.stringify(panelPatternLayers)),
+                      colorworkOptions: {} // Options are not currently stored separately
+                    };
+                  }),
+                  // Include only the patterns used in this project
+                  usedColorworkPatterns: Object.keys(usedPatterns).length > 0 ? usedPatterns : undefined
+                };
+
+                // Load current library and AMEND it (don't replace)
+                const currentLib = libraryData || {};
+                const updatedLib = {
+                  ...currentLib,
+                  knittingProjects: [
+                    ...(currentLib.knittingProjects || []),
+                    knittingProject
+                  ],
+                  lastUpdated: new Date().toISOString()
+                };
+
+                // Save the updated library
+                const result = await dispatch(saveFullLibrary(updatedLib) as any);
+                
+                if (result.type === 'library/saveFullLibrary/fulfilled') {
+                  message.success(`Project "${knittingProject.name}" saved to library!`);
+                  // Navigate back to the knitting pattern designer home
+                  navigate('/crafts/knitting-pattern-designer');
+                } else {
+                  throw new Error(result.error?.message || 'Failed to save project');
+                }
+              } catch (error: any) {
+                message.error(`Failed to save project: ${error.message || 'Unknown error'}`);
+                // Stay on the current page when there's an error
+              } finally {
+                setIsSaving(false);
+              }
             }}
           >
-            Start Knitting
+            {isSaving ? 'Saving...' : 'Create Project'}
           </Button>
         )}
       </div>

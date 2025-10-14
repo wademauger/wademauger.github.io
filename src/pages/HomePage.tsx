@@ -4,8 +4,11 @@ import { useSelector } from 'react-redux';
 import { Badge } from 'antd';
 import '../styles/HomePage.css';
 import RecipeIcon from '../img/icons/chef.svg';
-import MusicIcon from '../img/icons/uke.svg';
+import MusicIcon from '../img/icons/piano.svg';
 import KnittingIcon from '../img/icons/sweater.svg';
+
+const bgSlate600 = 'oklch(0.446 0.043 257.281)';
+const accentColor = 'cyan';
 
 const HomePage = () => {
   // Prefer the structured `fullLibrary` object when available (canonical source),
@@ -78,7 +81,7 @@ const HomePage = () => {
   return (
     <div className="home-page">
       <div className="app-cards">
-        <Badge.Ribbon text={`${recipeCount} recipe${recipeCount !== 1 ? 's' : ''}`} color={recipeCount ? 'green' : 'gray'}>
+        <Badge.Ribbon text={`${recipeCount} recipe${recipeCount !== 1 ? 's' : ''}`} color={recipeCount ? accentColor : bgSlate600}>
           <div className="app-card">
             <h2>Recipes</h2>
             <p>
@@ -94,9 +97,9 @@ const HomePage = () => {
           </div>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${songCount} song${songCount !== 1 ? 's' : ''}`} color={songCount ? 'green' : 'gray'}>
-          <Badge.Ribbon text={`${albumCount} album${albumCount !== 1 ? 's' : ''}`} color={albumCount ? 'blue' : 'gray'} style={{ top: 45 }}>
-            <Badge.Ribbon text={`${artistCount} artist${artistCount !== 1 ? 's' : ''}`} color={artistCount ? 'purple' : 'gray'} style={{ top: 80 }}>
+        <Badge.Ribbon text={`${songCount} song${songCount !== 1 ? 's' : ''}`} color={songCount ? accentColor : bgSlate600}>
+          <Badge.Ribbon text={`${albumCount} album${albumCount !== 1 ? 's' : ''}`} color={albumCount ? accentColor : bgSlate600} style={{ top: 45 }}>
+            <Badge.Ribbon text={`${artistCount} artist${artistCount !== 1 ? 's' : ''}`} color={artistCount ? accentColor : bgSlate600} style={{ top: 80 }}>
               <div className="app-card">
                 <h2>Music Tabs</h2>
                 <p>
@@ -108,14 +111,14 @@ const HomePage = () => {
                   alt="Music"
                   className="app-icon"
                 />
-                <Link to="/crafts/tabs" className="app-link">Open Music Tabs App</Link>
+                <Link to="/crafts/tabs" className="app-link bg-blue-500 ">Open Music Tabs App</Link>
               </div>
             </Badge.Ribbon>
           </Badge.Ribbon>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? 'green' : 'gray'}>
-          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? 'blue' : 'gray'} style={{ top: 45 }}>
+        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? accentColor : bgSlate600}>
+          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? accentColor : bgSlate600} style={{ top: 45 }}>
             <div className="app-card">
               <h2>Knitting Patterns</h2>
               <p>

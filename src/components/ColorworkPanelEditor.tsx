@@ -436,30 +436,7 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
     // Render functions for different stages
     const renderSettingsView = () => (
         <div className="colorwork-settings-view">
-            {capturedPanels.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                    <Text strong style={{ display: 'block', marginBottom: 8 }}>Captured panels</Text>
-                    <Space size={16} wrap>
-                        {capturedPanels.map((snapshot) => {
-                            const hydratedShape = snapshot.shape instanceof Trapezoid
-                                ? snapshot.shape
-                                : (snapshot.shape ? Trapezoid.fromObject(snapshot.shape) : null);
-                            const snapshotGauge = snapshot.gauge || defaultGaugeSnapshot;
-                            return hydratedShape ? (
-                                <ColorworkPanelDiagram
-                                    key={snapshot.panelKey}
-                                    shape={hydratedShape as any}
-                                    patternLayers={snapshot.layers as any}
-                                    gauge={snapshotGauge as any}
-                                    label={snapshot.label}
-                                    size={140}
-                                    padding={8}
-                                />
-                            ) : null;
-                        })}
-                    </Space>
-                </div>
-            )}
+            {/* Captured panels section removed - previews update live in the panel grid above */}
 
             <div style={{
                 marginBottom: 16,
@@ -474,18 +451,14 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
                         ? `Editing ${currentPanelLabel}${allSelectedPanelKeys.length > 1 ? ` (${currentPanelPosition} of ${allSelectedPanelKeys.length})` : ''}`
                         : 'Select a panel to edit'}
                 </Text>
-                <Space>
-                    {!hasNextPanel && previewKey && (
-                        <Text type="secondary">All selected panels captured</Text>
-                    )}
+                {hasNextPanel && previewKey && (
                     <Button
-                        type="primary"
+                        type="default"
                         onClick={handleNextPanel}
-                        disabled={!previewKey}
                     >
-                        {hasNextPanel ? 'Save & Next Panel' : 'Save Panel'}
+                        Next Panel →
                     </Button>
-                </Space>
+                )}
             </div>
 
             <ColorworkCanvasEditor

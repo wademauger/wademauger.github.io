@@ -303,6 +303,17 @@ const ColorworkCanvasEditor = ({
         const totalStitches = Math.round(widthInches * stitchesPerInch);
         const totalRows = Math.round(heightInches * rowsPerInch);
 
+        // Debug logging - remove after verification
+        console.log('[ColorworkCanvasEditor] Rendering with:', {
+            baseWidthInches,
+            scalingFactor,
+            widthInches,
+            stitchesPerInch,
+            totalStitches,
+            fullPanelDimensions: fullPanelDimensions ? true : false,
+            method: 'dimensions-first'
+        });
+
         // Calculate pixel size for each stitch/row
         // We need to fit totalStitches into displayWidth pixels
         // displayWidth is the actual screen space available
@@ -381,6 +392,18 @@ const ColorworkCanvasEditor = ({
         // Determine if we should repeat
         const repeatHorizontal = repeatMode === 'x' || repeatMode === 'both';
         const repeatVertical = repeatMode === 'y' || repeatMode === 'both';
+
+        console.log('[ColorworkCanvasEditor] applyPatternLayerCentered:', {
+            layerName: layer.name,
+            patternType: layer.patternType,
+            repeatMode,
+            repeatHorizontal,
+            repeatVertical,
+            patternRows,
+            patternStitches,
+            totalRows,
+            totalStitches
+        });
 
         // Calculate center offsets to start pattern from center
         const centerOffsetX = Math.floor((totalStitches - patternStitches) / 2);
@@ -1468,11 +1491,22 @@ const ColorworkCanvasEditor = ({
                                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
                                                                         {layer.patternConfig.colors.map((colorConfig, index: number) => (
                                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                                <ColorPicker
+                                                                                    value={colorConfig.color || '#ffffff'}
+                                                                                    onChange={(newColor) => {
+                                                                                        const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
+                                                                                        const newColors = [...layer.patternConfig.colors];
+                                                                                        newColors[index] = { ...newColors[index], color: colorValue };
+                                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                                    }}
+                                                                                    showText={false}
+                                                                                    size="small"
+                                                                                />
                                                                                 <InputNumber
                                                                                     value={colorConfig.rows}
                                                                                     onChange={(value: any) => {
                                                                                         const newColors = [...layer.patternConfig.colors];
-                                                                                        newColors[index].rows = value || 0;
+                                                                                        newColors[index] = { ...newColors[index], rows: value ?? 0 };
                                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                                     }}
                                                                                     min={0}
@@ -1524,11 +1558,22 @@ const ColorworkCanvasEditor = ({
                                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
                                                                         {layer.patternConfig.colors.map((colorConfig, index: number) => (
                                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                                <ColorPicker
+                                                                                    value={colorConfig.color || '#ffffff'}
+                                                                                    onChange={(newColor) => {
+                                                                                        const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
+                                                                                        const newColors = [...layer.patternConfig.colors];
+                                                                                        newColors[index] = { ...newColors[index], color: colorValue };
+                                                                                        handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
+                                                                                    }}
+                                                                                    showText={false}
+                                                                                    size="small"
+                                                                                />
                                                                                 <InputNumber
                                                                                     value={colorConfig.columns}
                                                                                     onChange={(value: any) => {
                                                                                         const newColors = [...layer.patternConfig.colors];
-                                                                                        newColors[index].columns = value || 0;
+                                                                                        newColors[index] = { ...newColors[index], columns: value ?? 0 };
                                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                                     }}
                                                                                     min={0}
@@ -2256,7 +2301,7 @@ function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' 
     );
 }
 
-function generatePattern(type, config, targetDimension = null) {
+export function generatePattern(type, config, targetDimension = null) {
     console.log('🎯 generatePattern called:', { type, hasConfig: !!config, configKeys: config ? Object.keys(config) : [] });
     
     if (type === 'stripes') {

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { theme } from 'antd';
 import polygonClipping from 'polygon-clipping';
+import { generatePattern } from './ColorworkCanvasEditor';
 
 /**
  * ColorworkPanelDiagram - Canvas-based panel diagram with high performance rendering
@@ -279,16 +280,31 @@ const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coor
 };
 
 const renderColorworkLayersToCanvasCentered = (ctx, patternLayers, shape, x, y, displayWidth, displayHeight, scale, gauge) => {
-    // Calculate actual dimensions in inches
-    const widthInches = Math.max(shape.baseA, shape.baseB);
-    const heightInches = shape.height;
+    // Calculate base dimensions in inches
+    const baseWidthInches = Math.max(shape.baseA, shape.baseB);
+    const baseHeightInches = shape.height;
     
-    // Calculate stitch and row counts based on gauge
+    // Apply scaling factor to panel dimensions first (matches ColorworkCanvasEditor approach)
+    const scalingFactor = gauge.scalingFactor || 1;
+    const widthInches = baseWidthInches * scalingFactor;
+    const heightInches = baseHeightInches * scalingFactor;
+    
+    // Calculate stitch and row counts based on gauge and scaled dimensions
     const stitchesPerInch = gauge.stitchesPerFourInches / 4;
     const rowsPerInch = gauge.rowsPerFourInches / 4;
     
     const totalStitches = Math.round(widthInches * stitchesPerInch);
     const totalRows = Math.round(heightInches * rowsPerInch);
+    
+    // Debug logging - remove after verification
+    console.log('[ColorworkPanelDiagram] Rendering with:', {
+        baseWidthInches,
+        scalingFactor,
+        widthInches,
+        stitchesPerInch,
+        totalStitches,
+        method: 'dimensions-first'
+    });
     
     // Calculate pixel size for each stitch/row in the display
     const stitchPixelWidth = displayWidth / totalStitches;
@@ -325,7 +341,32 @@ const createCombinedGridCentered = (totalStitches, totalRows, patternLayers) => 
 };
 
 const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
-    const { pattern, settings } = layer;
+    let { pattern, settings } = layer;
+    
+    // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
+    // This ensures patterns scale correctly to match the ColorworkCanvasEditor behavior
+    if (layer.patternType === 'stripes' && layer.patternConfig && layer.patternConfig.colors) {
+        const hasZeroRows = layer.patternConfig.colors.some((c: any) => c.rows === 0);
+        console.log('[ColorworkPanelDiagram] Stripe layer detected:', { 
+            hasZeroRows, 
+            totalRows, 
+            configColors: layer.patternConfig.colors 
+        });
+        if (hasZeroRows) {
+            const oldPattern = pattern;
+            pattern = generatePattern('stripes', layer.patternConfig, totalRows);
+            console.log('[ColorworkPanelDiagram] Regenerated stripe pattern:', {
+                oldHeight: oldPattern?.getRowCount?.(),
+                newHeight: pattern?.getRowCount?.(),
+                totalRows
+            });
+        }
+    } else if (layer.patternType === 'vstripes' && layer.patternConfig && layer.patternConfig.colors) {
+        const hasZeroColumns = layer.patternConfig.colors.some((c: any) => c.columns === 0);
+        if (hasZeroColumns) {
+            pattern = generatePattern('vstripes', layer.patternConfig, totalStitches);
+        }
+    }
     
     if (!pattern || !pattern.grid || pattern.grid.length === 0) {
         return;
