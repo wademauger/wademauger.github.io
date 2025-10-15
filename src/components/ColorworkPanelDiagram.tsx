@@ -554,6 +554,150 @@ const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dim
     }
 };
 
+/**
+ * Draw row highlight overlays on the panel
+ * Draws a red line across each trapezoid at the specified row positions
+ */
+const drawRowHighlights = (ctx, shape, scale, translateX, translateY, gauge, highlightedRow, completedRows) => {
+    // Calculate total rows and row positions for the entire shape hierarchy
+    const rowPositions = calculateRowPositionsRecursive(shape, scale, 0, 0, 0, gauge);
+    
+    if (rowPositions.length === 0) return;
+    
+    ctx.save();
+    ctx.translate(translateX, translateY);
+    
+    // Draw completed rows with a subtle green overlay
+    completedRows.forEach(rowNum => {
+        if (rowNum >= 0 && rowNum < rowPositions.length) {
+            const pos = rowPositions[rowNum];
+            ctx.strokeStyle = 'rgba(82, 196, 26, 0.6)'; // Green with transparency
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pos.leftX, pos.y);
+            ctx.lineTo(pos.rightX, pos.y);
+            ctx.stroke();
+        }
+    });
+    
+    // Draw highlighted (current) row with a bold red line
+    if (highlightedRow !== null && highlightedRow >= 0 && highlightedRow < rowPositions.length) {
+        const pos = rowPositions[highlightedRow];
+        ctx.strokeStyle = 'rgba(255, 77, 79, 0.9)'; // Bright red
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(pos.leftX, pos.y);
+        ctx.lineTo(pos.rightX, pos.y);
+        ctx.stroke();
+        
+        // Add small arrow indicators at the edges
+        const arrowSize = 6;
+        // Left arrow
+        ctx.fillStyle = 'rgba(255, 77, 79, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(pos.leftX, pos.y);
+        ctx.lineTo(pos.leftX - arrowSize, pos.y - arrowSize);
+        ctx.lineTo(pos.leftX - arrowSize, pos.y + arrowSize);
+        ctx.closePath();
+        ctx.fill();
+        // Right arrow
+        ctx.beginPath();
+        ctx.moveTo(pos.rightX, pos.y);
+        ctx.lineTo(pos.rightX + arrowSize, pos.y - arrowSize);
+        ctx.lineTo(pos.rightX + arrowSize, pos.y + arrowSize);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    ctx.restore();
+};
+
+/**
+ * Recursively calculate Y positions for each row across all trapezoids in the hierarchy
+ */
+const calculateRowPositionsRecursive = (shape, scale, xOffset, yOffset, startRow, gauge) => {
+    const positions = [];
+    
+    if (!shape || !gauge) return positions;
+    
+    const stitchesPerInch = (gauge.stitchesPerFourInches / 4) * (gauge.scalingFactor || 1);
+    const rowsPerInch = (gauge.rowsPerFourInches / 4) * (gauge.scalingFactor || 1);
+    
+    // Calculate dimensions for this trapezoid
+    const heightPixels = shape.height * scale;
+    const rowCount = Math.round(shape.height * rowsPerInch);
+    const rowHeightPixels = heightPixels / rowCount;
+    
+    // Calculate trapezoid shape coordinates
+    const topWidth = shape.baseB * scale;
+    const bottomWidth = shape.baseA * scale;
+    const containerWidth = Math.max(topWidth, bottomWidth);
+    
+    const topLeftX = xOffset + (containerWidth - topWidth) / 2 + (shape.baseBHorizontalOffset || 0) * scale;
+    const topRightX = topLeftX + topWidth;
+    const bottomLeftX = xOffset + (containerWidth - bottomWidth) / 2;
+    const bottomRightX = bottomLeftX + bottomWidth;
+    
+    // Generate positions for each row in this trapezoid
+    for (let i = 0; i < rowCount; i++) {
+        const t = i / rowCount; // Interpolation factor (0 to 1)
+        const y = yOffset + t * heightPixels;
+        
+        // Interpolate left and right X positions based on trapezoid shape
+        const leftX = topLeftX + (bottomLeftX - topLeftX) * t;
+        const rightX = topRightX + (bottomRightX - topRightX) * t;
+        
+        positions.push({
+            y,
+            leftX,
+            rightX,
+            rowNumber: startRow + i,
+            trapezoidId: shape.id || shape.label
+        });
+    }
+    
+    // Process successors (children)
+    if (shape.successors && shape.successors.length > 0) {
+        const nextStartRow = startRow + rowCount;
+        const nextYOffset = yOffset + heightPixels;
+        
+        // For multiple successors, they're arranged horizontally
+        if (shape.successors.length > 1) {
+            let currentXOffset = xOffset;
+            shape.successors.forEach(successor => {
+                const successorPositions = calculateRowPositionsRecursive(
+                    successor,
+                    scale,
+                    currentXOffset,
+                    nextYOffset,
+                    nextStartRow,
+                    gauge
+                );
+                positions.push(...successorPositions);
+                
+                // Move X offset for next successor
+                const successorWidth = Math.max(successor.baseA, successor.baseB) * scale;
+                currentXOffset += successorWidth;
+            });
+        } else {
+            // Single successor - centered
+            const successor = shape.successors[0];
+            const successorPositions = calculateRowPositionsRecursive(
+                successor,
+                scale,
+                xOffset,
+                nextYOffset,
+                nextStartRow,
+                gauge
+            );
+            positions.push(...successorPositions);
+        }
+    }
+    
+    return positions;
+};
+
 const ColorworkPanelDiagram = ({ 
     shape, 
     patternLayers = [], // Array of pattern layer objects
@@ -561,7 +705,9 @@ const ColorworkPanelDiagram = ({
     label = '', 
     size = 200, 
     padding = 10,
-    showPatterns = true 
+    showPatterns = true,
+    highlightedRow = null, // Row number to highlight (0-indexed)
+    completedRows = [] // Array of completed row numbers
 }) => {
     const { token } = theme.useToken();
     const fillColor = token.colorPrimary;
@@ -640,7 +786,21 @@ const ColorworkPanelDiagram = ({
         
         ctx.restore();
         
-    }, [shape, patternLayers, gauge, size, padding, showPatterns, fillColor]);
+        // Draw row highlights if specified
+        if ((highlightedRow !== null || completedRows.length > 0) && gauge && shape) {
+            drawRowHighlights(
+                ctx,
+                shape,
+                scaleFactor,
+                translateX,
+                translateY,
+                gauge,
+                highlightedRow,
+                completedRows
+            );
+        }
+        
+    }, [shape, patternLayers, gauge, size, padding, showPatterns, fillColor, highlightedRow, completedRows]);
 
     return (
         <div style={{ width: size + padding * 2, height: size + padding * 3, float: 'left' }}>

@@ -39,6 +39,22 @@ export async function saveEntry(entry: any, type: string): Promise<any> {
   return store.dispatch(saveEntry({ entry, type })).unwrap();
 }
 
+export async function saveKnittingProject(project: any): Promise<any> {
+  // Use the pattern established by other merge utilities
+  const { loadFullLibrary, saveFullLibrary } = await import('../store/librarySlice');
+  const { mergeKnittingProjectIntoLibrary } = await import('./libraryMergeKnittingProject');
+  
+  // Load current library
+  const currentLibraryResult = await store.dispatch(loadFullLibrary()).unwrap();
+  const currentLibrary = currentLibraryResult || {};
+  
+  // Merge the project into the library
+  const updatedLibrary = mergeKnittingProjectIntoLibrary(currentLibrary, project);
+  
+  // Save the updated library
+  return store.dispatch(saveFullLibrary(updatedLibrary)).unwrap();
+}
+
 export async function openEntry(id: string, type: string): Promise<any> {
   const { openEntry } = await import('../store/librarySlice');
   return store.dispatch(openEntry({ id, type })).unwrap();

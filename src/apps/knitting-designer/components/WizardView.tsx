@@ -7,7 +7,8 @@ import { ColorworkPanelDiagram } from '../../../components/ColorworkPanelDiagram
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep, copyPanelPatternLayers } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
-import { loadFullLibrary, setFullLibrary, clearEntries, saveFullLibrary } from '../../../store/librarySlice';
+import { loadFullLibrary, setFullLibrary, clearEntries } from '../../../store/librarySlice';
+import { saveKnittingProject } from '../../../utils/libraryThunks';
 import { useDriveAuth } from '../../colorwork-designer/context/DriveAuthContext';
 import { calculatePanelDimensions } from '../utils/panelDimensions';
 import { generateProjectTitle } from '../utils/ProjectTitlePlaceholderHelper';
@@ -17,6 +18,7 @@ import ColorworkEditorSection from './ColorworkEditorSection';
 import PanelSummary from './PanelSummary';
 import ColorworkPanelEditor from '../../../components/ColorworkPanelEditor';
 import { PanelMetadata } from '../types/patternWizard.types';
+import { generateConcreteStitchPlan, ConcreteStitchPlan } from '../../../utils/stitchPlanGenerator';
 import '../styles/PatternWizard.css';
 
 const WizardView: React.FC = () => {
@@ -798,9 +800,47 @@ const WizardView: React.FC = () => {
                   });
                 });
                 
+                // Read the name from Redux state (updated by toolbar input) instead of local state
+                const projectName = patternData?.meta?.name || patternData?.name || '';
+                
+                // Generate concrete stitch plans for each panel
+                const panelsWithStitchPlans = panelInstances.map(instance => {
+                  const shape = getPanelShape(instance.key);
+                  // Get colorwork pattern layers from redux state (stored directly as array, not as object.layers)
+                  const panelPatternLayers = patternData?.panels?.patternLayers?.[instance.instanceId] || [];
+                  
+                  // Generate the concrete stitch plan
+                  let stitchPlan: ConcreteStitchPlan | null = null;
+                  try {
+                    stitchPlan = generateConcreteStitchPlan(
+                      shape,
+                      patternData?.gauge || {},
+                      panelPatternLayers,
+                      instance.panelName
+                    );
+                    console.log(`Generated stitch plan for ${instance.panelName}:`, stitchPlan);
+                  } catch (error) {
+                    console.error(`Failed to generate stitch plan for ${instance.panelName}:`, error);
+                  }
+                  
+                  return {
+                    instanceId: instance.instanceId,
+                    panelKey: instance.key,
+                    panelName: instance.panelName,
+                    // Store the concrete stitch plan as the main pattern data
+                    stitchPlan: stitchPlan,
+                    // Keep the wizard options separate for editing later
+                    wizardOptions: {
+                      shape: JSON.parse(JSON.stringify(shape || {})),
+                      colorworkLayers: JSON.parse(JSON.stringify(panelPatternLayers)),
+                      colorworkOptions: {} // Options are not currently stored separately
+                    }
+                  };
+                });
+                
                 const knittingProject = {
                   id: projectId,
-                  name: name || cachedPlaceholderTitle,
+                  name: projectName.trim() || cachedPlaceholderTitle,
                   createdAt: new Date().toISOString(),
                   gauge: {
                     stitchesPerInch: patternData?.gauge?.stitchesPerInch || 0,
@@ -809,44 +849,17 @@ const WizardView: React.FC = () => {
                     rowsPerFourInches: patternData?.gauge?.rowsPerFourInches || 0,
                     scaleFactor: patternData?.gauge?.scaleFactor || 1
                   },
-                  panels: panelInstances.map(instance => {
-                    const shape = getPanelShape(instance.key);
-                    // Get colorwork pattern layers from redux state (stored directly as array, not as object.layers)
-                    const panelPatternLayers = patternData?.panels?.patternLayers?.[instance.instanceId] || [];
-                    return {
-                      instanceId: instance.instanceId,
-                      panelKey: instance.key,
-                      panelName: instance.panelName,
-                      shape: JSON.parse(JSON.stringify(shape || {})),
-                      colorworkLayers: JSON.parse(JSON.stringify(panelPatternLayers)),
-                      colorworkOptions: {} // Options are not currently stored separately
-                    };
-                  }),
+                  panels: panelsWithStitchPlans,
                   // Include only the patterns used in this project
                   usedColorworkPatterns: Object.keys(usedPatterns).length > 0 ? usedPatterns : undefined
                 };
 
-                // Load current library and AMEND it (don't replace)
-                const currentLib = libraryData || {};
-                const updatedLib = {
-                  ...currentLib,
-                  knittingProjects: [
-                    ...(currentLib.knittingProjects || []),
-                    knittingProject
-                  ],
-                  lastUpdated: new Date().toISOString()
-                };
-
-                // Save the updated library
-                const result = await dispatch(saveFullLibrary(updatedLib) as any);
+                // Use the library adapter to properly merge the project without replacing other entries
+                await saveKnittingProject(knittingProject);
                 
-                if (result.type === 'library/saveFullLibrary/fulfilled') {
-                  message.success(`Project "${knittingProject.name}" saved to library!`);
-                  // Navigate back to the knitting pattern designer home
-                  navigate('/crafts/knitting-pattern-designer');
-                } else {
-                  throw new Error(result.error?.message || 'Failed to save project');
-                }
+                message.success(`Project "${knittingProject.name}" saved to library!`);
+                // Navigate back to the knitting pattern designer home
+                navigate('/crafts/knitting-pattern-designer');
               } catch (error: any) {
                 message.error(`Failed to save project: ${error.message || 'Unknown error'}`);
                 // Stay on the current page when there's an error

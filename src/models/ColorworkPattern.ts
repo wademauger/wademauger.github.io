@@ -66,7 +66,7 @@ export class ColorworkPattern {
         const usedColorIds = new Set();
         this.grid.forEach((row: any) => {
             row.forEach((colorId: any) => {
-                if (colorId) usedColorIds.add(colorId);
+                if (colorId !== null && colorId !== undefined) usedColorIds.add(colorId);
             });
         });
         return Array.from(usedColorIds).map((id: any) => this.colors[id]).filter(Boolean);

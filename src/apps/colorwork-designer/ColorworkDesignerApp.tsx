@@ -8,6 +8,8 @@ import { useDropdown } from '../../components/DropdownProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatternData } from '@/store/knittingDesignSlice';
 import { selectPatternData } from '@/store/knittingDesignSlice';
+import { selectFullLibrary } from '@/store/librarySlice';
+import { loadFullLibrary } from '@/store/librarySlice';
 import { Input, InputNumber } from 'antd';
 import { generateProjectTitle } from '../knitting-designer/utils/ProjectTitlePlaceholderHelper';
 import { openLibrarySettingsModal } from '../../reducers/modal.reducer';
@@ -21,6 +23,7 @@ import PanelShapeCreator from './PanelShapeCreator';
 // Lazy-load the knitting designer and wizard to avoid circular import evaluation at module load time
 const KnittingDesignerApp = lazy(() => import('../knitting-designer/KnittingDesignerApp'));
 const WizardView = lazy(() => import('../knitting-designer/components/WizardView'));
+const InteractiveKnittingPage = lazy(() => import('../../pages/InteractiveKnittingPage'));
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -37,12 +40,33 @@ const ColorworkDesignerApp = () => {
     // removed local modal flow; navigation will be used instead
     const [knittingStage, setKnittingStage] = useState<string>('settings'); // 'settings' or 'knitting'
     const editorRef = useRef<any>(null);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    const cachedPlaceholderTitle = useMemo(() => generateProjectTitle(), []);
+    
     // Cast the imported editor to any to avoid prop-type friction during the focused pass
     const AnyColorworkPanelEditor: any = ColorworkPanelEditor;
-    const recentProjects = useMemo(() => ([
-        { id: 1, name: 'Raglan Sweater Front', garment: 'cozy-raglan-sweater', panel: 'Front', lastModified: '2 hours ago' },
-        { id: 2, name: 'Hat Crown', garment: 'seam-top-hat', panel: 'Hat', lastModified: '1 day ago' }
-    ]), []);
+    
+    // Get the full library data from Redux
+    const libraryData: any = useSelector(selectFullLibrary);
+    
+    // Load library on mount
+    useEffect(() => {
+        dispatch(loadFullLibrary() as any);
+    }, [dispatch]);
+    
+    // Get real knitting projects from the library instead of dummy data
+    const recentProjects = useMemo(() => {
+        const projects = libraryData?.knittingProjects || [];
+        // Create a copy before sorting (Redux arrays are immutable/frozen)
+        return [...projects].sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            return dateB - dateA;
+        });
+    }, [libraryData]);
 
     // Handle selecting a garment panel to knit
     const handleKnitPanel = (garment: any, panelName: any, panelShape: any) => {
@@ -67,8 +91,8 @@ const ColorworkDesignerApp = () => {
         // Fix legacy projects that might be missing panelShape data
         const fixedProject = fixLegacyProject(project);
         setCurrentProject(fixedProject);
-        // Open the pattern creator route for the loaded project
-        navigate('colorwork-pattern-designer', { state: { project: fixedProject } });
+        // Navigate to interactive knitting page to show row-by-row instructions
+        navigate('interactive-knitting', { state: { project: fixedProject } });
     };
 
     const handleSaveProject = (projectData: any) => {
@@ -89,9 +113,6 @@ const ColorworkDesignerApp = () => {
         
         setCurrentProject(updatedProject);
     };
-
-    const navigate = useNavigate();
-    const location = useLocation();
 
     // Helper function to fix legacy projects missing panelShape data
     const fixLegacyProject = (project: any) => {
@@ -122,8 +143,6 @@ const ColorworkDesignerApp = () => {
         const dispatch = useDispatch();
         const patternData: any = useSelector(selectPatternData);
         const [name, setName] = useState<string>(patternData?.name || '');
-
-        const cachedPlaceholderTitle = useMemo(() => generateProjectTitle(), []);
 
         const persistGauge = useCallback((nextFields: Partial<{ stitchesPerInch: number; rowsPerInch: number; scaleFactor: number }>) => {
             const current = (patternData && patternData.gauge) || {};
@@ -249,25 +268,47 @@ const ColorworkDesignerApp = () => {
             {/* Recent Projects Section */}
             {(recentProjects.length > 0 || savedPatterns.length > 0) && (
                 <div style={{ marginTop: 40 }}>
-                    <Title level={2}>Recent Projects</Title>
+                    <Title level={2}>Projects</Title>
                     <Row gutter={[16, 16]}>
                         <Col xs={24}>
-                            {recentProjects.map((project: any) => (
-                                <Card 
-                                    key={project.id}
-                                    hoverable
-                                    size="small"
-                                    title={project.name}
-                                    extra={<Button type="link" onClick={() => {}}>Resume</Button>}
-                                    style={{ marginBottom: '12px', cursor: 'pointer' }}
-                                    onClick={() => {}}
-                                >
-                                    <Text type="secondary">
-                                        Last modified: {project.lastModified}
-                                    </Text>
-
-                                </Card>
-                            ))}
+                            {recentProjects.map((project: any) => {
+                                // Format the creation date
+                                const createdDate = project.createdAt ? new Date(project.createdAt) : null;
+                                const formattedDate = createdDate ? createdDate.toLocaleDateString() : 'Unknown date';
+                                
+                                // Count the number of panels in the project
+                                const panelCount = project.panels?.length || 0;
+                                
+                                const interactiveKnittingPageRoute = `interactive-knitting`;
+                                return (
+                                    <Card 
+                                        key={project.id}
+                                        hoverable
+                                        size="small"
+                                        title={project.name}
+                                        extra={<Button type="link" onClick={(e: React.MouseEvent) => {
+                                            e.stopPropagation();
+                                            navigate(interactiveKnittingPageRoute, { state: { project: project } });
+                                        }}>Open Project</Button>}
+                                        style={{ marginBottom: '12px', cursor: 'pointer' }}
+                                        onClick={() => navigate(interactiveKnittingPageRoute, { state: { project: project } })}
+                                    >
+                                        <Space direction="vertical" size="small">
+                                            <Text type="secondary">
+                                                Created: {formattedDate}
+                                            </Text>
+                                            <Text type="secondary">
+                                                {panelCount} panel{panelCount !== 1 ? 's' : ''}
+                                            </Text>
+                                            {project.gauge && (
+                                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                                    Gauge: {project.gauge.stitchesPerFourInches || (project.gauge.stitchesPerInch * 4)?.toFixed(0)} sts × {project.gauge.rowsPerFourInches || (project.gauge.rowsPerInch * 4)?.toFixed(0)} rows per 4"
+                                                </Text>
+                                            )}
+                                        </Space>
+                                    </Card>
+                                );
+                            })}
                             {savedPatterns.map((pattern: any) => (
                                 <Card 
                                     key={pattern.id}
@@ -327,7 +368,6 @@ const ColorworkDesignerApp = () => {
 
     // Register header dropdown items for Colorwork Designer based on current sub-route
     const { setMenuItems } = useDropdown();
-    const dispatch = useDispatch();
     const [showOpenDialog, setShowOpenDialog] = useState(false);
     const [showSaveDialog, setShowSaveDialog] = useState(false);
     const [showPatternOpen, setShowPatternOpen] = useState(false);
@@ -421,6 +461,7 @@ const ColorworkDesignerApp = () => {
                                         </div>
                                     </div>
                                 )} />
+                                <Route path="interactive-knitting" element={<InteractiveKnittingPage />} />
                                 <Route path="pattern-wizard" element={(
                                     <div className="pattern-wizard" style={{ display: 'flex', flexDirection: 'column' }}>
                                         <div className="editor-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>

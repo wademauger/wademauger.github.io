@@ -120,9 +120,28 @@ const ColorworkPanelEditor = forwardRef<ColorworkPanelEditorHandle, ColorworkPan
         // Use project.panelShape directly since that's where the garment shape data is stored
         const shape = convertToTrapezoid(project?.panelShape || initialPanel?.shape) || createDefaultShape();
         
+        // Ensure gauge is always a Gauge instance, not a plain object
+        let gaugeInstance: Gauge;
+        if (initialPanel?.gauge) {
+            // If gauge exists but might be a plain object, reconstruct it
+            const g: any = initialPanel.gauge;
+            if (g instanceof Gauge) {
+                gaugeInstance = g;
+            } else {
+                // Reconstruct from plain object
+                gaugeInstance = new Gauge(
+                    g.stitchesPerFourInches || (g.stitchesPerInch ? g.stitchesPerInch * 4 : 19),
+                    g.rowsPerFourInches || (g.rowsPerInch ? g.rowsPerInch * 4 : 30),
+                    g.scaleFactor || g.scalingFactor || 1
+                );
+            }
+        } else {
+            gaugeInstance = new Gauge(19, 30);
+        }
+        
         return {
             shape: shape,
-            gauge: initialPanel?.gauge || new Gauge(19, 30),
+            gauge: gaugeInstance,
             sizeModifier: initialPanel?.sizeModifier || 1
         };
     });

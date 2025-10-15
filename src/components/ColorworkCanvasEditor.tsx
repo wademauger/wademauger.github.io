@@ -2177,7 +2177,7 @@ const ColorworkCanvasEditor = ({
                                                                     {layer.pattern && layer.pattern.colors && (() => {
                                                                         // Only show colors that are actually used in the pattern
                                                                         const usedColors = layer.pattern.getColorsUsed?.() || [];
-                                                                        const usedColorIds = new Set(usedColors.map((c: any) => c.id));
+                                                                        const usedColorIds = new Set(usedColors.map((c: any) => String(c.id)));
                                                                         
                                                                         const filteredEntries = Object.entries(layer.pattern.colors)
                                                                             .filter(([colorId]) => {
@@ -2189,23 +2189,46 @@ const ColorworkCanvasEditor = ({
                                                                                 return colorId !== 'transparent';
                                                                             });
                                                                         
-                                                                        return filteredEntries.map(([colorId, colorInfo]) => (
-                                                                            <div key={colorId} style={{ 
-                                                                                marginBottom: 4, 
-                                                                                display: 'grid', 
-                                                                                gridTemplateColumns: '1fr auto',
-                                                                                alignItems: 'center', 
-                                                                                gap: 8 
-                                                                            }}>
-                                                                                <Text style={textStyle11}>{colorInfo.label}</Text>
-                                                                                <ColorPicker
-                                                                                    value={layer.settings.colorMapping?.[colorId] || colorInfo.color}
-                                                                                    onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
-                                                                                    showText={false}
-                                                                                    size="small"
-                                                                                />
-                                                                            </div>
-                                                                        ));
+                                                                        return filteredEntries.map(([colorId, colorInfo]) => {
+                                                                            const currentColor = layer.settings.colorMapping?.[colorId] || colorInfo.color;
+                                                                            const isTransparent = currentColor === 'transparent';
+                                                                            
+                                                                            return (
+                                                                                <div key={colorId} style={{ 
+                                                                                    marginBottom: 4, 
+                                                                                    display: 'grid', 
+                                                                                    gridTemplateColumns: '1fr auto auto',
+                                                                                    alignItems: 'center', 
+                                                                                    gap: 8 
+                                                                                }}>
+                                                                                    <Text style={textStyle11}>{colorInfo.label}</Text>
+                                                                                    <ColorPicker
+                                                                                        value={isTransparent ? '#ffffff' : currentColor}
+                                                                                        onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
+                                                                                        showText={false}
+                                                                                        size="small"
+                                                                                        disabled={isTransparent}
+                                                                                    />
+                                                                                    <Button
+                                                                                        size="small"
+                                                                                        type={isTransparent ? "primary" : "default"}
+                                                                                        onClick={() => {
+                                                                                            const newColor = isTransparent ? colorInfo.color : 'transparent';
+                                                                                            handleLayerColorChange(layer.id, colorId, newColor);
+                                                                                        }}
+                                                                                        style={{ 
+                                                                                            minWidth: 'auto', 
+                                                                                            padding: '0 8px',
+                                                                                            fontSize: '10px',
+                                                                                            height: '24px'
+                                                                                        }}
+                                                                                        title={isTransparent ? "Make opaque" : "Make transparent"}
+                                                                                    >
+                                                                                        {isTransparent ? '●' : '○'}
+                                                                                    </Button>
+                                                                                </div>
+                                                                            );
+                                                                        });
                                                                     })()}
                                                                 </div>
                                                             </div>

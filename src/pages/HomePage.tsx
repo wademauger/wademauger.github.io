@@ -22,6 +22,7 @@ const HomePage = () => {
   let artistCount = 0;
   let albumCount = 0;
   let panelCount = 0;
+  let projectCount = 0;
   let colorworkCount = 0;
 
   if (fullLib) {
@@ -44,6 +45,14 @@ const HomePage = () => {
     }
     if (fullLib.panels && typeof fullLib.panels === 'object') {
       panelCount = Object.keys(fullLib.panels).length;
+    }
+    // Projects can be stored under several keys depending on library shape
+    if (fullLib.projects) {
+      if (Array.isArray(fullLib.projects)) projectCount = fullLib.projects.length;
+      else if (typeof fullLib.projects === 'object') projectCount = Object.keys(fullLib.projects).length;
+    } else if (fullLib.knittingProjects) {
+      if (Array.isArray(fullLib.knittingProjects)) projectCount = fullLib.knittingProjects.length;
+      else if (typeof fullLib.knittingProjects === 'object') projectCount = Object.keys(fullLib.knittingProjects).length;
     }
     if (fullLib.colorworkPatterns) {
       if (Array.isArray(fullLib.colorworkPatterns)) colorworkCount = fullLib.colorworkPatterns.length;
@@ -74,6 +83,8 @@ const HomePage = () => {
     }
     // artistCount and albumCount require structured library; default to 0 in fallback
     panelCount = counts['panel'] || 0;
+    // Fallback keys for knitting projects
+    projectCount = counts['project'] || counts['projects'] || counts['knittingProject'] || counts['knittingProjects'] || 0;
     // Fallback: count colorwork patterns from entries if present
     colorworkCount = counts['colorworkPatterns'] || counts['colorwork'] || counts['colorworkPattern'] || 0;
   }
@@ -97,41 +108,43 @@ const HomePage = () => {
           </div>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${songCount} song${songCount !== 1 ? 's' : ''}`} color={songCount ? accentColor : bgSlate600}>
-          <Badge.Ribbon text={`${albumCount} album${albumCount !== 1 ? 's' : ''}`} color={albumCount ? accentColor : bgSlate600} style={{ top: 45 }}>
-            <Badge.Ribbon text={`${artistCount} artist${artistCount !== 1 ? 's' : ''}`} color={artistCount ? accentColor : bgSlate600} style={{ top: 80 }}>
-              <div className="app-card">
-                <h2>Music Tabs</h2>
-                <p>
-                  Explore your collection of music tabs organized by artist and album.
-                  View chord charts for various instruments.
-                </p>
-                <img
-                  src={MusicIcon}
-                  alt="Music"
-                  className="app-icon"
-                />
-                <Link to="/crafts/tabs" className="app-link bg-blue-500 ">Open Music Tabs App</Link>
-              </div>
-            </Badge.Ribbon>
-          </Badge.Ribbon>
+        {/* Combined music badge: show songs · albums · artists in one long ribbon */}
+        <Badge.Ribbon
+          text={`${songCount} song${songCount !== 1 ? 's' : ''} \u00B7 ${albumCount} album${albumCount !== 1 ? 's' : ''} \u00B7 ${artistCount} artist${artistCount !== 1 ? 's' : ''}`}
+          color={(songCount || albumCount || artistCount) ? accentColor : bgSlate600}
+        >
+          <div className="app-card">
+            <h2>Music Tabs</h2>
+            <p>
+              Explore your collection of music tabs organized by artist and album.
+              View chord charts for various instruments.
+            </p>
+            <img
+              src={MusicIcon}
+              alt="Music"
+              className="app-icon"
+            />
+            <Link to="/crafts/tabs" className="app-link bg-blue-500 ">Open Music Tabs App</Link>
+          </div>
         </Badge.Ribbon>
 
-        <Badge.Ribbon text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''}`} color={colorworkCount ? accentColor : bgSlate600}>
-          <Badge.Ribbon text={`${panelCount} panel${panelCount !== 1 ? 's' : ''}`} color={panelCount ? accentColor : bgSlate600} style={{ top: 45 }}>
-            <div className="app-card">
-              <h2>Knitting Patterns</h2>
-              <p>
-                Design a garment in one size, then knit it in different sizes, using different yarns, using complex systems of colorwork patterns.
-              </p>
-              <img
-                src={KnittingIcon}
-                alt="Knitting"
-                className="app-icon"
-              />
-              <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Knitting Pattern App</Link>
-            </div>
-          </Badge.Ribbon>
+        {/* Combined knitting badge: show colorwork · panels · projects in one long ribbon */}
+        <Badge.Ribbon
+          text={`${colorworkCount} colorwork pattern${colorworkCount !== 1 ? 's' : ''} \u00B7 ${panelCount} panel${panelCount !== 1 ? 's' : ''} \u00B7 ${projectCount} project${projectCount !== 1 ? 's' : ''}`}
+          color={(colorworkCount || panelCount || projectCount) ? accentColor : bgSlate600}
+        >
+          <div className="app-card">
+            <h2>Knitting Patterns</h2>
+            <p>
+              Design a garment in one size, then knit it in different sizes, using different yarns, using complex systems of colorwork patterns.
+            </p>
+            <img
+              src={KnittingIcon}
+              alt="Knitting"
+              className="app-icon"
+            />
+            <Link to="/crafts/knitting-pattern-designer" className="app-link">Open Knitting Pattern App</Link>
+          </div>
         </Badge.Ribbon>
 
       </div>

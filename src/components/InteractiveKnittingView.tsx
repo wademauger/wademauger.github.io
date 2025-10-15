@@ -3,6 +3,7 @@ import { Card, Button, Row, Col, Space, Typography, Progress, Tag, Divider } fro
 import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import RowByRowInstructions from './RowByRowInstructions';
 import { ColorworkStitchPlanService } from '../models/ColorworkStitchPlanService';
+import { ColorworkPanelDiagram } from './ColorworkPanelDiagram';
 
 const { Title, Text } = Typography;
 
@@ -227,11 +228,17 @@ const InteractiveKnittingView = ({
                                 borderRadius: '8px',
                                 textAlign: 'center'
                             }}>
-                                <PanelRowHighlight 
-                                    combinedPattern={combinedPattern}
-                                    currentRow={knittingProgress.currentRow}
-                                    completedRows={knittingProgress.completedRows}
-                                />
+                                {combinedPattern?.panel?.shape && combinedPattern?.panel?.gauge && (
+                                    <ColorworkPanelDiagram
+                                        shape={combinedPattern.panel.shape}
+                                        patternLayers={combinedPattern.colorworkPattern ? [combinedPattern.colorworkPattern] : []}
+                                        gauge={combinedPattern.panel.gauge}
+                                        size={400}
+                                        showPatterns={true}
+                                        highlightedRow={knittingProgress.currentRow}
+                                        completedRows={knittingProgress.completedRows}
+                                    />
+                                )}
                             </div>
                         </Card>
 
@@ -295,59 +302,6 @@ const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
             >
                 {segments}
             </svg>
-        </div>
-    );
-};
-
-/**
- * PanelRowHighlight - Shows the panel shape with current row highlighted
- */
-const PanelRowHighlight = ({ combinedPattern, currentRow, completedRows }) => {
-    if (!combinedPattern || !combinedPattern.stitchPlan) {
-        return <Text type="secondary">Panel visualization unavailable</Text>;
-    }
-
-    const rows = combinedPattern.stitchPlan.rows;
-    const maxStitches = Math.max(...rows.map((row: any) => row.leftStitchesInWork + row.rightStitchesInWork));
-    
-    return (
-        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-            <Text strong style={{ fontSize: '12px' }}>Panel Shape (Row {currentRow + 1} highlighted)</Text>
-            <div style={{ marginTop: 8 }}>
-                {rows.map((row, index: number) => {
-                    const totalStitches = row.leftStitchesInWork + row.rightStitchesInWork;
-                    const widthPercent = (totalStitches / maxStitches) * 100;
-                    
-                    let backgroundColor = '#f0f0f0';
-                    if (completedRows.includes(index)) {
-                        backgroundColor = '#52c41a'; // Completed - green
-                    } else if (index === currentRow) {
-                        backgroundColor = '#1890ff'; // Current - blue
-                    }
-                    
-                    return (
-                        <div
-                            key={index}
-                            style={{
-                                width: `${widthPercent}%`,
-                                height: '6px',
-                                backgroundColor,
-                                margin: '1px auto',
-                                borderRadius: '3px',
-                                border: index === currentRow ? '2px solid #1890ff' : 'none'
-                            }}
-                            title={`Row ${index + 1}: ${totalStitches} stitches`}
-                        />
-                    );
-                })}
-            </div>
-            <div style={{ marginTop: 8, fontSize: '10px' }}>
-                <Space>
-                    <span style={{ color: '#52c41a' }}>● Completed</span>
-                    <span style={{ color: '#1890ff' }}>● Current</span>
-                    <span style={{ color: '#f0f0f0' }}>● Remaining</span>
-                </Space>
-            </div>
         </div>
     );
 };
