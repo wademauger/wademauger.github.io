@@ -7,6 +7,13 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { useSelector } from 'react-redux';
 import { selectColorworkPatterns } from '../store/librarySlice';
 import { renderPanel } from './KnittingPanelRenderer';
+import {
+    darkenHex,
+    collectTrapezoidCoordinates,
+    collectShortRowCoordinates,
+    calculateTrapezoidDimensions,
+    renderColorworkLayersToCanvas
+} from '../utils/panelRenderingUtils';
 import './ColorworkCanvasEditor.css';
 
 const { Text } = Typography;
@@ -69,6 +76,12 @@ const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragIt
 /**
  * ColorworkCanvasEditor - Full-page canvas-based editor with pan/zoom controls
  * Layout matches colorwork-designer with canvas front-and-center and side panel controls
+ * 
+ * Performance Optimizations:
+ * - Uses requestAnimationFrame for debounced canvas rendering
+ * - Prevents render blocking during rapid user input (color changes, slider adjustments)
+ * - Canvas updates are async, allowing UI to remain responsive even with complex patterns
+ * - Redux state is used only for library patterns; local state for editor operations
  */
 const ColorworkCanvasEditor = ({
     shape,
@@ -85,15 +98,14 @@ const ColorworkCanvasEditor = ({
     const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
     const hasInitialized = useRef(false);
     
+    // Rendering optimization: debounce canvas renders for performance with large patterns
+    const renderTimeoutRef = useRef<number | null>(null);
+    const pendingRenderRef = useRef(false);
+    const lastRenderParamsRef = useRef<any>(null);
+    
     // Get colorwork patterns from the library
     const libraryPatterns = useSelector(selectColorworkPatterns);
-    
-    // Debug: Log library patterns when they change
-    useEffect(() => {
-        console.log('📚 Library patterns loaded:', libraryPatterns);
-    }, [libraryPatterns]);
 
-    // Pattern creation functions (same as original) - now includes library patterns
     const availablePatterns = useMemo(() => {
         const basePatterns = {
             'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{ color: '#ffffff' }] } },
@@ -127,15 +139,10 @@ const ColorworkCanvasEditor = ({
 
         return basePatterns;
     }, [libraryPatterns]);
-    
-    // Debug: Log available patterns when they change
-    useEffect(() => {
-        console.log('🎨 Available patterns:', Object.keys(availablePatterns), availablePatterns);
-    }, [availablePatterns]);
 
     const [collapsedLayers, setCollapsedLayers] = useState(new Set()); // Track collapsed layers
 
-    // Canvas rendering functions (adapted from ColorworkPanelDiagram)
+    // Canvas rendering functions - using shared utilities from panelRenderingUtils
     const renderUnifiedShapeToCanvas = (ctx: any, shape: any, scale: any, xOffset = 0, yOffset = 0, fillColor: any, patternLayers: any = [], gauge: any = null) => {
         // Collect all trapezoid coordinates into one unified path
         const allCoordinates = [];
@@ -148,6 +155,10 @@ const ColorworkCanvasEditor = ({
         let maxX = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.x, coord.topRight.x, coord.bottomLeft.x, coord.bottomRight.x)));
         let minY = Math.min(...allCoordinates.map((coord: any) => Math.min(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
         let maxY = Math.max(...allCoordinates.map((coord: any) => Math.max(coord.topLeft.y, coord.topRight.y, coord.bottomLeft.y, coord.bottomRight.y)));
+
+        // Calculate full panel dimensions once for both main and short row rendering
+        let fullPanelDimensions = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        calculateTrapezoidDimensions(shape, 1, 0, 0, fullPanelDimensions);
 
         // Create unified clipping path
         ctx.save();
@@ -168,18 +179,29 @@ const ColorworkCanvasEditor = ({
 
         ctx.clip();
 
-        // If pattern layers are provided, render them as background with centered origin
-        if (patternLayers && patternLayers.length > 0 && gauge) {
-            // Calculate full panel dimensions for pattern rendering
-            let fullPanelDimensions = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-            calculateTrapezoidDimensions(shape, 1, 0, 0, fullPanelDimensions);
+        // --- Calculate extended bounds that include short rows BEFORE rendering ---
+        const shortRowCoords = [];
+        collectShortRowCoordinates(shape, scale, xOffset, yOffset, shortRowCoords);
+        
+        let extendedMinY = minY;
+        let extendedMaxY = maxY;
+        shortRowCoords.forEach((srCoord: any) => {
+            const { topLeft, topRight, bottomLeft, bottomRight } = srCoord;
+            const srMinY = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+            const srMaxY = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+            extendedMinY = Math.min(extendedMinY, srMinY);
+            extendedMaxY = Math.max(extendedMaxY, srMaxY);
+        });
 
+        // If pattern layers are provided, render them as background with centered origin
+        // Use EXTENDED dimensions so main shape and short rows share the same pattern grid
+        if (patternLayers && patternLayers.length > 0 && gauge) {
             // Skip border layers here; border is rendered separately after fill
-            renderColorworkLayersToCanvasCentered(
+            renderColorworkLayersToCanvas(
                 ctx,
                 (patternLayers || []).filter((l: any) => l.patternType !== 'border'),
                 shape,
-                minX, minY, maxX - minX, maxY - minY,
+                minX, extendedMinY, maxX - minX, extendedMaxY - extendedMinY,
                 scale,
                 gauge,
                 fullPanelDimensions // Pass the full panel dimensions
@@ -193,6 +215,63 @@ const ColorworkCanvasEditor = ({
         }
 
         ctx.restore();
+
+        // --- NEW: Render short rows with colorwork patterns ---
+        // Short row coordinates and extended bounds already calculated above
+
+        shortRowCoords.forEach((srCoord: any) => {
+            const { topLeft, topRight, bottomLeft, bottomRight } = srCoord;
+
+            // Create clipping region for this short row
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(topLeft.x, topLeft.y);
+            ctx.lineTo(topRight.x, topRight.y);
+            ctx.lineTo(bottomRight.x, bottomRight.y);
+            ctx.lineTo(bottomLeft.x, bottomLeft.y);
+            ctx.closePath();
+            ctx.clip();
+
+            // If patterns are enabled, render colorwork inside the short row
+            if (patternLayers && patternLayers.length > 0 && gauge) {
+                // Render the full pattern grid that covers both main shape and short rows
+                // The clipping path will show only the short row portion
+                renderColorworkLayersToCanvas(
+                    ctx,
+                    (patternLayers || []).filter((l: any) => l.patternType !== 'border'),
+                    shape,
+                    minX, // Start from main shape's left edge
+                    minY, // Start from main shape's top
+                    maxX - minX, // Full width
+                    extendedMaxY - minY, // Extended height to include short rows
+                    scale,
+                    gauge,
+                    fullPanelDimensions // Pass full panel dimensions for proper pattern scale
+                );
+            } else {
+                // Fallback: solid fill (same as parent, no darkening)
+                ctx.fillStyle = fillColor;
+                ctx.globalAlpha = 0.3;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+
+            ctx.restore();
+
+            // Draw short row border
+            ctx.strokeStyle = '#ff4d4f';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(topLeft.x, topLeft.y);
+            ctx.lineTo(topRight.x, topRight.y);
+            ctx.lineTo(bottomRight.x, bottomRight.y);
+            ctx.lineTo(bottomLeft.x, bottomLeft.y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.setLineDash([]);
+        });
+        // --- END short row rendering ---
 
         // Draw gauge-scaled inward border if a border layer is present
         const borderLayer = (patternLayers || []).find((l: any) => l.patternType === 'border');
@@ -250,245 +329,10 @@ const ColorworkCanvasEditor = ({
         });
     };
 
-    const collectTrapezoidCoordinates = (trap: any, scale: any, xOffset = 0, yOffset = 0, coordinates: any = []) => {
-        const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
-        const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-        const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-        const xBottomLeft = xOffset + (trapWidth - trap.baseA * scale) / 2;
-        const xBottomRight = xOffset + (trapWidth + trap.baseA * scale) / 2;
-        const yTop = yOffset;
-        const yBottom = yOffset + trap.height * scale;
+    // Now using shared collectTrapezoidCoordinates from panelRenderingUtils
 
-        coordinates.push({
-            topLeft: { x: xTopLeft, y: yTop },
-            topRight: { x: xTopRight, y: yTop },
-            bottomLeft: { x: xBottomLeft, y: yBottom },
-            bottomRight: { x: xBottomRight, y: yBottom }
-        });
-
-        if (trap.successors && trap.successors.length > 0) {
-            const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-            const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
-            let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
-
-            for (let i = trap.successors.length - 1; i >= 0; i--) {
-                const successor = trap.successors[i];
-                const successorWidth = successorWidths[i];
-                collectTrapezoidCoordinates(
-                    successor,
-                    scale,
-                    childXOffset,
-                    yTop - successor.height * scale,
-                    coordinates
-                );
-                childXOffset += successorWidth;
-            }
-        }
-    };
-
-    const renderColorworkLayersToCanvasCentered = (ctx, patternLayers, shape, x, y, displayWidth, displayHeight, scale, gauge, fullPanelDimensions = null) => {
-        // Use the full panel dimensions instead of just the top-level shape
-        const baseWidthInches = fullPanelDimensions ? (fullPanelDimensions.maxX - fullPanelDimensions.minX) : Math.max(shape.baseA, shape.baseB);
-        const baseHeightInches = fullPanelDimensions ? (fullPanelDimensions.maxY - fullPanelDimensions.minY) : shape.height;
-
-        // Apply scaling factor to get actual panel size in inches
-        const scalingFactor = gauge.scalingFactor || 1;
-        const widthInches = baseWidthInches * scalingFactor;
-        const heightInches = baseHeightInches * scalingFactor;
-
-        // Calculate stitch and row counts based on gauge and scaled dimensions
-        const stitchesPerInch = gauge.stitchesPerFourInches / 4;
-        const rowsPerInch = gauge.rowsPerFourInches / 4;
-
-        const totalStitches = Math.round(widthInches * stitchesPerInch);
-        const totalRows = Math.round(heightInches * rowsPerInch);
-
-        // Debug logging - remove after verification
-        console.log('[ColorworkCanvasEditor] Rendering with:', {
-            baseWidthInches,
-            scalingFactor,
-            widthInches,
-            stitchesPerInch,
-            totalStitches,
-            fullPanelDimensions: fullPanelDimensions ? true : false,
-            method: 'dimensions-first'
-        });
-
-        // Calculate pixel size for each stitch/row
-        // We need to fit totalStitches into displayWidth pixels
-        // displayWidth is the actual screen space available
-        const stitchPixelWidth = displayWidth / totalStitches;
-        const rowPixelHeight = displayHeight / totalRows;
-
-        // Create a combined pattern grid for all layers with centered origin
-        // Pattern repeats stay at their original stitch size, but we have more/fewer total stitches
-        // due to the scaled panel dimensions, so pattern appears relatively larger/smaller
-        const combinedGrid = createCombinedGridCentered(totalStitches, totalRows, patternLayers, displayWidth, displayHeight);
-
-        // Render the combined grid to canvas
-        for (let row = 0; row < totalRows; row++) {
-            for (let stitch = 0; stitch < totalStitches; stitch++) {
-                const cellX = x + stitch * stitchPixelWidth;
-                const cellY = y + row * rowPixelHeight;
-                const color = combinedGrid[row] && combinedGrid[row][stitch];
-
-                if (color && color !== 'transparent') {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(cellX, cellY, stitchPixelWidth, rowPixelHeight);
-                }
-            }
-        }
-    };
-
-    const createCombinedGridCentered = (totalStitches, totalRows, patternLayers, displayWidth, displayHeight) => {
-        // Initialize grid with transparent background
-        const grid = Array(totalRows).fill().map(() => Array(totalStitches).fill('transparent'));
-
-        // Process layers from bottom to top using reverse array order
-        // First item in array = top visual layer, so render it last
-        // Last item in array = bottom visual layer, so render it first
-        [...patternLayers].reverse().forEach((layer: any) => {
-            applyPatternLayerCentered(grid, totalStitches, totalRows, layer, displayWidth, displayHeight);
-        });
-
-        return grid;
-    };
-
-    const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
-        let { pattern, settings } = layer;
-
-        // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
-        if (layer.patternType === 'stripes' && layer.patternConfig && layer.patternConfig.colors) {
-            const hasZeroRows = layer.patternConfig.colors.some((c: any) => c.rows === 0);
-            if (hasZeroRows) {
-                pattern = generatePattern('stripes', layer.patternConfig, totalRows);
-            }
-        } else if (layer.patternType === 'vstripes' && layer.patternConfig && layer.patternConfig.colors) {
-            const hasZeroColumns = layer.patternConfig.colors.some((c: any) => c.columns === 0);
-            if (hasZeroColumns) {
-                pattern = generatePattern('vstripes', layer.patternConfig, totalStitches);
-            }
-        }
-
-        if (!pattern || !pattern.grid || pattern.grid.length === 0) {
-            return;
-        }
-
-        const patternRows = pattern.getRowCount();
-        const patternStitches = pattern.getStitchCount();
-
-        if (patternRows === 0 || patternStitches === 0) {
-            return;
-        }
-
-        const {
-            repeatMode = 'none',
-            repeatCountX = 0,
-            repeatCountY = 0,
-            offsetHorizontal = 0,
-            offsetVertical = 0
-        } = settings;
-
-        // Determine if we should repeat
-        const repeatHorizontal = repeatMode === 'x' || repeatMode === 'both';
-        const repeatVertical = repeatMode === 'y' || repeatMode === 'both';
-
-        console.log('[ColorworkCanvasEditor] applyPatternLayerCentered:', {
-            layerName: layer.name,
-            patternType: layer.patternType,
-            repeatMode,
-            repeatHorizontal,
-            repeatVertical,
-            patternRows,
-            patternStitches,
-            totalRows,
-            totalStitches
-        });
-
-        // Calculate center offsets to start pattern from center
-        const centerOffsetX = Math.floor((totalStitches - patternStitches) / 2);
-        const centerOffsetY = Math.floor((totalRows - patternRows) / 2);
-
-        for (let row = 0; row < totalRows; row++) {
-            for (let stitch = 0; stitch < totalStitches; stitch++) {
-                // Apply center offset and user offset
-                const adjustedStitch = stitch - centerOffsetX - offsetHorizontal;
-                const adjustedRow = row - centerOffsetY - offsetVertical;
-
-                // Calculate which repeat we're in
-                let repeatIndexX = 0;
-                let repeatIndexY = 0;
-
-                if (repeatHorizontal && patternStitches > 0) {
-                    repeatIndexX = Math.floor(adjustedStitch / patternStitches);
-                }
-                if (repeatVertical && patternRows > 0) {
-                    repeatIndexY = Math.floor(adjustedRow / patternRows);
-                }
-
-                // Check if we're within the allowed repeat count (0 means infinite)
-                // For horizontal repeats: center the specified number of repeats
-                if (repeatHorizontal && repeatCountX > 0) {
-                    // Calculate the range of valid repeat indices for centering
-                    const halfRepeats = Math.floor(repeatCountX / 2);
-                    const minRepeatX = repeatCountX % 2 === 0 ? -halfRepeats : -halfRepeats;
-                    const maxRepeatX = repeatCountX % 2 === 0 ? halfRepeats - 1 : halfRepeats;
-
-                    if (repeatIndexX < minRepeatX || repeatIndexX > maxRepeatX) {
-                        continue;
-                    }
-                }
-                if (repeatVertical && repeatCountY > 0) {
-                    // Calculate the range of valid repeat indices for centering
-                    const halfRepeats = Math.floor(repeatCountY / 2);
-                    const minRepeatY = repeatCountY % 2 === 0 ? -halfRepeats : -halfRepeats;
-                    const maxRepeatY = repeatCountY % 2 === 0 ? halfRepeats - 1 : halfRepeats;
-
-                    if (repeatIndexY < minRepeatY || repeatIndexY > maxRepeatY) {
-                        continue;
-                    }
-                }
-
-                // Skip if outside pattern bounds and no repeat
-                if (!repeatHorizontal && (adjustedStitch < 0 || adjustedStitch >= patternStitches)) {
-                    continue;
-                }
-                if (!repeatVertical && (adjustedRow < 0 || adjustedRow >= patternRows)) {
-                    continue;
-                }
-
-                // Calculate pattern coordinates with wrapping if repeat is enabled
-                let patternStitch, patternRow;
-
-                if (repeatHorizontal) {
-                    patternStitch = ((adjustedStitch % patternStitches) + patternStitches) % patternStitches;
-                } else {
-                    patternStitch = adjustedStitch;
-                    if (patternStitch < 0 || patternStitch >= patternStitches) continue;
-                }
-
-                if (repeatVertical) {
-                    patternRow = ((adjustedRow % patternRows) + patternRows) % patternRows;
-                } else {
-                    patternRow = adjustedRow;
-                    if (patternRow < 0 || patternRow >= patternRows) continue;
-                }
-
-                // Get color from pattern
-                const colorId = pattern.grid[patternRow][patternStitch];
-                const colorInfo = pattern.colors[colorId];
-
-                if (colorInfo) {
-                    // Use per-layer color mapping if available, otherwise use pattern default
-                    const layerColor = layer.settings.colorMapping?.[colorId] || colorInfo.color;
-                    // Only apply color if it's not transparent (allows layers below to show through)
-                    if (layerColor && layerColor !== 'transparent') {
-                        grid[row][stitch] = layerColor;
-                    }
-                }
-            }
-        }
-    };
+    // Now using shared renderColorworkLayersToCanvas from panelRenderingUtils
+    // (The canvas version that renders pixels directly)
 
     const drawRulers = (ctx, canvasWidth, canvasHeight, shape, zoom, pan, scaleFactor, dimensions, centerX, centerY, actualWidthInches, actualHeightInches) => {
         const devicePixelRatio = window.devicePixelRatio || 1;
@@ -699,12 +543,14 @@ const ColorworkCanvasEditor = ({
 
     const renderTrapezoidWithPattern = (ctx, trap, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null) => {
         const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
+        const effectiveHeight = (trap.isHem ? (trap.height * 0.5) : trap.height) * scale; // Respect hem!
+        
         const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
         const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
         const xBottomLeft = xOffset + (trapWidth - trap.baseA * scale) / 2;
         const xBottomRight = xOffset + (trapWidth + trap.baseA * scale) / 2;
         const yTop = yOffset;
-        const yBottom = yOffset + trap.height * scale;
+        const yBottom = yOffset + effectiveHeight; // Use effectiveHeight
 
         // Create clipping path for this individual trapezoid
         ctx.save();
@@ -727,13 +573,14 @@ const ColorworkCanvasEditor = ({
             };
 
             // Skip border layers here; border is rendered after
-            renderColorworkLayersToCanvasCentered(
+            renderColorworkLayersToCanvas(
                 ctx,
                 (patternLayers || []).filter((l: any) => l.patternType !== 'border'),
                 trapShape,
                 xBottomLeft, yTop, xBottomRight - xBottomLeft, yBottom - yTop,
                 scale,
-                gauge
+                gauge,
+                null // No full panel dimensions for individual trapezoids
             );
         } else {
             // Fill with solid color if no pattern
@@ -772,13 +619,14 @@ const ColorworkCanvasEditor = ({
             for (let i = trap.successors.length - 1; i >= 0; i--) {
                 const successor = trap.successors[i];
                 const successorWidth = successorWidths[i];
+                const successorEffectiveHeight = (successor.isHem ? (successor.height * 0.5) : successor.height) * scale; // Respect hem!
 
                 renderHierarchyToCanvas(
                     ctx,
                     successor,
                     scale,
                     childXOffset,
-                    yTop - successor.height * scale,
+                    yTop - successorEffectiveHeight, // Use effectiveHeight for positioning
                     dimensions,
                     fillColor,
                     patternLayers,
@@ -790,50 +638,7 @@ const ColorworkCanvasEditor = ({
         }
     };
 
-    const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
-        const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
-
-        // Compute bounding box of the current trapezoid
-        const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-        const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
-        const xBottomLeft = xOffset + (trapWidth - trap.baseA * scale) / 2;
-        const xBottomRight = xOffset + (trapWidth + trap.baseA * scale) / 2;
-        const yTop = yOffset;
-        const yBottom = yOffset + trap.height * scale;
-
-        // Update dimensions
-        dimensions.minX = Math.min(dimensions.minX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
-        dimensions.maxX = Math.max(dimensions.maxX, xTopLeft, xTopRight, xBottomLeft, xBottomRight);
-        dimensions.minY = Math.min(dimensions.minY, yTop, yBottom);
-        dimensions.maxY = Math.max(dimensions.maxY, yTop, yBottom);
-
-        if (trap.successors && trap.successors.length > 0) {
-            // Compute total width of all successors
-            const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-            const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
-
-            // Compute initial offset to center the row
-            let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
-
-            // Reverse the order of successors before rendering
-            for (let i = trap.successors.length - 1; i >= 0; i--) {
-                const successor = trap.successors[i];
-                const successorWidth = successorWidths[i];
-
-                // Place each successor ABOVE the parent
-                calculateTrapezoidDimensions(
-                    successor,
-                    scale,
-                    childXOffset,
-                    yTop - successor.height * scale,
-                    dimensions
-                );
-
-                // Move x-offset for the next successor
-                childXOffset += successorWidth;
-            }
-        }
-    };
+    // Now using shared calculateTrapezoidDimensions from panelRenderingUtils
 
     // Canvas event handlers
     const handleMouseDown = (e: any) => {
@@ -914,7 +719,119 @@ const ColorworkCanvasEditor = ({
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Canvas rendering effect
+    // Debounced canvas rendering function for performance with large patterns
+    const scheduleRender = useCallback(() => {
+        // Cancel any pending render
+        if (renderTimeoutRef.current !== null) {
+            cancelAnimationFrame(renderTimeoutRef.current);
+        }
+
+        // Mark that we have a pending render
+        pendingRenderRef.current = true;
+
+        // Schedule the render on the next animation frame
+        renderTimeoutRef.current = requestAnimationFrame(() => {
+            pendingRenderRef.current = false;
+            renderTimeoutRef.current = null;
+            
+            const canvas = canvasRef.current;
+            if (!canvas || !shape) return;
+
+            const ctx = canvas.getContext('2d');
+            const devicePixelRatio = window.devicePixelRatio || 1;
+
+            // Ruler constants
+            const rulerOffsetX = 30;
+            const rulerOffsetY = 30;
+
+            // Set canvas size with device pixel ratio for crisp rendering
+            canvas.width = canvasSize.width * devicePixelRatio;
+            canvas.height = canvasSize.height * devicePixelRatio;
+            canvas.style.width = `${canvasSize.width}px`;
+            canvas.style.height = `${canvasSize.height}px`;
+
+            // Scale context for device pixel ratio
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+
+            // Apply zoom and pan transforms
+            ctx.save();
+
+            // Add offset for rulers (move content area to account for ruler space)
+            ctx.translate(
+                (canvasSize.width - rulerOffsetX) / 2 + pan.x + rulerOffsetX,
+                (canvasSize.height - rulerOffsetY) / 2 + pan.y + rulerOffsetY
+            );
+            ctx.scale(zoom, zoom);
+
+            let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+            calculateTrapezoidDimensions(shape, 1, 0, 0, dimensions);
+
+            const width = dimensions.maxX - dimensions.minX;
+            const height = dimensions.maxY - dimensions.minY;
+
+            // Calculate scale factor to fit in view (accounting for ruler space)
+            const availableWidth = (canvasSize.width - rulerOffsetX) * 0.8; // Leave some margin
+            const availableHeight = (canvasSize.height - rulerOffsetY) * 0.8;
+            const scaleFactor = Math.min(availableWidth / width, availableHeight / height);
+
+            // Center the shape
+            const translateX = -dimensions.minX * scaleFactor - width * scaleFactor / 2;
+            const translateY = -dimensions.minY * scaleFactor - height * scaleFactor / 2;
+
+            ctx.translate(translateX, translateY);
+
+            // Save the calculated dimensions for the rulers
+            const calculatedDimensions = { ...dimensions };
+
+            // Render with the calculated scale using unified shape rendering
+            renderUnifiedShapeToCanvas(
+                ctx,
+                shape,
+                scaleFactor,
+                0,
+                0,
+                '#1890ff',
+                patternLayers,
+                gauge
+            );
+
+            ctx.restore();
+
+            // Calculate actual dimensions in inches for the rulers
+            let actualDimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+            calculateTrapezoidDimensions(shape, 1, 0, 0, actualDimensions);
+            
+            // Apply gauge scaling factor to get true dimensions
+            const gaugeScalingFactor = gauge?.scalingFactor || 1;
+            const actualWidthInches = (actualDimensions.maxX - actualDimensions.minX) * gaugeScalingFactor;
+            const actualHeightInches = (actualDimensions.maxY - actualDimensions.minY) * gaugeScalingFactor;
+
+            // Draw rulers after restoring context (so they're drawn in screen space)
+            const adjustedCenterX = (canvasSize.width - rulerOffsetX) / 2 + pan.x + rulerOffsetX;
+            const adjustedCenterY = (canvasSize.height - rulerOffsetY) / 2 + pan.y + rulerOffsetY;
+            drawRulers(ctx, canvasSize.width, canvasSize.height, shape, zoom, { x: pan.x, y: pan.y }, scaleFactor, calculatedDimensions, adjustedCenterX, adjustedCenterY, actualWidthInches, actualHeightInches);
+        });
+    }, [shape, patternLayers, gauge, zoom, pan, canvasSize]);
+
+    // Canvas rendering effect - uses debounced rendering
+    useEffect(() => {
+        scheduleRender();
+        
+        // Cleanup function to cancel pending renders
+        return () => {
+            if (renderTimeoutRef.current !== null) {
+                cancelAnimationFrame(renderTimeoutRef.current);
+                renderTimeoutRef.current = null;
+            }
+        };
+    }, [scheduleRender]);
+
+    // Legacy rendering effect - REPLACED by debounced version above
+    // Keeping this comment for reference of what was replaced
+    /*
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !shape) return;
@@ -925,83 +842,9 @@ const ColorworkCanvasEditor = ({
         // Ruler constants
         const rulerOffsetX = 30;
         const rulerOffsetY = 30;
-
-        // Set canvas size with device pixel ratio for crisp rendering
-        canvas.width = canvasSize.width * devicePixelRatio;
-        canvas.height = canvasSize.height * devicePixelRatio;
-        canvas.style.width = `${canvasSize.width}px`;
-        canvas.style.height = `${canvasSize.height}px`;
-
-        // Scale context for device pixel ratio
-        ctx.scale(devicePixelRatio, devicePixelRatio);
-
-        // Clear canvas
-        ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-
-        // Apply zoom and pan transforms
-        ctx.save();
-
-        // Add offset for rulers (move content area to account for ruler space)
-        ctx.translate(
-            (canvasSize.width - rulerOffsetX) / 2 + pan.x + rulerOffsetX,
-            (canvasSize.height - rulerOffsetY) / 2 + pan.y + rulerOffsetY
-        );
-        ctx.scale(zoom, zoom);
-
-        let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-
-        // First pass: Compute bounding box (dummy render to calculate dimensions)
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        renderHierarchyToCanvas(tempCtx, shape, 1, 0, 0, dimensions, '#1890ff');
-
-        const width = dimensions.maxX - dimensions.minX;
-        const height = dimensions.maxY - dimensions.minY;
-
-        // Calculate scale factor to fit in view (accounting for ruler space)
-        const availableWidth = (canvasSize.width - rulerOffsetX) * 0.8; // Leave some margin
-        const availableHeight = (canvasSize.height - rulerOffsetY) * 0.8;
-        const scaleFactor = Math.min(availableWidth / width, availableHeight / height);
-
-        // Center the shape
-        const translateX = -dimensions.minX * scaleFactor - width * scaleFactor / 2;
-        const translateY = -dimensions.minY * scaleFactor - height * scaleFactor / 2;
-
-        ctx.translate(translateX, translateY);
-
-        // Save the calculated dimensions for the rulers
-        const calculatedDimensions = { ...dimensions };
-
-        // Second pass: Render with the calculated scale using unified shape rendering
-        // This ensures continuous pattern flow across all trapezoids
-        renderUnifiedShapeToCanvas(
-            ctx,
-            shape,
-            scaleFactor,
-            0,
-            0,
-            '#1890ff',
-            patternLayers,
-            gauge
-        );
-
-        ctx.restore();
-
-        // Calculate actual dimensions in inches for the rulers
-        let actualDimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        calculateTrapezoidDimensions(shape, 1, 0, 0, actualDimensions); // Scale=1 for base dimensions
-        
-        // Apply gauge scaling factor to get true dimensions
-        const gaugeScalingFactor = gauge?.scalingFactor || 1;
-        const actualWidthInches = (actualDimensions.maxX - actualDimensions.minX) * gaugeScalingFactor;
-        const actualHeightInches = (actualDimensions.maxY - actualDimensions.minY) * gaugeScalingFactor;
-
-        // Draw rulers after restoring context (so they're drawn in screen space)
-        const adjustedCenterX = (canvasSize.width - rulerOffsetX) / 2 + pan.x + rulerOffsetX;
-        const adjustedCenterY = (canvasSize.height - rulerOffsetY) / 2 + pan.y + rulerOffsetY;
-        drawRulers(ctx, canvasSize.width, canvasSize.height, shape, zoom, { x: pan.x, y: pan.y }, scaleFactor, calculatedDimensions, adjustedCenterX, adjustedCenterY, actualWidthInches, actualHeightInches);
-
+        ... (old synchronous rendering code removed for performance)
     }, [shape, patternLayers, gauge, zoom, pan, canvasSize]);
+    */
 
     // Handle canvas resize
     useEffect(() => {

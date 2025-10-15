@@ -10,6 +10,9 @@ class Trapezoid {
     modificationScale: number;
     finishingSteps: any[];
     label: string | null;
+    id?: string; // Unique identifier for the trapezoid
+    isHem?: boolean; // Whether this trapezoid should be folded in half (hemmed)
+    shortRows?: any[]; // Array of short row sections within this trapezoid
 
     /**
      * Represents a trapezoidal section of the knitting panel.

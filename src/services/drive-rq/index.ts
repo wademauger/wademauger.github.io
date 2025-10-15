@@ -25,8 +25,12 @@ export {
 // Utilities
 export { mergeLibraries } from './utils';
 
-// Mock Adapter
+// Adapters
 export { MockDriveAdapter, createMockAdapter } from './MockAdapter';
+export { GoogleDriveAdapter, createGoogleDriveAdapter } from './GoogleDriveAdapter';
+
+// Provider & Context
+export { DriveProvider, useDriveAdapter, useDriveAdapterStatus } from './DriveProvider';
 
 // React Query Hooks
 export {

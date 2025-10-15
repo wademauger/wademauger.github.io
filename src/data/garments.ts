@@ -3,28 +3,28 @@ import VisualMotif from '../models/VisualMotif';
 // Helper function to generate systematic garment sizes
 // Based on 10% scaling per size, with Men's Medium = Women's Large as base (1.0)
 const generateGarmentSizes = () => {
-  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  const getSizeIndex = (size) => sizeOrder.indexOf(size) - 3; // M = index 0
-  const calculateSizeMultiplier = (sizeIndex) => Math.pow(1.1, sizeIndex);
+    const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const getSizeIndex = (size) => sizeOrder.indexOf(size) - 3; // M = index 0
+    const calculateSizeMultiplier = (sizeIndex) => Math.pow(1.1, sizeIndex);
 
-  const sizes = {};
-  
-  // Generate all combinations based on Men's M = Women's L equivalency
-  sizeOrder.forEach((mensSize: any) => {
-    sizeOrder.forEach((womensSize: any) => {
-      const mensSizeIndex = getSizeIndex(mensSize);
-      const womensSizeIndex = getSizeIndex(womensSize) - 1; // Offset by 1 for equivalency
-      
-      // Only include sizes where the calculations match
-      if (mensSizeIndex === womensSizeIndex) {
-        const multiplier = calculateSizeMultiplier(mensSizeIndex);
-        const sizeName = `men's ${mensSize.toLowerCase()} / women's ${womensSize.toLowerCase()}`;
-        sizes[sizeName] = Math.round(multiplier * 1000) / 1000; // Round to 3 decimal places
-      }
+    const sizes = {};
+
+    // Generate all combinations based on Men's M = Women's L equivalency
+    sizeOrder.forEach((mensSize: any) => {
+        sizeOrder.forEach((womensSize: any) => {
+            const mensSizeIndex = getSizeIndex(mensSize);
+            const womensSizeIndex = getSizeIndex(womensSize) - 1; // Offset by 1 for equivalency
+
+            // Only include sizes where the calculations match
+            if (mensSizeIndex === womensSizeIndex) {
+                const multiplier = calculateSizeMultiplier(mensSizeIndex);
+                const sizeName = `men's ${mensSize.toLowerCase()} / women's ${womensSize.toLowerCase()}`;
+                sizes[sizeName] = Math.round(multiplier * 1000) / 1000; // Round to 3 decimal places
+            }
+        });
     });
-  });
-  
-  return sizes;
+
+    return sizes;
 };
 
 const standardGarmentSizes = generateGarmentSizes();
@@ -206,7 +206,100 @@ const garments = [
                     // triangle with bottom/baseA = 0 (point at bottom)
                     { height: 10, baseA: 0, baseB: 10, successors: [] }
                 ]
-            }
+            },
+            "ear flap hat": {
+                "height": 4,
+                "baseA": 22.5,
+                "baseB": 22.5,
+                "baseBHorizontalOffset": 0,
+                "successors": [
+                    {
+                        "height": 7,
+                        "baseA": 22.5,
+                        "baseB": 22.5,
+                        "baseBHorizontalOffset": 0,
+                        "successors": [
+                            {
+                                "height": 3.5,
+                                "baseA": 5.625,
+                                "baseB": 0,
+                                "baseBHorizontalOffset": 0,
+                                "successors": [],
+                                "finishingSteps": [],
+                                "sizeModifier": 1,
+                                "label": "C",
+                                "isHem": false,
+                                "shortRows": []
+                            },
+                            {
+                                "height": 3.5,
+                                "baseA": 5.625,
+                                "baseB": 0,
+                                "baseBHorizontalOffset": 0,
+                                "successors": [],
+                                "finishingSteps": [],
+                                "sizeModifier": 1,
+                                "label": "D",
+                                "isHem": false,
+                                "shortRows": []
+                            },
+                            {
+                                "height": 3.5,
+                                "baseA": 5.625,
+                                "baseB": 0,
+                                "baseBHorizontalOffset": 0,
+                                "successors": [],
+                                "finishingSteps": [],
+                                "sizeModifier": 1,
+                                "label": "E",
+                                "isHem": false,
+                                "shortRows": []
+                            },
+                            {
+                                "height": 3.5,
+                                "baseA": 5.625,
+                                "baseB": 0,
+                                "baseBHorizontalOffset": 0,
+                                "successors": [],
+                                "finishingSteps": [],
+                                "sizeModifier": 1,
+                                "label": "F",
+                                "isHem": false,
+                                "shortRows": []
+                            }
+                        ],
+                        "finishingSteps": [],
+                        "sizeModifier": 1,
+                        "label": "B",
+                        "isHem": false,
+                        "shortRows": []
+                    }
+                ],
+                "finishingSteps": [],
+                "sizeModifier": 1,
+                "label": "A",
+                "isHem": true,
+                "shortRows": [
+                    {
+                        "id": "sr-1759376725931-9le0",
+                        "label": null,
+                        "posX": 0.8,
+                        "posY": 0.5,
+                        "height": 2,
+                        "baseStart": 5,
+                        "basePivot": 1
+                    },
+                    {
+                        "id": "sr-1759376732404-6hj2",
+                        "label": null,
+                        "posX": 0.2,
+                        "posY": 0.5,
+                        "height": 2,
+                        "baseStart": 5,
+                        "basePivot": 1
+                    }
+                ]
+            },
         },
         finishingSteps: ['Use these panels for gauge and motif testing.']
     }

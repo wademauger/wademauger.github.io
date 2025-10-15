@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { InputNumber, Input, Divider, Select, Collapse, Space, Typography, Card, message, Button, Spin } from 'antd';
 import { EditOutlined, PlusOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { PanelDiagram } from '../../../components/PanelDiagram';
-import { ColorworkPanelDiagram } from '../../../components/ColorworkPanelDiagram';
+import { UnifiedPanelDiagram } from '../../../components/UnifiedPanelDiagram';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatternData, selectPatternData, nextStep, previousStep, selectCurrentStep, copyPanelPatternLayers } from '../../../store/knittingDesignSlice';
 import { garments } from '../../../data/garments';
@@ -436,26 +435,17 @@ const WizardView: React.FC = () => {
                                       
                                       return (
                                         <div key={instanceId} style={{ position: 'relative', display: 'inline-block' }}>
-                                          {normalizedGauge ? (
-                                            <ColorworkPanelDiagram
-                                              shape={shape}
-                                              patternLayers={instancePatternLayers}
-                                              gauge={normalizedGauge as any}
-                                              label={count > 1 ? `#${i + 1}` : ''}
-                                              size={count > 1 ? 80 : 100}
-                                              padding={6}
-                                              showPatterns={true}
-                                            />
-                                          ) : (
-                                            <div style={{ textAlign: 'center' }}>
-                                              <PanelDiagram 
-                                                shape={shape} 
-                                                label={count > 1 ? `#${i + 1}` : ''} 
-                                                size={count > 1 ? 80 : 100} 
-                                                padding={6}
-                                              />
-                                            </div>
-                                          )}
+                                          <UnifiedPanelDiagram
+                                            shape={shape}
+                                            patternLayers={normalizedGauge ? instancePatternLayers : []}
+                                            gauge={normalizedGauge as any}
+                                            label={count > 1 ? `#${i + 1}` : ''}
+                                            size={count > 1 ? 80 : 100}
+                                            padding={6}
+                                            showPatterns={!!normalizedGauge}
+                                            showLabels={false}
+                                            showShortRows={true}
+                                          />
                                         </div>
                                       );
                                     })
@@ -477,22 +467,17 @@ const WizardView: React.FC = () => {
                                           }
                                         : null;
                                       
-                                      return normalizedGauge ? (
-                                        <ColorworkPanelDiagram
+                                      return (
+                                        <UnifiedPanelDiagram
                                           shape={shape}
-                                          patternLayers={[]}
+                                          patternLayers={normalizedGauge ? [] : []}
                                           gauge={normalizedGauge as any}
                                           label=""
                                           size={100}
                                           padding={8}
-                                          showPatterns={true}
-                                        />
-                                      ) : (
-                                        <PanelDiagram 
-                                          shape={shape} 
-                                          label="" 
-                                          size={100} 
-                                          padding={8}
+                                          showPatterns={!!normalizedGauge}
+                                          showLabels={false}
+                                          showShortRows={true}
                                         />
                                       );
                                     })()
@@ -800,9 +785,6 @@ const WizardView: React.FC = () => {
                   });
                 });
                 
-                // Read the name from Redux state (updated by toolbar input) instead of local state
-                const projectName = patternData?.meta?.name || patternData?.name || '';
-                
                 // Generate concrete stitch plans for each panel
                 const panelsWithStitchPlans = panelInstances.map(instance => {
                   const shape = getPanelShape(instance.key);
@@ -840,7 +822,7 @@ const WizardView: React.FC = () => {
                 
                 const knittingProject = {
                   id: projectId,
-                  name: projectName.trim() || cachedPlaceholderTitle,
+                  name: name.trim() || cachedPlaceholderTitle,
                   createdAt: new Date().toISOString(),
                   gauge: {
                     stitchesPerInch: patternData?.gauge?.stitchesPerInch || 0,

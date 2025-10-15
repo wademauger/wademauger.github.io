@@ -4,6 +4,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { DriveProvider } from '@/services/drive-rq';
 import store from './store';
 import { loadFullLibrary } from './store/librarySlice';
 import Layout from '@/components/Layout';
@@ -185,6 +186,8 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10
 
 function App() {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'development-fallback';
+  const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+  const GOOGLE_APP_ID = import.meta.env.VITE_GOOGLE_APP_ID;
   
   // Debug: Log client ID at startup to verify .env is loaded
   console.log('🔧 App startup: GOOGLE_CLIENT_ID =', GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.slice(0,6)}...${GOOGLE_CLIENT_ID.slice(-4)}` : 'null/undefined');
@@ -193,9 +196,11 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <ErrorBoundary>
-            <AppInner />
-          </ErrorBoundary>
+          <DriveProvider clientId={GOOGLE_CLIENT_ID} apiKey={GOOGLE_API_KEY} appId={GOOGLE_APP_ID}>
+            <ErrorBoundary>
+              <AppInner />
+            </ErrorBoundary>
+          </DriveProvider>
         </QueryClientProvider>
       </Provider>
     </GoogleOAuthProvider>

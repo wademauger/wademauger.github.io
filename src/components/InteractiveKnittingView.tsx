@@ -3,7 +3,7 @@ import { Card, Button, Row, Col, Space, Typography, Progress, Tag, Divider } fro
 import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import RowByRowInstructions from './RowByRowInstructions';
 import { ColorworkStitchPlanService } from '../models/ColorworkStitchPlanService';
-import { ColorworkPanelDiagram } from './ColorworkPanelDiagram';
+import { UnifiedPanelDiagram } from './UnifiedPanelDiagram';
 
 const { Title, Text } = Typography;
 
@@ -229,14 +229,17 @@ const InteractiveKnittingView = ({
                                 textAlign: 'center'
                             }}>
                                 {combinedPattern?.panel?.shape && combinedPattern?.panel?.gauge && (
-                                    <ColorworkPanelDiagram
+                                    <UnifiedPanelDiagram
                                         shape={combinedPattern.panel.shape}
                                         patternLayers={combinedPattern.colorworkPattern ? [combinedPattern.colorworkPattern] : []}
                                         gauge={combinedPattern.panel.gauge}
                                         size={400}
                                         showPatterns={true}
+                                        showProgress={true}
                                         highlightedRow={knittingProgress.currentRow}
                                         completedRows={knittingProgress.completedRows}
+                                        showLabels={false}
+                                        showShortRows={true}
                                     />
                                 )}
                             </div>

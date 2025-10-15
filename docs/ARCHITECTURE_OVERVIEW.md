@@ -4,16 +4,16 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      PATTERN WIZARD                              │
-│  (User designs pattern with shape + colorwork layers)            │
+│                      PATTERN WIZARD                             │
+│  (User designs pattern with shape + colorwork layers)           │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             │ On "Create Project"
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│               STITCH PLAN GENERATOR                              │
+│               STITCH PLAN GENERATOR                             │
 │  ✓ Reconstruct Trapezoid from shape data                        │
-│  ✓ Create Panel with gauge                                       │
+│  ✓ Create Panel with gauge                                      │
 │  ✓ Use PanelColorworkComposer to map colorwork                  │
 │  ✓ Generate concrete row-by-row stitch plan                     │
 └───────────────────────────┬─────────────────────────────────────┘
@@ -21,20 +21,20 @@
                             │ Save to library
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PROJECT DATA                                  │
-│  {                                                               │
-│    panels: [{                                                    │
+│                    PROJECT DATA                                 │
+│  {                                                              │
+│    panels: [{                                                   │
 │      stitchPlan: {           ← CONCRETE PATTERN DATA            │
-│        rows: [...],             (Ready for knitting)             │
-│        colorPalette: {...},                                      │
-│        metadata: {...}                                           │
-│      },                                                          │
+│        rows: [...],             (Ready for knitting)            │
+│        colorPalette: {...},                                     │
+│        metadata: {...}                                          │
+│      },                                                         │
 │      wizardOptions: {        ← ABSTRACT DESIGN DATA             │
-│        shape: {...},            (For re-editing)                 │
-│        colorworkLayers: [...],                                   │
-│      }                                                           │
-│    }]                                                            │
-│  }                                                               │
+│        shape: {...},            (For re-editing)                │
+│        colorworkLayers: [...],                                  │
+│      }                                                          │
+│    }]                                                           │
+│  }                                                              │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             │ Load project

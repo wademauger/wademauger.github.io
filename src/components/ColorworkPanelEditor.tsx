@@ -10,7 +10,7 @@ import { Gauge } from '../models/Gauge';
 import { updatePanelPatternLayers } from '../store/knittingDesignSlice';
 import ColorworkCanvasEditor from './ColorworkCanvasEditor';
 import InteractiveKnittingView from './InteractiveKnittingView';
-import { ColorworkPanelDiagram } from './ColorworkPanelDiagram';
+import { UnifiedPanelDiagram } from './UnifiedPanelDiagram';
 import './ColorworkPanelEditor.css';
 
 const { Text } = Typography;
@@ -537,7 +537,15 @@ function convertToTrapezoid(shape: unknown): Trapezoid | null {
                 });
             }
             
-            return new Trapezoid(height, baseA, baseB, offset, successors, finishingSteps);
+            const trap = new Trapezoid(height, baseA, baseB, offset, successors, finishingSteps);
+            
+            // Preserve additional properties that aren't in the Trapezoid constructor
+            if (shapeData.id) trap.id = shapeData.id;
+            if (shapeData.label) trap.label = shapeData.label;
+            if (typeof shapeData.isHem === 'boolean') trap.isHem = shapeData.isHem;
+            if (Array.isArray(shapeData.shortRows)) trap.shortRows = shapeData.shortRows;
+            
+            return trap;
         };
         
         return convertShapeRecursively(shape);

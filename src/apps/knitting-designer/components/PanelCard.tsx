@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Card, InputNumber, Button, Typography, Collapse } from 'antd';
 import { EditOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { PanelCardProps } from '../types/patternWizard.types';
-import { PanelDiagram } from '../../../components/PanelDiagram';
+import { UnifiedPanelDiagram } from '../../../components/UnifiedPanelDiagram';
 import '../styles/PatternWizard.css';
 
 const { Text } = Typography;
@@ -81,11 +81,14 @@ export const PanelCard: React.FC<PanelCardProps> = ({
       {/* Panel preview diagram */}
       <div className="panel-card-preview">
         {shape ? (
-          <PanelDiagram 
+          <UnifiedPanelDiagram 
             shape={shape} 
             label="" 
             size={100} 
             padding={8}
+            showLabels={false}
+            showPatterns={false}
+            showShortRows={true}
           />
         ) : (
           <div className="panel-card-no-preview">

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Card, Button, InputNumber, Space, Row, Col, Typography, List, Divider } from 'antd';
 import { Switch } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, PlusOutlined, DeleteOutlined, CopyOutlined, SettingOutlined, SaveOutlined, FolderOpenOutlined } from '@ant-design/icons';
-import { PanelDiagram } from '@/components/PanelDiagram';
+import { UnifiedPanelDiagram } from '@/components/UnifiedPanelDiagram';
 import { useDriveAuth } from './context/DriveAuthContext';
 import { Panel } from '@/models/Panel';
 import { message } from 'antd';
@@ -314,7 +314,7 @@ export default function PanelShapeCreator() {
       {/* Preview */}
       <div style={{ flex: 1, minWidth: 360, padding: 16 }}>
         <Card size="small" title="Preview">
-          <PanelDiagram 
+          <UnifiedPanelDiagram 
             key={JSON.stringify(root)} // Force re-render when structure changes
             shape={root} 
             size={560} 
@@ -322,6 +322,9 @@ export default function PanelShapeCreator() {
             selectedId={selectedId}
             selectedShortRowId={selectedShortRowId}
             onSelect={(id) => id && setSelectedId(id)}
+            showLabels={true}
+            showShortRows={true}
+            showPatterns={false}
           />
         </Card>
       </div>
