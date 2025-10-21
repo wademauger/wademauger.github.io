@@ -8,7 +8,7 @@ const sampleLib = {
   }
 };
 
-const loader = async (fileId) => {
+const loader = async (fileId: string) => {
   if (fileId === 'file1') return sampleLib;
   if (fileId === 'file2') return { namespaces: { panels: [{ id: 'panel-3', name: 'P3' }] } };
   return null;
@@ -58,7 +58,7 @@ test('resolveEntryReference accepts libraryObj directly', async () => {
 });
 
 test('resolveEntryReference migrates legacy format with fileId', async () => {
-  const legacyLoader = async (fileId) => {
+  const legacyLoader = async (fileId: string) => {
     if (fileId === 'legacy') return [{ id: 'old-1', name: 'Old' }];
     return null;
   };

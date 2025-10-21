@@ -1,6 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-const initialState = {
+interface UiEventsState {
+  lastEvent: any | null;
+}
+
+const initialState: UiEventsState = {
   // simple event queue for app-level header actions if needed
   lastEvent: null
 };
@@ -9,10 +13,10 @@ const uiEvents = createSlice({
   name: 'uiEvents',
   initialState,
   reducers: {
-    emitEvent: (state, action) => {
+    emitEvent: (state: UiEventsState, action: PayloadAction<any>) => {
       state.lastEvent = action.payload;
     },
-    clearEvent: (state) => {
+    clearEvent: (state: UiEventsState) => {
       state.lastEvent = null;
     }
   }

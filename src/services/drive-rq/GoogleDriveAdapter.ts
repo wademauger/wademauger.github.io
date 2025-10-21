@@ -16,6 +16,14 @@ import type {
 import { AuthError, NotFoundError, NetworkError, DriveError } from './types';
 import { mergeLibraries as mergeLibrariesUtil } from './utils';
 
+// Token response type from Google Identity Services
+type TokenResponse = {
+  access_token?: string;
+  error?: string;
+  error_description?: string;
+  expires_in?: number;
+};
+
 /**
  * Real Google Drive Adapter using gapi client
  */
@@ -31,7 +39,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
   
   private gapiInited = false;
   private gisInited = false;
-  private tokenClient: any = null;
+  private tokenClient: ReturnType<typeof google.accounts.oauth2.initTokenClient> | null = null;
   
   // ============================================================================
   // Initialization
@@ -67,9 +75,10 @@ export class GoogleDriveAdapter implements IDriveAdapter {
           });
           this.gapiInited = true;
           resolve();
-        } catch (error: any) {
+        } catch (error) {
+          const err = error as Error;
           reject(new DriveError(
-            `Failed to initialize Google API: ${error.message}`,
+            `Failed to initialize Google API: ${err.message}`,
             'GAPI_INIT_FAILED'
           ));
         }
@@ -96,29 +105,30 @@ export class GoogleDriveAdapter implements IDriveAdapter {
             'openid https://www.googleapis.com/auth/userinfo.email ' +
             'https://www.googleapis.com/auth/userinfo.profile ' +
             'https://www.googleapis.com/auth/drive',
-          callback: (tokenResponse: any) => {
+          callback: (tokenResponse: TokenResponse) => {
             this.handleTokenResponse(tokenResponse);
           }
         });
         this.gisInited = true;
         resolve();
-      } catch (error: any) {
+      } catch (error) {
+        const err = error as Error;
         reject(new DriveError(
-          `Failed to initialize GIS: ${error.message}`,
+          `Failed to initialize GIS: ${err.message}`,
           'GIS_INIT_FAILED'
         ));
       }
     });
   }
   
-  private handleTokenResponse(tokenResponse: any): void {
+  private handleTokenResponse(tokenResponse: TokenResponse): void {
     if (tokenResponse.error) {
       console.error('Token error:', tokenResponse.error);
       return;
     }
     
-    this.authState.accessToken = tokenResponse.access_token;
-    this.authState.tokenExpiry = Date.now() + (tokenResponse.expires_in * 1000);
+    this.authState.accessToken = tokenResponse.access_token || null;
+    this.authState.tokenExpiry = Date.now() + ((tokenResponse.expires_in || 3600) * 1000);
     this.authState.isSignedIn = true;
     
     // Fetch user info
@@ -157,11 +167,11 @@ export class GoogleDriveAdapter implements IDriveAdapter {
     
     return new Promise((resolve, reject) => {
       // Store resolve/reject for callback
-      const originalCallback = this.tokenClient.callback;
+      const originalCallback = this.tokenClient!.callback;
       
-      this.tokenClient.callback = (tokenResponse: any) => {
+      this.tokenClient!.callback = (tokenResponse: TokenResponse) => {
         // Restore original callback
-        this.tokenClient.callback = originalCallback;
+        this.tokenClient!.callback = originalCallback;
         
         if (tokenResponse.error) {
           reject(new AuthError(tokenResponse.error_description || tokenResponse.error));
@@ -177,7 +187,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
       };
       
       // Request token
-      this.tokenClient.requestAccessToken({ prompt: 'consent' });
+      this.tokenClient!.requestAccessToken({ prompt: 'consent' });
     });
   }
   
@@ -220,20 +230,21 @@ export class GoogleDriveAdapter implements IDriveAdapter {
         };
       }
       
-      const response = await gapi.client.drive.files.get({
+      const response = await gapi.client.drive!.files.get({
         fileId: id,
         alt: 'media'
       });
       
       return response.result as LibraryData;
-    } catch (error: any) {
-      if (error.status === 404) {
+    } catch (error) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 404) {
         throw new NotFoundError(`Library file not found: ${fileId}`);
       }
-      if (error.status === 401) {
+      if (err.status === 401) {
         throw new AuthError('Authentication expired');
       }
-      throw new NetworkError(`Failed to load library: ${error.message}`);
+      throw new NetworkError(`Failed to load library: ${err.message || 'Unknown error'}`);
     }
   }
   
@@ -254,7 +265,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
       
       if (fileId) {
         // Update existing file
-        const response = await gapi.client.request({
+        const response = await (gapi.client as any).request({
           path: `/upload/drive/v3/files/${fileId}`,
           method: 'PATCH',
           params: { uploadType: 'multipart' },
@@ -267,7 +278,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
         return response.result.id;
       } else {
         // Create new file
-        const response = await gapi.client.request({
+        const response = await (gapi.client as any).request({
           path: '/upload/drive/v3/files',
           method: 'POST',
           params: { uploadType: 'multipart' },
@@ -279,11 +290,12 @@ export class GoogleDriveAdapter implements IDriveAdapter {
         
         return response.result.id;
       }
-    } catch (error: any) {
-      if (error.status === 401) {
+    } catch (error) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 401) {
         throw new AuthError('Authentication expired');
       }
-      throw new NetworkError(`Failed to save library: ${error.message}`);
+      throw new NetworkError(`Failed to save library: ${err.message || 'Unknown error'}`);
     }
   }
   
@@ -308,7 +320,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
   // CRUD Operations
   // ============================================================================
   
-  async getEntry<T = any>(
+  async getEntry<T = unknown>(
     collection: keyof LibraryData,
     id: string,
     fileId?: string
@@ -319,18 +331,18 @@ export class GoogleDriveAdapter implements IDriveAdapter {
     if (!col) return null;
     
     if (Array.isArray(col)) {
-      const entry = col.find((item: any) => item.id === id);
-      return entry || null;
+      const entry = col.find((item) => (item as { id?: string }).id === id);
+      return (entry as T) || null;
     }
     
-    if (typeof col === 'object') {
-      return col[id] || null;
+    if (typeof col === 'object' && col !== null) {
+      return ((col as Record<string, unknown>)[id] as T) || null;
     }
     
     return null;
   }
   
-  async setEntry<T = any>(
+  async setEntry<T = unknown>(
     collection: keyof LibraryData,
     id: string,
     data: T,
@@ -345,17 +357,17 @@ export class GoogleDriveAdapter implements IDriveAdapter {
     }
     
     const col = library[collection];
-    const entry = { ...data, id } as any;
+    const entry = { ...(data as object), id };
     
     if (Array.isArray(col)) {
-      const index = col.findIndex((item: any) => item.id === id);
+      const index = col.findIndex((item) => (item as { id?: string }).id === id);
       if (index >= 0) {
         col[index] = entry;
       } else {
         col.push(entry);
       }
     } else if (typeof col === 'object') {
-      col[id] = entry;
+      (col as Record<string, unknown>)[id] = entry;
     }
     
     await this.saveLibrary(library, fileId);
@@ -374,12 +386,12 @@ export class GoogleDriveAdapter implements IDriveAdapter {
     }
     
     if (Array.isArray(col)) {
-      const index = col.findIndex((item: any) => item.id === id);
+      const index = col.findIndex((item) => (item as { id?: string }).id === id);
       if (index >= 0) {
         col.splice(index, 1);
       }
     } else if (typeof col === 'object') {
-      delete col[id];
+      delete (col as Record<string, unknown>)[id];
     }
     
     await this.saveLibrary(library, fileId);
@@ -403,13 +415,13 @@ export class GoogleDriveAdapter implements IDriveAdapter {
   
   private async findLibraryFile(): Promise<string | null> {
     try {
-      const response = await gapi.client.drive.files.list({
+      const response = await gapi.client.drive!.files.list({
         q: `name='${this.config?.defaultLibraryFilename || 'library.json'}' and trashed=false`,
         fields: 'files(id, name)',
         pageSize: 1
       });
       
-      const files = response.result.files;
+      const files = response.result.files as any;
       return files && files.length > 0 ? files[0].id : null;
     } catch (error) {
       console.warn('Failed to find library file:', error);
@@ -417,7 +429,7 @@ export class GoogleDriveAdapter implements IDriveAdapter {
     }
   }
   
-  private createMultipartBody(metadata: any, content: string): string {
+  private createMultipartBody(metadata: Record<string, unknown>, content: string): string {
     const delimiter = '\r\n--boundary\r\n';
     const closeDelimiter = '\r\n--boundary--';
     

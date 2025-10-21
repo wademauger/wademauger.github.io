@@ -81,7 +81,7 @@ class GoogleDriveServiceModern {
     }
   }
 
-  setUseUploadFallback(value) {
+  setUseUploadFallback(value: boolean): void {
     this.USE_UPLOAD_FALLBACK = !!value;
   }
 
@@ -89,7 +89,7 @@ class GoogleDriveServiceModern {
    * Clean up legacy per-app settings from localStorage
    * This ensures we only use the unified library system
    */
-  cleanLegacySettings() {
+  cleanLegacySettings(): void {
     try {
       // Clean from the user-specific settings object
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
@@ -143,7 +143,7 @@ class GoogleDriveServiceModern {
   /**
    * Get user-specific Google Drive settings
    */
-  getSettings() {
+  getSettings(): any {
     try {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
       const saved = localStorage.getItem(userKey);
@@ -178,7 +178,7 @@ class GoogleDriveServiceModern {
   /**
    * Update user-specific Google Drive settings
    */
-  updateSettings(settings) {
+  updateSettings(settings: any): void {
     try {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
       
@@ -225,7 +225,7 @@ class GoogleDriveServiceModern {
   /**
    * Get the current library filename based on user settings
    */
-  getLibraryFilename() {
+  getLibraryFilename(): string {
     const settings = this.getSettings();
     // Use unified library settings only
     return settings.libraryLibraryFile || 'library.json';
@@ -234,7 +234,7 @@ class GoogleDriveServiceModern {
   /**
    * Get the current library folder based on user settings
    */
-  getLibraryFolder() {
+  getLibraryFolder(): string {
     const settings = this.getSettings();
     // Use unified library settings only
     return settings.libraryFolder || '/';
@@ -244,7 +244,7 @@ class GoogleDriveServiceModern {
    * Get cached user preferences for library
    * Returns user's last used settings for file and folder
    */
-  getUserPreferences() {
+  getUserPreferences(): any {
     const userKey = this.getUserPreferenceKey();
     try {
       const saved = localStorage.getItem(userKey);
@@ -269,7 +269,7 @@ class GoogleDriveServiceModern {
    * Save user preferences for songs library
    * @param {Object} preferences - User preferences object
    */
-  saveUserPreferences(preferences) {
+  saveUserPreferences(preferences: any): void {
     const userKey = this.getUserPreferenceKey();
     try {
       const preferencesToSave = {
@@ -289,7 +289,7 @@ class GoogleDriveServiceModern {
   /**
    * Get user-specific preference key (includes email for multi-user support)
    */
-  getUserPreferenceKey() {
+  getUserPreferenceKey(): string {
     const email = this.userEmail || 'default';
     return `songsUserPreferences_${email}`;
   }
@@ -297,7 +297,7 @@ class GoogleDriveServiceModern {
   /**
    * Clear user preferences (useful for reset functionality)
    */
-  clearUserPreferences() {
+  clearUserPreferences(): void {
     const userKey = this.getUserPreferenceKey();
     try {
       localStorage.removeItem(userKey);
@@ -310,7 +310,7 @@ class GoogleDriveServiceModern {
   /**
    * Check if user has saved preferences
    */
-  hasUserPreferences() {
+  hasUserPreferences(): boolean {
     const userKey = this.getUserPreferenceKey();
     return localStorage.getItem(userKey) !== null;
   }
@@ -318,7 +318,7 @@ class GoogleDriveServiceModern {
   /**
    * Get folder path for search queries
    */
-  getFolderQuery(folderPath = '/') {
+  getFolderQuery(folderPath: string = '/'): string {
     if (!folderPath || folderPath === '/') {
       return ''; // No folder restriction for root
     }
@@ -331,11 +331,11 @@ class GoogleDriveServiceModern {
    * Public wrapper to get (and optionally create) a folder by path and return its folderId
    * @param {string} folderPath - e.g. '/MyFolder/Subfolder'
    */
-  async getFolderIdByPath(folderPath = '/') {
+  async getFolderIdByPath(folderPath: string = '/'): Promise<string> {
     return this.withAutoAuth(this._getFolderIdByPathInternal, 'getFolderIdByPath', folderPath);
   }
 
-  async _getFolderIdByPathInternal(folderPath = '/') {
+  async _getFolderIdByPathInternal(folderPath: string = '/'): Promise<string> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -352,13 +352,13 @@ class GoogleDriveServiceModern {
         const resp = await gapi.client.drive.files.list({ q, fields: 'files(id,name,parents)', spaces: 'drive' });
         const files = resp.result && resp.result.files ? resp.result.files : [];
         if (files.length > 0) {
-          parentId = files[0].id;
+          parentId = files[0].id || '';
         } else {
           // Create folder under parentId (omit parents for root)
-          const resource = { name: part, mimeType: 'application/vnd.google-apps.folder' };
+          const resource: any = { name: part, mimeType: 'application/vnd.google-apps.folder' };
           if (parentId && parentId !== 'root') resource.parents = [parentId];
           const createResp = await gapi.client.drive.files.create({ resource, fields: 'id' });
-          parentId = createResp.result.id;
+          parentId = createResp.result.id || '';
         }
       }
       return parentId;
@@ -371,7 +371,7 @@ class GoogleDriveServiceModern {
   /**
    * Clean up duplicate library files (utility method for maintenance)
    */
-  async cleanupDuplicateFiles() {
+  async cleanupDuplicateFiles(): Promise<void> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -384,10 +384,10 @@ class GoogleDriveServiceModern {
         orderBy: 'modifiedTime desc'
       });
 
-      const files = response.result.files;
+      const files = response.result.files || [];
       if (files.length <= 1) {
         console.log('No duplicate files found');
-        return { message: 'No duplicates found', duplicatesRemoved: 0 };
+        return { message: 'No duplicates found', duplicatesRemoved: 0 } as any;
       }
 
       console.log(`Found ${files.length} files with name '${libraryFilename}'`);
@@ -398,7 +398,7 @@ class GoogleDriveServiceModern {
 
       for (const file of duplicates) {
         // Check if file is empty or very small (might be a failed upload)
-        const size = parseInt(file.size) || 0;
+        const size = parseInt((file.size as any)) || 0;
         if (size < 50) { // Files smaller than 50 bytes are likely empty/corrupted
           filesToCheck.push({
             id: file.id,
@@ -416,14 +416,14 @@ class GoogleDriveServiceModern {
         totalFiles: files.length,
         duplicatesFound: duplicates.length,
         problematicFiles: filesToCheck
-      };
+      } as any;
     } catch (error: unknown) {
       console.error('Error checking for duplicate files:', error);
       throw new Error('Failed to check for duplicate files');
     }
   }
 
-  async loadGoogleAPIs() {
+  async loadGoogleAPIs(): Promise<void> {
     return new Promise((resolve, reject) => {
       // Load Google APIs JavaScript client if not already loaded
       if (typeof gapi !== 'undefined') {
@@ -439,7 +439,7 @@ class GoogleDriveServiceModern {
       });
     }
 
-  async initialize(clientId) {
+  async initialize(clientId: string): Promise<void> {
     try {
       // If caller didn't pass a clientId, use the same approach as App.tsx
       const safeGetImportMetaClientId = () => {
@@ -448,7 +448,7 @@ class GoogleDriveServiceModern {
           const result = import.meta.env.VITE_GOOGLE_CLIENT_ID;
           console.log('🔧 safeGetImportMetaClientId: import.meta.env result (masked):', result ? `${String(result).slice(0,6)}...${String(result).slice(-4)}` : result);
           return result;
-        } catch (e) {
+        } catch (e: any) {
           console.log('🔧 safeGetImportMetaClientId: direct access failed, trying fallbacks:', e.message);
           // Try fallbacks for test environments
           try {
@@ -456,7 +456,7 @@ class GoogleDriveServiceModern {
             const fallback = (globalThis && globalThis.__IMPORT_META_ENV__ && globalThis.__IMPORT_META_ENV__.VITE_GOOGLE_CLIENT_ID) || (typeof process !== 'undefined' && process.env && process.env.VITE_GOOGLE_CLIENT_ID) || undefined;
             console.log('🔧 safeGetImportMetaClientId: fallback result (masked):', fallback ? `${String(fallback).slice(0,6)}...${String(fallback).slice(-4)}` : fallback);
             return fallback;
-          } catch (e2) {
+          } catch (e2: any) {
             console.log('🔧 safeGetImportMetaClientId: all methods failed:', e2.message);
             return undefined;
           }
@@ -473,12 +473,12 @@ class GoogleDriveServiceModern {
       if (!this.CLIENT_ID) {
         // Don't throw here; mark service as not configured and return early. Callers can check isConfigured.
         console.warn('\u26a0\ufe0f GoogleDriveServiceModern.initialize: CLIENT_ID not provided. Google services will remain uninitialized.');
-        this.configured = false;
-        this.inited = false;
+        (this as any).configured = false;
+        (this as any).inited = false;
         return;
       }
 
-      this.configured = true;
+      (this as any).configured = true;
 
       // Load gapi and gis libraries
       await this.loadGoogleAPIs();
@@ -487,18 +487,18 @@ class GoogleDriveServiceModern {
       await this.initializeGapi();
       await this.initializeGis();
 
-      this.inited = true;
+      (this as any).inited = true;
       console.log('\ud83d\udd27 GoogleDriveServiceModern: initialize completed. States =>', { gapiInited: this.gapiInited, gisInited: this.gisInited });
     } catch (error) {
       console.error('Failed to initialize Google Drive service: ', error);
       // Keep inited=false so callers know service is not ready
-      this.inited = false;
+      (this as any).inited = false;
       // Re-throw so callers that expect initialize to throw still see the error when a client id was present
       if (this.CLIENT_ID) throw error;
     }
   }
 
-  async initializeGapi() {
+  async initializeGapi(): Promise<void> {
     return new Promise((resolve, reject) => {
       gapi.load('client', {
         callback: async () => {
@@ -517,7 +517,7 @@ class GoogleDriveServiceModern {
     });
   }
 
-  async initializeGis() {
+  async initializeGis(): Promise<void> {
     return new Promise((resolve, reject) => {
       // Load Google Identity Services
       if (typeof google !== 'undefined' && google.accounts) {
@@ -537,14 +537,14 @@ class GoogleDriveServiceModern {
     });
   }
 
-  setupTokenClient() {
+  setupTokenClient(): void {
     console.log('🔐 Setting up GoogleDriveServiceModern token client with scopes:', this.SCOPES);
     this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: this.CLIENT_ID,
+      client_id: this.CLIENT_ID || '',
       scope: this.SCOPES,
       prompt: 'consent', // Force fresh consent screen to show updated permissions
       include_granted_scopes: true, // Include previously granted scopes
-      callback: (response) => {
+      callback: (response: any) => {
         if (response.error !== undefined) {
           console.error('Token client error:', response.error);
           throw new Error(`Authentication failed: ${response.error}`);
@@ -555,7 +555,7 @@ class GoogleDriveServiceModern {
         
         // Set the token for API calls
         gapi.client.setToken({
-          access_token: this.accessToken
+          access_token: this.accessToken || ''
         });
 
         // Load user profile and save session
@@ -568,12 +568,12 @@ class GoogleDriveServiceModern {
         
         console.log('GoogleDriveServiceModern authentication successful');
       }
-    });
+    } as any);
     
     this.gisInited = true;
   }
 
-  async requestAccessToken() {
+  async requestAccessToken(): Promise<void> {
     if (!this.tokenClient) {
       throw new Error('Google Identity Services not initialized');
     }
@@ -584,7 +584,7 @@ class GoogleDriveServiceModern {
         const originalCallback = this.tokenClient.callback;
         
         // Temporarily override callback for this specific request
-        this.tokenClient.callback = (response) => {
+        this.tokenClient.callback = (response: any) => {
           // Restore original callback
           this.tokenClient.callback = originalCallback;
           
@@ -598,7 +598,7 @@ class GoogleDriveServiceModern {
           
           // Set the token for API calls
           gapi.client.setToken({
-            access_token: this.accessToken
+            access_token: this.accessToken || ''
           });
 
           // Load user profile and save session
@@ -620,21 +620,21 @@ class GoogleDriveServiceModern {
     });
   }
 
-  async signIn() {
+  async signIn(): Promise<void> {
     if (!this.gapiInited || !this.gisInited) {
       throw new Error('Google services not initialized');
     }
 
     try {
       await this.requestAccessToken();
-      return true;
+      return true as any;
     } catch (error: unknown) {
       console.error('Sign in failed:', error);
       throw error;
     }
   }
 
-  signOut() {
+  signOut(): void {
     if (this.accessToken) {
       // Revoke the token
       try {
@@ -670,7 +670,7 @@ class GoogleDriveServiceModern {
    * Force re-authentication with broader permissions to access files created outside the app
    * This clears the current session and requests fresh permissions
    */
-  async reauthorizeForBroaderAccess() {
+  async reauthorizeForBroaderAccess(): Promise<void> {
     console.log('🔄 Forcing re-authentication for broader Google Drive access...');
     
     try {
@@ -687,8 +687,8 @@ class GoogleDriveServiceModern {
       await this.signIn();
       
       console.log('✅ Re-authentication completed with broader permissions');
-      return true;
-    } catch (error: unknown) {
+      return true as any;
+    } catch (error: any) {
       console.error('❌ Re-authentication failed:', error);
       throw new Error(`Re-authentication failed: ${error.message}`);
     }
@@ -697,7 +697,7 @@ class GoogleDriveServiceModern {
   /**
    * Generate direct OAuth URL for debugging what scopes are actually being requested
    */
-  generateDirectOAuthURL() {
+  generateDirectOAuthURL(): string {
     const params = new URLSearchParams({
       client_id: this.CLIENT_ID,
       redirect_uri: window.location.origin,
@@ -705,7 +705,7 @@ class GoogleDriveServiceModern {
       scope: this.SCOPES,
       prompt: 'consent',
       include_granted_scopes: true
-    });
+    } as any);
     
     const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
     console.log('🔗 Direct OAuth URL:', oauthUrl);
@@ -714,7 +714,7 @@ class GoogleDriveServiceModern {
     return oauthUrl;
   }
 
-  async loadUserProfile() {
+  async loadUserProfile(): Promise<void> {
     console.log('GoogleDriveServiceModern.loadUserProfile: === STARTING ===');
     
     if (!this.accessToken) {
@@ -758,7 +758,7 @@ class GoogleDriveServiceModern {
     console.log('GoogleDriveServiceModern.loadUserProfile: === COMPLETE ===');
   }
 
-  async validateToken() {
+  async validateToken(): Promise<boolean> {
     if (!this.accessToken) {
       console.log('validateToken: No access token available');
       this.isSignedIn = false;
@@ -808,7 +808,7 @@ class GoogleDriveServiceModern {
 
       if (response.status === 200) {
         this.isSignedIn = true;
-        this.userEmail = response.result.user?.emailAddress;
+        this.userEmail = response.result.user?.emailAddress || null;
         console.log('validateToken: Token is valid, user:', this.userEmail);
         // Also load full user profile to get name and picture
         await this.loadUserProfile();
@@ -818,7 +818,7 @@ class GoogleDriveServiceModern {
       } else {
         console.warn('validateToken: Unexpected response status:', response.status);
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('validateToken: Token validation failed with error:', error);
       console.error('validateToken: Error details:', {
         message: error.message,
@@ -860,7 +860,7 @@ class GoogleDriveServiceModern {
    * and prefers to write { panels: { [panelName]: panelObj }, lastUpdated }
    * If the caller supplied { panel, panelName } we prefer that mapping.
    */
-  _normalizeLibraryPayload(libraryData) {
+  _normalizeLibraryPayload(libraryData: any): any {
     try {
       if (!libraryData) return { panels: {}, lastUpdated: new Date().toISOString() };
 
@@ -931,7 +931,7 @@ class GoogleDriveServiceModern {
   }
 
   // Session management methods
-  saveSession() {
+  saveSession(): void {
     if (this.accessToken) {
       localStorage.setItem(this.SESSION_KEYS.ACCESS_TOKEN, this.accessToken);
       localStorage.setItem(this.SESSION_KEYS.IS_SIGNED_IN, 'true');
@@ -946,7 +946,7 @@ class GoogleDriveServiceModern {
     console.log('Session saved to localStorage');
   }
 
-  restoreSession() {
+  restoreSession(): void {
     try {
       const savedToken = localStorage.getItem(this.SESSION_KEYS.ACCESS_TOKEN);
       const tokenExpiry = localStorage.getItem(this.SESSION_KEYS.TOKEN_EXPIRY);
@@ -965,7 +965,7 @@ class GoogleDriveServiceModern {
           this.userPicture = localStorage.getItem(this.SESSION_KEYS.USER_PICTURE);
           
           console.log('Session restored from localStorage for user:', this.userEmail);
-          return true;
+          return true as any;
         } else {
           console.log('Stored session has expired, clearing...');
           this.clearSession();
@@ -976,10 +976,10 @@ class GoogleDriveServiceModern {
       this.clearSession();
     }
     
-    return false;
+    return false as any;
   }
 
-  clearSession() {
+  clearSession(): void {
     Object.values(this.SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
@@ -987,7 +987,7 @@ class GoogleDriveServiceModern {
     console.log('Session cleared from localStorage');
   }
 
-  getSignInStatus() {
+  getSignInStatus(): any {
     return {
       isSignedIn: this.isSignedIn,
       userEmail: this.userEmail,
@@ -997,7 +997,7 @@ class GoogleDriveServiceModern {
   }
 
   // Debug method to help troubleshoot authentication issues
-  debugCurrentState() {
+  debugCurrentState(): void {
     const state = {
       isSignedIn: this.isSignedIn,
       hasAccessToken: !!this.accessToken,
@@ -1007,13 +1007,13 @@ class GoogleDriveServiceModern {
       gapiInited: this.gapiInited,
       gisInited: this.gisInited,
       hasTokenClient: !!this.tokenClient,
-      sessionKeys: Object.keys(this.SESSION_KEYS).reduce((acc, key) => {
-        const storageKey = this.SESSION_KEYS[key];
+      sessionKeys: Object.keys(this.SESSION_KEYS).reduce((acc: any, key: any) => {
+        const storageKey = (this.SESSION_KEYS as any)[key];
         acc[key] = {
           key: storageKey,
           hasValue: !!localStorage.getItem(storageKey),
           value: key.includes('TOKEN') ? 
-            (localStorage.getItem(storageKey) ? localStorage.getItem(storageKey).substring(0, 10) + '...' : null) :
+            (localStorage.getItem(storageKey) ? localStorage.getItem(storageKey)!.substring(0, 10) + '...' : null) :
             localStorage.getItem(storageKey)
         };
         return acc;
@@ -1027,11 +1027,11 @@ class GoogleDriveServiceModern {
     console.log(JSON.stringify(state, null, 2));
     console.log('==========================================');
     
-    return state;
+    return state as any;
   }
 
   // Test connection method for debugging and testing tools
-  async testConnection() {
+  async testConnection(): Promise<any> {
     try {
       // First check if we have basic requirements
       if (!this.isSignedIn || !this.accessToken) {
@@ -1077,7 +1077,7 @@ class GoogleDriveServiceModern {
           details: response.statusText || 'Unknown error'
         };
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       // Check for specific authentication errors
       if (error.status === 401) {
         return {
@@ -1098,11 +1098,11 @@ class GoogleDriveServiceModern {
 
   // API Methods - These remain largely the same but with simplified error handling
 
-  async findLibraryFile() {
+  async findLibraryFile(): Promise<any> {
     return this.withAutoAuth(this._findLibraryFileInternal, 'findLibraryFile');
   }
 
-  async _findLibraryFileInternal() {
+  async _findLibraryFileInternal(): Promise<any> {
     // Ensure the GAPI client is available. If it's missing, attempt a lazy init when
     // we have a configured CLIENT_ID. Otherwise surface a clear error so callers
     // know to initialize the service first.
@@ -1168,7 +1168,7 @@ class GoogleDriveServiceModern {
         fields: 'files(id, name, modifiedTime)'
       });
 
-      const files = response.result.files;
+      const files = response.result.files || [];
       const file = files.length > 0 ? files[0] : null;
       
       if (!file) {
@@ -1176,7 +1176,7 @@ class GoogleDriveServiceModern {
           new Error('Library file not found'),
           libraryFilename,
           'find',
-          { email: this.userEmail, name: this.userName }
+          { email: this.userEmail, name: this.userName } as any
         );
       }
       
@@ -1187,17 +1187,17 @@ class GoogleDriveServiceModern {
         error,
         this.getLibraryFilename(),
         'find',
-        { email: this.userEmail, name: this.userName }
+        { email: this.userEmail, name: this.userName } as any
       );
       throw new Error('Failed to search for library file');
     }
   }
 
-  async createLibraryFile() {
+  async createLibraryFile(): Promise<any> {
     return this.withAutoAuth(this._createLibraryFileInternal, 'createLibraryFile');
   }
 
-  async _createLibraryFileInternal() {
+  async _createLibraryFileInternal(): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1238,7 +1238,7 @@ class GoogleDriveServiceModern {
           mimeType: 'application/json',
           body: JSON.stringify(emptyLibrary, null, 2)
         }
-      });
+      } as any);
 
       console.log('GoogleDriveServiceModern: created library file id=', response.result && response.result.id);
       console.log('Library file created:', response.result.id);
@@ -1250,13 +1250,13 @@ class GoogleDriveServiceModern {
         error,
         this.getLibraryFilename(),
         'create',
-        { email: this.userEmail, name: this.userName }
+        { email: this.userEmail, name: this.userName } as any
       );
       throw new Error('Failed to create library file');
     }
   }
 
-  async loadLibrary() {
+  async loadLibrary(): Promise<any> {
     // Check if user is signed in before attempting to load
     if (!this.isSignedIn || !this.accessToken) {
       console.log('📭 loadLibrary: User not signed in, returning empty library');
@@ -1272,7 +1272,7 @@ class GoogleDriveServiceModern {
     return this.withAutoAuth(this._loadLibraryInternal, 'loadLibrary');
   }
 
-  async _loadLibraryInternal() {
+  async _loadLibraryInternal(): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1328,7 +1328,10 @@ class GoogleDriveServiceModern {
           hasArtists: !!(lib?.artists),
           artistsType: typeof lib?.artists,
           artistsIsArray: Array.isArray(lib?.artists),
-          artistCount: lib?.artists?.length || 0
+          artistCount: lib?.artists?.length || 0,
+          firstArtist: undefined as any,
+          firstAlbum: undefined as any,
+          totalSongs: 0
         };
 
         if (lib?.artists && Array.isArray(lib.artists) && lib.artists.length > 0) {
@@ -1347,8 +1350,8 @@ class GoogleDriveServiceModern {
           }
 
           // Count total songs
-          analysis.totalSongs = lib.artists.reduce((total, artist) => {
-            return total + (artist.albums || []).reduce((albumTotal, album) => {
+          analysis.totalSongs = lib.artists.reduce((total: any, artist: any) => {
+            return total + (artist.albums || []).reduce((albumTotal: any, album: any) => {
               return albumTotal + (album.songs || []).length;
             }, 0);
           }, 0);
@@ -1363,11 +1366,11 @@ class GoogleDriveServiceModern {
       return library;
     } catch (error: unknown) {
       console.error('Error loading library:', error);
-      throw new Error('Failed to load library from Google Drive', error);
+      throw new Error('Failed to load library from Google Drive');
     }
   }
 
-  async saveLibrary(libraryData) {
+  async saveLibrary(libraryData: any): Promise<any> {
     return this.withAutoAuth(this._saveLibraryInternal, 'saveLibrary', libraryData);
   }
 
@@ -1376,11 +1379,11 @@ class GoogleDriveServiceModern {
    * @param {string} fileId
    * @param {Object} libraryData
    */
-  async saveLibraryToFile(fileId, libraryData) {
+  async saveLibraryToFile(fileId: string, libraryData: any): Promise<any> {
     return this.withAutoAuth(this._saveLibraryToFileInternal, 'saveLibraryToFile', fileId, libraryData);
   }
 
-  async _saveLibraryToFileInternal(fileId, libraryData) {
+  async _saveLibraryToFileInternal(fileId: string, libraryData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1429,7 +1432,7 @@ class GoogleDriveServiceModern {
       if (this.accessToken && typeof gapi !== 'undefined' && gapi.client) {
         try { gapi.client.setToken({ access_token: this.accessToken }); } catch  { /* ignore */ }
       }
-      const response = await gapi.client.drive.files.update({ fileId, media: { mimeType: 'application/json', body: bodyStr } });
+      const response = await gapi.client.drive.files.update({ fileId, media: { mimeType: 'application/json', body: bodyStr } } as any);
       console.log('GoogleDriveServiceModern: files.update response for', fileId, response && response.status);
       // Additional upload via HTTP PATCH to the upload endpoint to ensure content is replaced
       if (this.USE_UPLOAD_FALLBACK) {
@@ -1454,7 +1457,7 @@ class GoogleDriveServiceModern {
       }
       // Attempt to verify by fetching the file content immediately
       try {
-        const verify = await gapi.client.drive.files.get({ fileId, alt: 'media' });
+        const verify: any = await gapi.client.drive.files.get({ fileId, alt: 'media' });
         const body = verify && (verify.body || verify.result || verify);
         const len = body ? (typeof body === 'string' ? body.length : JSON.stringify(body).length) : 0;
         // Debug: attempt to parse verification body and log panels keys/count
@@ -1536,7 +1539,7 @@ class GoogleDriveServiceModern {
     }
   }
 
-  async _saveLibraryInternal(libraryData) {
+  async _saveLibraryInternal(libraryData: any): Promise<any> {
     // Ensure the GAPI client is available before attempting to save.
     if (typeof gapi === 'undefined' || !gapi.client) {
       if (this.CLIENT_ID) {
@@ -1650,11 +1653,11 @@ class GoogleDriveServiceModern {
    * List JSON files in a folder and return lightweight counts and previews per namespace.
    * Note: This will download each file's content to compute namespace counts and small previews.
    */
-  async listFilesInFolderWithCounts(folderPath = '/') {
+  async listFilesInFolderWithCounts(folderPath: string = '/'): Promise<any> {
     return this.withAutoAuth(this._listFilesInFolderWithCountsInternal, 'listFilesInFolderWithCounts', folderPath);
   }
 
-  async _listFilesInFolderWithCountsInternal(folderPath = '/') {
+  async _listFilesInFolderWithCountsInternal(folderPath: string = '/'): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1676,7 +1679,7 @@ class GoogleDriveServiceModern {
 
       for (const file of files) {
         try {
-          const fileContentResp = await gapi.client.drive.files.get({ fileId: file.id, alt: 'media' });
+          const fileContentResp = await gapi.client.drive.files.get({ fileId: file.id!, alt: 'media' });
           const body = fileContentResp.body || fileContentResp.result || fileContentResp;
           let parsed = null;
           try {
@@ -1692,7 +1695,7 @@ class GoogleDriveServiceModern {
             Object.keys(parsed.namespaces).forEach((ns) => {
               const arr = parsed.namespaces[ns];
               if (Array.isArray(arr)) {
-                preview[ns] = arr.slice(0, 3).map((e: any) => ({ id: e && e.id, name: e && (e.name || e.title || '') }));
+                (preview as any)[ns] = arr.slice(0, 3).map((e: any) => ({ id: e && e.id, name: e && (e.name || e.title || '') }));
               }
             });
           }
@@ -1714,7 +1717,7 @@ class GoogleDriveServiceModern {
       return results;
     } catch (error: unknown) {
       console.error('Error listing files with counts:', error);
-      GoogleDriveErrorHandler.handleFileError(error, 'listFilesInFolderWithCounts', 'list', { email: this.userEmail, name: this.userName });
+      GoogleDriveErrorHandler.handleFileError(error, 'listFilesInFolderWithCounts', 'list', { email: this.userEmail, name: this.userName } as any);
       throw new Error('Failed to list files');
     }
   }
@@ -1723,11 +1726,11 @@ class GoogleDriveServiceModern {
    * Create or update a library file and insert/replace an entry within a namespace.
    * options: { fileId, folderPath, fileName, namespace, entry, replaceExisting }
    */
-  async createOrUpdateLibraryFile(options = {}) {
+  async createOrUpdateLibraryFile(options: any = {}): Promise<any> {
     return this.withAutoAuth(this._createOrUpdateLibraryFileInternal, 'createOrUpdateLibraryFile', options);
   }
 
-  async _createOrUpdateLibraryFileInternal(options = {}) {
+  async _createOrUpdateLibraryFileInternal(options: any = {}): Promise<any> {
     const { fileId, folderPath, fileName, namespace = 'panels', entry, replaceExisting = false } = options;
 
     if (!this.isSignedIn || !this.accessToken) {
@@ -1774,13 +1777,13 @@ class GoogleDriveServiceModern {
       const bodyStr = JSON.stringify(libObj, null, 2);
 
       if (targetFileId) {
-        const updateResp = await gapi.client.drive.files.update({ fileId: targetFileId, media: { mimeType: 'application/json', body: bodyStr } });
+        const updateResp = await gapi.client.drive.files.update({ fileId: targetFileId, media: { mimeType: 'application/json', body: bodyStr } } as any);
         return { fileId: targetFileId, result: updateResp.result };
       } else {
         // Create in specified folderPath
         if (!fileName || String(fileName).trim() === '') throw new Error('Filename required to create a new library file');
         const folderId = await this._getFolderIdByPathInternal(folderPath);
-        const resource = { name: fileName || 'library.json', mimeType: 'application/json' };
+        const resource: any = { name: fileName || 'library.json', mimeType: 'application/json' };
         if (folderId && folderId !== 'root') resource.parents = [folderId];
 
         // Create the file resource first to ensure name/parents are set
@@ -1789,7 +1792,7 @@ class GoogleDriveServiceModern {
 
         if (createdId) {
           try {
-            const updateResp = await gapi.client.drive.files.update({ fileId: createdId, media: { mimeType: 'application/json', body: bodyStr } });
+            const updateResp = await gapi.client.drive.files.update({ fileId: createdId, media: { mimeType: 'application/json', body: bodyStr } } as any);
             return { fileId: createdId, result: updateResp.result };
           } catch (updateErr: unknown) {
             console.warn('Failed to upload content after create in createOrUpdate flow, returning created resource', updateErr);
@@ -1809,11 +1812,11 @@ class GoogleDriveServiceModern {
   // These would be implemented similar to your existing methods
   // but with the simplified error handling approach
 
-  async addArtist(libraryData, artistName) {
+  async addArtist(libraryData: any, artistName: string): Promise<any> {
     return this.withAutoAuth(this._addArtistInternal, 'addArtist', libraryData, artistName);
   }
 
-  async _addArtistInternal(libraryData, artistName) {
+  async _addArtistInternal(libraryData: any, artistName: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1846,11 +1849,11 @@ class GoogleDriveServiceModern {
     return newArtist;
   }
 
-  async addAlbum(libraryData, artistName, albumTitle) {
+  async addAlbum(libraryData: any, artistName: string, albumTitle: string): Promise<any> {
     return this.withAutoAuth(this._addAlbumInternal, 'addAlbum', libraryData, artistName, albumTitle);
   }
 
-  async _addAlbumInternal(libraryData, artistName, albumTitle) {
+  async _addAlbumInternal(libraryData: any, artistName: string, albumTitle: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1888,11 +1891,11 @@ class GoogleDriveServiceModern {
     return newAlbum;
   }
 
-  async addSong(libraryData, artistName, albumTitle, songData) {
+  async addSong(libraryData: any, artistName: string, albumTitle: string, songData: any): Promise<any> {
     return this.withAutoAuth(this._addSongInternal, 'addSong', libraryData, artistName, albumTitle, songData);
   }
 
-  async _addSongInternal(libraryData, artistName, albumTitle, songData) {
+  async _addSongInternal(libraryData: any, artistName: string, albumTitle: string, songData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1947,11 +1950,11 @@ class GoogleDriveServiceModern {
     return newSong;
   }
 
-  async updateSong(libraryData, artistName, albumTitle, songTitle, songData) {
+  async updateSong(libraryData: any, artistName: string, albumTitle: string, songTitle: string, songData: any): Promise<any> {
     return this.withAutoAuth(this._updateSongInternal, 'updateSong', libraryData, artistName, albumTitle, songTitle, songData);
   }
 
-  async _updateSongInternal(libraryData, artistName, albumTitle, songTitle, songData) {
+  async _updateSongInternal(libraryData: any, artistName: string, albumTitle: string, songTitle: string, songData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1996,11 +1999,11 @@ class GoogleDriveServiceModern {
     return song;
   }
 
-  async deleteSong(libraryData, artistName, albumTitle, songTitle) {
+  async deleteSong(libraryData: any, artistName: string, albumTitle: string, songTitle: string): Promise<any> {
     return this.withAutoAuth(this._deleteSongInternal, 'deleteSong', libraryData, artistName, albumTitle, songTitle);
   }
 
-  async _deleteSongInternal(libraryData, artistName, albumTitle, songTitle) {
+  async _deleteSongInternal(libraryData: any, artistName: string, albumTitle: string, songTitle: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2053,7 +2056,7 @@ class GoogleDriveServiceModern {
   }
 
   // Method to handle tokens from @react-oauth/google
-  async handleOAuthToken(tokenResponse) {
+  async handleOAuthToken(tokenResponse: any): Promise<void> {
     console.log('GoogleDriveServiceModern.handleOAuthToken: Starting with tokenResponse:', tokenResponse);
     try {
       // The tokenResponse from @react-oauth/google contains an access_token
@@ -2097,7 +2100,7 @@ class GoogleDriveServiceModern {
         let tokenSetSuccess = false;
         if (typeof gapi !== 'undefined' && gapi.client) {
           gapi.client.setToken({
-            access_token: this.accessToken
+            access_token: this.accessToken || ''
           });
           console.log('GoogleDriveServiceModern.handleOAuthToken: ✓ Token set in gapi.client');
           tokenSetSuccess = true;
@@ -2132,7 +2135,7 @@ class GoogleDriveServiceModern {
           gapiInited: this.gapiInited,
           gisInited: this.gisInited
         });
-        return true;
+        return true as any;
       } else if (tokenResponse.code) {
         // If we receive an authorization code instead, we need to exchange it for an access token
         console.warn('Received authorization code instead of access token. This requires server-side token exchange.');
@@ -2152,11 +2155,11 @@ class GoogleDriveServiceModern {
    * @param {string} currentPath - Current path for building full paths
    * @returns {Promise<Array>} Array of folder objects with name, id, and fullPath
    */
-  async listFolders(parentId = null, currentPath = '/') {
+  async listFolders(parentId: string | null = null, currentPath: string = '/'): Promise<any> {
     return this.withAutoAuth(this._listFoldersInternal, 'listFolders', parentId, currentPath);
   }
 
-  async _listFoldersInternal(parentId = null, currentPath = '/') {
+  async _listFoldersInternal(parentId: string | null = null, currentPath: string = '/'): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2183,7 +2186,7 @@ class GoogleDriveServiceModern {
       console.log('🔍 GoogleDriveServiceModern: Drive API response:', response);
       const folders = response.result.files || [];
       console.log('🔍 GoogleDriveServiceModern: Found', folders.length, 'folders at path:', currentPath);
-      let allFolders = [];
+      let allFolders: any[] = [];
 
       // Add current level folders
       for (const folder of folders) {
@@ -2200,14 +2203,14 @@ class GoogleDriveServiceModern {
           try {
             const subfolders = await this._listFoldersInternal(folder.id, fullPath);
             allFolders = allFolders.concat(subfolders);
-          } catch (error: unknown) {
+          } catch (error: any) {
             console.warn(`Failed to load subfolders for ${folder.name}:`, error);
           }
         }
       }
 
       return allFolders;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error listing folders:', error);
       throw new Error(`Failed to list folders: ${error.message}`);
     }
@@ -2218,11 +2221,11 @@ class GoogleDriveServiceModern {
    * Returns formatted options suitable for Ant Design Select component
    * @returns {Promise<Array>} Array of options with value and label
    */
-  async getFolderSuggestions() {
+  async getFolderSuggestions(): Promise<any> {
     return this.withAutoAuth(this._getFolderSuggestionsInternal, 'getFolderSuggestions');
   }
 
-  async _getFolderSuggestionsInternal() {
+  async _getFolderSuggestionsInternal(): Promise<any> {
     try {
       console.log('🔍 GoogleDriveServiceModern: Starting folder suggestions...');
       const folders = await this._listFoldersInternal();
@@ -2278,11 +2281,11 @@ class GoogleDriveServiceModern {
    * @param {string} folderPath - Folder path to search in (default: '/')
    * @returns {Promise<Object>} Search result with found status and file info
    */
-  async findFile(fileName, folderPath = '/') {
+  async findFile(fileName: string, folderPath: string = '/'): Promise<any> {
     return this.withAutoAuth(this._findFileInternal, 'findFile', fileName, folderPath);
   }
 
-  async _findFileInternal(fileName, folderPath = '/') {
+  async _findFileInternal(fileName: string, folderPath: string = '/'): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2367,7 +2370,7 @@ class GoogleDriveServiceModern {
         found: false,
         fileName: fileName,
         folderPath: folderPath,
-        error: `Search failed: ${error.message}`
+        error: `Search failed: ${(error as any).message}`
       };
     }
   }
@@ -2377,7 +2380,7 @@ class GoogleDriveServiceModern {
    * @param {Object} file - File object with parents array
    * @returns {Promise<string>} Full folder path
    */
-  async _getFileLocation(file) {
+  async _getFileLocation(file: any): Promise<string> {
     try {
       if (!file.parents || file.parents.length === 0) {
         return '/';
@@ -2415,11 +2418,11 @@ class GoogleDriveServiceModern {
    * @param {string} folderPath - Folder path to create the file in
    * @returns {Promise<Object>} Created file info
    */
-  async createNewLibrary(fileName, folderPath = '/') {
+  async createNewLibrary(fileName: string, folderPath: string = '/'): Promise<any> {
     return this.withAutoAuth(this._createNewLibraryInternal, 'createNewLibrary', fileName, folderPath);
   }
 
-  async _createNewLibraryInternal(fileName, folderPath = '/') {
+  async _createNewLibraryInternal(fileName: string, folderPath: string = '/'): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2445,7 +2448,7 @@ class GoogleDriveServiceModern {
 
       // Resolve folder and create the file in the intended folder
       const folderId = await this._getFolderIdByPathInternal(folderPath);
-      const resource = { name: fileName, mimeType: 'application/json' };
+      const resource: any = { name: fileName, mimeType: 'application/json' };
       if (folderId && folderId !== 'root') resource.parents = [folderId];
       // Create the file resource first (ensure name/parents are set)
       const createResp = await gapi.client.drive.files.create({ resource, fields: 'id,name' });
@@ -2462,7 +2465,7 @@ class GoogleDriveServiceModern {
               mimeType: 'application/json',
               body: JSON.stringify(initialData, null, 2)
             }
-          });
+          } as any);
 
           console.log('New library created and initialized successfully:', updateResp.result || createResp.result);
           GoogleDriveErrorHandler.showSuccess('create', `Created ${fileName}`);
@@ -2478,7 +2481,7 @@ class GoogleDriveServiceModern {
 
       // If no id returned from create, throw
       throw new Error('Failed to create Drive file resource');
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error creating new library:', error);
       throw new Error(`Failed to create new library: ${error.message}`);
     }
@@ -2491,11 +2494,11 @@ class GoogleDriveServiceModern {
    * @param {string} newFileName - New file name (optional)
    * @returns {Promise<Object>} Updated file info
    */
-  async moveFile(fileId, newFolderPath, newFileName = null) {
+  async moveFile(fileId: string, newFolderPath: string, newFileName: string | null = null): Promise<any> {
     return this.withAutoAuth(this._moveFileInternal, 'moveFile', fileId, newFolderPath, newFileName);
   }
 
-  async _moveFileInternal(fileId, newFolderPath, newFileName = null) {
+  async _moveFileInternal(fileId: string, newFolderPath: string, newFileName: string | null = null): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2505,7 +2508,7 @@ class GoogleDriveServiceModern {
       
       // Update filename if provided
       if (newFileName) {
-        updateData.name = newFileName;
+        (updateData as any).name = newFileName;
       }
 
       // For simplicity, we'll just update the name
@@ -2517,7 +2520,7 @@ class GoogleDriveServiceModern {
 
       console.log('File moved successfully:', response.result);
       return response.result;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error moving file:', error);
       throw new Error(`Failed to move file: ${error.message}`);
     }
@@ -2527,7 +2530,7 @@ class GoogleDriveServiceModern {
    * Load library data (alias for loadLibrary for consistency with modal interface)
    * @returns {Promise<Object>} Library data
    */
-  async loadLibraryData() {
+  async loadLibraryData(): Promise<any> {
     return this.loadLibrary();
   }
 
@@ -2536,11 +2539,11 @@ class GoogleDriveServiceModern {
    * @param {string} fileId - The Google Drive file ID to load
    * @returns {Promise<Object>} Library data
    */
-  async loadLibraryById(fileId) {
+  async loadLibraryById(fileId: string): Promise<any> {
     return this.withAutoAuth(this._loadLibraryByIdInternal, 'loadLibraryById', fileId);
   }
 
-  async _loadLibraryByIdInternal(fileId) {
+  async _loadLibraryByIdInternal(fileId: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -2567,12 +2570,13 @@ class GoogleDriveServiceModern {
       // - response.result (object or string)
       // - response (already the parsed object)
       let rawBody = null;
-      if (response && response.body) rawBody = response.body;
-      else if (response && response.result) {
+      const resp: any = response;
+      if (resp && resp.body) rawBody = resp.body;
+      else if (resp && resp.result) {
         // If result is string, use it; if it's an object that has a 'body', try that; otherwise, if result is an object, use it directly
-        if (typeof response.result === 'string') rawBody = response.result;
-        else if (response.result.body) rawBody = response.result.body;
-        else rawBody = response.result;
+        if (typeof resp.result === 'string') rawBody = resp.result;
+        else if (resp.result.body) rawBody = resp.result.body;
+        else rawBody = resp.result;
       } else {
         rawBody = response;
       }
@@ -2606,7 +2610,7 @@ class GoogleDriveServiceModern {
       console.log('Library loaded successfully from file ID:', fileId, 'preview:', makePreview(libraryData));
 
       return libraryData;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error loading library by ID:', error);
       
       if (error.status === 404) {
@@ -2638,7 +2642,7 @@ class GoogleDriveServiceModern {
         error,
         `File ID: ${fileId}`,
         'load',
-        { email: this.userEmail, name: this.userName }
+        { email: this.userEmail, name: this.userName } as any
       );
       throw new Error(`Failed to load library file: ${error.message}`);
     }
@@ -2651,7 +2655,7 @@ class GoogleDriveServiceModern {
    * @param {Array} args - Arguments to pass to the operation
    * @returns {Promise} Result of the operation
    */
-  async withAutoAuth(operation, operationName, ...args) {
+  async withAutoAuth(operation: any, operationName: string, ...args: any[]): Promise<any> {
     const retryKey = operationName;
     
     try {
@@ -2665,7 +2669,7 @@ class GoogleDriveServiceModern {
       
       console.log(`✅ Operation completed successfully: ${operationName}`);
       return result;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.log(`❌ Operation failed: ${operationName}`, error.message);
       
       // Check for various authentication error patterns
@@ -2693,7 +2697,7 @@ class GoogleDriveServiceModern {
             // immediately throwing "Google services not initialized".
             if (!this.gapiInited || !this.gisInited) {
               try {
-                let cid = this.CLIENT_ID;
+                let cid = this.CLIENT_ID || '';
                 if (!cid) {
                   try {
                     // eslint-disable-next-line no-new-func
@@ -2707,7 +2711,7 @@ class GoogleDriveServiceModern {
                 }
 
                 await this.initialize(cid);
-              } catch (initErr) {
+              } catch (initErr: any) {
                 console.warn('withAutoAuth: Google service initialization failed during re-auth attempt', initErr);
                 throw new Error('Google services not initialized');
               }
@@ -2726,7 +2730,7 @@ class GoogleDriveServiceModern {
             
             console.log(`✅ Retry successful for ${operationName}`);
             return result;
-          } catch (authError: unknown) {
+          } catch (authError: any) {
             console.error(`❌ Re-authentication failed for ${operationName}:`, authError);
             // Clear retry counter on auth failure
             this.authRetryAttempts.delete(retryKey);
@@ -2750,7 +2754,7 @@ class GoogleDriveServiceModern {
    * @param {Error} error - The error to check
    * @returns {boolean} True if the error is authentication-related
    */
-  isAuthenticationError(error) {
+  isAuthenticationError(error: any): boolean {
     if (!error) return false;
     
     const message = error.message || '';
@@ -2806,8 +2810,8 @@ const googleDriveServiceModern = new GoogleDriveServiceModern();
 
 // Expose to global scope for debugging
 if (typeof window !== 'undefined') {
-  window.GoogleDriveServiceModern = googleDriveServiceModern;
-  window.debugGoogleDrive = () => googleDriveServiceModern.debugCurrentState();
+  (window as any).GoogleDriveServiceModern = googleDriveServiceModern;
+  (window as any).debugGoogleDrive = () => googleDriveServiceModern.debugCurrentState();
 }
 
 // Try to pick up VITE_GOOGLE_CLIENT_ID at module load time using a safe accessor.

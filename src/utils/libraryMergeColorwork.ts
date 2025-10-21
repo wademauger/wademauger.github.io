@@ -1,5 +1,5 @@
 // Merge helper for colorwork patterns
-export function mergeColorworkIntoLibrary(library, patternPayload) {
+export function mergeColorworkIntoLibrary(library: any, patternPayload: any): any {
   const lib = (library && typeof library === 'object') ? { ...library } : {};
   lib.colorworkPatterns = Array.isArray(lib.colorworkPatterns) ? [...lib.colorworkPatterns] : [];
 

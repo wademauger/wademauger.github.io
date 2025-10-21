@@ -166,16 +166,31 @@ function deepMergeWithConflicts(
   
   // Primitive values
   if (target !== source) {
+    // If one side is a plain object/array and the other is a primitive, treat as a type conflict
+    if ((isPlainObject(target) || Array.isArray(target)) && !(isPlainObject(source) || Array.isArray(source))) {
+      conflicts.push({
+        path,
+        message: `Type conflict: target is ${Array.isArray(target) ? 'array' : typeof target}, source is ${Array.isArray(source) ? 'array' : typeof source}`
+      });
+
+      if (options.conflictResolution === 'error') {
+        throw new Error(`Type conflict at ${path}`);
+      }
+
+      return options.conflictResolution === 'keepLast' ? deepClone(source) : target;
+    }
+
+    // Otherwise this is a value conflict
     conflicts.push({
       path,
       message: `Value conflict: target="${target}", source="${source}"`
     });
-    
+
     if (options.conflictResolution === 'error') {
       throw new Error(`Value conflict at ${path}`);
     }
   }
-  
+
   return options.conflictResolution === 'keepLast' ? source : target;
 }
 
@@ -339,13 +354,14 @@ export function normalizeLibraryData(data: LibraryData): LibraryData {
     normalized.colorworkPatterns = {};
   }
   
-  if (normalized.artists && !Array.isArray(normalized.artists)) {
-    console.warn('Invalid artists collection, resetting to empty array');
+  // If artists or entries are nullish or not arrays, ensure they are arrays
+  if (!normalized.artists || !Array.isArray(normalized.artists)) {
+    if (normalized.artists && typeof normalized.artists !== 'object') console.warn('Invalid artists collection, resetting to empty array');
     normalized.artists = [];
   }
-  
-  if (normalized.entries && !Array.isArray(normalized.entries)) {
-    console.warn('Invalid entries collection, resetting to empty array');
+
+  if (!normalized.entries || !Array.isArray(normalized.entries)) {
+    if (normalized.entries && typeof normalized.entries !== 'object') console.warn('Invalid entries collection, resetting to empty array');
     normalized.entries = [];
   }
   

@@ -9,7 +9,19 @@ import './SongEditor.css';
 
 const { Option } = Select;
 
-const SongEditor = ({
+interface SongEditorProps {
+  song: any;
+  artist: any;
+  album: any;
+  onSave: (updatedSong: any, metadata?: { artist: string; album: string }) => void;
+  onCancel: () => void;
+  isGoogleDriveConnected: boolean;
+  isNewSong?: boolean;
+  library?: any | null;
+  lyricsRef?: React.RefObject<HTMLTextAreaElement>;
+}
+
+const SongEditor: React.FC<SongEditorProps> = ({
   song,
   artist,
   album,
@@ -26,26 +38,26 @@ const SongEditor = ({
   const [songAlbum, setSongAlbum] = useState(() => album?.title || '');
   
   // Spotify album suggestions
-  const [spotifyAlbums, setSpotifyAlbums] = useState([]);
+  const [spotifyAlbums, setSpotifyAlbums] = useState<any[]>([]);
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
   
   // Spotify artist suggestions
-  const [spotifyArtists, setSpotifyArtists] = useState([]);
+  const [spotifyArtists, setSpotifyArtists] = useState<any[]>([]);
   const [isLoadingArtists, setIsLoadingArtists] = useState(false);
   
   // Spotify track suggestions
-  const [spotifyTracks, setSpotifyTracks] = useState([]);
+  const [spotifyTracks, setSpotifyTracks] = useState<any[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
   
   const [editedLyrics, setEditedLyrics] = useState(() => {
     // Ensure we always have a string
     return typeof song?.lyrics === 'string' ? song.lyrics : '';
   });
-  const [chordPalette, setChordPalette] = useState([]);
+  const [chordPalette, setChordPalette] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const textareaRef = useRef(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   // Always call hooks at the top level
-  const localLyricsRef = useRef(null);
+  const localLyricsRef = useRef<HTMLTextAreaElement | null>(null);
   const lyricsSectionRef = lyricsRef !== undefined && lyricsRef !== null ? lyricsRef : localLyricsRef;
 
   // Lyrics conversion state
@@ -61,7 +73,7 @@ const SongEditor = ({
           const albums = await SpotifyService.getAlbumsForArtist(songArtist);
           setSpotifyAlbums(albums);
         } catch (error: unknown) {
-          console.log('Spotify album suggestions unavailable:', error.message);
+          console.log('Spotify album suggestions unavailable:', error instanceof Error ? error.message : 'Unknown error');
           setSpotifyAlbums([]);
         } finally {
           setIsLoadingAlbums(false);
@@ -74,6 +86,7 @@ const SongEditor = ({
     } else {
       setSpotifyAlbums([]);
       setIsLoadingAlbums(false);
+      return undefined;
     }
   }, [songArtist]);
 
@@ -86,7 +99,7 @@ const SongEditor = ({
           const artists = await SpotifyService.searchArtists(songArtist);
           setSpotifyArtists(artists);
         } catch (error: unknown) {
-          console.log('Spotify artist suggestions unavailable:', error.message);
+          console.log('Spotify artist suggestions unavailable:', error instanceof Error ? error.message : 'Unknown error');
           setSpotifyArtists([]);
         } finally {
           setIsLoadingArtists(false);
@@ -99,6 +112,7 @@ const SongEditor = ({
     } else {
       setSpotifyArtists([]);
       setIsLoadingArtists(false);
+      return undefined;
     }
   }, [songArtist]);
 
@@ -111,7 +125,7 @@ const SongEditor = ({
           const tracks = await SpotifyService.getTracksFromAlbum(songArtist, songAlbum);
           setSpotifyTracks(tracks);
         } catch (error: unknown) {
-          console.log('Spotify track suggestions unavailable:', error.message);
+          console.log('Spotify track suggestions unavailable:', error instanceof Error ? error.message : 'Unknown error');
           setSpotifyTracks([]);
         } finally {
           setIsLoadingTracks(false);
@@ -124,6 +138,7 @@ const SongEditor = ({
     } else {
       setSpotifyTracks([]);
       setIsLoadingTracks(false);
+      return undefined;
     }
   }, [songArtist, songAlbum]);
 
@@ -261,7 +276,7 @@ const SongEditor = ({
   // Extract all chords from the lyrics when component mounts or lyrics change
   useEffect(() => {
     const chordPattern = /\[([^\]]+)\]/g;
-    const matches = [];
+    const matches: string[] = [];
     let match;
 
     // Ensure editedLyrics is a string before using regex
@@ -343,7 +358,7 @@ const SongEditor = ({
 
           // Use the same chord rendering logic as SongDetail
           const chordRegex = /\[(.*?)\]/g;
-          const chordPositions = [];
+          const chordPositions: Array<{ chord: string; position: number; length: number }> = [];
           let plainText = line;
           let match;
 
@@ -395,7 +410,7 @@ const SongEditor = ({
   };
 
   // Insert chord at cursor position
-  const insertChord = async (chord) => {
+  const insertChord = async (chord: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -527,14 +542,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingArtists ? 'Searching...' : 'No artists found'}
                 >
                   {/* Existing artists from library */}
-                  {filteredLibraryArtists.map((artistName, index: number) => (
+                  {filteredLibraryArtists.map((artistName: string, index: number) => (
                     <Option key={`library-artist-${index}-${artistName}`} value={artistName}>
                       📚 {artistName}
                     </Option>
                   ))}
                   
                   {/* Spotify artist suggestions */}
-                  {filteredArtists.map((artistName, index: number) => (
+                  {filteredArtists.map((artistName: string, index: number) => (
                     <Option key={`spotify-artist-${index}-${artistName}`} value={artistName}>
                       <img 
                         src={SpotifyIcon} 
@@ -565,14 +580,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingAlbums ? 'Loading albums...' : 'No albums found'}
                 >
                   {/* Existing albums from library */}
-                  {filteredLibraryAlbums.map((albumTitle, index: number) => (
+                  {filteredLibraryAlbums.map((albumTitle: string, index: number) => (
                     <Option key={`library-album-${index}-${albumTitle}`} value={albumTitle}>
                       📚 {albumTitle}
                     </Option>
                   ))}
                   
                   {/* Spotify album suggestions */}
-                  {filteredAlbums.map((albumTitle, index: number) => (
+                  {filteredAlbums.map((albumTitle: string, index: number) => (
                     <Option key={`spotify-album-${index}-${albumTitle}`} value={albumTitle}>
                       <img 
                         src={SpotifyIcon} 
@@ -603,14 +618,14 @@ const SongEditor = ({
                   notFoundContent={isLoadingTracks ? 'Loading tracks...' : 'No tracks found'}
                 >
                   {/* Existing songs from library */}
-                  {filteredLibrarySongs.map((title, index: number) => (
+                  {filteredLibrarySongs.map((title: string, index: number) => (
                     <Option key={`library-${index}-${title}`} value={title}>
                       📚 {title}
                     </Option>
                   ))}
                   
                   {/* Spotify track suggestions from selected album (deduplicated) */}
-                  {filteredSpotifyTracks.map((trackTitle, index: number) => (
+                  {filteredSpotifyTracks.map((trackTitle: string, index: number) => (
                     <Option key={`spotify-${index}-${trackTitle}`} value={trackTitle}>
                       <img 
                         src={SpotifyIcon} 
@@ -630,7 +645,7 @@ const SongEditor = ({
       {/* Main Editor */}
       <div className="editor-main">
         {/* Left: Editable Lyrics */}
-        <div className="editor-pane" ref={lyricsSectionRef}>
+        <div className="editor-pane">
           <div className="editor-header">
             <h3>Edit Lyrics <small>(use [chord] format)</small></h3>
             

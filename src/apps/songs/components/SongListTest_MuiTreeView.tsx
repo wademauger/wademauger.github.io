@@ -3,13 +3,18 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import './SongTree.css';
 
+interface SongListTest_MuiTreeViewProps {
+  library: any;
+  onSelectSong: (song: any) => void;
+}
+
 // Custom tree implementation replacing MUI TreeView to avoid recursion issues
 // This simple tree provides the same functionality without the complexity and bugs of MUI's TreeView
-function SongListTest_MuiTreeView({ library, onSelectSong }) {
+function SongListTest_MuiTreeView({ library, onSelectSong }: SongListTest_MuiTreeViewProps) {
   const [filterText, setFilterText] = React.useState('');
   const [expandedArtists, setExpandedArtists] = React.useState(new Set());
   const [expandedAlbums, setExpandedAlbums] = React.useState(new Set());
-  const [selectedSongId, setSelectedSongId] = React.useState(null);
+  const [selectedSongId, setSelectedSongId] = React.useState<string | null>(null);
 
   // Filter library data based on search text
   const filteredLibrary = React.useMemo(() => {
@@ -58,7 +63,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
   }, []);
 
   // Toggle album expansion
-  const toggleAlbum = React.useCallback((albumId) => {
+  const toggleAlbum = React.useCallback((albumId: string) => {
     setExpandedAlbums(prev => {
       const newSet = new Set(prev);
       if (newSet.has(albumId)) {
@@ -71,7 +76,7 @@ function SongListTest_MuiTreeView({ library, onSelectSong }) {
   }, []);
 
   // Handle song selection
-  const handleSongSelect = React.useCallback((song, artistName, albumTitle: any) => {
+  const handleSongSelect = React.useCallback((song: any, artistName: string, albumTitle: string) => {
     const songId = `${artistName}-${albumTitle}-${song.title}`;
     setSelectedSongId(songId);
     if (onSelectSong) {

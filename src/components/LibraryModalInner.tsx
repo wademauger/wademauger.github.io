@@ -951,7 +951,7 @@ const LibraryModalInner = () => {
                   showSearch
                   allowClear
                   options={folderOptions}
-                  dropdownRender={(menu) => (
+                  dropdownRender={(menu: React.ReactElement) => (
                     <div>
                       {menu}
                       <div style={{ padding: '4px 8px', borderTop: '1px solid #f0f0f0', fontSize: '12px', color: '#666' }}>

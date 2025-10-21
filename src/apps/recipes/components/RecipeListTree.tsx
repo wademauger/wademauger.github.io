@@ -4,13 +4,20 @@ import Box from '@mui/material/Box';
 import { getCategoryEmoji } from '../utils/categoryEmojis';
 import './RecipeTree.css';
 
+interface RecipeListTreeProps {
+  recipes: any;
+  onSelectRecipe: (recipe: any) => void;
+  activeRecipePermalink: string;
+  driveRecipes?: any[];
+}
+
 // Custom tree implementation similar to SongListTest for recipes
 function RecipeListTree({ 
   recipes, 
   onSelectRecipe, 
   activeRecipePermalink,
   driveRecipes = []
-}) {
+}: RecipeListTreeProps) {
   const [filterText, setFilterText] = React.useState('');
   const [expandedSections, setExpandedSections] = React.useState(new Set());
   const [selectedRecipeId, setSelectedRecipeId] = React.useState(null);
@@ -65,7 +72,7 @@ function RecipeListTree({
   }, [combinedRecipes, filterText]);
 
   // Toggle section expansion
-  const toggleSection = React.useCallback((sectionName) => {
+  const toggleSection = React.useCallback((sectionName: string) => {
     setExpandedSections(prev => {
       const newSet = new Set(prev);
       if (newSet.has(sectionName)) {
@@ -78,7 +85,7 @@ function RecipeListTree({
   }, []);
 
   // Handle recipe selection
-  const handleRecipeSelect = React.useCallback((recipe) => {
+  const handleRecipeSelect = React.useCallback((recipe: any) => {
     const recipeId = recipe.permalink || recipe.id || recipe.title;
     setSelectedRecipeId(recipeId);
     if (onSelectRecipe) {

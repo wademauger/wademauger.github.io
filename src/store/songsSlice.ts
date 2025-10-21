@@ -1,11 +1,11 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import googleDriveService from '../apps/songs/services/GoogleDriveServiceModern';
 import { loadFullLibrary, saveFullLibrary } from './librarySlice';
 
 // Async thunk for loading library from Google Drive
 export const loadLibraryFromDrive = createAsyncThunk(
   'songs/loadLibraryFromDrive',
-  async (_, { dispatch, rejectWithValue }) => {
+  async (_: any, { dispatch, rejectWithValue }: any) => {
     try {
       const lib = await dispatch(loadFullLibrary()).unwrap();
       return lib;
@@ -18,7 +18,7 @@ export const loadLibraryFromDrive = createAsyncThunk(
 // Async thunk for updating a song
 export const updateSong = createAsyncThunk(
   'songs/updateSong',
-  async (params: any, { getState, dispatch, rejectWithValue }) => {
+  async (params: any, { getState, dispatch, rejectWithValue }: any) => {
     const {
       artistName,
       albumTitle,
@@ -105,7 +105,7 @@ export const updateSong = createAsyncThunk(
 // Async thunk for adding a song
 export const addSong = createAsyncThunk(
   'songs/addSong',
-  async ({ artistName, albumTitle, songData, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, albumTitle, songData, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -155,7 +155,7 @@ export const addSong = createAsyncThunk(
 // Async thunk for adding an empty artist
 export const addArtist = createAsyncThunk(
   'songs/addArtist',
-  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -186,7 +186,7 @@ export const addArtist = createAsyncThunk(
 // Async thunk for adding an empty album
 export const addAlbum = createAsyncThunk(
   'songs/addAlbum',
-  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -219,7 +219,7 @@ export const addAlbum = createAsyncThunk(
 // Async thunk for deleting a song
 export const deleteSong = createAsyncThunk(
   'songs/deleteSong',
-  async ({ artistName, albumTitle, songTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, albumTitle, songTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -260,7 +260,7 @@ export const deleteSong = createAsyncThunk(
 // Async thunk for updating an artist
 export const updateArtist = createAsyncThunk(
   'songs/updateArtist',
-  async ({ oldArtistName, newArtistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ oldArtistName, newArtistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -289,7 +289,7 @@ export const updateArtist = createAsyncThunk(
 // Async thunk for updating an album
 export const updateAlbum = createAsyncThunk(
   'songs/updateAlbum',
-  async ({ artistName, oldAlbumTitle, newAlbumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, oldAlbumTitle, newAlbumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -320,7 +320,7 @@ export const updateAlbum = createAsyncThunk(
 // Async thunk for deleting an artist
 export const deleteArtist = createAsyncThunk(
   'songs/deleteArtist',
-  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -347,7 +347,7 @@ export const deleteArtist = createAsyncThunk(
 // Async thunk for deleting an album
 export const deleteAlbum = createAsyncThunk(
   'songs/deleteAlbum',
-  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }) => {
+  async ({ artistName, albumTitle, isGoogleDriveConnected }: any, { getState, dispatch, rejectWithValue }: any) => {
     try {
       const state = getState();
       const library = JSON.parse(JSON.stringify(state.songs.library));
@@ -423,7 +423,7 @@ const normalizeSong = (song: any) => {
 };
 
 // Helper function to find and return song with normalized structure
-const findSongWithArtistAlbum = (library, artistName, albumTitle, songTitle) => {
+const findSongWithArtistAlbum = (library: any, artistName: string, albumTitle: string, songTitle: string): any => {
   const artist = library.artists.find((a: any) => a.name === artistName);
   if (!artist) return null;
 
@@ -444,13 +444,13 @@ const songsSlice = createSlice({
   name: 'songs',
   initialState,
   reducers: {
-    setSelectedSong: (state, action) => {
+    setSelectedSong: (state: any, action: PayloadAction<any>) => {
       state.selectedSong = action.payload;
     },
     clearSelectedSong: (state: any) => {
       state.selectedSong = null;
     },
-    setLibrary: (state, action) => {
+    setLibrary: (state: any, action: PayloadAction<any>) => {
       // Normalize all albums and songs in the library
       try {
         console.log('songsSlice.setLibrary called — incoming artists=', (action.payload && action.payload.artists) ? action.payload.artists.length : 0);
@@ -614,23 +614,23 @@ const songsSlice = createSlice({
 
       state.library = normalizedLibrary;
     },
-    setGoogleDriveConnection: (state, action) => {
+    setGoogleDriveConnection: (state: any, action: PayloadAction<boolean>) => {
       state.isGoogleDriveConnected = action.payload;
     },
-    setUserInfo: (state, action) => {
+    setUserInfo: (state: any, action: PayloadAction<any>) => {
       state.userInfo = action.payload;
     },
-    setEditingEnabled: (state, action) => {
+    setEditingEnabled: (state: any, action: PayloadAction<boolean>) => {
       state.editingEnabled = action.payload;
     },
-    setError: (state, action) => {
+    setError: (state: any, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
     clearError: (state: any) => {
       state.error = null;
     },
     // Local update for mock data
-    updateSongLocal: (state, action) => {
+    updateSongLocal: (state: any, action: PayloadAction<any>) => {
       const {
         artistName,
         albumTitle,
@@ -736,7 +736,7 @@ const songsSlice = createSlice({
       }
     },
     // Local add for mock data
-    addSongLocal: (state, action) => {
+    addSongLocal: (state: any, action: PayloadAction<any>) => {
       const { artistName, albumTitle, songData } = action.payload;
 
       // Find or create artist
@@ -765,14 +765,14 @@ const songsSlice = createSlice({
       album.songs.push(newSong);
     }
   },
-  extraReducers: (builder) => {
+  extraReducers: (builder: any) => {
     builder
       // Load library from Drive
       .addCase(loadLibraryFromDrive.pending, (state: any) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(loadLibraryFromDrive.fulfilled, (state, action) => {
+      .addCase(loadLibraryFromDrive.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         // Normalize the library from Google Drive
         const normalizedLibrary = {
@@ -787,7 +787,7 @@ const songsSlice = createSlice({
         };
         state.library = normalizedLibrary;
       })
-      .addCase(loadLibraryFromDrive.rejected, (state, action) => {
+      .addCase(loadLibraryFromDrive.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
         // Fall back to mock library
@@ -824,7 +824,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateSong.fulfilled, (state, action) => {
+      .addCase(updateSong.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const {
           library,
@@ -874,7 +874,7 @@ const songsSlice = createSlice({
           state.selectedSong = findSongWithArtistAlbum(state.library, targetArtist, targetAlbum, targetTitle);
         }
       })
-      .addCase(updateSong.rejected, (state, action) => {
+      .addCase(updateSong.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -883,7 +883,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(addSong.fulfilled, (state, action) => {
+      .addCase(addSong.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, songTitle, songData, isLocal } = action.payload;
 
@@ -910,7 +910,7 @@ const songsSlice = createSlice({
         // Auto-select the newly added song
         state.selectedSong = findSongWithArtistAlbum(state.library, artistName, albumTitle, songTitle);
       })
-      .addCase(addSong.rejected, (state, action) => {
+      .addCase(addSong.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -919,7 +919,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteSong.fulfilled, (state, action) => {
+      .addCase(deleteSong.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, songTitle, isLocal } = action.payload;
 
@@ -956,7 +956,7 @@ const songsSlice = createSlice({
           state.selectedSong = null;
         }
       })
-      .addCase(deleteSong.rejected, (state, action) => {
+      .addCase(deleteSong.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -965,7 +965,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(addArtist.fulfilled, (state, action) => {
+      .addCase(addArtist.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, isLocal } = action.payload;
 
@@ -990,7 +990,7 @@ const songsSlice = createSlice({
           state.library = normalizedLibrary;
         }
       })
-      .addCase(addArtist.rejected, (state, action) => {
+      .addCase(addArtist.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -999,7 +999,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(addAlbum.fulfilled, (state, action) => {
+      .addCase(addAlbum.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, isLocal } = action.payload;
 
@@ -1030,7 +1030,7 @@ const songsSlice = createSlice({
           state.library = normalizedLibrary;
         }
       })
-      .addCase(addAlbum.rejected, (state, action) => {
+      .addCase(addAlbum.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -1039,7 +1039,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateArtist.fulfilled, (state, action) => {
+      .addCase(updateArtist.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, oldArtistName, newArtistName, isLocal } = action.payload;
 
@@ -1064,7 +1064,7 @@ const songsSlice = createSlice({
           state.library = normalizedLibrary;
         }
       })
-      .addCase(updateArtist.rejected, (state, action) => {
+      .addCase(updateArtist.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -1073,7 +1073,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateAlbum.fulfilled, (state, action) => {
+      .addCase(updateAlbum.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, oldAlbumTitle, newAlbumTitle, isLocal } = action.payload;
 
@@ -1101,7 +1101,7 @@ const songsSlice = createSlice({
           state.library = normalizedLibrary;
         }
       })
-      .addCase(updateAlbum.rejected, (state, action) => {
+      .addCase(updateAlbum.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -1110,7 +1110,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteArtist.fulfilled, (state, action) => {
+      .addCase(deleteArtist.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, isLocal } = action.payload;
 
@@ -1137,7 +1137,7 @@ const songsSlice = createSlice({
           state.selectedSong = null;
         }
       })
-      .addCase(deleteArtist.rejected, (state, action) => {
+      .addCase(deleteArtist.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -1146,7 +1146,7 @@ const songsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(deleteAlbum.fulfilled, (state, action) => {
+      .addCase(deleteAlbum.fulfilled, (state: any, action: any) => {
         state.isLoading = false;
         const { library, artistName, albumTitle, isLocal } = action.payload;
 
@@ -1178,7 +1178,7 @@ const songsSlice = createSlice({
           state.selectedSong = null;
         }
       })
-      .addCase(deleteAlbum.rejected, (state, action) => {
+      .addCase(deleteAlbum.rejected, (state: any, action: any) => {
         state.isLoading = false;
         state.error = action.payload;
       });
@@ -1211,15 +1211,15 @@ export const selectUserInfo = (state: any) => state.songs.userInfo;
 export const selectTotalSongsCount = (state: any) => {
   const library = selectLibrary(state);
   if (!library || !library.artists) return 0;
-  return library.artists.reduce((total, artist: any) => {
-    return total + artist.albums.reduce((albumTotal, album: any) => {
+  return library.artists.reduce((total: any, artist: any) => {
+    return total + artist.albums.reduce((albumTotal: any, album: any) => {
       return albumTotal + (album.songs ? album.songs.length : 0);
     }, 0);
   }, 0);
 };
 
 // Helper selector to find a song by artist, album, and song names
-export const selectSongByIdentifiers = (state, artistName, albumTitle, songTitle) => {
+export const selectSongByIdentifiers = (state: any, artistName: any, albumTitle: any, songTitle: any) => {
   const library = selectLibrary(state);
   return findSongWithArtistAlbum(library, artistName, albumTitle, songTitle);
 };

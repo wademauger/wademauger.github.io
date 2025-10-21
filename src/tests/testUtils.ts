@@ -8,7 +8,7 @@ try {
   // If for some reason the .tsx can't be required in this environment, export
   // a minimal no-op fallback to avoid breaking test runs.
   module.exports = {
-    renderWithProviders: (c) => { throw new Error('testUtils shim: renderWithProviders not available'); },
+    renderWithProviders: (c: any) => { throw new Error('testUtils shim: renderWithProviders not available'); },
     getDriveMock: () => ({}),
     resetDriveMock: () => {},
     getInnerInputByTestId: async () => { throw new Error('testUtils shim: getInnerInputByTestId not available'); },

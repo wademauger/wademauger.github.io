@@ -80,6 +80,7 @@ describe('VisualMotif Model', () => {
         it('should preserve motif properties in child', () => {
             const motif = new VisualMotif('type', 'primary', ['sec1', 'sec2'], 'main', ['cc1', 'cc2'], null, 5, 3, 4, 10);
             const child = motif.getChild(5);
+            assert.ok(child);
             assert.strictEqual(child.type, 'type');
             assert.strictEqual(child.primaryMotif, 'primary');
             assert.deepStrictEqual(child.secondaryMotifs, ['sec1', 'sec2']);

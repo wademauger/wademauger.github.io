@@ -4,7 +4,15 @@ import { faSearchMinus, faSearchPlus } from '@fortawesome/free-solid-svg-icons';
 import { fixedFontStyle } from '../styles/fontStyles';
 import '../styles/RecipeControls.css';
 
-const RecipeControls = ({ 
+interface RecipeControlsProps {
+  fontSize: number;
+  onFontSizeChange: (size: number) => void;
+  scale: number;
+  onScaleChange: (scale: number) => void;
+  showScaleControl?: boolean;
+}
+
+const RecipeControls: React.FC<RecipeControlsProps> = ({ 
   fontSize, 
   onFontSizeChange, 
   scale, 

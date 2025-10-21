@@ -1,10 +1,10 @@
 import googleDriveServiceModern from './GoogleDriveServiceModern';
 
 describe('GoogleDriveServiceModern concurrency / race integration style', () => {
-  let originalGapi;
+  let originalGapi: any;
 
   beforeEach(() => {
-    originalGapi = global.gapi;
+    originalGapi = (global as any).gapi;
 
     // stub auth state
     googleDriveServiceModern.isSignedIn = true;
@@ -14,7 +14,7 @@ describe('GoogleDriveServiceModern concurrency / race integration style', () => 
     let remoteLib = { panels: { existing: { meta: 'orig' } }, lastUpdated: new Date().toISOString() };
 
     // Mock gapi client drive methods. get returns the current remoteLib; update writes into remoteLib
-    global.gapi = {
+    (global as any).gapi = {
       client: {
         drive: {
           files: {
@@ -44,8 +44,8 @@ describe('GoogleDriveServiceModern concurrency / race integration style', () => 
   });
 
   afterEach(() => {
-    global.gapi = originalGapi;
-    delete global.fetch;
+    (global as any).gapi = originalGapi;
+    delete (global as any).fetch;
     // reset flag to default true
     googleDriveServiceModern.setUseUploadFallback(true);
   });
@@ -66,7 +66,7 @@ describe('GoogleDriveServiceModern concurrency / race integration style', () => 
     await googleDriveServiceModern.saveLibraryToFile(fileId, lib2);
 
     // Final verification: the mocked get returns the latest remoteLib (as JSON string)
-    const finalResp = await global.gapi.client.drive.files.get({ fileId, alt: 'media' });
+    const finalResp = await (global as any).gapi.client.drive.files.get({ fileId, alt: 'media' });
     const finalBody = JSON.parse(finalResp.body);
 
     expect(finalBody.panels).toHaveProperty('existing');

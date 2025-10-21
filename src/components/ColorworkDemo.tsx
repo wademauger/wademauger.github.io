@@ -17,8 +17,8 @@ const { Title, Text, Paragraph } = Typography;
  */
 const ColorworkDemo = () => {
     const [currentExample, setCurrentExample] = useState(0);
-    const [combinedPattern, setCombinedPattern] = useState(null);
-    const [instructions, setInstructions] = useState([]);
+    const [combinedPattern, setCombinedPattern] = useState<any>(null);
+    const [instructions, setInstructions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const examples = [
@@ -120,7 +120,7 @@ const ColorworkDemo = () => {
         generateExample(currentExample);
     }, [currentExample]);
 
-    const generateExample = async (exampleIndex) => {
+    const generateExample = async (exampleIndex: number) => {
         setIsLoading(true);
         try {
             const example = examples[exampleIndex];
@@ -134,7 +134,9 @@ const ColorworkDemo = () => {
 
             // Create colorwork pattern
             const colorworkPattern = new ColorworkPattern(
-                example.colorwork.grid,
+                example.colorwork.grid[0]?.length || 0,
+                example.colorwork.grid.length || 0,
+                example.colorwork.grid as any,
                 example.colorwork.colors,
                 example.colorwork.metadata
             );

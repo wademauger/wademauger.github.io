@@ -1,5 +1,28 @@
 import { message } from 'antd';
 
+interface ErrorMessage {
+  title: string;
+  message: string;
+  action: string;
+}
+
+interface ErrorHandlerOptions {
+  showUserMessage?: boolean;
+  logToConsole?: boolean;
+  userInfo?: any;
+  operation?: string;
+}
+
+interface ErrorResult {
+  type: string;
+  title: string;
+  message: string;
+  action: string;
+  details: Record<string, any>;
+  context: string;
+  timestamp: string;
+}
+
 /**
  * Enhanced Google Drive Error Handler
  * Provides specific error messages and logging for different Google Drive scenarios
@@ -18,7 +41,7 @@ export class GoogleDriveErrorHandler {
     UNKNOWN_ERROR: 'UNKNOWN_ERROR'
   };
 
-  static ErrorMessages = {
+  static ErrorMessages: Record<string, ErrorMessage> = {
     AUTH_ERROR: {
       title: 'Authentication Failed',
       message: 'Unable to authenticate with Google Drive. Please sign in again.',
@@ -73,7 +96,7 @@ export class GoogleDriveErrorHandler {
    * @param {Object} options - Options for error handling
    * @returns {Object} Structured error information
    */
-  static handleError(error, context = '', options = {}) {
+  static handleError(error: any, context: string = '', options: ErrorHandlerOptions = {}): ErrorResult {
     const { 
       showUserMessage = true, 
       logToConsole = true,
@@ -82,7 +105,7 @@ export class GoogleDriveErrorHandler {
     } = options;
 
     let errorType = this.ErrorTypes.UNKNOWN_ERROR;
-    let details = {};
+    let details: Record<string, any> = {};
     let originalError = error;
 
     // Analyze the error to determine type
@@ -167,7 +190,7 @@ export class GoogleDriveErrorHandler {
   /**
    * Handle file operation errors specifically
    */
-  static handleFileError(error, fileName, operation, userInfo = null) {
+  static handleFileError(error: any, fileName: string, operation: string, userInfo: any = null): ErrorResult {
     const context = `File operation: ${operation} on ${fileName}`;
     return this.handleError(error, context, { 
       operation, 
@@ -179,7 +202,7 @@ export class GoogleDriveErrorHandler {
   /**
    * Handle authentication errors specifically
    */
-  static handleAuthError(error, userInfo = null) {
+  static handleAuthError(error: any, userInfo: any = null): ErrorResult {
     const context = 'Google Drive authentication';
     return this.handleError(error, context, { 
       operation: 'authentication', 
@@ -191,8 +214,8 @@ export class GoogleDriveErrorHandler {
   /**
    * Create a success message for operations
    */
-  static showSuccess(operation, details = '') {
-    const messages = {
+  static showSuccess(operation: string, details: string = ''): void {
+    const messages: Record<string, string> = {
       'load': `Data loaded successfully from Google Drive${details ? ` - ${details}` : ''}`,
       'save': `Data saved successfully to Google Drive${details ? ` - ${details}` : ''}`,
       'create': `File created successfully in Google Drive${details ? ` - ${details}` : ''}`,
@@ -207,8 +230,8 @@ export class GoogleDriveErrorHandler {
   /**
    * Get user-friendly suggestions based on error type
    */
-  static getSuggestions(errorType) {
-    const suggestions = {
+  static getSuggestions(errorType: string): string[] {
+    const suggestions: Record<string, string[]> = {
       [this.ErrorTypes.AUTH_ERROR]: [
         'Sign out and sign back in',
         'Clear browser cache and cookies',
@@ -242,13 +265,19 @@ export class GoogleDriveErrorHandler {
   /**
    * Create a detailed error report for debugging
    */
-  static generateErrorReport(errors) {
+  static generateErrorReport(errors: ErrorResult[]): {
+    timestamp: string;
+    totalErrors: number;
+    errorsByType: Record<string, number>;
+    recentErrors: ErrorResult[];
+    suggestions: string[];
+  } {
     const report = {
       timestamp: new Date().toISOString(),
       totalErrors: errors.length,
-      errorsByType: {},
+      errorsByType: {} as Record<string, number>,
       recentErrors: errors.slice(-10),
-      suggestions: []
+      suggestions: [] as string[]
     };
 
     // Group errors by type

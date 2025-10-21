@@ -4,16 +4,24 @@ import { FolderOutlined, FileTextOutlined, CalendarOutlined } from '@ant-design/
 
 const { Text } = Typography;
 
-const LibraryFileSelector = ({ 
+interface LibraryFileSelectorProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onSelectFile: (file: any) => void;
+  driveService: any;
+  isLoading?: boolean;
+}
+
+const LibraryFileSelector: React.FC<LibraryFileSelectorProps> = ({ 
   isVisible, 
   onClose, 
   onSelectFile, 
   driveService, 
   isLoading = false 
 }) => {
-  const [libraryFiles, setLibraryFiles] = useState([]);
+  const [libraryFiles, setLibraryFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Load available library files when modal opens
   useEffect(() => {
@@ -37,12 +45,12 @@ const LibraryFileSelector = ({
     }
   };
 
-  const handleSelectFile = (file) => {
+  const handleSelectFile = (file: any) => {
     onSelectFile(file);
     onClose();
   };
 
-  const renderFileItem = (file) => {
+  const renderFileItem = (file: any) => {
     const recipeCountText = typeof file.recipeCount === 'number' 
       ? `${file.recipeCount} recipe${file.recipeCount !== 1 ? 's' : ''}` 
       : 'Unknown recipes';

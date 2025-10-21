@@ -3,6 +3,31 @@
 
 /* global gapi, google */
 
+interface GoogleDriveSettings {
+  songsLibraryFile: string;
+  recipesLibraryFile: string;
+  songsFolder: string;
+  recipesFolder: string;
+}
+
+interface UserPreferences {
+  recipesLibraryFile?: string;
+  recipesFolder?: string;
+  lastUsed?: string | null;
+  selectedFileId?: string;
+}
+
+interface SessionKeys {
+  ACCESS_TOKEN: string;
+  USER_EMAIL: string;
+  USER_NAME: string;
+  USER_PICTURE: string;
+  IS_SIGNED_IN: string;
+  TOKEN_EXPIRY: string;
+  RECIPES_LIBRARY_FILE: string;
+  RECIPES_FOLDER_PATH: string;
+}
+
 class GoogleDriveRecipeService {
   isSignedIn: boolean;
   tokenClient: any;
@@ -91,7 +116,7 @@ class GoogleDriveRecipeService {
   /**
    * Update user-specific Google Drive settings
    */
-  updateSettings(settings) {
+  updateSettings(settings: Partial<GoogleDriveSettings>): GoogleDriveSettings {
     try {
       const userKey = `googleDriveSettings_${this.userEmail || 'default'}`;
       const currentSettings = this.getSettings();
@@ -148,10 +173,10 @@ class GoogleDriveRecipeService {
    * Save user preferences for recipes library
    * @param {Object} preferences - User preferences object
    */
-  saveUserPreferences(preferences) {
+  saveUserPreferences(preferences: Partial<UserPreferences>): UserPreferences {
     const userKey = this.getUserPreferenceKey();
     try {
-      const preferencesToSave = {
+      const preferencesToSave: UserPreferences = {
         ...preferences,
         lastUsed: new Date().toISOString()
       };
@@ -194,7 +219,7 @@ class GoogleDriveRecipeService {
     return localStorage.getItem(userKey) !== null;
   }
 
-  async initialize(clientId) {
+  async initialize(clientId: string): Promise<boolean> {
     this.CLIENT_ID = clientId;
     
     try {
@@ -229,8 +254,8 @@ class GoogleDriveRecipeService {
     }
   }
 
-  async loadGoogleAPIs() {
-    return new Promise((resolve, reject) => {
+  async loadGoogleAPIs(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       // Load Google APIs JavaScript client if not already loaded
       if (typeof gapi !== 'undefined') {
         resolve();
@@ -245,27 +270,34 @@ class GoogleDriveRecipeService {
     });
   }
 
-  async initializeGapi() {
-    return new Promise((resolve, reject) => {
+  async initializeGapi(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       gapi.load('client', {
         callback: async () => {
           try {
             await gapi.client.init({
-              discoveryDocs: [this.DISCOVERY_DOC]
+              apiKey: '',
+              discoveryDocs: [this.DISCOVERY_DOC],
             });
             this.gapiInited = true;
+            console.log('Google Recipe service API (gapi) initialized');
             resolve();
           } catch (error: unknown) {
+            console.error('Failed to initialize Google Recipe service API:', error);
             reject(error);
           }
         },
-        onerror: () => reject(new Error('Failed to load GAPI client'))
+        onerror: () => {
+          const error = new Error('Failed to load gapi client');
+          console.error('Error loading gapi client for recipes:', error);
+          reject(error);
+        }
       });
     });
   }
 
-  async initializeGis() {
-    return new Promise((resolve, reject) => {
+  async initializeGis(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       // Load Google Identity Services
       if (typeof google !== 'undefined' && google.accounts) {
         this.setupTokenClient();
@@ -284,14 +316,14 @@ class GoogleDriveRecipeService {
     });
   }
 
-  setupTokenClient() {
+  setupTokenClient(): void {
     console.log('🔐 Setting up recipe token client with scopes:', this.SCOPES);
     this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: this.CLIENT_ID,
+      client_id: this.CLIENT_ID || '',
       scope: this.SCOPES,
       prompt: 'consent', // Force fresh consent screen to show updated permissions
       include_granted_scopes: true, // Include previously granted scopes
-      callback: (response) => {
+      callback: (response: any) => {
         if (response.error !== undefined) {
           console.error('Token client error:', response.error);
           throw new Error(`Authentication failed: ${response.error}`);
@@ -302,7 +334,7 @@ class GoogleDriveRecipeService {
         
         // Set the token for API calls
         gapi.client.setToken({
-          access_token: this.accessToken
+          access_token: this.accessToken || ''
         });
 
         // Load user profile and save session
@@ -315,23 +347,23 @@ class GoogleDriveRecipeService {
         
         console.log('Recipe authentication successful');
       }
-    });
+    } as any);
     
     this.gisInited = true;
   }
 
-  async requestAccessToken() {
+  async requestAccessToken(): Promise<any> {
     if (!this.tokenClient) {
       throw new Error('Google Identity Services not initialized');
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       try {
         // Store original callback to restore later
         const originalCallback = this.tokenClient.callback;
         
         // Temporarily override callback for this specific request
-        this.tokenClient.callback = (response) => {
+        this.tokenClient.callback = (response: any) => {
           // Restore original callback
           this.tokenClient.callback = originalCallback;
           
@@ -345,14 +377,14 @@ class GoogleDriveRecipeService {
           
           // Set the token for API calls
           gapi.client.setToken({
-            access_token: this.accessToken
+            access_token: this.accessToken || ''
           });
 
           // Load user profile and save session
           this.loadUserProfile().then(() => {
             this.saveSession();
             resolve(response);
-          }).catch((error) => {
+          }).catch((error: unknown) => {
             console.warn('Failed to load user profile:', error);
             this.saveSession(); // Still save session even if profile load fails
             resolve(response); // Still resolve since auth was successful
@@ -431,7 +463,7 @@ class GoogleDriveRecipeService {
       return true;
     } catch (error: unknown) {
       console.error('❌ Recipe re-authentication failed:', error);
-      throw new Error(`Recipe re-authentication failed: ${error.message}`);
+      throw new Error(`Recipe re-authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -573,7 +605,7 @@ class GoogleDriveRecipeService {
   }
 
   // Method to handle tokens from @react-oauth/google
-  async handleOAuthToken(tokenResponse) {
+  async handleOAuthToken(tokenResponse: any): Promise<boolean> {
     try {
       // The tokenResponse from @react-oauth/google contains an access_token
       if (tokenResponse.access_token) {
@@ -583,7 +615,7 @@ class GoogleDriveRecipeService {
         // Set the token for API calls
         if (typeof gapi !== 'undefined' && gapi.client) {
           gapi.client.setToken({
-            access_token: this.accessToken
+            access_token: this.accessToken || ''
           });
         }
 
@@ -688,9 +720,8 @@ class GoogleDriveRecipeService {
       
       // Get folder paths and recipe counts for each file
       const filesWithDetails = await Promise.all(
-        files.map(async (file) => {
+        files.map(async (file: any) => {
           let folderPath = '/';
-          let recipeCount = 0;
           
           // Get folder path
           if (file.parents && file.parents.length > 0) {
@@ -708,6 +739,7 @@ class GoogleDriveRecipeService {
           }
           
           // Get recipe count by reading file content
+          let recipeCount: number | string = 0;
           try {
             const contentResponse = await gapi.client.drive.files.get({
               fileId: file.id,
@@ -802,7 +834,7 @@ class GoogleDriveRecipeService {
 
       // Download file content
       const response = await gapi.client.drive.files.get({
-        fileId: libraryFile.id,
+        fileId: libraryFile.id!,
         alt: 'media'
       });
 
@@ -813,7 +845,7 @@ class GoogleDriveRecipeService {
       console.error('Error loading recipe library:', error);
       
       // Pass through specific errors for UI handling
-      if (error.message === 'NO_LIBRARY_FOUND' || error.message === 'MULTIPLE_LIBRARIES_FOUND') {
+      if (error instanceof Error && (error.message === 'NO_LIBRARY_FOUND' || error.message === 'MULTIPLE_LIBRARIES_FOUND')) {
         throw error;
       }
       
@@ -821,7 +853,7 @@ class GoogleDriveRecipeService {
     }
   }
 
-  async saveRecipeLibrary(libraryData) {
+  async saveRecipeLibrary(libraryData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -838,12 +870,16 @@ class GoogleDriveRecipeService {
 
       // Use the simpler files.update method instead of raw request
       const response = await gapi.client.drive.files.update({
-        fileId: libraryFile.id,
+        fileId: libraryFile.id!,
+        uploadType: 'media',
+        resource: {
+          mimeType: 'application/json'
+        },
         media: {
           mimeType: 'application/json',
           body: JSON.stringify(libraryData, null, 2)
         }
-      });
+      } as any);
 
       console.log('Recipe library saved successfully');
       return response.result;
@@ -853,7 +889,7 @@ class GoogleDriveRecipeService {
     }
   }
 
-  async addRecipe(recipeData) {
+  async addRecipe(recipeData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -912,7 +948,7 @@ class GoogleDriveRecipeService {
     }
   }
 
-  async updateRecipe(recipeId, updatedData) {
+  async updateRecipe(recipeId: string, updatedData: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -958,7 +994,7 @@ class GoogleDriveRecipeService {
     }
   }
 
-  async deleteRecipe(recipeId) {
+  async deleteRecipe(recipeId: string): Promise<boolean> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -987,7 +1023,7 @@ class GoogleDriveRecipeService {
   }
 
   // Helper method to check if a permalink is available
-  async isPermalinkAvailable(permalink) {
+  async isPermalinkAvailable(permalink: string): Promise<boolean> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1008,7 +1044,7 @@ class GoogleDriveRecipeService {
    * @param {string} currentPath - Current path for building full paths
    * @returns {Promise<Array>} Array of folder objects with name, id, and fullPath
    */
-  async listFolders(parentId = null, currentPath = '/') {
+  async listFolders(parentId: string | null = null, currentPath = '/'): Promise<any[]> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1032,7 +1068,7 @@ class GoogleDriveRecipeService {
       });
 
       const folders = response.result.files || [];
-      let allFolders = [];
+      let allFolders: any[] = [];
 
       // Add current level folders
       for (const folder of folders) {
@@ -1047,7 +1083,7 @@ class GoogleDriveRecipeService {
         // Recursively get subfolders (limit depth to prevent infinite recursion)
         if (currentPath.split('/').length < 5) { // Max depth of 4 levels
           try {
-            const subfolders = await this.listFolders(folder.id, fullPath);
+            const subfolders: any[] = await this.listFolders(folder.id, fullPath);
             allFolders = allFolders.concat(subfolders);
           } catch (error: unknown) {
             console.warn(`Failed to load subfolders for ${folder.name}:`, error);
@@ -1058,7 +1094,8 @@ class GoogleDriveRecipeService {
       return allFolders;
     } catch (error: unknown) {
       console.error('Error listing folders:', error);
-      throw new Error(`Failed to list folders: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to list folders: ${message}`);
     }
   }
 
@@ -1120,7 +1157,7 @@ class GoogleDriveRecipeService {
    * @param {string} folderPath - Folder path to search in (default: '/')
    * @returns {Promise<Object>} Search result with found status and file info
    */
-  async findFile(fileName, folderPath = '/') {
+  async findFile(fileName: string, folderPath = '/') {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1201,11 +1238,12 @@ class GoogleDriveRecipeService {
 
     } catch (error: unknown) {
       console.error('Error searching for file:', error);
+      const message = error instanceof Error ? error.message : String(error);
       return {
         found: false,
         fileName: fileName,
         folderPath: folderPath,
-        error: `Search failed: ${error.message}`
+        error: `Search failed: ${message}`
       };
     }
   }
@@ -1215,7 +1253,7 @@ class GoogleDriveRecipeService {
    * @param {Object} file - File object with parents array
    * @returns {Promise<string>} Full folder path
    */
-  async _getFileLocation(file) {
+  async _getFileLocation(file: any): Promise<string> {
     try {
       if (!file.parents || file.parents.length === 0) {
         return '/';
@@ -1238,7 +1276,7 @@ class GoogleDriveRecipeService {
       }
 
       // Recursively build the path (simplified - could be optimized)
-      const grandParentPath = await this._getFileLocation(parent);
+      const grandParentPath: string = await this._getFileLocation(parent);
       return grandParentPath === '/' ? `/${parent.name}` : `${grandParentPath}/${parent.name}`;
       
     } catch (error: unknown) {
@@ -1253,7 +1291,7 @@ class GoogleDriveRecipeService {
    * @param {string} folderPath - Folder path to create the file in
    * @returns {Promise<Object>} Created file info
    */
-  async createNewLibrary(fileName) {
+  async createNewLibrary(fileName: string) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1283,13 +1321,14 @@ class GoogleDriveRecipeService {
           mimeType: 'application/json',
           body: JSON.stringify(initialData, null, 2)
         }
-      });
+      } as any);
 
       console.log('New recipe library created successfully:', response.result);
       return response.result;
     } catch (error: unknown) {
       console.error('Error creating new recipe library:', error);
-      throw new Error(`Failed to create new recipe library: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to create new recipe library: ${message}`);
     }
   }
 
@@ -1300,13 +1339,13 @@ class GoogleDriveRecipeService {
    * @param {string} newFileName - New file name (optional)
    * @returns {Promise<Object>} Updated file info
    */
-  async moveFile(fileId, newFolderPath, newFileName = null) {
+  async moveFile(fileId: string, newFolderPath: string, newFileName: string | null = null) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
 
     try {
-      const updateData = {};
+      const updateData: any = {};
       
       // Update filename if provided
       if (newFileName) {
@@ -1324,7 +1363,8 @@ class GoogleDriveRecipeService {
       return response.result;
     } catch (error: unknown) {
       console.error('Error moving recipe file:', error);
-      throw new Error(`Failed to move recipe file: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to move recipe file: ${message}`);
     }
   }
 
@@ -1342,7 +1382,7 @@ class GoogleDriveRecipeService {
    * @param {string} fileId - The Google Drive file ID to select
    * @returns {Promise<Object>} Library data
    */
-  async selectLibraryFile(fileId) {
+  async selectLibraryFile(fileId: string) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1370,7 +1410,8 @@ class GoogleDriveRecipeService {
       return await this.loadLibraryById(fileId);
     } catch (error: unknown) {
       console.error('Error selecting library file:', error);
-      throw new Error(`Failed to select library file: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to select library file: ${message}`);
     }
   }
 
@@ -1379,7 +1420,7 @@ class GoogleDriveRecipeService {
    * @param {string} fileId - The Google Drive file ID to load
    * @returns {Promise<Object>} Library data
    */
-  async loadLibraryById(fileId) {
+  async loadLibraryById(fileId: string) {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -1403,14 +1444,15 @@ class GoogleDriveRecipeService {
       return libraryData;
     } catch (error: unknown) {
       console.error('Error loading recipe library by ID:', error);
+      const errorObj = error as any;
       
-      if (error.status === 404) {
+      if (errorObj.status === 404) {
         throw new Error('Recipe library file not found or access denied');
       }
       
-      if (error.status === 403) {
+      if (errorObj.status === 403) {
         // Check for specific app authorization error
-        if (error.body && error.body.includes('appNotAuthorizedToFile')) {
+        if (errorObj.body && errorObj.body.includes('appNotAuthorizedToFile')) {
           throw new Error('🔐 PERMISSION ISSUE: This recipe file was created outside the app.\n\n' +
             '✅ SOLUTION: Clear your browser cache and sign in again!\n\n' +
             '1. Clear all cookies/cache for this site\n' +
@@ -1421,16 +1463,17 @@ class GoogleDriveRecipeService {
         throw new Error('Access Denied: You don\'t have permission to access this file. Please clear your browser cache and sign in again to refresh permissions.');
       }
       
-      if (error.message && error.message.includes('insufficient authentication scopes')) {
+      if (error instanceof Error && error.message && error.message.includes('insufficient authentication scopes')) {
         throw new Error('Insufficient permissions. Please sign out and sign in again to grant additional permissions.');
       }
       
-      throw new Error(`Failed to load recipe library file: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to load recipe library file: ${message}`);
     }
   }
 
   // Helper method to validate permalink format
-  validatePermalinkFormat(permalink) {
+  validatePermalinkFormat(permalink: string) {
     if (!permalink || typeof permalink !== 'string') {
       return { isValid: false, error: 'Permalink is required' };
     }
@@ -1460,7 +1503,7 @@ class GoogleDriveRecipeService {
   }
 
   // Helper method to generate unique permalink from title
-  _generatePermalink(title, existingRecipes) {
+  _generatePermalink(title: string, existingRecipes: any[]) {
     if (!title || typeof title !== 'string') {
       title = 'untitled-recipe';
     }
@@ -1484,7 +1527,7 @@ const googleDriveRecipeService = new GoogleDriveRecipeService();
 
 // Expose to global scope for debugging
 if (typeof window !== 'undefined') {
-  window.GoogleDriveRecipeService = googleDriveRecipeService;
+  (window as any).GoogleDriveRecipeService = googleDriveRecipeService;
   // Note: debugCurrentState method not implemented yet for recipe service
 }
 

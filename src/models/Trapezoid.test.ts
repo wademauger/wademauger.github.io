@@ -4,7 +4,7 @@ import { Gauge } from './Gauge';
 import { StitchPlan } from './StitchPlan';
 
 describe('Trapezoid Model', () => {
-    let trapezoid;
+    let trapezoid: Trapezoid;
 
     beforeEach(() => {
         trapezoid = new Trapezoid(10, 20, 30, 5, [], [], 1);
@@ -97,6 +97,7 @@ describe('Trapezoid Model', () => {
                 successors: [{ height: 5, baseA: 10, baseB: 15 }, null, []]
             };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.successors.length, 1);
         });
 
@@ -108,6 +109,7 @@ describe('Trapezoid Model', () => {
                 baseBHorizontalOffset: '5'
             };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.height, 10);
             assert.strictEqual(trapezoid.baseA, 20);
             assert.strictEqual(trapezoid.baseB, 30);
@@ -122,12 +124,14 @@ describe('Trapezoid Model', () => {
                 finishingSteps: 'single step'
             };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.deepStrictEqual(trapezoid.finishingSteps, ['single step']);
         });
 
         it('should use default values for missing numeric fields', () => {
             const json = {};
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.height, 0);
             assert.strictEqual(trapezoid.baseA, 0);
             assert.strictEqual(trapezoid.baseB, 0);
@@ -137,18 +141,21 @@ describe('Trapezoid Model', () => {
         it('should preserve id from json', () => {
             const json = { height: 10, baseA: 20, baseB: 30, id: 'test-id' };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.id, 'test-id');
         });
 
         it('should use _id as fallback for id', () => {
             const json = { height: 10, baseA: 20, baseB: 30, _id: 'alt-id' };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.id, 'alt-id');
         });
 
         it('should generate id when not provided', () => {
             const json = { height: 10, baseA: 20, baseB: 30 };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.ok(trapezoid.id);
             assert.ok(trapezoid.id.startsWith('trap-'));
         });
@@ -156,6 +163,7 @@ describe('Trapezoid Model', () => {
         it('should preserve isHem flag', () => {
             const json = { height: 10, baseA: 20, baseB: 30, isHem: true };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.isHem, true);
         });
 
@@ -163,27 +171,29 @@ describe('Trapezoid Model', () => {
             const shortRows = [{ row: 1, stitches: 10 }];
             const json = { height: 10, baseA: 20, baseB: 30, shortRows };
             const trapezoid = Trapezoid.fromObject(json);
-            assert.strictEqual(trapezoid.shortRows.length, 1);
-            assert.strictEqual(trapezoid.shortRows[0].row, 1);
+            assert.ok(trapezoid);
+            assert.strictEqual(trapezoid.shortRows!.length, 1);
+            assert.strictEqual(trapezoid.shortRows![0].row, 1);
         });
 
         it('should convert label to string', () => {
             const json = { height: 10, baseA: 20, baseB: 30, label: 123 };
             const trapezoid = Trapezoid.fromObject(json);
+            assert.ok(trapezoid);
             assert.strictEqual(trapezoid.label, '123');
         });
 
         it('should set label to null when undefined', () => {
             const json = { height: 10, baseA: 20, baseB: 30 };
             const trapezoid = Trapezoid.fromObject(json);
-            assert.strictEqual(trapezoid.label, null);
+            assert.ok(trapezoid);            assert.strictEqual(trapezoid.label, null);
         });
     });
 
     describe('getUpperBaseWidthInStitches', () => {
         it('should calculate base width in stitches', () => {
             const gauge = new Gauge(10, 10);
-            const stitches = trapezoid.getUpperBaseWidthInStitches(gauge, 1);
+            const stitches = trapezoid.getUpperBaseWidthInStitches(gauge);
             assert.strictEqual(stitches, 75);
         });
     });
@@ -215,26 +225,26 @@ describe('Trapezoid Model', () => {
         });
 
         it('should serialize successors without toJSON method', () => {
-            trapezoid.successors = [{ height: 5, baseA: 10 }];
+            trapezoid.successors = [{ height: 5, baseA: 10 } as any];
             const json = trapezoid.toJSON();
             assert.ok(Array.isArray(json.successors));
             assert.strictEqual(json.successors[0].height, 5);
         });
 
         it('should handle null successors', () => {
-            trapezoid.successors = null;
+            (trapezoid as any).successors = null;
             const json = trapezoid.toJSON();
             assert.deepStrictEqual(json.successors, []);
         });
 
         it('should handle null finishingSteps', () => {
-            trapezoid.finishingSteps = null;
+            (trapezoid as any).finishingSteps = null;
             const json = trapezoid.toJSON();
             assert.deepStrictEqual(json.finishingSteps, []);
         });
 
         it('should handle null modificationScale', () => {
-            trapezoid.modificationScale = null;
+            (trapezoid as any).modificationScale = null;
             const json = trapezoid.toJSON();
             assert.strictEqual(json.sizeModifier, 1);
         });
@@ -259,7 +269,7 @@ describe('Trapezoid Model', () => {
         });
 
         it('should handle non-array shortRows', () => {
-            trapezoid.shortRows = null;
+            (trapezoid as any).shortRows = null;
             const json = trapezoid.toJSON();
             assert.deepStrictEqual(json.shortRows, []);
         });

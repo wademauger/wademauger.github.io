@@ -435,12 +435,20 @@ const TEST_CONFIG = {
 };
 
 class GoogleDriveServiceTester {
-    constructor(service) {
+    service: any;
+    testResults: Array<{
+        test: string;
+        passed: boolean;
+        error: string | null;
+        timestamp: string;
+    }>;
+
+    constructor(service: any) {
         this.service = service;
         this.testResults = [];
     }
 
-    log(test, result, error = null) {
+    log(test: string, result: boolean, error: any = null) {
         const testResult = {
             test,
             passed: result,
@@ -499,7 +507,7 @@ class GoogleDriveServiceTester {
             await this.service.loadLibrary();
             this.log('Load library (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Load library throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
 
@@ -507,7 +515,7 @@ class GoogleDriveServiceTester {
             await this.service.saveLibrary(TEST_CONFIG.MOCK_LIBRARY);
             this.log('Save library (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Save library throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
     }
@@ -522,7 +530,7 @@ class GoogleDriveServiceTester {
             await this.service.addArtist(mockLibrary, 'New Test Artist');
             this.log('Add artist (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Add artist throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
 
@@ -531,7 +539,7 @@ class GoogleDriveServiceTester {
             await this.service.addAlbum(mockLibrary, 'test-artist-1', 'New Test Album');
             this.log('Add album (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Add album throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
 
@@ -546,7 +554,7 @@ class GoogleDriveServiceTester {
             await this.service.addSong(mockLibrary, 'test-artist-1', 'test-album-1', songData);
             this.log('Add song (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Add song throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
 
@@ -556,7 +564,7 @@ class GoogleDriveServiceTester {
             await this.service.updateSong(mockLibrary, 'test-artist-1', 'test-album-1', 'test-song-1', updateData);
             this.log('Update song (unauthenticated)', false, new Error('Should have thrown auth error'));
         } catch (error: unknown) {
-            const expectedError = error.message === 'User not signed in to Google Drive';
+            const expectedError = (error instanceof Error) && error.message === 'User not signed in to Google Drive';
             this.log('Update song throws auth error when not signed in', expectedError, expectedError ? null : error);
         }
     }

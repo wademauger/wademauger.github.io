@@ -90,16 +90,20 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
         folderPath = folderPath || settings[`${keyForSettings}Folder`] || '/';
       }
 
-      const fullPath = folderPath === '/' ? `/${fileName}` : `${folderPath}/${fileName}`;
+      // Ensure we have valid values
+      const finalFileName = fileName || 'library.json';
+      const finalFolderPath = folderPath || '/';
+
+      const fullPath = finalFolderPath === '/' ? `/${finalFileName}` : `${finalFolderPath}/${finalFileName}`;
       setLibraryPath(fullPath);
       console.log(`📚 OpenModal (${jsonKey}): Loading from: ${fullPath}`, {
         settingsKey: keyForSettings,
-        fileName,
-        folderPath
+        fileName: finalFileName,
+        folderPath: finalFolderPath
       });
 
       // Find and load the library file
-      const fileResult = await service.findFile(fileName, folderPath);
+      const fileResult = await service.findFile(finalFileName, finalFolderPath);
       
       if (!fileResult.found) {
         setError(`Library file not found: ${fullPath}\n\nPlease save some ${displayLabel.toLowerCase()}s first or check your library settings.`);
@@ -216,10 +220,10 @@ export const OpenModal = <T extends LibraryEntity = LibraryEntity>({
             <List.Item
               style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
               onClick={() => handleSelectEntity(entity)}
-              onMouseEnter={(e) => {
+              onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
                 e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
               }}
-              onMouseLeave={(e) => {
+              onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >

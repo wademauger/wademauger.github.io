@@ -12,7 +12,19 @@ import '../styles/ToolPanel.css';
 
 const { Text } = Typography;
 
-const ToolPanel = ({ 
+interface ToolPanelProps {
+  activeTool: string;
+  onToolChange: (tool: string) => void;
+  pasteMode: string;
+  hasClipboard: boolean;
+  onCopy: () => void;
+  onPaste: () => void;
+  onClearSelection: () => void;
+  onFillSelection: () => void;
+  hasSelection: boolean;
+}
+
+const ToolPanel: React.FC<ToolPanelProps> = ({ 
   activeTool, 
   onToolChange, 
   pasteMode, 

@@ -72,7 +72,7 @@ export const PanelCard: React.FC<PanelCardProps> = ({
             min={0}
             max={20}
             value={quantity}
-            onChange={(value) => onQuantityChange(value || 0)}
+            onChange={(value: number | null) => onQuantityChange(value || 0)}
             style={{ width: 60 }}
           />
         </div>

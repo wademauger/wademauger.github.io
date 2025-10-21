@@ -1,7 +1,20 @@
 import React, { useMemo } from 'react';
 import KnitStitch from './KnitStitch';
 
-const KnitSwatch = ({ 
+interface KnitSwatchProps {
+  gauge?: { stitches: number; rows: number };
+  colors?: string[];
+  pattern?: number[][] | number[];
+  size?: { width: number; height: number };
+  stitchSize?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: ((row: number, stitch: number) => void) | null;
+  showBorder?: boolean;
+  borderColor?: string;
+}
+
+const KnitSwatch: React.FC<KnitSwatchProps> = ({ 
   gauge = { stitches: 19, rows: 26 }, // Stitches and rows per 4 inches
   colors = ['#ffffff'], 
   pattern = [], // 2D array for colorwork patterns, empty for solid
@@ -40,11 +53,11 @@ const KnitSwatch = ({
           if (Array.isArray(pattern[0])) {
             // 2D pattern array (stranded/intarsia)
             const patternRow = row % pattern.length;
-            const patternCol = stitch % pattern[patternRow].length;
-            colorIndex = pattern[patternRow][patternCol] || 0;
+            const patternCol = stitch % (pattern[patternRow] as number[]).length;
+            colorIndex = (pattern[patternRow] as number[])[patternCol] || 0;
           } else {
             // 1D pattern array (stripes)
-            colorIndex = pattern[row % pattern.length] || 0;
+            colorIndex = (pattern[row % pattern.length] as number) || 0;
           }
         }
         
@@ -67,7 +80,7 @@ const KnitSwatch = ({
   }, [pattern, colors, dimensions]);
 
   // Handle stitch clicks
-  const handleStitchClick = (row, stitch) => {
+  const handleStitchClick = (row: number, stitch: number) => {
     if (onClick) {
       onClick(row, stitch);
     }
@@ -116,13 +129,13 @@ const KnitSwatch = ({
       {/* Stitch grid */}
       <div style={gridStyle}>
         {stitchGrid.map((row: any) => 
-          row.map(({ row: r, stitch: s, color, key }) => (
+          row.map(({ row: r, stitch: s, color, key }: { row: number; stitch: number; color: string; key: string }) => (
             <KnitStitch
               key={key}
               color={color}
               size={stitchSize}
               strokeWidth={0} // Remove stroke for seamless tessellation
-              onClick={onClick ? () => handleStitchClick(r, s) : null}
+              onClick={onClick ? () => handleStitchClick(r, s) : null as any}
               style={{
                 width: stitchSize,
                 height: stitchSize * 0.75,

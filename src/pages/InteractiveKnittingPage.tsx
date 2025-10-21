@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, Space, Typography, Spin, Select } from 'antd';
-import { LeftOutlined } from '@ant-design/icons';
+import { useDispatch, useSelector } from 'react-redux';
+import { Button, Space, Typography, Spin, Select, Modal, Alert, Row, Col, Card, Progress } from 'antd';
+import { LeftOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import InteractiveKnittingView from '../components/InteractiveKnittingView';
 import { PanelColorworkComposer } from '../models/PanelColorworkComposer';
 import { InstructionGenerator } from '../models/InstructionGenerator';
@@ -9,36 +10,45 @@ import { Panel } from '../models/Panel';
 import { Trapezoid } from '../models/Trapezoid';
 import { ColorworkPattern } from '../models/ColorworkPattern';
 import { Gauge } from '../models/Gauge';
+import { HandKnittingActualizer } from '../models/HandKnittingActualizer';
 import { getRowColorwork } from '../utils/stitchPlanGenerator';
+import { 
+    setCurrentRowIndex, 
+    setCurrentPanelIndex, 
+    setCurrentTrapezoidIndex,
+    addCompletedRow,
+    updateKnittingProgress 
+} from '../store/knittingDesignSlice';
+import { 
+    calculateStepFromRow, 
+    getProgressMapping, 
+    calculateRowSkipForSteps,
+    calculateDisplayProgress 
+} from '../utils/knittingProgressUtils';
 
 const { Title, Text } = Typography;
-
-interface KnittingProgress {
-    currentRow: number;
-    completedRows: number[];
-    currentSection: number;
-}
+const { confirm } = Modal;
 
 /**
  * InteractiveKnittingPage - Dedicated page for row-by-row knitting instructions
  * Loads project data from route state and displays interactive knitting interface
+ * Now uses Redux for progress tracking with synchronized indicators
  */
 const InteractiveKnittingPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    
+    // Get knitting progress from Redux
+    const knittingProgress = useSelector((state: any) => state.knittingDesign.knittingProgress);
     
     const [combinedPattern, setCombinedPattern] = useState<any>(null);
     const [instructions, setInstructions] = useState<any[]>([]);
-    const [knittingProgress, setKnittingProgress] = useState<KnittingProgress>({
-        currentRow: 0,
-        completedRows: [],
-        currentSection: 0
-    });
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedPanelIndex, setSelectedPanelIndex] = useState(0);
     const [projectPanels, setProjectPanels] = useState<any[]>([]);
+    const [knittingOptions, setKnittingOptions] = useState<any>(null);
 
-    // Load project from route state
+    // Load project from route state and sync with Redux
     useEffect(() => {
         const project = location.state?.project;
         
@@ -55,32 +65,39 @@ const InteractiveKnittingPage: React.FC = () => {
         }
 
         setProjectPanels(project.panels);
+        setKnittingOptions(project.knittingOptions || {});
+        
+        // Sync Redux panel index if needed
+        if (knittingProgress.currentPanelIndex !== 0) {
+            dispatch(setCurrentPanelIndex(0));
+        }
+        
         console.log('Loaded project panels:', project.panels);
+        console.log('Loaded knitting options:', project.knittingOptions);
         setIsLoading(false);
-    }, [location.state, navigate]);
+    }, [location.state, navigate, dispatch, knittingProgress.currentPanelIndex]);
 
     // Generate combined pattern when panel selection changes
     useEffect(() => {
-        if (projectPanels.length === 0 || selectedPanelIndex >= projectPanels.length) {
+        if (projectPanels.length === 0 || knittingProgress.currentPanelIndex >= projectPanels.length) {
             return;
         }
 
-        const panelData = projectPanels[selectedPanelIndex];
+        const panelData = projectPanels[knittingProgress.currentPanelIndex];
         
         try {
-            console.log('Panel data:', panelData);
-            
-            // NEW APPROACH: Check if we have a pre-generated stitch plan
+            // Check if we have a pre-generated stitch plan
             if (panelData.stitchPlan) {
-                console.log('Using pre-generated stitch plan:', panelData.stitchPlan);
-                
                 // Convert the concrete stitch plan into the format expected by InteractiveKnittingView
+                const panelShape = panelData.wizardOptions?.shape || panelData.shape;
                 const stitchPlanObj = {
                     rows: panelData.stitchPlan.rows.map((row: any) => ({
                         rowNumber: row.rowNumber,
                         leftStitchesInWork: row.leftStitchesInWork,
                         rightStitchesInWork: row.rightStitchesInWork,
-                        colorwork: getRowColorwork(row) // Use helper to handle compressed/uncompressed
+                        colorwork: getRowColorwork(row), // Use helper to handle compressed/uncompressed
+                        shortRowInfo: row.shortRowInfo, // Include short row metadata
+                        sectionLabel: row.sectionLabel // Include section label for grouping
                     })),
                     colorworkMapping: {
                         colorworkPattern: {
@@ -88,33 +105,138 @@ const InteractiveKnittingPage: React.FC = () => {
                         }
                     },
                     hasColorwork: () => true,
+                    knittingOptions: knittingOptions,
+                    shape: panelShape,
                     generateKnittingInstructions: function() {
                         return this.generateShapingInstructions();
                     },
                     generateShapingInstructions: function() {
-                        // Simple instruction generation
-                        const instructions: string[] = [];
+                        const instructions: any[] = [];
                         if (this.rows.length === 0) return instructions;
                         
-                        // Check if rectangular
-                        const firstRow = this.rows[0];
-                        const lastRow = this.rows[this.rows.length - 1];
-                        const firstTotal = firstRow.leftStitchesInWork + firstRow.rightStitchesInWork;
-                        const lastTotal = lastRow.leftStitchesInWork + lastRow.rightStitchesInWork;
+                        // Create HandKnittingActualizer instance
+                        const actualizer = new HandKnittingActualizer(this.knittingOptions);
                         
-                        if (firstTotal === lastTotal) {
-                            instructions.push(`Knit ${this.rows.length} rows (${firstTotal} sts in work).`);
+                        // Add cast-on instruction at the beginning
+                        const firstRow = this.rows[0];
+                        const initialStitches = firstRow.leftStitchesInWork + firstRow.rightStitchesInWork;
+                        const initialLeftStitches = firstRow.leftStitchesInWork;
+                        const initialRightStitches = firstRow.rightStitchesInWork;
+                        const castOnMethod = this.knittingOptions?.castOnMethod || 'long-tail';
+                        const castOnInstr = `CO ${initialStitches} stitches using ${castOnMethod} cast-on.`;
+                        instructions.push({
+                            text: castOnInstr,
+                            stepData: {
+                                text: castOnInstr,
+                                startRowIndex: -1,
+                                endRowIndex: -1,
+                                rowsInStep: 0,
+                                absolutePositioning: {
+                                    totalStitches: initialStitches,
+                                    leftStitches: initialLeftStitches,
+                                    rightStitches: initialRightStitches
+                                }
+                            }
+                        });
+                        
+                        // Check if the ENTIRE panel is rectangular (first to last row same stitch count)
+                        const lowerLeft = this.rows[0].leftStitchesInWork;
+                        const lowerRight = this.rows[0].rightStitchesInWork;
+                        const upperLeft = this.rows[this.rows.length - 1].leftStitchesInWork;
+                        const upperRight = this.rows[this.rows.length - 1].rightStitchesInWork;
+                        
+                        if (lowerLeft === upperLeft && lowerRight === upperRight) {
+                            const rectInstr = `Knit ${this.rows.length} rows (RC=${this.rows[this.rows.length - 1].rowNumber}, ${this.rows[this.rows.length - 1].leftStitchesInWork + this.rows[this.rows.length - 1].rightStitchesInWork} sts in work).`;
+                            instructions.push({
+                                text: rectInstr,
+                                stepData: {
+                                    text: rectInstr,
+                                    startRowIndex: 0,
+                                    endRowIndex: this.rows.length - 1,
+                                    rowsInStep: this.rows.length,
+                                    absolutePositioning: actualizer.getAbsolutePosition(this.rows[this.rows.length - 1])
+                                }
+                            });
                         } else {
-                            instructions.push(`Knit panel with shaping from ${firstTotal} to ${lastTotal} stitches over ${this.rows.length} rows.`);
+                            // Multiple sections: process by section first, then by shaping within sections
+                            let currentSection: any = null;
+                            let sectionStartRowIndex = 0;
+                            let sectionRows: any[] = [];
+                            
+                            for (let i = 0; i < this.rows.length; i++) {
+                                const row = this.rows[i];
+                                const rowSection = row.sectionLabel || null;
+                                
+                                // Check if we're starting a new section
+                                if (rowSection !== currentSection) {
+                                    // Process the previous section if it exists
+                                    if (sectionRows.length > 0) {
+                                        // Use the actualizer to generate instructions for this section
+                                        const sectionInstructions = actualizer.actualize(sectionRows, sectionStartRowIndex);
+                                        instructions.push(...sectionInstructions);
+                                    }
+                                    
+                                    currentSection = rowSection;
+                                    sectionStartRowIndex = i;
+                                    sectionRows = [row];
+                                } else {
+                                    sectionRows.push(row);
+                                }
+                            }
+                            
+                            // Don't forget the last section
+                            if (sectionRows.length > 0) {
+                                const sectionInstructions = actualizer.actualize(sectionRows, sectionStartRowIndex);
+                                instructions.push(...sectionInstructions);
+                            }
                         }
+                        
+                        // Add bind-off instruction at the end
+                        const lastRow = this.rows[this.rows.length - 1];
+                        const finalStitches = lastRow.leftStitchesInWork + lastRow.rightStitchesInWork;
+                        const bindOffMethod = this.knittingOptions?.bindOffMethod || 'knitwise';
+                        const bindOffInstr = `BO all ${finalStitches} stitches using ${bindOffMethod} bind-off.`;
+                        instructions.push({
+                            text: bindOffInstr,
+                            stepData: {
+                                text: bindOffInstr,
+                                startRowIndex: -1,
+                                endRowIndex: -1,
+                                rowsInStep: 0,
+                                absolutePositioning: actualizer.getAbsolutePosition(lastRow)
+                            }
+                        });
                         
                         return instructions;
                     }
                 };
                 
+                // Extract shape and gauge for the panel diagram
+                const shape = panelData.wizardOptions?.shape || panelData.shape;
+                const gaugeData = location.state?.project?.gauge || { stitchesPerFourInches: 20, rowsPerFourInches: 28 };
+                
+                // Create gauge object for UnifiedPanelDiagram
+                const gauge = {
+                    stitchesPerFourInches: gaugeData.stitchesPerFourInches || 20,
+                    rowsPerFourInches: gaugeData.rowsPerFourInches || 28,
+                    scalingFactor: gaugeData.scalingFactor || gaugeData.scaleFactor || 1
+                };
+                
+                // Get colorwork pattern layers for display
+                const colorworkLayers = panelData.wizardOptions?.colorworkLayers || [];
+                
                 const combined = {
                     stitchPlan: stitchPlanObj,
-                    getRowCount: () => stitchPlanObj.rows.length
+                    getRowCount: () => stitchPlanObj.rows.length,
+                    // Add panel info for UnifiedPanelDiagram
+                    panel: {
+                        shape: shape,
+                        gauge: gauge
+                    },
+                    shape: shape,
+                    gauge: gauge,
+                    colorworkPattern: colorworkLayers.length > 0 ? colorworkLayers[0]?.pattern : null,
+                    colorworkLayers: colorworkLayers
                 };
                 
                 setCombinedPattern(combined);
@@ -124,12 +246,13 @@ const InteractiveKnittingPage: React.FC = () => {
                 const generatedInstructions = stitchPlanObj.generateShapingInstructions();
                 setInstructions(generatedInstructions);
                 
-                // Reset progress
-                setKnittingProgress({
-                    currentRow: 0,
-                    completedRows: [],
-                    currentSection: 0
-                });
+                // Reset progress in Redux
+                dispatch(updateKnittingProgress({
+                    currentRowIndex: 0,
+                    currentPanelIndex: knittingProgress.currentPanelIndex,
+                    currentTrapezoidIndex: 0,
+                    completedRows: []
+                }));
                 
                 return;
             }
@@ -222,7 +345,7 @@ const InteractiveKnittingPage: React.FC = () => {
 
             // Generate combined pattern
             const composer = new PanelColorworkComposer();
-            const combined = composer.combinePatterns(panel, colorworkPattern);
+            const combined = composer.combinePatterns(panel, colorworkPattern!);
             console.log('Combined pattern created:', combined);
             console.log('Stitch plan:', (combined as any).stitchPlan);
             console.log('Has generateKnittingInstructions?', typeof (combined as any).stitchPlan?.generateKnittingInstructions);
@@ -233,29 +356,28 @@ const InteractiveKnittingPage: React.FC = () => {
             const generatedInstructions = generator.generateInstructions(combined);
             setInstructions(generatedInstructions);
 
-            // Reset progress when changing panels
-            setKnittingProgress({
-                currentRow: 0,
-                completedRows: [],
-                currentSection: 0
-            });
+            // Reset progress when changing panels in Redux
+            dispatch(updateKnittingProgress({
+                currentRowIndex: 0,
+                currentPanelIndex: knittingProgress.currentPanelIndex,
+                currentTrapezoidIndex: 0,
+                completedRows: []
+            }));
 
         } catch (error) {
             console.error('Error generating combined pattern:', error);
             setCombinedPattern(null);
             setInstructions([]);
         }
-    }, [projectPanels, selectedPanelIndex, location.state]);
+    }, [projectPanels, knittingProgress.currentPanelIndex, location.state, knittingOptions, dispatch]);
 
     const handleRowComplete = (rowIndex: number) => {
-        // Get total row count from instructions or combined pattern
-        const totalRows = instructions.length || (combinedPattern?.stitchPlan?.rows?.length) || 0;
+        // Add to completed rows and advance current row in Redux
+        dispatch(addCompletedRow(rowIndex));
         
-        setKnittingProgress(prev => ({
-            ...prev,
-            currentRow: Math.min(rowIndex + 1, totalRows - 1),
-            completedRows: [...prev.completedRows, rowIndex]
-        }));
+        const totalRows = instructions.length || (combinedPattern?.stitchPlan?.rows?.length) || 0;
+        const nextRow = Math.min(rowIndex + 1, totalRows - 1);
+        dispatch(setCurrentRowIndex(nextRow));
     };
 
     const handleBackToSettings = () => {
@@ -300,8 +422,8 @@ const InteractiveKnittingPage: React.FC = () => {
                     <Space>
                         {projectPanels.length > 1 && (
                             <Select
-                                value={selectedPanelIndex}
-                                onChange={setSelectedPanelIndex}
+                                value={knittingProgress.currentPanelIndex}
+                                onChange={(value: number) => dispatch(setCurrentPanelIndex(value))}
                                 style={{ width: 200 }}
                             >
                                 {projectPanels.map((panel, index) => (

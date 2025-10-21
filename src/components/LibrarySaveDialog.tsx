@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Input, message, Typography, Button } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../store';
+import type { RootState } from '../store';
 import { saveEntry } from '../store/librarySlice';
 import { openLibrarySettingsModal } from '../reducers/modal.reducer';
 
@@ -16,12 +16,12 @@ interface Props {
 export default function LibrarySaveDialog({ visible, onClose, fileId, libraryData, onSave }: Props) {
   const [filename, setFilename] = useState('library.json');
   const [isSaving, setSaving] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   const selectedFile = useSelector((state: RootState) => state.library?.selectedFile);
 
   const handleOpenLibrarySettings = () => {
     // Open the global library settings modal so the user can select/create a library
-    dispatch(openLibrarySettingsModal('panels'));
+    dispatch(openLibrarySettingsModal(null));
     // close this dialog since user will select a library in the modal
     onClose();
   };
@@ -76,7 +76,7 @@ export default function LibrarySaveDialog({ visible, onClose, fileId, libraryDat
             <Typography.Paragraph>
               This will save the current panel into the selected library (<strong>{selectedFile?.name || fileId}</strong>).
             </Typography.Paragraph>
-            <Input value={filename} onChange={(e) => setFilename(e.target.value)} placeholder="Optional filename" />
+            <Input value={filename} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilename(e.target.value)} placeholder="Optional filename" />
           </div>
         )}
       </div>

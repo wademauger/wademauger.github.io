@@ -1,5 +1,5 @@
-export default function Table({ titles, elements }) {
-    return (<table class="table-auto ingredient-table"> 
+export default function Table({ titles, elements }: { titles: string[], elements: any[] }) {
+    return (<table className="table-auto ingredient-table"> 
         <thead>
             <tr>
                 {titles.map((title: any) => <th>{title}</th>)}

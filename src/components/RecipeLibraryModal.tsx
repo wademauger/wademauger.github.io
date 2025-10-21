@@ -5,7 +5,33 @@ import GoogleDriveRecipeService from '../apps/recipes/services/GoogleDriveRecipe
 
 const { Text, Paragraph } = Typography;
 
-const RecipeLibraryModal = ({ 
+interface RecipeLibraryModalProps {
+  visible: boolean;
+  onClose: () => void;
+  userInfo?: any;
+  currentSettings?: any;
+}
+
+interface FileStatus {
+  found: boolean;
+  fileId?: string;
+  fileName?: string;
+  folderPath?: string;
+  recipeCount?: number | string;
+  lastModified?: string;
+  fileSize?: string;
+  email?: string;
+  currentLocation?: string;
+  error?: string;
+}
+
+interface FolderOption {
+  value: string;
+  label: string;
+  key: string;
+}
+
+const RecipeLibraryModal: React.FC<RecipeLibraryModalProps> = ({ 
   visible, 
   onClose, 
   userInfo = null,
@@ -15,9 +41,9 @@ const RecipeLibraryModal = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [fileStatus, setFileStatus] = useState(null);
-  const [lastSearchSettings, setLastSearchSettings] = useState(null);
-  const [folderOptions, setFolderOptions] = useState([]);
+  const [fileStatus, setFileStatus] = useState<FileStatus | null>(null);
+  const [lastSearchSettings, setLastSearchSettings] = useState<any>(null);
+  const [folderOptions, setFolderOptions] = useState<FolderOption[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
 
   // Default settings for recipes
@@ -57,8 +83,10 @@ const RecipeLibraryModal = ({
     const currentValues = form.getFieldsValue();
     if (currentValues.recipesLibraryFile && currentValues.recipesFolder) {
       // Debounce the search
-      clearTimeout(window.recipeSearchTimeout);
-      window.recipeSearchTimeout = setTimeout(() => {
+      if ((window as any).recipeSearchTimeout) {
+        clearTimeout((window as any).recipeSearchTimeout);
+      }
+      (window as any).recipeSearchTimeout = setTimeout(() => {
         searchForFile(currentValues);
       }, 1000);
     }
@@ -74,7 +102,7 @@ const RecipeLibraryModal = ({
       console.error('Error loading folder suggestions:', error);
       
       // Check if it's a scope/permission error
-      if (error.message && error.message.includes('insufficient authentication scopes')) {
+      if (error instanceof Error && error.message && error.message.includes('insufficient authentication scopes')) {
         message.warning('Additional permissions needed. Please sign out and sign in again to browse folders.');
       }
       
@@ -123,8 +151,8 @@ const RecipeLibraryModal = ({
         found: false,
         fileName: searchSettings.recipesLibraryFile,
         folderPath: searchSettings.recipesFolder,
-        error: `Search failed: ${error.message}`
-      });
+        error: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      } as FileStatus);
     } finally {
       setSearching(false);
     }
@@ -166,7 +194,7 @@ const RecipeLibraryModal = ({
       const settings = form.getFieldsValue();
       
       // Create new library file
-      await GoogleDriveRecipeService.createNewLibrary(settings.recipesLibraryFile, settings.recipesFolder);
+      await GoogleDriveRecipeService.createNewLibrary(settings.recipesLibraryFile);
       await saveSettings();
 
       const store = require('../store').default;
@@ -191,7 +219,7 @@ const RecipeLibraryModal = ({
       
       // Move the file to the new location
       await GoogleDriveRecipeService.moveFile(
-        fileStatus.fileId,
+        fileStatus.fileId || '',
         settings.recipesFolder,
         settings.recipesLibraryFile
       );
@@ -415,7 +443,7 @@ const RecipeLibraryModal = ({
               optionFilterProp="label"
               loading={loadingFolders}
               notFoundContent={loadingFolders ? <Spin size="small" /> : 'No folders found'}
-              dropdownRender={(menu) => (
+              dropdownRender={(menu: React.ReactElement) => (
                 <>
                   {menu}
                   <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>

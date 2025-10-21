@@ -15,7 +15,31 @@ const { Text } = Typography;
 // Simple id generator
 const genId = () => `trap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const defaultTrap = () => ({
+// Model types for strictness
+interface ShortRow {
+  id: string;
+  label: string | null;
+  posX: number;
+  posY: number;
+  height: number;
+  baseStart?: number;
+  basePivot?: number;
+}
+
+interface Trapezoid {
+  id: string;
+  height: number;
+  baseA: number;
+  baseB: number;
+  baseBHorizontalOffset: number;
+  successors: Trapezoid[];
+  label: string | null;
+  title?: string;
+  isHem: boolean;
+  shortRows?: ShortRow[];
+}
+
+const defaultTrap = (): Trapezoid => ({
   id: genId(),
   height: 40,
   baseA: 20,
@@ -27,7 +51,7 @@ const defaultTrap = () => ({
   shortRows: []
 });
 
-const defaultChild = () => ({
+const defaultChild = (): Trapezoid => ({
   id: genId(),
   height: 12,
   baseA: 16,
@@ -39,7 +63,7 @@ const defaultChild = () => ({
   shortRows: []
 });
 
-const defaultShortRow = () => ({
+const defaultShortRow = (): ShortRow => ({
   id: `sr-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
   label: null,
   posX: 0.5,
@@ -51,27 +75,27 @@ const defaultShortRow = () => ({
   basePivot: 1 // default to 0 means the short row comes to a point
 });
 
-function clone(obj) {
+function clone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-function findNodeAndParent(root, id, parent = null) {
-  if (!root) return { node: null, parent: null, indexInParent: -1 };
+function findNodeAndParent(root: Trapezoid | null, id: string, parent: Trapezoid | null = null): { node: Trapezoid | null; parent: Trapezoid | null; indexInParent: number } {
+  if (!root) return { node: null as Trapezoid | null, parent: null as Trapezoid | null, indexInParent: -1 };
   if (root.id === id) return { node: root, parent, indexInParent: -1 };
   for (let i = 0; i < (root.successors || []).length; i++) {
     const child = root.successors[i];
-    const res = findNodeAndParent(child, id, root);
+    const res: { node: Trapezoid | null; parent: Trapezoid | null; indexInParent: number } = findNodeAndParent(child, id, root);
     if (res.node) return { ...res, indexInParent: parent === root ? i : res.indexInParent };
   }
-  return { node: null, parent: null, indexInParent: -1 };
+  return { node: null as Trapezoid | null, parent: null as Trapezoid | null, indexInParent: -1 };
 }
 
-function enumerateTrapezoids(root) {
+function enumerateTrapezoids(root: Trapezoid): Record<string, string> {
   // Preorder traversal to build a stable label map A, B, C...
-  const labels = {};
+  const labels: Record<string, string> = {};
   let index = 0;
   const stack = [root];
-  const toLetter = (n) => {
+  const toLetter = (n: number): string => {
     // Excel-like letters: A, B, ..., Z, AA, AB, ... if many nodes
     let s = '';
     n += 1; // 1-based
@@ -94,73 +118,77 @@ function enumerateTrapezoids(root) {
   return labels;
 }
 
-function assignLabelsToTrapezoids(root) {
+function assignLabelsToTrapezoids(root: Trapezoid): Trapezoid {
   // Assign labels directly to trapezoid objects
   const labels = enumerateTrapezoids(root);
-  const cloneDeep = (node) => {
+  const cloneDeep = (node: Trapezoid): Trapezoid => {
     if (!node) return node;
-    const n = { ...node };
-    n.label = labels[node.id];
+    const n: Trapezoid = { ...node } as Trapezoid;
+    n.label = labels[node.id] || null;
     n.title = labels[node.id] ? `Trapezoid ${labels[node.id]}` : 'Trapezoid';
     if (n.successors && n.successors.length) {
-      n.successors = n.successors.map(cloneDeep);
+      n.successors = n.successors.map(cloneDeep) as Trapezoid[];
     }
     return n;
   };
   return cloneDeep(root);
 }
 
-function updateNode(root, id, updater) {
+function updateNode(root: Trapezoid, id: string, updater: (n: Trapezoid) => void): Trapezoid {
   const next = clone(root);
-  const stack = [next];
+  const stack: Trapezoid[] = [next];
   while (stack.length) {
-    const n = stack.pop();
+    const n = stack.pop() as Trapezoid | undefined;
+    if (!n) continue;
     if (n.id === id) {
       updater(n);
       break;
     }
-    (n.successors || []).forEach((c: any) => stack.push(c));
+    (n.successors || []).forEach((c) => stack.push(c));
   }
   return next;
 }
 
-function removeNode(root, id) {
+function removeNode(root: Trapezoid, id: string): Trapezoid {
   if (root.id === id) return root; // do not remove root
   const next = clone(root);
-  const queue = [next];
+  const queue: Trapezoid[] = [next];
   while (queue.length) {
-    const n = queue.shift();
+    const n = queue.shift() as Trapezoid | undefined;
+    if (!n) continue;
     if (!n.successors) continue;
-    const idx = n.successors.findIndex((c: any) => c.id === id);
+    const idx = n.successors.findIndex((c) => c.id === id);
     if (idx !== -1) {
       n.successors.splice(idx, 1);
       break;
     }
-    n.successors.forEach((c: any) => queue.push(c));
+    n.successors.forEach((c) => queue.push(c));
   }
   return next;
 }
 
-function addChild(root, parentId) {
+function addChild(root: Trapezoid, parentId: string): Trapezoid {
   const next = clone(root);
-  const stack = [next];
+  const stack: Trapezoid[] = [next];
   while (stack.length) {
-    const n = stack.pop();
+    const n = stack.pop() as Trapezoid | undefined;
+    if (!n) continue;
     if (n.id === parentId) {
       n.successors = n.successors || [];
       n.successors.push(defaultChild());
       break;
     }
-    (n.successors || []).forEach((c: any) => stack.push(c));
+    (n.successors || []).forEach((c) => stack.push(c));
   }
   return next;
 }
 
-function reorderChildren(root, parentId, from, to) {
+function reorderChildren(root: Trapezoid, parentId: string, from: number, to: number): Trapezoid {
   const next = clone(root);
-  const stack = [next];
+  const stack: Trapezoid[] = [next];
   while (stack.length) {
-    const n = stack.pop();
+    const n = stack.pop() as Trapezoid | undefined;
+    if (!n) continue;
     if (n.id === parentId) {
       if (!n.successors) break;
       const arr = n.successors;
@@ -168,15 +196,16 @@ function reorderChildren(root, parentId, from, to) {
       arr.splice(to, 0, moved);
       break;
     }
-    (n.successors || []).forEach((c: any) => stack.push(c));
+    (n.successors || []).forEach((c) => stack.push(c));
   }
   return next;
 }
 
 export default function PanelShapeCreator() {
-  const [root, setRoot] = useState(() => assignLabelsToTrapezoids(defaultTrap()));
-  const [selectedId, setSelectedId] = useState(root.id);
-  const [selectedShortRowId, setSelectedShortRowId] = useState(null);
+  const initialRoot = assignLabelsToTrapezoids(defaultTrap());
+  const [root, setRoot] = useState<Trapezoid>(() => initialRoot);
+  const [selectedId, setSelectedId] = useState<string>(initialRoot.id);
+  const [selectedShortRowId, setSelectedShortRowId] = useState<string | null>(null);
 
   // Modal visibility state
   const [showOpen, setShowOpen] = useState(false);
@@ -189,13 +218,13 @@ export default function PanelShapeCreator() {
   const selected = selectedInfo.node || root;
 
   // Generic field handler for numeric fields — preserve falsy 0 values
-  const handleField = useCallback((key, value: any) => {
-    setRoot(prev => updateNode(prev, selected.id, (n) => { n[key] = (value === undefined || value === null) ? 0 : value; }));
+  const handleField = useCallback((key: keyof Trapezoid, value: number | null | undefined) => {
+    setRoot(prev => updateNode(prev, selected.id, (n) => { (n as any)[key] = (value === undefined || value === null) ? 0 : value; }));
   }, [selected?.id]);
 
   // Toggle boolean fields like isHem
-  const handleToggle = useCallback((key, value: any) => {
-    setRoot(prev => updateNode(prev, selected.id, (n) => { n[key] = !!value; }));
+  const handleToggle = useCallback((key: keyof Trapezoid, value: boolean) => {
+    setRoot(prev => updateNode(prev, selected.id, (n) => { (n as any)[key] = !!value; }));
   }, [selected?.id]);
 
   const handleAddChild = useCallback(() => setRoot(prev => assignLabelsToTrapezoids(addChild(prev, selected.id))), [selected?.id]);
@@ -214,6 +243,7 @@ export default function PanelShapeCreator() {
     const stack = [next];
     while (stack.length) {
       const n = stack.pop();
+      if (!n) continue;
       if (n.id === parent.id) {
         const idx = n.successors.findIndex((c: any) => c.id === selected.id);
         n.successors.splice(idx + 1, 0, copy);
@@ -281,7 +311,7 @@ export default function PanelShapeCreator() {
 
   const removeShortRow = useCallback(() => {
     if (!selectedShortRowId) return;
-    setRoot(prev => updateNode(prev, selected.id, (n) => { n.shortRows = (n.shortRows || []).filter((s: any) => s.id !== selectedShortRowId); }));
+    setRoot(prev => updateNode(prev, selected.id, (n) => { n.shortRows = (n.shortRows || []).filter((s) => s.id !== selectedShortRowId); }));
     setSelectedShortRowId(null);
   }, [selected?.id, selectedShortRowId]);
 
@@ -289,23 +319,23 @@ export default function PanelShapeCreator() {
     if (!selectedShortRowId) return;
     setRoot(prev => updateNode(prev, selected.id, (n) => {
       n.shortRows = n.shortRows || [];
-      const idx = n.shortRows.findIndex((s: any) => s.id === selectedShortRowId);
+      const idx = n.shortRows.findIndex((s) => s.id === selectedShortRowId);
       if (idx === -1) return;
-      const copy = { ...n.shortRows[idx], id: `sr-${Date.now()}-${Math.random().toString(36).slice(2,6)}` };
+      const copy = { ...n.shortRows[idx], id: `sr-${Date.now()}-${Math.random().toString(36).slice(2,6)}` } as ShortRow;
       n.shortRows.splice(idx + 1, 0, copy);
     }));
   }, [selected?.id, selectedShortRowId]);
 
   // short rows are positioned individually; no reordering needed
 
-  const updateShortRowField = useCallback((id, key, value: any) => {
+  const updateShortRowField = useCallback((id: string, key: keyof ShortRow, value: number | null | undefined) => {
     // clamp posX/posY
-    const v = (key === 'posX' || key === 'posY') ? Math.max(0, Math.min(1, value)) : value;
+    const v = (key === 'posX' || key === 'posY') ? Math.max(0, Math.min(1, value ?? 0)) : value;
     setRoot(prev => updateNode(prev, selected.id, (n) => {
       if (!n.shortRows) return;
-      const idx = n.shortRows.findIndex((s: any) => s.id === id);
+      const idx = n.shortRows.findIndex((s) => s.id === id);
       if (idx === -1) return;
-      n.shortRows[idx] = { ...n.shortRows[idx], [key]: v };
+      n.shortRows[idx] = { ...n.shortRows[idx], [key]: v } as ShortRow;
     }));
   }, [selected?.id]);
 
@@ -339,21 +369,21 @@ export default function PanelShapeCreator() {
             <Row gutter={8}>
               <Col span={12}>
                 <Text>Height</Text>
-                <InputNumber value={selected.height} min={0} onChange={(v) => handleField('height', v)} style={{ width: '100%' }} />
+                <InputNumber value={selected.height} min={0} onChange={(v: number | null) => handleField('height', v)} style={{ width: '100%' }} />
               </Col>
               <Col span={12}>
                 <Text>Lower Base (A)</Text>
-                <InputNumber value={selected.baseA} min={0} onChange={(v) => handleField('baseA', v)} style={{ width: '100%' }} />
+                <InputNumber value={selected.baseA} min={0} onChange={(v: number | null) => handleField('baseA', v)} style={{ width: '100%' }} />
               </Col>
             </Row>
             <Row gutter={8} style={{ marginTop: 8 }}>
               <Col span={12}>
                 <Text>Upper Base (B)</Text>
-                <InputNumber value={selected.baseB} min={0} onChange={(v) => handleField('baseB', v)} style={{ width: '100%' }} />
+                <InputNumber value={selected.baseB} min={0} onChange={(v: number | null) => handleField('baseB', v)} style={{ width: '100%' }} />
               </Col>
               <Col span={12}>
                 <Text>Horizontal Offset</Text>
-                <InputNumber value={selected.baseBHorizontalOffset} onChange={(v) => handleField('baseBHorizontalOffset', v)} style={{ width: '100%' }} />
+                <InputNumber value={selected.baseBHorizontalOffset} onChange={(v: number | null) => handleField('baseBHorizontalOffset', v)} style={{ width: '100%' }} />
               </Col>
             </Row>
 
@@ -361,7 +391,7 @@ export default function PanelShapeCreator() {
               <Col span={24}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <Text style={{ whiteSpace: 'nowrap', marginRight: 8 }}>Is Hem</Text>
-                  <Switch checked={!!selected.isHem} onChange={(v) => handleToggle('isHem', v)} />
+                  <Switch checked={!!selected.isHem} onChange={(v: boolean) => handleToggle('isHem', v)} />
                 </div>
               </Col>
             </Row>
@@ -377,9 +407,9 @@ export default function PanelShapeCreator() {
               size="small"
               bordered
               dataSource={children}
-              rowKey={(item) => `${item.id}-${item.label || 'none'}`} // Include label in key to force re-render
+              rowKey={(item: any) => `${item.id}-${item.label || 'none'}`} // Include label in key to force re-render
               locale={{ emptyText: 'No children' }}
-              renderItem={(item, index: number) => (
+              renderItem={(item: any, index: number) => (
                 <List.Item
                   style={{ cursor: 'pointer', background: item.id === selectedId ? '#f0f7ff' : 'transparent' }}
                   onClick={() => setSelectedId(item.id)}
@@ -409,9 +439,9 @@ export default function PanelShapeCreator() {
               size="small"
               bordered
               dataSource={shortRows}
-              rowKey={(item) => `${item.id}-${item.label || 'none'}`}
+              rowKey={(item: any) => `${item.id}-${item.label || 'none'}`}
               locale={{ emptyText: 'No short rows' }}
-              renderItem={(item, index: number) => (
+              renderItem={(item: any, index: number) => (
                 <List.Item
                   style={{ cursor: 'pointer', background: item.id === selectedShortRowId ? '#f0f7ff' : 'transparent' }}
                   onClick={() => setSelectedShortRowId(item.id)}
@@ -434,17 +464,17 @@ export default function PanelShapeCreator() {
                     <Row gutter={8}>
                       <Col span={12}>
                         <Text>Pos X</Text>
-                        <InputNumber min={0} max={1} step={0.01} value={sr.posX} onChange={(v) => updateShortRowField(sr.id, 'posX', v)} style={{ width: '100%' }} />
+                        <InputNumber min={0} max={1} step={0.01} value={sr.posX} onChange={(v: number | null) => updateShortRowField(sr.id, 'posX', v)} style={{ width: '100%' }} />
                       </Col>
                       <Col span={12}>
                         <Text>Pos Y</Text>
-                        <InputNumber min={0} max={1} step={0.01} value={sr.posY} onChange={(v) => updateShortRowField(sr.id, 'posY', v)} style={{ width: '100%' }} />
+                        <InputNumber min={0} max={1} step={0.01} value={sr.posY} onChange={(v: number | null) => updateShortRowField(sr.id, 'posY', v)} style={{ width: '100%' }} />
                       </Col>
                     </Row>
                     <Row gutter={8} style={{ marginTop: 8 }}>
                       <Col span={12}>
                         <Text>Height (in)</Text>
-                        <InputNumber min={0} step={0.1} value={sr.height} onChange={(v) => updateShortRowField(sr.id, 'height', v)} style={{ width: '100%' }} />
+                        <InputNumber min={0} step={0.1} value={sr.height} onChange={(v: number | null) => updateShortRowField(sr.id, 'height', v)} style={{ width: '100%' }} />
                       </Col>
                       <Col span={12}>
                         <Text> </Text>
@@ -453,11 +483,11 @@ export default function PanelShapeCreator() {
                     <Row gutter={8} style={{ marginTop: 8 }}>
                       <Col span={12}>
                         <Text>Base Start (in)</Text>
-                        <InputNumber min={0} step={0.1} value={sr.baseStart} onChange={(v) => updateShortRowField(sr.id, 'baseStart', v)} style={{ width: '100%' }} />
+                        <InputNumber min={0} step={0.1} value={sr.baseStart} onChange={(v: number | null) => updateShortRowField(sr.id, 'baseStart', v)} style={{ width: '100%' }} />
                       </Col>
                       <Col span={12}>
                         <Text>Base Pivot (in)</Text>
-                        <InputNumber min={0} step={0.1} value={sr.basePivot} onChange={(v) => updateShortRowField(sr.id, 'basePivot', v)} style={{ width: '100%' }} />
+                        <InputNumber min={0} step={0.1} value={sr.basePivot} onChange={(v: number | null) => updateShortRowField(sr.id, 'basePivot', v)} style={{ width: '100%' }} />
                       </Col>
                     </Row>
                     {/* Label is intentionally omitted for short rows */}

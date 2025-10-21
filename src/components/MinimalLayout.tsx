@@ -1,6 +1,10 @@
 import React from 'react';
 
-const MinimalLayout = ({ children }) => {
+interface MinimalLayoutProps {
+  children: React.ReactNode;
+}
+
+const MinimalLayout = ({ children }: MinimalLayoutProps) => {
   return (
     <div>
       {children}

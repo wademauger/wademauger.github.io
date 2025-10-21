@@ -11,11 +11,27 @@ import '../App.css';
 const { Panel: AntPanel } = Collapse;
 const { Step } = Steps; // Destructure Step from Steps
 
-const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
-  const [currentStep, setCurrentStep] = useState(0); // State of which knitting instruction the user is on
-  const [isCompleted, setIsCompleted] = useState(false); // State to control the completion message
-  const [activeKey, setActiveKey] = useState([]); // State to control the collapse panel, initially empty to keep it closed
-  const currentStepRef = useRef(null); // Create a ref for the current step element
+interface PatternInstructionsProps {
+  patternId: string;
+  panelId: string;
+  instructions?: string[];
+  isKnitting: boolean;
+  setIsKnitting: (panelId: string, resetCurrentStep?: any) => void;
+  handleCancel: (skipConfirm?: boolean) => void;
+}
+
+const PatternInstructions: React.FC<PatternInstructionsProps> = ({ 
+  patternId, 
+  panelId, 
+  instructions = [], 
+  isKnitting, 
+  setIsKnitting, 
+  handleCancel 
+}) => {
+  const [currentStep, setCurrentStep] = useState<number>(0); // State of which knitting instruction the user is on
+  const [isCompleted, setIsCompleted] = useState<boolean>(false); // State to control the completion message
+  const [activeKey, setActiveKey] = useState<string[]>([]); // State to control the collapse panel, initially empty to keep it closed
+  const currentStepRef = useRef<HTMLDivElement | null>(null); // Create a ref for the current step element
 
   const handleNextStep = useCallback(() => {
     if (currentStep + 1 === instructions.length) {
@@ -71,14 +87,15 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
     </div>
   ) : null);
 
-  const handleButtonClick = (event: any) => {
+  const handleButtonClick = (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent collapse from toggling
-    setIsKnitting(`${patternId}-${panelId}`, setCurrentStep);
+    setIsKnitting(`${patternId}-${panelId}`);
+    setCurrentStep(0);
     setIsCompleted(false);
     setActiveKey(['1']); // Ensure the collapse is open
   };
 
-  const handleCancelClick = (skipConfirm) => {
+  const handleCancelClick = (skipConfirm?: boolean) => {
     handleCancel(skipConfirm);
     setActiveKey([]); // Close the collapse
   };
@@ -122,15 +139,15 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
 
 function KnittingPatterns() {
   const { id: patternId } = useParams();
-  const [currentKnittingPanel, setCurrentKnittingPanel] = useState(null);
-  const [sizeModifier, setSizeModifier] = useState(1); // Add state for size modifier
+  const [currentKnittingPanel, setCurrentKnittingPanel] = useState<string | null>(null);
+  const [sizeModifier, setSizeModifier] = useState<number>(1); // Add state for size modifier
   const [gauge, setGauge] = useState({ stitches: 19, rows: 30 }); // Add state for gauge
-  const [selectedMotif, setSelectedMotif] = useState(null); // Add state for selected visual motif
+  const [selectedMotif, setSelectedMotif] = useState<any>(null); // Add state for selected visual motif
 
   const pattern = garments.find((pattern: any) => pattern.permalink === patternId);
   const patternInstructions = Object.keys(pattern ? pattern.shapes : {})
-    .map((panelId: any) => {
-      const panelData = pattern.shapes[panelId];
+    .map((panelId: string) => {
+      const panelData = (pattern as any)?.shapes[panelId];
       const trapezoid = Trapezoid.fromObject(panelData);
       const panel = new Panel(trapezoid, new Gauge(gauge.stitches, gauge.rows), sizeModifier, selectedMotif); // Pass gauge, sizeModifier, and selectedMotif to Panel
       const instructions = panel.generateKnittingInstructions();
@@ -142,7 +159,7 @@ function KnittingPatterns() {
     setCurrentKnittingPanel(null);
   }, [patternId]);
 
-  const setIsKnitting = (panelId, resetCurrentStep) => {
+  const setIsKnitting = (panelId: string, resetCurrentStep?: any) => {
     if (currentKnittingPanel && currentKnittingPanel !== panelId) {
       Modal.confirm({
         title: 'Cancel current panel?',
@@ -160,7 +177,7 @@ function KnittingPatterns() {
     }
   };
 
-  const handleCancel = (skipConfirm) => {
+  const handleCancel = (skipConfirm?: boolean) => {
     if (!skipConfirm) {
       // Use modal confirm synchronously by returning early unless user confirms via callback
       Modal.confirm({
@@ -193,12 +210,12 @@ function KnittingPatterns() {
     }
   };
 
-  const handleGaugeChange = (type, value: any) => {
+  const handleGaugeChange = (type: string, value: number) => {
     setGauge(prevGauge => ({ ...prevGauge, [type]: value }));
   };
 
-  const handleMotifChange = (value: any) => {
-    setSelectedMotif(value ? visualMotifs[value] : null);
+  const handleMotifChange = (value: string | null) => {
+    setSelectedMotif(value ? (visualMotifs as any)[value] : null);
   };
 
   return (
@@ -252,7 +269,7 @@ function KnittingPatterns() {
               <Col xs={24} sm={24} md={24} lg={14} xl={14}>
                 <div className='diagrams'>
                   {Object.keys(pattern.shapes).map((shape, index: number) =>
-                    <PanelDiagram key={index} shape={pattern.shapes[shape]} label={shape} sizeModifier={sizeModifier} />
+                    <PanelDiagram key={index} shape={(pattern.shapes as any)[shape]} label={shape} />
                   )}
                 </div>
               </Col>
@@ -260,7 +277,7 @@ function KnittingPatterns() {
             {patternInstructions.map((instructions, index: number) => (
               <PatternInstructions
                 key={index}
-                patternId={patternId}
+                patternId={patternId || ''}
                 panelId={instructions.id}
                 instructions={instructions.instructions}
                 isKnitting={currentKnittingPanel === `${patternId}-${instructions.id}`}

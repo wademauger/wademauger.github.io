@@ -5,7 +5,7 @@
 import { ShapePerimeterDetector } from '../../utils/ShapePerimeterDetector';
 
 describe('Border Pattern Improvements', () => {
-    let detector;
+    let detector: ShapePerimeterDetector;
 
     beforeEach(() => {
         detector = new ShapePerimeterDetector();

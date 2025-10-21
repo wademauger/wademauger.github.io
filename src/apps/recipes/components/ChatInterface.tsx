@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatInterface.css';
 
-const ChatInterface = ({ messages, onSendMessage }) => {
+interface Message {
+  role: string;
+  content: string;
+  timestamp: number;
+}
+
+interface ChatInterfaceProps {
+  messages: Message[];
+  onSendMessage: (message: string) => Promise<void>;
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -41,11 +52,11 @@ const ChatInterface = ({ messages, onSendMessage }) => {
     }
   };
 
-  const formatMessage = (content) => {
+  const formatMessage = (content: string) => {
     // Simple markdown-like formatting for code blocks
     return content
       .split('```json')
-      .map((part, index: number) => {
+      .map((part: string, index: number) => {
         if (index === 0) return part;
         const [code, ...rest] = part.split('```');
         return (
@@ -86,7 +97,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
             </div>
           </div>
         ) : (
-          messages.map((message, index: number) => (
+          messages.map((message: Message, index: number) => (
             <div key={index} className={`message ${message.role}`}>
               <div className="message-avatar">
                 {message.role === 'user' ? '👤' : '🤖'}
@@ -114,7 +125,7 @@ const ChatInterface = ({ messages, onSendMessage }) => {
             onKeyPress={handleKeyPress}
             placeholder="Ask me about recipes, ingredients, cooking techniques..."
             className="chat-input"
-            rows="3"
+            rows={3}
             disabled={isLoading}
           />
           <button 

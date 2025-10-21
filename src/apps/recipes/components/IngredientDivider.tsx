@@ -4,7 +4,23 @@ import { FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const IngredientDivider = ({
+interface IngredientDividerProps {
+  id: string;
+  divider: { label?: string };
+  index: number;
+  editingIndex: number | null;
+  editingEnabled: boolean;
+  hoveredIndex: number | null;
+  setHoveredIndex: (index: number | null) => void;
+  handleEdit: (index: number) => void;
+  handleDelete: (index: number) => void;
+  handleSave: (value: { label?: string }, index: number) => void;
+  handleCancel: () => void;
+  isPendingSave?: boolean;
+  isPendingDelete?: boolean;
+}
+
+const IngredientDivider: React.FC<IngredientDividerProps> = ({
   id,
   divider,
   index,
@@ -33,7 +49,7 @@ const IngredientDivider = ({
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
@@ -52,7 +68,7 @@ const IngredientDivider = ({
       onMouseEnter={() => setHoveredIndex(index)}
       onMouseLeave={() => setHoveredIndex(null)}
     >
-      <td colSpan="4" style={{ padding: '12px 0' }}>
+      <td colSpan={4} style={{ padding: '12px 0' }}>
         <div style={{
           borderTop: '2px solid #ddd',
           paddingTop: '8px',

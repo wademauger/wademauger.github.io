@@ -4,7 +4,7 @@
  * @param {string} input - The input lyrics text
  * @returns {string} The converted lyrics with inline chord notation
  */
-function convertLyrics(input) {
+function convertLyrics(input: string): string {
   // First, remove any existing [tag] notation from the entire input
   let cleanedInput = input.replace(/\[.*?\]/g, '');
   
@@ -46,7 +46,11 @@ function convertLyrics(input) {
     const isChordLine = chordMatches.length > 0 && (lineWithoutChords === '' || /^\s*$/.test(lineWithoutChords));
 
     if (isChordLine) {
-      const chordPositions = [];
+      interface ChordPosition {
+        chord: string;
+        position: number;
+      }
+      const chordPositions: ChordPosition[] = [];
       let match;
       
       // If the line contains only a single chord (after removing spaces)
@@ -107,7 +111,11 @@ function convertLyrics(input) {
         if (!nextLineIsChordLine && !nextLineIsSectionHeader) {
           const lyricLine = nextLine;
           const chars = lyricLine.split('');
-          const insertions = [];
+          interface Insertion {
+            pos: number;
+            text: string;
+          }
+          const insertions: Insertion[] = [];
           
           chordPositions.forEach(({ chord, position }) => {
             // Find the best position in the lyric line for this chord
@@ -136,8 +144,8 @@ function convertLyrics(input) {
           
           // Separate chords that go within the lyrics vs at the end
           const lyricsLength = lyricLine.length;
-          const endChords = [];
-          const withinChords = [];
+          const endChords: Insertion[] = [];
+          const withinChords: Insertion[] = [];
           
           insertions.forEach(({ pos, text }) => {
             if (pos >= lyricsLength) {
@@ -159,8 +167,8 @@ function convertLyrics(input) {
             // Sort end chords by their original position in the chord line
             const sortedEndChords = endChords.sort((a, b) => {
               // Find the original chord positions
-              const aOriginalPos = chordPositions.find((cp: any) => cp.chord === a.text.slice(1, -1))?.position || 0;
-              const bOriginalPos = chordPositions.find((cp: any) => cp.chord === b.text.slice(1, -1))?.position || 0;
+              const aOriginalPos = chordPositions.find((cp) => cp.chord === a.text.slice(1, -1))?.position || 0;
+              const bOriginalPos = chordPositions.find((cp) => cp.chord === b.text.slice(1, -1))?.position || 0;
               return aOriginalPos - bOriginalPos;
             });
             

@@ -8,11 +8,67 @@ const { Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { Step } = Steps;
 
+interface ColorworkSegment {
+    stitchCount: number;
+    colorId: string;
+}
+
+interface Colorwork {
+    description: string;
+    colorSequence: ColorworkSegment[];
+}
+
+interface Shaping {
+    description: string;
+}
+
+interface VisualChart {
+    svg: string;
+}
+
+interface Instruction {
+    row?: number;
+    machineRow?: number;
+    shaping?: Shaping;
+    colorwork?: Colorwork;
+    visualChart?: VisualChart;
+    getDescription(): string;
+    hasColorwork(): boolean;
+    hasShaping?(): boolean;
+}
+
+interface PatternColor {
+    id: string | number;
+    label: string;
+    color: string;
+}
+
+interface PatternGrid {
+    getRowCount(): number;
+    getStitchCount(): number;
+    getRowInstructions(rowIndex: number): any[];
+    grid: number[][];
+    colors: Record<number, PatternColor>;
+    getColorsUsed(): PatternColor[];
+}
+
+interface CombinedPattern {
+    colorworkPattern?: PatternGrid;
+    [key: string]: any;
+}
+
+interface CombinedViewProps {
+    combinedPattern?: CombinedPattern;
+    instructions?: Instruction[];
+    isLoading?: boolean;
+    isPreview?: boolean;
+}
+
 /**
  * CombinedView - Displays the combined pattern with instructions and visualizations
  * Updated to support compact instructions as default and enhanced visual mode
  */
-const CombinedView = ({
+const CombinedView: React.FC<CombinedViewProps> = ({
     combinedPattern,
     instructions = [],
     isLoading = false,
@@ -232,8 +288,16 @@ const CombinedView = ({
         }
     };
 
-    const renderColorworkOverlay = (pattern, bottomLeft, topLeft, bottomRight, topRight, topY, bottomY) => {
-        const elements = [];
+    const renderColorworkOverlay = (
+        pattern: PatternGrid,
+        bottomLeft: number,
+        topLeft: number,
+        bottomRight: number,
+        topRight: number,
+        topY: number,
+        bottomY: number
+    ): React.ReactElement[] => {
+        const elements: React.ReactElement[] = [];
         const patternHeight = pattern.grid.length;
         const patternWidth = pattern.grid[0]?.length || 0;
 
@@ -315,7 +379,7 @@ const CombinedView = ({
                                     {instruction.getDescription()}
                                 </div>
 
-                                {instruction.hasColorwork() && (
+                                {instruction.hasColorwork() && instruction.colorwork && (
                                     <div className="colorwork-detail">
                                         <div className="colorwork-sequence">
                                             {instruction.colorwork.colorSequence.map((segment, i: number) => (
@@ -353,7 +417,7 @@ const CombinedView = ({
                         <span className="instruction-content">
                             {instruction.getDescription()}
                         </span>
-                        {instruction.hasColorwork() && (
+                        {instruction.hasColorwork() && instruction.colorwork && (
                             <div className="colorwork-compact">
                                 Colors: {instruction.colorwork.description}
                             </div>
@@ -366,6 +430,8 @@ const CombinedView = ({
 
     const renderVisualInstructions = () => {
         // Create a visual chart for the entire pattern
+        if (!combinedPattern?.colorworkPattern) return null;
+        
         const fullChart = colorworkVisualizer.generateChart(combinedPattern.colorworkPattern, {
             cellSize: 12,
             showRowNumbers: true,
@@ -502,8 +568,8 @@ const CombinedView = ({
                 index + 1,
                 instruction.row || '',
                 instruction.machineRow || '',
-                instruction.hasShaping() ? instruction.shaping.description : '',
-                instruction.hasColorwork() ? instruction.colorwork.description : ''
+                (instruction.hasShaping && instruction.hasShaping() && instruction.shaping) ? instruction.shaping.description : '',
+                (instruction.hasColorwork() && instruction.colorwork) ? instruction.colorwork.description : ''
             ].join(',');
         }).join('\n');
 

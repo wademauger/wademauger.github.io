@@ -12,7 +12,7 @@ const RoutePreloader = () => {
         if (href.includes('recipes')) {
           import('../apps/recipes/RecipesApp');
         } else if (href.includes('songs') || href.includes('tabs')) {
-          import('../apps/songs/SongTabsAppModern.tsx');
+          import('../apps/songs/SongTabsAppModern');
         } else if (href.includes('knitting')) {
           // Knitting app preloading can be added here if needed
         }

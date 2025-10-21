@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Input, Form, Button, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 
-const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) => {
+interface AddRecipeModalProps {
+  googleDriveService: any;
+  onRecipeAdded?: (recipe: any) => void;
+  onCancel?: () => void;
+  open: boolean;
+}
+
+const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ googleDriveService, onRecipeAdded, onCancel, open }) => {
   const [isModalVisible, setIsModalVisible] = useState(open || false);
   const [isLoading, setIsLoading] = useState(false);
   const [permalinkManuallyEdited, setPermalinkManuallyEdited] = useState(false);
@@ -32,7 +39,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
 
 
   // Generate slug from title
-  const generateSlugFromTitle = (title) => {
+  const generateSlugFromTitle = (title: string) => {
     if (!title || typeof title !== 'string') return '';
 
     return title
@@ -56,7 +63,7 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
     }
   };
 
-  const validatePermalink = async (_, value: any) => {
+  const validatePermalink = async (_: any, value: any) => {
     if (!value) {
       return Promise.reject(new Error('Permalink is required'));
     }
@@ -100,7 +107,8 @@ const AddRecipeModal = ({ googleDriveService, onRecipeAdded, onCancel, open }) =
         onRecipeAdded(newRecipe);
       }
     } catch (error: unknown) {
-      message.error(error.message || 'Failed to create recipe');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create recipe';
+      message.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

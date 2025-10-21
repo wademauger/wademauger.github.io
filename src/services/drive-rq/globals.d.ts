@@ -2,15 +2,16 @@
  * Global type declarations for Google APIs
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/// <reference path="../../types/gapi.d.ts" />
 
-declare const gapi: any;
-declare const google: any;
+// Re-export the gapi types for this module
+declare const gapi: typeof globalThis.gapi;
+declare const google: typeof globalThis.google;
 
 declare global {
   interface Window {
-    gapi: any;
-    google: any;
+    gapi: typeof gapi;
+    google: typeof google;
   }
 }
 

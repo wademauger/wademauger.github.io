@@ -1,4 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { RootState } from '../store.types';
 
 // Modal types
 export const MODAL_TYPES = {
@@ -7,9 +8,19 @@ export const MODAL_TYPES = {
   CONFIRMATION: 'CONFIRMATION',
   NEW_RECIPE: 'NEW_RECIPE',
   NEW_SONG: 'NEW_SONG'
-};
+} as const;
 
-const initialState = {
+type ModalType = typeof MODAL_TYPES[keyof typeof MODAL_TYPES];
+type AppContext = 'songs' | 'recipes' | null;
+
+interface ModalState {
+  currentModal: ModalType;
+  modalData: Record<string, unknown> | null;
+  isLoading: boolean;
+  appContext: AppContext;
+}
+
+const initialState: ModalState = {
   // Current open modal
   currentModal: MODAL_TYPES.NONE,
   
@@ -28,7 +39,11 @@ const modalSlice = createSlice({
   initialState,
   reducers: {
     // Open a modal
-    openModal: (state, action) => {
+    openModal: (state: ModalState, action: PayloadAction<{
+      modalType: ModalType;
+      data?: Record<string, unknown> | null;
+      appContext?: AppContext;
+    }>) => {
       const { modalType, data = null, appContext = null } = action.payload;
       state.currentModal = modalType;
       state.modalData = data;
@@ -38,7 +53,7 @@ const modalSlice = createSlice({
     },
     
     // Close current modal
-    closeModal: (state: any) => {
+    closeModal: (state: ModalState) => {
       state.currentModal = MODAL_TYPES.NONE;
       state.modalData = null;
       state.appContext = null;
@@ -46,12 +61,12 @@ const modalSlice = createSlice({
     },
     
     // Update modal data without changing which modal is open
-    updateModalData: (state, action) => {
+    updateModalData: (state: ModalState, action: PayloadAction<Record<string, unknown>>) => {
       state.modalData = { ...state.modalData, ...action.payload };
     },
     
     // Set loading state for modal operations
-    setModalLoading: (state, action) => {
+    setModalLoading: (state: ModalState, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     }
   }
@@ -65,14 +80,14 @@ export const {
 } = modalSlice.actions;
 
 // Selectors
-export const selectCurrentModal = (state: any) => state.modal.currentModal;
-export const selectModalData = (state: any) => state.modal.modalData;
-export const selectModalLoading = (state: any) => state.modal.isLoading;
-export const selectAppContext = (state: any) => state.modal.appContext;
-export const selectIsModalOpen = (modalType) => (state: any) => state.modal.currentModal === modalType;
+export const selectCurrentModal = (state: RootState) => state.modal.currentModal;
+export const selectModalData = (state: RootState) => state.modal.modalData;
+export const selectModalLoading = (state: RootState) => state.modal.isLoading;
+export const selectAppContext = (state: RootState) => state.modal.appContext;
+export const selectIsModalOpen = (modalType: ModalType) => (state: RootState) => state.modal.currentModal === modalType;
 
 // Thunk actions for common modal operations
-export const openLibrarySettingsModal = (appContext, currentSettings = {}) => (dispatch) => {
+export const openLibrarySettingsModal = (appContext: AppContext, currentSettings: Record<string, unknown> = {}) => (dispatch: (action: unknown) => void) => {
   dispatch(openModal({
     modalType: MODAL_TYPES.LIBRARY_SETTINGS,
     appContext,
@@ -84,11 +99,16 @@ export const openLibrarySettingsModal = (appContext, currentSettings = {}) => (d
 };
 
 // New alias for a more generic name
-export const openLibraryModal = (appContext, currentSettings = {}) => (dispatch) => {
+export const openLibraryModal = (appContext: AppContext, currentSettings: Record<string, unknown> = {}) => (dispatch: (action: unknown) => void) => {
   return dispatch(openLibrarySettingsModal(appContext, currentSettings));
 };
 
-export const openConfirmationModal = (title, message, onConfirm, onCancel = null) => (dispatch) => {
+export const openConfirmationModal = (
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  onCancel: (() => void) | null = null
+) => (dispatch: (action: unknown) => void) => {
   dispatch(openModal({
     modalType: MODAL_TYPES.CONFIRMATION,
     data: {

@@ -4,7 +4,13 @@ import { ColorworkVisualizer } from './ColorworkVisualizer';
  * CombinedInstruction - Represents a single row instruction with both shaping and colorwork
  */
 export class CombinedInstruction {
-    constructor(row, machineRow, shaping, colorwork, visualChart = null) {
+    row: number | null;
+    machineRow: number | null;
+    shaping: any;
+    colorwork: any;
+    visualChart: any;
+
+    constructor(row: number | null, machineRow: number | null, shaping: any, colorwork: any, visualChart: any = null) {
         this.row = row;
         this.machineRow = machineRow;
         this.shaping = shaping;
@@ -12,18 +18,18 @@ export class CombinedInstruction {
         this.visualChart = visualChart;
     }
 
-    hasShaping() {
+    hasShaping(): boolean {
         return this.shaping && (
             this.shaping.description.includes('Increase') || 
             this.shaping.description.includes('Decrease')
         );
     }
 
-    hasColorwork() {
+    hasColorwork(): boolean {
         return this.colorwork && this.colorwork.colorSequence && this.colorwork.colorSequence.length > 0;
     }
 
-    toString() {
+    toString(): string {
         let instruction = `Row ${this.row}`;
         if (this.machineRow && this.machineRow !== this.row) {
             instruction += ` (RC: ${this.machineRow})`;
@@ -46,6 +52,8 @@ export class CombinedInstruction {
  * Synchronizes shaping instructions with colorwork instructions
  */
 export class InstructionGenerator {
+    colorworkVisualizer: ColorworkVisualizer;
+
     constructor() {
         this.colorworkVisualizer = new ColorworkVisualizer();
     }
@@ -55,7 +63,7 @@ export class InstructionGenerator {
      * @param {CombinedPattern} combinedPattern - The combined pattern
      * @param {string} format - 'compact', 'detailed', or 'visual'
      */
-    generateInstructions(combinedPattern, format = 'compact') {
+    generateInstructions(combinedPattern: any, format: string = 'compact'): any[] {
         const instructions = this.generateCombinedInstructions(combinedPattern);
         
         // Apply format-specific filtering/transformation
@@ -74,7 +82,7 @@ export class InstructionGenerator {
     /**
      * Format instructions for compact display
      */
-    formatCompactInstructions(instructions) {
+    formatCompactInstructions(instructions: any[]): any[] {
         // Return only key instructions, skip redundant details
         return instructions.filter((instruction: any) => 
             instruction.hasShaping() || 
@@ -86,7 +94,7 @@ export class InstructionGenerator {
     /**
      * Format instructions for visual display
      */
-    formatVisualInstructions(instructions) {
+    formatVisualInstructions(instructions: any[]): any[] {
         // Return instructions with visual charts
         return instructions.filter((instruction: any) => 
             instruction.visualChart
@@ -96,7 +104,7 @@ export class InstructionGenerator {
     /**
      * Generate combined instructions for a panel with colorwork
      */
-    generateCombinedInstructions(combinedPattern) {
+    generateCombinedInstructions(combinedPattern: any): any[] {
         const shapingInstructions = this.generateShapingInstructions(combinedPattern.panel);
         const colorworkInstructions = this.generateColorworkInstructions(combinedPattern);
         
@@ -106,7 +114,7 @@ export class InstructionGenerator {
     /**
      * Generate shaping instructions from the panel
      */
-    generateShapingInstructions(panel) {
+    generateShapingInstructions(panel: any): any[] {
         // Reuse existing panel instruction generation
         return panel.generateKnittingInstructions();
     }
@@ -114,7 +122,7 @@ export class InstructionGenerator {
     /**
      * Generate colorwork instructions from the combined pattern
      */
-    generateColorworkInstructions(combinedPattern) {
+    generateColorworkInstructions(combinedPattern: any): any[] {
         const instructions = [];
         
         for (const mappedRow of combinedPattern.mappedRows) {
@@ -133,7 +141,7 @@ export class InstructionGenerator {
     /**
      * Generate colorwork instructions for a single row
      */
-    generateRowColorworkInstructions(mappedRow) {
+    generateRowColorworkInstructions(mappedRow: any): any {
         const colorSequence = [];
         let currentColor = null;
         let stitchCount = 0;
@@ -167,7 +175,7 @@ export class InstructionGenerator {
     /**
      * Synchronize shaping and colorwork instructions
      */
-    synchronizeInstructions(shapingInstructions, colorworkInstructions, combinedPattern) {
+    synchronizeInstructions(shapingInstructions: any[], colorworkInstructions: any[], combinedPattern: any): any[] {
         const synchronized = [];
         const colors = combinedPattern.colorworkPattern.colors;
 
@@ -193,7 +201,7 @@ export class InstructionGenerator {
         }
 
         // Add any remaining shaping instructions that don't have colorwork
-        this.addRemainingShapingInstructions(synchronized, shapingInstructions, shapingByRow);
+        this.addRemainingShapingInstructions(synchronized, shapingInstructions);
 
         return synchronized;
     }
@@ -201,11 +209,11 @@ export class InstructionGenerator {
     /**
      * Parse shaping instructions to create a row-based lookup
      */
-    parseShapingInstructions(shapingInstructions) {
-        const shapingByRow = {};
+    parseShapingInstructions(shapingInstructions: any[]): Record<number | string, any> {
+        const shapingByRow: Record<number | string, any> = {};
         
         // Simple parsing - this could be enhanced to parse more complex instruction formats
-        shapingInstructions.forEach((instruction, index: number) => {
+        shapingInstructions.forEach((instruction: any, index: number) => {
             if (typeof instruction === 'string') {
                 // Extract row numbers if mentioned in the instruction
                 const rowMatch = instruction.match(/(?:Row|RC[=:]?)\s*(\d+)/i);
@@ -233,7 +241,7 @@ export class InstructionGenerator {
     /**
      * Format colorwork description for display
      */
-    formatColorworkDescription(colorSequence, colors) {
+    formatColorworkDescription(colorSequence: any[], colors: any): string {
         if (colorSequence.length === 0) return 'No colorwork';
         
         const parts = colorSequence.map((segment: any) => {
@@ -248,7 +256,7 @@ export class InstructionGenerator {
     /**
      * Generate a visual chart for a specific row
      */
-    generateRowVisualChart(combinedPattern, rowIndex) {
+    generateRowVisualChart(combinedPattern: any, rowIndex: number): any {
         if (rowIndex < 0 || rowIndex >= combinedPattern.mappedRows.length) {
             return null;
         }
@@ -263,7 +271,7 @@ export class InstructionGenerator {
             getStitchCount: () => mappedRow.colorwork.length
         };
 
-        return this.colorworkVisualizer.generateChart(singleRowPattern, {
+        return this.colorworkVisualizer.generateChart(singleRowPattern as any, {
             cellSize: 15,
             showRowNumbers: false,
             showStitchNumbers: false,
@@ -274,9 +282,9 @@ export class InstructionGenerator {
     /**
      * Add remaining shaping instructions that don't have corresponding colorwork
      */
-    addRemainingShapingInstructions(synchronized, shapingInstructions) {
+    addRemainingShapingInstructions(synchronized: any[], shapingInstructions: any[]): void {
         // Add cast on, bind off, and finishing instructions
-        shapingInstructions.forEach((instruction, index: number) => {
+        shapingInstructions.forEach((instruction: any, index: number) => {
             const isGeneral = typeof instruction === 'string' && 
                              (instruction.toLowerCase().includes('cast on') ||
                               instruction.toLowerCase().includes('bind off') ||

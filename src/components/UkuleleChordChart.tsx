@@ -2,21 +2,25 @@ import { useEffect, useRef } from 'react';
 import { ChordBox } from 'vexchords';
 import { ukuleleChords } from '../apps/songs/data/ukuleleChords';
 
+interface UkuleleChordChartProps {
+  chord: string;
+}
+
 /**
  * Converts ukulele chord data from [G,C,E,A] format to VexChords [[string,fret]] format
  * @param {Array} frets - Array of fret positions [G, C, E, A]
  * @returns {Array} Array of [string, fret] pairs for VexChords
  */
-const convertToVexChordsFormat = (frets) => {
+const convertToVexChordsFormat = (frets: number[] | null): [number, number][] => {
   if (!frets || frets.length !== 4) {
     return [[4, 0], [3, 0], [2, 0], [1, 0]]; // Default open chord
   }
   
   // Convert from [G, C, E, A] to [[string, fret], ...] format
   // VexChords uses: string 4=G, 3=C, 2=E, 1=A (bottom to top)
-  const result = [];
+  const result: [number, number][] = [];
   
-  frets.forEach((fret, index: number) => {
+  frets.forEach((fret: number, index: number) => {
     if (fret >= 0) { // Only include non-muted strings
       const stringNumber = 4 - index; // Convert array index to string number
       result.push([stringNumber, fret]);
@@ -26,14 +30,16 @@ const convertToVexChordsFormat = (frets) => {
   return result.length > 0 ? result : [[4, 0], [3, 0], [2, 0], [1, 0]];
 };
 
-const UkuleleChordChart = ({ chord }) => {
-  const containerRef = useRef(null);
+const UkuleleChordChart: React.FC<UkuleleChordChartProps> = ({ chord }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
+    if (!container) return;
+    
     container.innerHTML = ''; // Clear the container before drawing the new chart
 
-    const chordBox = new ChordBox(container, {
+    const chordBox = new ChordBox(container as HTMLElement, {
       width: 60,
       height: 72,
       circleRadius: 4,
@@ -45,7 +51,7 @@ const UkuleleChordChart = ({ chord }) => {
       fretWidth: 1,
       stringWidth: 1
     });    // Get chord data from ukuleleChords and convert to VexChords format
-    const chordData = ukuleleChords[chord];
+    const chordData = (ukuleleChords as any)[chord];
     const chordFrets = chordData ? chordData.frets : null;
     
     chordBox.draw({

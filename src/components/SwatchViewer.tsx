@@ -1,7 +1,19 @@
 import React, { useMemo, useCallback } from 'react';
 import KnitStitch from './KnitStitch';
 
-const SwatchViewer = ({ 
+interface SwatchViewerProps {
+  pattern?: number[][] | number[];
+  colors?: string[];
+  gauge?: { stitches: number; rows: number };
+  size?: { width: number; height: number };
+  onStitchClick?: ((row: number, stitch: number) => void) | null;
+  className?: string;
+  style?: React.CSSProperties;
+  showScrollbars?: boolean;
+  maxDisplayStitches?: number;
+}
+
+const SwatchViewer: React.FC<SwatchViewerProps> = ({ 
   pattern = [], 
   colors = ['#ffffff'], 
   gauge = { stitches: 19, rows: 30 }, 
@@ -47,11 +59,11 @@ const SwatchViewer = ({
           if (Array.isArray(pattern[0])) {
             // 2D pattern array
             const patternRow = row % pattern.length;
-            const patternCol = stitch % pattern[patternRow].length;
-            colorIndex = pattern[patternRow][patternCol];
+            const patternCol = stitch % (pattern[patternRow] as number[]).length;
+            colorIndex = (pattern[patternRow] as number[])[patternCol];
           } else {
             // 1D pattern array (stripes)
-            colorIndex = pattern[row % pattern.length];
+            colorIndex = pattern[row % pattern.length] as number;
           }
         }
         
@@ -73,7 +85,7 @@ const SwatchViewer = ({
   }, [pattern, colors, dimensions, maxDisplayStitches]);
 
   // Handle stitch clicks
-  const handleStitchClick = useCallback((row, stitch) => {
+  const handleStitchClick = useCallback((row: number, stitch: number) => {
     if (onStitchClick) {
       onStitchClick(row, stitch);
     }
@@ -120,13 +132,13 @@ const SwatchViewer = ({
     <div className={className} style={containerStyle}>
       <div style={gridStyle}>
         {patternGrid.map((row: any) => 
-          row.map(({ row: r, stitch: s, color, key }) => (
+          row.map(({ row: r, stitch: s, color, key }: { row: number; stitch: number; color: string; key: string }) => (
             <KnitStitch
               key={key}
               color={color}
               size={dimensions.stitchSize}
               strokeWidth={dimensions.stitchSize > 8 ? 0.5 : 0.25}
-              onClick={onStitchClick ? () => handleStitchClick(r, s) : null}
+              onClick={onStitchClick ? () => handleStitchClick(r, s) : null as any}
               style={{
                 width: dimensions.stitchSize,
                 height: dimensions.stitchSize * 0.75

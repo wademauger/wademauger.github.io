@@ -73,7 +73,7 @@ describe('React Query Hooks', () => {
       
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       
-      const authState = queryClient.getQueryData(driveKeys.auth());
+      const authState = queryClient.getQueryData(driveKeys.auth()) as any;
       expect(authState?.isSignedIn).toBe(true);
     });
   });
@@ -91,7 +91,7 @@ describe('React Query Hooks', () => {
       
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       
-      const authState = queryClient.getQueryData(driveKeys.auth());
+      const authState = queryClient.getQueryData(driveKeys.auth()) as any;
       expect(authState?.isSignedIn).toBe(false);
     });
   });
@@ -106,7 +106,7 @@ describe('React Query Hooks', () => {
       const library: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Test Artist' }]
+        artists: [{ id: 'artist-1', name: 'Test Artist' } as any]
       };
       await adapter.saveLibrary(library);
       
@@ -145,7 +145,7 @@ describe('React Query Hooks', () => {
       const newLibrary: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'New Artist' }]
+        artists: [{ id: 'artist-1', name: 'New Artist' } as any]
       };
       
       result.current.mutate(newLibrary);
@@ -168,7 +168,7 @@ describe('React Query Hooks', () => {
       const original: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Original' }]
+        artists: [{ id: 'artist-1', name: 'Original' } as any]
       };
       
       queryClient.setQueryData(driveKeys.library(), original);
@@ -178,7 +178,7 @@ describe('React Query Hooks', () => {
       const updated: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Updated' }]
+        artists: [{ id: 'artist-1', name: 'Updated' } as any]
       };
       
       result.current.mutate(updated);
@@ -198,13 +198,13 @@ describe('React Query Hooks', () => {
       const lib1: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Artist 1' }]
+        artists: [{ id: 'artist-1', name: 'Artist 1' } as any]
       };
       
       const lib2: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-2', name: 'Artist 2' }]
+        artists: [{ id: 'artist-2', name: 'Artist 2' } as any]
       };
       
       await adapter.saveLibrary(lib1, 'file1');
@@ -232,7 +232,7 @@ describe('React Query Hooks', () => {
       const library: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Test Artist' }]
+        artists: [{ id: 'artist-1', name: 'Test Artist' } as any]
       };
       
       await adapter.saveLibrary(library);
@@ -245,7 +245,7 @@ describe('React Query Hooks', () => {
       
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       
-      expect(result.current.data?.name).toBe('Test Artist');
+      expect((result.current.data as any)?.name).toBe('Test Artist');
     });
   });
   
@@ -279,7 +279,7 @@ describe('React Query Hooks', () => {
       const library: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Original Name' }]
+        artists: [{ id: 'artist-1', name: 'Original Name' } as any]
       };
       
       await adapter.saveLibrary(library);
@@ -301,7 +301,7 @@ describe('React Query Hooks', () => {
       
       // Wait for mutation to process (onMutate is async)
       await waitFor(() => {
-        const cached = queryClient.getQueryData(driveKeys.entry('artists', 'artist-1'));
+        const cached = queryClient.getQueryData(driveKeys.entry('artists', 'artist-1')) as any;
         return cached?.name === 'Updated Name';
       });
       
@@ -327,7 +327,7 @@ describe('React Query Hooks', () => {
       await waitFor(() => expect(result.current.isError).toBe(true));
       
       // Should rollback
-      const cached = queryClient.getQueryData(driveKeys.entry('artists', 'artist-1'));
+      const cached = queryClient.getQueryData(driveKeys.entry('artists', 'artist-1')) as any;
       expect(cached?.name).toBe('Original');
     });
   });
@@ -339,7 +339,7 @@ describe('React Query Hooks', () => {
       const library: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Test Artist' }]
+        artists: [{ id: 'artist-1', name: 'Test Artist' } as any]
       };
       
       await adapter.saveLibrary(library);

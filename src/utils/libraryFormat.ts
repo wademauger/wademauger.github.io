@@ -1,9 +1,9 @@
 // Utilities for namespaced library format
-export function countNamespaces(libraryObj) {
+export function countNamespaces(libraryObj: any): Record<string, number> {
   if (!libraryObj || typeof libraryObj !== 'object') return {};
   const ns = libraryObj.namespaces || libraryObj;
-  const counts = {};
-  Object.keys(ns).forEach((k: number) => {
+  const counts: Record<string, number> = {};
+  Object.keys(ns).forEach((k: string) => {
     const arr = ns[k];
     // Special-case for songs namespace which may be structured as artists -> albums -> songs
     if (k === 'songs' && arr && typeof arr === 'object') {
@@ -63,7 +63,7 @@ export function countNamespaces(libraryObj) {
   return counts;
 }
 
-export function detectLegacyFormat(obj) {
+export function detectLegacyFormat(obj: any): { isLegacy: boolean; inferredNamespace?: string } {
   // Legacy format: top-level array of entries or top-level object that isn't namespaced
   if (!obj || typeof obj !== 'object') return { isLegacy: false };
   const hasNamespaces = !!obj.namespaces;
@@ -71,7 +71,7 @@ export function detectLegacyFormat(obj) {
   // If top-level keys look like namespace names (panels, recipes, songs) and are arrays, consider not legacy
   const likelyNamespaces = ['panels', 'recipes', 'songs', 'colorworks', 'patterns'];
   const topKeys = Object.keys(obj);
-  const matches = topKeys.filter((k: any) => likelyNamespaces.includes(k) && Array.isArray(obj[k]));
+  const matches = topKeys.filter((k: string) => likelyNamespaces.includes(k) && Array.isArray(obj[k]));
   // If there are multiple top-level keys that match known namespaces (and more than one),
   // treat as already namespaced. If there's only one key and it's an array, we'll treat it as legacy below.
   if (matches.length > 0 && topKeys.length === matches.length && topKeys.length > 1) return { isLegacy: false };
@@ -88,10 +88,10 @@ export function detectLegacyFormat(obj) {
   return { isLegacy: false };
 }
 
-export function migrateLegacyToNamespaced(obj, namespace = 'panels') {
+export function migrateLegacyToNamespaced(obj: any, namespace = 'panels'): any {
   if (!obj) return { metadata: {}, namespaces: { [namespace]: [] } };
   if (obj.namespaces) return obj; // already namespaced
-  let entries = [];
+  let entries: any[] = [];
   if (Array.isArray(obj)) entries = obj;
   else {
     const keys = Object.keys(obj);

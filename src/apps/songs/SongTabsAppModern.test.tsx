@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
-import testUtils from '@/tests/testUtils';
+const testUtils = require('@/tests/testUtils');
 import { Modal, message } from 'antd';
 import { Provider } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -34,9 +34,8 @@ const DriveMockModule: any = testUtils.getDriveMock();
 // Mock environment variables for Jest (import.meta is not available outside ESM)
 // Create a global object that code under test can read instead.
 // Some build setups read from import.meta.env; tests can read from globalThis.__IMPORT_META_ENV__
-// @ts-ignore
-globalThis.__IMPORT_META_ENV__ = globalThis.__IMPORT_META_ENV__ || {};
-globalThis.__IMPORT_META_ENV__.VITE_GOOGLE_CLIENT_ID = 'test-client-id';
+(globalThis as any).__IMPORT_META_ENV__ = (globalThis as any).__IMPORT_META_ENV__ || {};
+(globalThis as any).__IMPORT_META_ENV__.VITE_GOOGLE_CLIENT_ID = 'test-client-id';
 
 // Reuse shared test utilities
 const { renderWithProviders, resetDriveMock, getInnerInputByTestId, findInputByLabel, findModalSubmitButton } = testUtils;

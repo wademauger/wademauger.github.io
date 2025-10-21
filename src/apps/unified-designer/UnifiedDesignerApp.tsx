@@ -134,7 +134,7 @@ const UnifiedDesignerApp = () => {
     ];
 
     // Handle panel creation completion
-    const handlePanelCreated = useCallback((panel) => {
+    const handlePanelCreated = useCallback((panel: any) => {
         setSavedPanels(prev => [...prev, {
             ...panel,
             id: Date.now(),
@@ -168,11 +168,11 @@ const UnifiedDesignerApp = () => {
             <div className="panel-content">
                 {panelView === 'shape-creator' && (
                     <PanelShapeCreator
-                        onShapeCreated={(shape) => {
+                        onShapeCreated={(shape: any) => {
                             handlePanelCreated({ shape, name: 'New Panel Shape' });
                         }}
-                        onContinueToColorwork={(shape) => {
-                            setCurrentProject({ shape, name: 'New Panel' });
+                        onContinueToColorwork={(shape: any) => {
+                            setCurrentProject({ shape, name: 'New Panel' } as any);
                             setPanelView('colorwork-editor');
                         }}
                     />
@@ -180,10 +180,8 @@ const UnifiedDesignerApp = () => {
                 
                 {panelView === 'colorwork-editor' && (
                     <ColorworkPanelEditor
-                        initialProject={currentProject}
-                        gauge={defaultGauge}
-                        onSave={handlePanelCreated}
-                        onBack={() => setPanelView('shape-creator')}
+                        project={currentProject as any}
+                        onStageChange={() => setPanelView('shape-creator')}
                     />
                 )}
                 
@@ -198,10 +196,12 @@ const UnifiedDesignerApp = () => {
     const renderGarmentComposition = () => (
         <div className="garment-composition-container">
             <GarmentComposer
-                availablePanels={savedPanels}
-                initialGarment={selectedGarment}
-                onSave={handleGarmentSaved}
-                onCancel={() => setSelectedGarment(null)}
+                {...{
+                    availablePanels: savedPanels,
+                    initialGarment: selectedGarment,
+                    onSave: handleGarmentSaved,
+                    onCancel: () => setSelectedGarment(null)
+                } as any}
             />
         </div>
     );

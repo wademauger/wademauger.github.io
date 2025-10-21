@@ -21,11 +21,20 @@ export type PatternData = {
   colorwork?: PatternColorwork;
 };
 
+export type KnittingProgress = {
+  currentRowIndex: number; // 0-based index into the complete stitch plan
+  currentPanelIndex: number; // Which panel in the project (0-based)
+  currentTrapezoidIndex: number; // Which section within current panel (0-based)
+  completedRows: number[]; // Array of completed row indices
+  lastUpdated: string; // ISO timestamp for persistence
+};
+
 export type KnittingDesignState = {
   currentStep: number;
   isKnittingMode: boolean;
   uiMode: 'wizard' | 'workspace';
   patternData: PatternData;
+  knittingProgress: KnittingProgress; // Track user's knitting progress
   sessionId: string | null;
   lastSaved: string | null;
   isDirty: boolean;
@@ -69,6 +78,11 @@ const initialState: KnittingDesignState = {
       fabricWidth: 160,
       fabricHeight: 240
     },
+    knittingOptions: {
+      castOnMethod: 'long-tail',
+      bindOffMethod: 'knitwise',
+      shortRowTechnique: 'wraps'
+    },
     colorwork: {
       type: 'solid', // Default to solid color
       color: '#ffffff', // Default color for solid
@@ -99,6 +113,13 @@ const initialState: KnittingDesignState = {
       showSeams: true,
       showConstruction: false
     }
+  },
+  knittingProgress: {
+    currentRowIndex: 0,
+    currentPanelIndex: 0,
+    currentTrapezoidIndex: 0,
+    completedRows: [],
+    lastUpdated: new Date().toISOString()
   },
   sessionId: null,
   lastSaved: null,
@@ -131,7 +152,7 @@ const knittingDesignSlice = createSlice({
     
   nextStep: (state: KnittingDesignState) => {
       // Simplified 2-step workflow: setup (0) -> panels with colorwork (1)
-      const maxSteps = 1; // 0-1, so 2 total steps
+      const maxSteps = 2; // 0-2, so 3 total steps
       
       if (state.currentStep < maxSteps) {
         state.currentStep += 1;
@@ -298,6 +319,55 @@ const knittingDesignSlice = createSlice({
         state.uiMode = mode;
         state.isDirty = true;
       }
+    },
+
+    updateKnittingProgress: (state: KnittingDesignState, action: PayloadAction<Partial<KnittingProgress>>) => {
+      const updates = action.payload;
+      state.knittingProgress = {
+        ...state.knittingProgress,
+        ...updates,
+        lastUpdated: new Date().toISOString()
+      };
+      state.isDirty = true;
+    },
+
+    setCurrentRowIndex: (state: KnittingDesignState, action: PayloadAction<number>) => {
+      state.knittingProgress.currentRowIndex = action.payload;
+      state.knittingProgress.lastUpdated = new Date().toISOString();
+      state.isDirty = true;
+    },
+
+    setCurrentPanelIndex: (state: KnittingDesignState, action: PayloadAction<number>) => {
+      state.knittingProgress.currentPanelIndex = action.payload;
+      state.knittingProgress.lastUpdated = new Date().toISOString();
+      state.isDirty = true;
+    },
+
+    setCurrentTrapezoidIndex: (state: KnittingDesignState, action: PayloadAction<number>) => {
+      state.knittingProgress.currentTrapezoidIndex = action.payload;
+      state.knittingProgress.lastUpdated = new Date().toISOString();
+      state.isDirty = true;
+    },
+
+    addCompletedRow: (state: KnittingDesignState, action: PayloadAction<number>) => {
+      const rowIndex = action.payload;
+      if (!state.knittingProgress.completedRows.includes(rowIndex)) {
+        state.knittingProgress.completedRows.push(rowIndex);
+        state.knittingProgress.completedRows.sort((a, b) => a - b);
+      }
+      state.knittingProgress.lastUpdated = new Date().toISOString();
+      state.isDirty = true;
+    },
+
+    resetKnittingProgress: (state: KnittingDesignState) => {
+      state.knittingProgress = {
+        currentRowIndex: 0,
+        currentPanelIndex: 0,
+        currentTrapezoidIndex: 0,
+        completedRows: [],
+        lastUpdated: new Date().toISOString()
+      };
+      state.isDirty = true;
     }
   }
 });
@@ -330,7 +400,13 @@ export const {
   updateGarmentSequence,
   removeFromGarmentSequence,
   updatePanelPatternLayers,
-  copyPanelPatternLayers
+  copyPanelPatternLayers,
+  updateKnittingProgress,
+  setCurrentRowIndex,
+  setCurrentPanelIndex,
+  setCurrentTrapezoidIndex,
+  addCompletedRow,
+  resetKnittingProgress
 } = knittingDesignSlice.actions;
 
 export default knittingDesignSlice.reducer;
@@ -350,7 +426,8 @@ export const selectCurrentStepInfo = (state: any) => {
   
   const steps = [
     { title: 'Pattern Setup', key: 'setup' },
-    { title: 'Panel Selection & Colorwork', key: 'panels-colorwork' }
+    { title: 'Panel Selection & Colorwork', key: 'panels-colorwork' },
+    { title: 'Knitting Techniques', key: 'techniques' }
   ];
   
   return {

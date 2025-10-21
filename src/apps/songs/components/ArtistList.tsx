@@ -1,6 +1,12 @@
 import React from 'react';
 
-const ArtistList = ({ artists, selectedArtist, onSelectArtist }) => {
+interface ArtistListProps {
+  artists: any[];
+  selectedArtist: any;
+  onSelectArtist: (artist: any) => void;
+}
+
+const ArtistList = ({ artists, selectedArtist, onSelectArtist }: ArtistListProps) => {
   return (
     <div className="artist-list">
       <ul>

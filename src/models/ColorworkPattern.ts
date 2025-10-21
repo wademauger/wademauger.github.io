@@ -111,13 +111,13 @@ export class ColorworkPattern {
     }
 
     // Resize pattern to fit specific dimensions
-    resizeToFit(targetStitches, targetRows, fillColor = 'MC') {
+    resizeToFit(targetStitches: number, targetRows: number, fillColor = 'MC'): void {
         const currentStitches = this.getStitchCount();
         const currentRows = this.getRowCount();
 
         if (currentStitches === 0 || currentRows === 0) return;
 
-        const newGrid = [];
+        const newGrid: string[][] = [];
         for (let row = 0; row < targetRows; row++) {
             const newRow = [];
             const sourceRow = Math.floor((row * currentRows) / targetRows);
@@ -133,12 +133,12 @@ export class ColorworkPattern {
     }
 
     // Create a section of the pattern for a specific stitch range
-    extractSection(startStitch, endStitch, startRow = 0, endRow = null) {
-        endRow = endRow || this.getRowCount();
+    extractSection(startStitch: number, endStitch: number, startRow = 0, endRow: number | null = null): ColorworkPattern {
+        const actualEndRow = endRow || this.getRowCount();
         
-        const section = [];
-        for (let row = startRow; row < Math.min(endRow, this.getRowCount()); row++) {
-            const newRow = [];
+        const section: string[][] = [];
+        for (let row = startRow; row < Math.min(actualEndRow, this.getRowCount()); row++) {
+            const newRow: string[] = [];
             for (let col = startStitch; col < Math.min(endStitch, this.getStitchCount()); col++) {
                 newRow.push(this.grid[row] ? this.grid[row][col] : 'MC');
             }

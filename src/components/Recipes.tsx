@@ -8,7 +8,33 @@ import recipes from '../data/recipes/index';
 import { useSelector, useDispatch } from 'react-redux';
 import { setIsPrintMode, setFontSize } from '../reducers/recipes.reducer';
 
-const RecipeIndex = ({ onAIClick }) => {
+interface Ingredient {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
+interface Recipe {
+  title: string;
+  description: string;
+  permalink: string;
+  defaultServings: number;
+  servingUnits: string;
+  scalable: boolean;
+  ingredients: Ingredient[];
+  steps: string[];
+  notes: string[];
+}
+
+type RecipeCategories = {
+  [key: string]: Recipe[];
+};
+
+interface RecipeIndexProps {
+  onAIClick?: () => void;
+}
+
+const RecipeIndex: React.FC<RecipeIndexProps> = ({ onAIClick }) => {
   console.log('RecipeIndex rendered, onAIClick:', typeof onAIClick);
   return (
     <div>
@@ -27,11 +53,12 @@ const RecipeIndex = ({ onAIClick }) => {
         </Button>
       </div>
       {Object.keys(recipes).map((category, index: number) => {
+        const recipesData = recipes as RecipeCategories;
         return (
           <div key={index}>
             <h2 className="text-2xl font-semibold">{category}</h2>
             <ul>
-              {recipes[category].map((recipe: any) => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
+              {recipesData[category].map((recipe: Recipe) => <li key={recipe.permalink}><NavLink to={`/crafts/recipes/${recipe.permalink}`}>{recipe.title}</NavLink></li>)}
             </ul>
           </div>
         );
@@ -42,8 +69,9 @@ const RecipeIndex = ({ onAIClick }) => {
 
 function Recipes() {
   const { id } = useParams();
-  const recipe = Object.keys(recipes).reduce((acc, category) => {
-    const found = recipes[category].find((recipe: any) => recipe.permalink === id);
+  const recipesData = recipes as RecipeCategories;
+  const recipe = Object.keys(recipesData).reduce<Recipe | null>((acc, category) => {
+    const found = recipesData[category].find((recipe: Recipe) => recipe.permalink === id);
     return found ? found : acc;
   }, null);
   const [servings, setServings] = useState(recipe ? recipe.defaultServings : 1);
@@ -81,18 +109,12 @@ function Recipes() {
     setShowAIChat(true);
   };
 
-  const scaledIngredients = recipe && Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ingredient: any) => {
-    // Handle both object and string ingredient formats
-    if (typeof ingredient === 'object' && ingredient !== null && ingredient.quantity !== undefined) {
-      const quantity = (ingredient.quantity * servings / recipe.defaultServings).toFixed(1);
-      return {
-        ...ingredient,
-        quantity: quantity.endsWith('.0') ? parseInt(quantity) : quantity
-      };
-    } else {
-      // For string ingredients or objects without quantity, return as-is
-      return ingredient;
-    }
+    const scaledIngredients = recipe && Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ingredient: Ingredient) => {
+    return {
+      name: ingredient.name,
+      quantity: (ingredient.quantity * servings / recipe.defaultServings).toFixed(1),
+      unit: ingredient.unit
+    };
   }) : [];
 
   const minServings = recipe ? Math.max(1, Math.floor(recipe.defaultServings / 5)) : 1;
@@ -147,15 +169,15 @@ function Recipes() {
                 </Flex>
               )}
             <Table titles={['Ingredient', '#', 'Units']} elements={scaledIngredients} />
-            <h1 className='text-2xl text-left'><b>Steps:</b></h1>
-            <ul className='text-left steps-list'>
-              {recipe.steps.map((step, index: number) => <li key={index}>{step}</li>)}
-            </ul>
+            <h1 className='text-2xl text-left'><b>Instructions:</b></h1>
+            <ol className='text-left steps-list'>
+              {recipe.steps.map((step: string, index: number) => <li key={index}>{step}</li>)}
+            </ol>
             {recipe.notes.length > 0 ? (
               <>
                 <h1 className='text-2xl text-left'><b>Notes:</b></h1>
                 <ul className='text-left steps-list'>
-                  {recipe.notes.map((note, index: number) => <li key={index}>{note}</li>)}
+                  {recipe.notes.map((note: string, index: number) => <li key={index}>{note}</li>)}
                 </ul>
               </>
             ) : null}

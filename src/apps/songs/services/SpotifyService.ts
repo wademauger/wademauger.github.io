@@ -14,7 +14,7 @@ class SpotifyService {
   }
 
   // Search for album art by artist and album (no track required)
-  async searchAlbumArt(artist, album = null) {
+  async searchAlbumArt(artist: string, album: string | null = null) {
     try {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
@@ -66,7 +66,7 @@ class SpotifyService {
   }
 
   // Keep the original method for backwards compatibility
-  async searchTrack(artist, track, album = null) {
+  async searchTrack(artist: string, track: string, album: string | null = null) {
     try {
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
@@ -102,7 +102,7 @@ class SpotifyService {
   }
 
   // Get albums for an artist (cached)
-  async getAlbumsForArtist(artistName) {
+  async getAlbumsForArtist(artistName: string) {
     if (!artistName || artistName.trim() === '') {
       return [];
     }
@@ -146,7 +146,7 @@ class SpotifyService {
       }
       
       // Extract album names from the response
-      let albums = [];
+      let albums: any[] = [];
       if (data.albums?.items) {
         // Deduplicate and sort album names
         albums = [...new Set(
@@ -173,7 +173,7 @@ class SpotifyService {
   }
 
   // Search for artists by name (for fuzzy matching/autocomplete)
-  async searchArtists(searchTerm) {
+  async searchArtists(searchTerm: string) {
     if (!searchTerm || searchTerm.trim() === '') {
       return [];
     }
@@ -212,7 +212,7 @@ class SpotifyService {
       }
       
       // Extract artist names from the response
-      let artists = [];
+      let artists: any[] = [];
       if (data.artists?.items) {
         // Deduplicate and sort artist names
         artists = [...new Set(
@@ -252,13 +252,13 @@ class SpotifyService {
   }
 
   // Get album artwork URL with fallback handling
-  getAlbumArtUrl(trackData) {
+  getAlbumArtUrl(trackData: any) {
     if (!trackData?.albumArt) return null;
     return trackData.albumArt;
   }
 
   // Get tracks from a specific album (for song title suggestions)
-  async getTracksFromAlbum(artistName, albumName) {
+  async getTracksFromAlbum(artistName: string, albumName: string) {
     if (!artistName || !albumName || artistName.trim() === '' || albumName.trim() === '') {
       return [];
     }
@@ -298,7 +298,7 @@ class SpotifyService {
       }
       
       // Extract track names from the response
-      let tracks = [];
+      let tracks: any[] = [];
       if (data.tracks?.items) {
         // Deduplicate and sort track names
         tracks = [...new Set(
@@ -325,7 +325,7 @@ class SpotifyService {
   }
 
   // Search for tracks by name (for fuzzy matching/autocomplete)
-  async searchTracks(searchTerm, artistName = null) {
+  async searchTracks(searchTerm: string, artistName: string | null = null) {
     if (!searchTerm || searchTerm.trim() === '') {
       return [];
     }
@@ -365,7 +365,7 @@ class SpotifyService {
       }
       
       // Extract track names from the response
-      let tracks = [];
+      let tracks: any[] = [];
       if (data.tracks?.items) {
         // Deduplicate and sort track names
         tracks = [...new Set(

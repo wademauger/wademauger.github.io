@@ -1,8 +1,8 @@
 import googleDriveServiceModern from './GoogleDriveServiceModern';
 
 describe('GoogleDriveServiceModern upload fallback', () => {
-  let svc;
-  const originalGapi = global.gapi;
+  let svc: typeof googleDriveServiceModern;
+  const originalGapi = (global as any).gapi;
 
   beforeEach(() => {
     svc = googleDriveServiceModern;
@@ -11,7 +11,7 @@ describe('GoogleDriveServiceModern upload fallback', () => {
     svc.accessToken = 'fake-token';
 
     // Mock gapi client drive.files.update to return a resolved response
-    global.gapi = {
+    (global as any).gapi = {
       client: {
         drive: {
           files: {
@@ -28,8 +28,8 @@ describe('GoogleDriveServiceModern upload fallback', () => {
   });
 
   afterEach(() => {
-    global.gapi = originalGapi;
-    delete global.fetch;
+    (global as any).gapi = originalGapi;
+    delete (global as any).fetch;
   });
 
   it('calls upload fallback PATCH after files.update', async () => {
@@ -38,7 +38,7 @@ describe('GoogleDriveServiceModern upload fallback', () => {
     // Use the public wrapper which calls withAutoAuth
     await svc.saveLibraryToFile(fileId, lib);
     // Expect gapi update called
-    expect(global.gapi.client.drive.files.update).toHaveBeenCalled();
+    expect((global as any).gapi.client.drive.files.update).toHaveBeenCalled();
     // Expect fetch called to upload endpoint
     const expectedUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
     expect(global.fetch).toHaveBeenCalledWith(expectedUrl, expect.objectContaining({ method: 'PATCH' }));

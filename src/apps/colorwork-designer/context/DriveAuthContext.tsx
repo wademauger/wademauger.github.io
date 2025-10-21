@@ -209,7 +209,7 @@ export const DriveAuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Try to restore session from localStorage
-        const restored = GoogleDriveServiceModern.restoreSession && GoogleDriveServiceModern.restoreSession();
+        const restored = GoogleDriveServiceModern.restoreSession ? GoogleDriveServiceModern.restoreSession() : false;
         if (!restored) return;
 
         // If we restored a session, ensure services are initialized before
@@ -221,7 +221,7 @@ export const DriveAuthProvider = ({ children }: { children: ReactNode }) => {
             // Attempt a background initialize if no CLIENT_ID; this may noop
             // in test/non-browser environments.
             if (typeof GoogleDriveServiceModern.initialize === 'function') {
-              await GoogleDriveServiceModern.initialize(GoogleDriveServiceModern.CLIENT_ID || undefined);
+              await GoogleDriveServiceModern.initialize(GoogleDriveServiceModern.CLIENT_ID || '');
             }
           }
         } catch (initErr) {

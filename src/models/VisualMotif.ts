@@ -1,5 +1,27 @@
 class VisualMotif {
-    constructor(type, primaryMotif, secondaryMotifs = [], mainColor = '', contrastColors = [], successor = null, truncatedBy = 0, horizontalRepeat = 0, verticalRepeat = 0, height = 0) {
+    type: string;
+    primaryMotif: any;
+    secondaryMotifs: any[];
+    mainColor: string;
+    contrastColors: string[];
+    successor: VisualMotif | null;
+    truncatedBy: number;
+    horizontalRepeat: number;
+    verticalRepeat: number;
+    height: number;
+
+    constructor(
+        type: string,
+        primaryMotif: any,
+        secondaryMotifs: any[] = [],
+        mainColor = '',
+        contrastColors: string[] = [],
+        successor: VisualMotif | null = null,
+        truncatedBy = 0,
+        horizontalRepeat = 0,
+        verticalRepeat = 0,
+        height = 0
+    ) {
         this.type = type;
         this.primaryMotif = primaryMotif;
         this.secondaryMotifs = secondaryMotifs;
@@ -12,9 +34,9 @@ class VisualMotif {
         this.height = height;
     }
 
-    getChild(row) {
-        let currentMotif = this;
-        let accumulatedHeight = this.height;
+    getChild(row: number) {
+        let currentMotif: VisualMotif = this;
+        let accumulatedHeight: number = this.height;
 
         while (currentMotif.successor && row >= accumulatedHeight) {
             row -= accumulatedHeight;

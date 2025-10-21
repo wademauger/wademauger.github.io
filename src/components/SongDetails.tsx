@@ -6,7 +6,16 @@ import LineWithChords from './LineWithChords';
 
 const { Title } = Typography;
 
-const SongDetails = ({ song, keyShift, transposeSong, allChords, handlePinChord, lyrics }) => (
+interface SongDetailsProps {
+  song: { title: string; artist: string };
+  keyShift: number;
+  transposeSong: (shift: number) => void;
+  allChords: string[];
+  handlePinChord: (chord: string) => void;
+  lyrics: string[];
+}
+
+const SongDetails: React.FC<SongDetailsProps> = ({ song, keyShift, transposeSong, allChords, handlePinChord, lyrics }) => (
   <div>
     <Title level={3}>{song.title} by <i>{song.artist}</i></Title>
     {/* Controls for transposing the song */}
@@ -20,7 +29,7 @@ const SongDetails = ({ song, keyShift, transposeSong, allChords, handlePinChord,
     {/* Display all the charts for the chords in the current song */}
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
       <Flex justify="center" gap="small" wrap="wrap">
-        {allChords.map((chord, index: number) => (
+        {allChords.map((chord: string, index: number) => (
           <div key={index} onClick={() => handlePinChord(chord)} style={{ cursor: 'pointer' }}>
             <UkuleleChordChart chord={chord} />
           </div>
@@ -30,7 +39,7 @@ const SongDetails = ({ song, keyShift, transposeSong, allChords, handlePinChord,
 
     {/* Display lyrics with chords */}
     <Flex align="center" vertical={true}>
-      {lyrics.map((line, lineIndex) => (
+      {lyrics.map((line: any, lineIndex: number) => (
         <div key={lineIndex} style={{ marginBottom: '20px', display: 'flex' }}>
           <LineWithChords key={lineIndex} line={line} togglePinChord={handlePinChord} />
         </div>

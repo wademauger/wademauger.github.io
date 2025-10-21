@@ -1,6 +1,16 @@
 import React from 'react';
 
-const KnitStitch = ({ 
+interface KnitStitchProps {
+  color?: string;
+  size?: number;
+  strokeColor?: string;
+  strokeWidth?: number;
+  style?: React.CSSProperties;
+  className?: string;
+  onClick?: React.MouseEventHandler<SVGSVGElement> | null;
+}
+
+const KnitStitch: React.FC<KnitStitchProps> = ({ 
   color = '#ffffff', 
   size = 12, 
   strokeColor = '#cccccc',
@@ -21,7 +31,7 @@ const KnitStitch = ({
         ...style
       }}
       className={className}
-      onClick={onClick}
+      onClick={onClick || undefined}
     >
       {/* Simple clean V-shaped knit stitch */}
       <path

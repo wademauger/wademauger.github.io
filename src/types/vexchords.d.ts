@@ -15,7 +15,8 @@ declare module 'vexchords' {
     numStrings?: number;
     numFrets?: number;
     showTuning?: boolean;
-    [key: string]: any; // Allow any other properties
+    // Allow additional string-keyed properties for extensibility
+    [key: string]: number | number[] | number[][] | string | string[] | boolean | undefined;
   }
 
   export class ChordBox {

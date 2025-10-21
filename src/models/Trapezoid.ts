@@ -2,6 +2,8 @@ import { StitchPlan } from './StitchPlan';
 import { defaultGauge } from './Gauge';
 
 class Trapezoid {
+    static _nextId?: number; // Static counter for generating IDs
+    
     height: number;
     baseA: number;
     baseB: number;
@@ -29,27 +31,27 @@ class Trapezoid {
         this.label = label; // Optional display label (e.g., "A", "B", "C")
     }
 
-    setSizeModifier(sizeModifier) {
+    setSizeModifier(sizeModifier: number): void {
         this.modificationScale = sizeModifier;
     }
 
-    getHeight() {
+    getHeight(): number {
         return this.height * this.modificationScale;
     }
 
-    getLowerBase() {
+    getLowerBase(): number {
         return this.baseA * this.modificationScale;
     }
 
-    getUpperBase() {
+    getUpperBase(): number {
         return this.baseB * this.modificationScale;
     }
 
-    getOffset() {
+    getOffset(): number {
         return this.baseBHorizontalOffset * this.modificationScale;
     }
 
-    static fromObject(json) {
+    static fromObject(json: any): Trapezoid | null {
         // Defensive checks: ensure json is an object with meaningful data
         if (!json || typeof json !== 'object' || Array.isArray(json) && json.length === 0) {
             return null;
@@ -111,7 +113,7 @@ class Trapezoid {
         return trap;
     }
 
-    toJSON() {
+    toJSON(): any {
         return {
             height: this.height,
             baseA: this.baseA,
@@ -126,11 +128,11 @@ class Trapezoid {
         };
     }
 
-    getUpperBaseWidthInStitches(gauge = defaultGauge) {
+    getUpperBaseWidthInStitches(gauge: any = defaultGauge): number {
         return Math.round(this.getUpperBase() * (gauge.getStitchesPerInch()));
     }
 
-    getStitchPlan(gauge, sizeModifier, startRow = 1) {
+    getStitchPlan(gauge: any, sizeModifier: number, startRow: number = 1): StitchPlan {
         const stitchesPerInch = gauge.getStitchesPerInch() * sizeModifier;
         const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
         const startStitches = Math.round(this.getLowerBase() * stitchesPerInch);
@@ -151,7 +153,7 @@ class Trapezoid {
 
         let leftShapingCounter = 0, rightShapingCounter = 0;
 
-        const stitchPlan = new StitchPlan(gauge, sizeModifier);
+        const stitchPlan = new StitchPlan();
         let prevRow = new StitchPlan.Row(startRow - 1, startStitchesLeft, startStitchesRight);
         for (let rowNumber = startRow; rowNumber < startRow + totalRows; rowNumber++) {
             let leftShapingModifier = 0;
@@ -192,7 +194,7 @@ class Trapezoid {
         return stitchPlan;
     }
 
-    generateKnittingInstructions(gauge, sizeModifier, startRow = 1, isRoot = false, visualMotif = null) {
+    generateKnittingInstructions(gauge: any, sizeModifier: number, startRow: number = 1, isRoot: boolean = false, visualMotif: any = null): any[] {
         const stitchPlan = this.getStitchPlan(gauge, sizeModifier, startRow);
         const instructions = [];
 
@@ -200,7 +202,7 @@ class Trapezoid {
             instructions.push(`Cast on ${stitchPlan.rows[0].leftStitchesInWork + stitchPlan.rows[0].rightStitchesInWork} stitches.`);
         }
 
-        instructions.push(...stitchPlan.generateKnittingInstructions(visualMotif));
+        instructions.push(...stitchPlan.generateKnittingInstructions());
 
         instructions.push(...this.finishingSteps);
 
@@ -208,20 +210,20 @@ class Trapezoid {
             instructions.push(`Divide into ${this.successors.length} sections:`);
             for (let i = 0; i < this.successors.length; i++) {
                 const successor = this.successors[i];
-                const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge, sizeModifier);
+                const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge);
                 if (successor.getHeight() > 0) {
                     instructions.push(`Section ${i + 1}: ${successorBaseWidth} stitches`);
-                    const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
+                    const successorInstructions: any[] = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
                     instructions.push(...successorInstructions);
                 } else {
-                    instructions.push(`Section ${i + 1}: bind off ${successor.getUpperBaseWidthInStitches(gauge, sizeModifier)} stitches.`);
+                    instructions.push(`Section ${i + 1}: bind off ${successor.getUpperBaseWidthInStitches(gauge)} stitches.`);
                 }
             }
         } else if (this.successors.length === 1) {
             const successor = this.successors[0];
-            const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge, sizeModifier);
+            const successorBaseWidth = successor.getUpperBaseWidthInStitches(gauge);
             if (successor.getHeight() > 0) {
-                const successorInstructions = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
+                const successorInstructions: any[] = successor.generateKnittingInstructions(gauge, sizeModifier, stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber + 1 : startRow, false, visualMotif ? visualMotif.getChild(stitchPlan.rows.length) : null);
                 instructions.push(...successorInstructions);
             } else {
                 instructions.push(`Bind off ${successorBaseWidth} stitches.`);

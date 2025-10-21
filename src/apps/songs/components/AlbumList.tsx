@@ -1,6 +1,12 @@
 import React from 'react';
 
-const AlbumList = ({ albums, selectedAlbum, onSelectAlbum }) => {
+interface AlbumListProps {
+  albums: any[];
+  selectedAlbum: any;
+  onSelectAlbum: (album: any) => void;
+}
+
+const AlbumList = ({ albums, selectedAlbum, onSelectAlbum }: AlbumListProps) => {
   return (
     <div className="album-list">
       <ul>

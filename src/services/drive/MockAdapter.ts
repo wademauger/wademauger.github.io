@@ -482,7 +482,7 @@ export class MockGoogleDriveAdapter implements IGoogleDriveAdapter {
       collection,
       id,
       data
-    });
+    }) as CrudResult<T>;
     
     // Save if successful
     if (result.success) {

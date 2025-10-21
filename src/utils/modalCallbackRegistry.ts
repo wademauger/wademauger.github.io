@@ -1,10 +1,10 @@
-const callbacks = new Map();
+const callbacks = new Map<string, Function>();
 
-function genId() {
+function genId(): string {
   return `cb-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
 }
 
-export function registerCallback(fn) {
+export function registerCallback(fn: Function): string {
   const id = genId();
   callbacks.set(id, fn);
   // Debug log for callback registration
@@ -16,7 +16,7 @@ export function registerCallback(fn) {
   return id;
 }
 
-export function getCallback(id) {
+export function getCallback(id: string): Function | undefined {
   const cb = callbacks.get(id);
   try {
     console.log(`modalCallbackRegistry: getCallback -> ${id} -> ${cb ? 'FOUND' : 'MISSING'}`);
@@ -26,7 +26,7 @@ export function getCallback(id) {
   return cb;
 }
 
-export function removeCallback(id) {
+export function removeCallback(id: string): void {
   const existed = callbacks.delete(id);
   try {
     console.log(`modalCallbackRegistry: removeCallback -> ${id} -> ${existed ? 'REMOVED' : 'NOT_FOUND'}`);

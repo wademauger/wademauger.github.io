@@ -8,7 +8,6 @@ import { useSelector } from 'react-redux';
 import { selectColorworkPatterns } from '../store/librarySlice';
 import { renderPanel } from './KnittingPanelRenderer';
 import {
-    darkenHex,
     collectTrapezoidCoordinates,
     collectShortRowCoordinates,
     calculateTrapezoidDimensions,
@@ -20,8 +19,16 @@ const { Text } = Typography;
 const { Option } = Select;
 
 // Draggable Layer Item Component - defined outside to prevent re-creation
-const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragItemHoverStyle, dragItemNormalStyle }) => {
-    const layerRef = useRef(null);
+interface DraggableLayerItemProps {
+    layer: any;
+    children: React.ReactNode;
+    onLayerReorder: (draggedId: string, targetId: string) => void;
+    dragItemHoverStyle: React.CSSProperties;
+    dragItemNormalStyle: React.CSSProperties;
+}
+
+const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragItemHoverStyle, dragItemNormalStyle }: DraggableLayerItemProps) => {
+    const layerRef = useRef<HTMLDivElement>(null);
     const [isDraggedOver, setIsDraggedOver] = useState(false);
 
     useEffect(() => {
@@ -31,7 +38,7 @@ const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragIt
         // Set up draggable
         const draggableCleanup = draggable({
             element,
-            getInitialData: () => ({ layerId: layer.id, type: 'layer' }),
+            getInitialData: () => ({ layerId: layer.id as string, type: 'layer' as const }),
             onDragStart: () => {
                 element.style.opacity = '0.5';
             },
@@ -47,7 +54,7 @@ const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragIt
             onDragLeave: () => setIsDraggedOver(false),
             onDrop: ({ source }) => {
                 setIsDraggedOver(false);
-                const draggedLayerId = source.data.layerId;
+                const draggedLayerId = source.data.layerId as string;
                 if (draggedLayerId && draggedLayerId !== layer.id) {
                     onLayerReorder(draggedLayerId, layer.id);
                 }
@@ -83,14 +90,23 @@ const DraggableLayerItem = React.memo(({ layer, children, onLayerReorder, dragIt
  * - Canvas updates are async, allowing UI to remain responsive even with complex patterns
  * - Redux state is used only for library patterns; local state for editor operations
  */
-const ColorworkCanvasEditor = ({
+
+interface ColorworkCanvasEditorProps {
+    shape: any;
+    patternLayers?: any[];
+    gauge?: Gauge | null;
+    onLayersChange?: (...args: any[]) => void;
+    onGaugeChange?: (...args: any[]) => void;
+}
+
+const ColorworkCanvasEditor: React.FC<ColorworkCanvasEditorProps> = ({
     shape,
     patternLayers = [],
     gauge = null,
     onLayersChange = (..._args: any[]) => { },
     onGaugeChange = (..._args: any[]) => { }
 }) => {
-    const canvasRef = useRef(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -107,7 +123,7 @@ const ColorworkCanvasEditor = ({
     const libraryPatterns = useSelector(selectColorworkPatterns);
 
     const availablePatterns = useMemo(() => {
-        const basePatterns = {
+        const basePatterns: Record<string, any> = {
             'solid': { name: 'Solid Color', type: 'solid', defaultConfig: { colors: [{ color: '#ffffff' }] } },
             'stripes': { name: 'Horizontal Stripes', type: 'stripes', defaultConfig: { colors: [{ color: '#ffffff', rows: 2 }, { color: '#000000', rows: 2 }], width: 4 } },
             'vstripes': { name: 'Vertical Stripes', type: 'vstripes', defaultConfig: { colors: [{ color: '#ffffff', columns: 2 }, { color: '#000000', columns: 2 }], height: 4 } },
@@ -145,7 +161,7 @@ const ColorworkCanvasEditor = ({
     // Canvas rendering functions - using shared utilities from panelRenderingUtils
     const renderUnifiedShapeToCanvas = (ctx: any, shape: any, scale: any, xOffset = 0, yOffset = 0, fillColor: any, patternLayers: any = [], gauge: any = null) => {
         // Collect all trapezoid coordinates into one unified path
-        const allCoordinates = [];
+        const allCoordinates: any[] = [];
         collectTrapezoidCoordinates(shape, scale, xOffset, yOffset, allCoordinates);
 
         if (allCoordinates.length === 0) return;
@@ -180,7 +196,7 @@ const ColorworkCanvasEditor = ({
         ctx.clip();
 
         // --- Calculate extended bounds that include short rows BEFORE rendering ---
-        const shortRowCoords = [];
+        const shortRowCoords: any[] = [];
         collectShortRowCoordinates(shape, scale, xOffset, yOffset, shortRowCoords);
         
         let extendedMinY = minY;
@@ -334,7 +350,7 @@ const ColorworkCanvasEditor = ({
     // Now using shared renderColorworkLayersToCanvas from panelRenderingUtils
     // (The canvas version that renders pixels directly)
 
-    const drawRulers = (ctx, canvasWidth, canvasHeight, shape, zoom, pan, scaleFactor, dimensions, centerX, centerY, actualWidthInches, actualHeightInches) => {
+    const drawRulers = (ctx: any, canvasWidth: number, canvasHeight: number, shape: any, zoom: number, pan: any, scaleFactor: number, dimensions: any, centerX: number, centerY: number, actualWidthInches: number, actualHeightInches: number) => {
         const devicePixelRatio = window.devicePixelRatio || 1;
         const rulerWidth = 30 * devicePixelRatio;
         const rulerHeight = 30 * devicePixelRatio;
@@ -541,7 +557,7 @@ const ColorworkCanvasEditor = ({
         ctx.restore();
     };
 
-    const renderTrapezoidWithPattern = (ctx, trap, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null) => {
+    const renderTrapezoidWithPattern = (ctx: any, trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, fillColor: any, patternLayers: any[] = [], gauge: any = null) => {
         const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
         const effectiveHeight = (trap.isHem ? (trap.height * 0.5) : trap.height) * scale; // Respect hem!
         
@@ -601,7 +617,7 @@ const ColorworkCanvasEditor = ({
         ctx.stroke();
     };
 
-    const renderHierarchyToCanvas = (ctx, trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor, patternLayers = [], gauge = null) => {
+    const renderHierarchyToCanvas = (ctx: any, trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, dimensions: any = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor: any, patternLayers: any[] = [], gauge: any = null) => {
         // Calculate dimensions first
         calculateTrapezoidDimensions(trap, scale, xOffset, yOffset, dimensions);
 
@@ -612,7 +628,7 @@ const ColorworkCanvasEditor = ({
         if (trap.successors && trap.successors.length > 0) {
             const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
             const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-            const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+            const totalSuccessorWidth = successorWidths.reduce((sum: number, w: number) => sum + w, 0);
             let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
             const yTop = yOffset;
 
@@ -738,6 +754,7 @@ const ColorworkCanvasEditor = ({
             if (!canvas || !shape) return;
 
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             const devicePixelRatio = window.devicePixelRatio || 1;
 
             // Ruler constants
@@ -888,8 +905,8 @@ const ColorworkCanvasEditor = ({
     }, [patternLayers.length, onLayersChange]);
 
     // Pattern layer management
-    const handleLayerSettingChange = useCallback((layerId, setting, value: any) => {
-        onLayersChange(prevLayers =>
+    const handleLayerSettingChange = useCallback((layerId: any, setting: any, value: any) => {
+        onLayersChange((prevLayers: any) =>
             prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     return {
@@ -902,7 +919,7 @@ const ColorworkCanvasEditor = ({
         );
     }, [onLayersChange]);
 
-    const handleLayerColorChange = (layerId, colorId, newColor) => {
+    const handleLayerColorChange = (layerId: any, colorId: any, newColor: any) => {
         // Convert color to hex string if it's a color object
         const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
 
@@ -925,8 +942,8 @@ const ColorworkCanvasEditor = ({
         onLayersChange(updatedLayers);
     };
 
-    const handleLayerReorder = useCallback((draggedLayerId, targetLayerId) => {
-        onLayersChange(prevLayers => {
+    const handleLayerReorder = useCallback((draggedLayerId: any, targetLayerId: any) => {
+        onLayersChange((prevLayers: any) => {
             const draggedIndex = prevLayers.findIndex((layer: any) => layer.id === draggedLayerId);
             const targetIndex = prevLayers.findIndex((layer: any) => layer.id === targetLayerId);
 
@@ -941,7 +958,7 @@ const ColorworkCanvasEditor = ({
     }, [onLayersChange]);
 
     // Simple handler for collapse changes
-    const handleCollapseChange = useCallback((layerId) => {
+    const handleCollapseChange = useCallback((layerId: any) => {
         setCollapsedLayers(prev => {
             const newCollapsed = new Set(prev);
             if (newCollapsed.has(layerId)) {
@@ -972,7 +989,7 @@ const ColorworkCanvasEditor = ({
             }
         };
         // Add new layer to the top of the stack
-        onLayersChange(prevLayers => [newLayer, ...prevLayers]);
+        onLayersChange((prevLayers: any) => [newLayer, ...prevLayers]);
     }, [patternLayers.length, onLayersChange]);
 
     // Memoized style objects to prevent re-renders
@@ -1000,17 +1017,17 @@ const ColorworkCanvasEditor = ({
     }), [dragItemBaseStyle]);
 
     // Memoized pattern key finder to prevent recalculation
-    const getPatternKeyForLayer = useCallback((layer) => {
+    const getPatternKeyForLayer = useCallback((layer: any) => {
         // Return the stored pattern key if it exists, otherwise fall back to patternType
         return layer.patternKey || layer.patternType || 'checkerboard';
     }, []);
 
-    const removePatternLayer = useCallback((layerId) => {
-        onLayersChange(prevLayers => prevLayers.filter((layer: any) => layer.id !== layerId));
+    const removePatternLayer = useCallback((layerId: any) => {
+        onLayersChange((prevLayers: any) => prevLayers.filter((layer: any) => layer.id !== layerId));
     }, [onLayersChange]);
 
-    const copyPatternLayer = useCallback((layerId) => {
-        onLayersChange(prevLayers => {
+    const copyPatternLayer = useCallback((layerId: any) => {
+        onLayersChange((prevLayers: any) => {
             const layerToCopy = prevLayers.find((layer: any) => layer.id === layerId);
             if (!layerToCopy) return prevLayers;
 
@@ -1026,14 +1043,14 @@ const ColorworkCanvasEditor = ({
         });
     }, [onLayersChange]);
 
-    const handlePatternChangeForLayer = useCallback((layerId, patternKey) => {
+    const handlePatternChangeForLayer = useCallback((layerId: any, patternKey: any) => {
         const patternType = availablePatterns[patternKey].type;
         const config = {
             ...availablePatterns[patternKey].defaultConfig,
             patterns: availablePatterns // Pass availablePatterns for stack types
         };
         const pattern = generatePattern(patternType, config);
-        onLayersChange(prevLayers =>
+        onLayersChange((prevLayers: any) =>
             prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     return {
@@ -1053,8 +1070,8 @@ const ColorworkCanvasEditor = ({
         );
     }, [onLayersChange, availablePatterns]);
 
-    const handlePatternConfigChange = useCallback((layerId, newConfig) => {
-        onLayersChange(prevLayers =>
+    const handlePatternConfigChange = useCallback((layerId: any, newConfig: any) => {
+        onLayersChange((prevLayers: any) =>
             prevLayers.map((layer: any) => {
                 if (layer.id === layerId) {
                     // Pass availablePatterns for stack types
@@ -1161,7 +1178,6 @@ const ColorworkCanvasEditor = ({
                                     <DraggableLayerItem
                                         key={layer.id}
                                         layer={layer}
-                                        index={index}
                                         onLayerReorder={handleLayerReorder}
                                         dragItemHoverStyle={dragItemHoverStyle}
                                         dragItemNormalStyle={dragItemNormalStyle}
@@ -1212,7 +1228,7 @@ const ColorworkCanvasEditor = ({
                                                                 <Text style={textStyle12}>Pattern:</Text>
                                                                 <Select
                                                                     value={getPatternKeyForLayer(layer)}
-                                                                    onChange={(patternKey) => handlePatternChangeForLayer(layer.id, patternKey)}
+                                                                    onChange={(patternKey: any) => handlePatternChangeForLayer(layer.id, patternKey)}
                                                                     style={fullWidthStyle}
                                                                     size="small"
                                                                 >
@@ -1228,7 +1244,7 @@ const ColorworkCanvasEditor = ({
                                                                     <div style={{ margin: '6px 0 12px' }}>
                                                                         <ColorPicker
                                                                             value={layer.patternConfig?.color || '#000000'}
-                                                                            onChange={(newColor) => {
+                                                                            onChange={(newColor: any) => {
                                                                                 const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
                                                                                 const newConfig = { ...layer.patternConfig, color: colorValue };
                                                                                 handlePatternConfigChange(layer.id, newConfig);
@@ -1315,7 +1331,7 @@ const ColorworkCanvasEditor = ({
                                                                     </Text>
                                                                     {(() => {
                                                                         const zeroRowIndices = layer.patternConfig.colors
-                                                                            .map((c, i: number) => c.rows === 0 ? i : -1)
+                                                                            .map((c: any, i: number) => c.rows === 0 ? i : -1)
                                                                             .filter((i: any) => i !== -1);
                                                                         const invalidZeroRows = zeroRowIndices.filter((i: any) =>
                                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
@@ -1332,11 +1348,11 @@ const ColorworkCanvasEditor = ({
                                                                         return null;
                                                                     })()}
                                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                                                                        {layer.patternConfig.colors.map((colorConfig, index: number) => (
+                                                                        {layer.patternConfig.colors.map((colorConfig: any, index: number) => (
                                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                                 <ColorPicker
                                                                                     value={colorConfig.color || '#ffffff'}
-                                                                                    onChange={(newColor) => {
+                                                                                    onChange={(newColor: any) => {
                                                                                         const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
                                                                                         const newColors = [...layer.patternConfig.colors];
                                                                                         newColors[index] = { ...newColors[index], color: colorValue };
@@ -1360,7 +1376,7 @@ const ColorworkCanvasEditor = ({
                                                                                 <Text>{colorConfig.rows === 0 ? 'rows (fill)' : 'rows'}</Text>
                                                                                 {layer.patternConfig.colors.length > 1 && (
                                                                                     <Button size="small" danger onClick={() => {
-                                                                                        const newColors = layer.patternConfig.colors.filter((_, i: number) => i !== index);
+                                                                                        const newColors = layer.patternConfig.colors.filter((_: any, i: number) => i !== index);
                                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                                     }}>Remove</Button>
                                                                                 )}
@@ -1382,7 +1398,7 @@ const ColorworkCanvasEditor = ({
                                                                     </Text>
                                                                     {(() => {
                                                                         const zeroColumnIndices = layer.patternConfig.colors
-                                                                            .map((c, i: number) => c.columns === 0 ? i : -1)
+                                                                            .map((c: any, i: number) => c.columns === 0 ? i : -1)
                                                                             .filter((i: any) => i !== -1);
                                                                         const invalidZeroColumns = zeroColumnIndices.filter((i: any) =>
                                                                             i !== 0 && i !== layer.patternConfig.colors.length - 1
@@ -1399,11 +1415,11 @@ const ColorworkCanvasEditor = ({
                                                                         return null;
                                                                     })()}
                                                                     <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                                                                        {layer.patternConfig.colors.map((colorConfig, index: number) => (
+                                                                        {layer.patternConfig.colors.map((colorConfig: any, index: number) => (
                                                                             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                                 <ColorPicker
                                                                                     value={colorConfig.color || '#ffffff'}
-                                                                                    onChange={(newColor) => {
+                                                                                    onChange={(newColor: any) => {
                                                                                         const colorValue = typeof newColor === 'string' ? newColor : newColor.toHexString();
                                                                                         const newColors = [...layer.patternConfig.colors];
                                                                                         newColors[index] = { ...newColors[index], color: colorValue };
@@ -1427,7 +1443,7 @@ const ColorworkCanvasEditor = ({
                                                                                 <Text>{colorConfig.columns === 0 ? 'cols (fill)' : 'cols'}</Text>
                                                                                 {layer.patternConfig.colors.length > 1 && (
                                                                                     <Button size="small" danger onClick={() => {
-                                                                                        const newColors = layer.patternConfig.colors.filter((_, i: number) => i !== index);
+                                                                                        const newColors = layer.patternConfig.colors.filter((_: any, i: number) => i !== index);
                                                                                         handlePatternConfigChange(layer.id, { ...layer.patternConfig, colors: newColors });
                                                                                     }}>Remove</Button>
                                                                                 )}
@@ -1896,7 +1912,7 @@ const ColorworkCanvasEditor = ({
                                                                                                         <Text style={{ fontSize: '10px' }}>{colorInfo.label}</Text>
                                                                                                         <ColorPicker
                                                                                                             value={element.colorMapping?.[colorInfo.id] || colorInfo.defaultColor}
-                                                                                                            onChange={(newColor) => {
+                                                                                                            onChange={(newColor: any) => {
                                                                                                                 const newElements = [...(layer.patternConfig.elements || [])];
                                                                                                                 newElements[index] = { 
                                                                                                                     ...element, 
@@ -2032,8 +2048,8 @@ const ColorworkCanvasEditor = ({
                                                                                 return colorId !== 'transparent';
                                                                             });
                                                                         
-                                                                        return filteredEntries.map(([colorId, colorInfo]) => {
-                                                                            const currentColor = layer.settings.colorMapping?.[colorId] || colorInfo.color;
+                                                                        return filteredEntries.map(([colorId, colorInfo]: [string, any]) => {
+                                                                            const currentColor = layer.settings.colorMapping?.[colorId] || (colorInfo as any).color;
                                                                             const isTransparent = currentColor === 'transparent';
                                                                             
                                                                             return (
@@ -2044,10 +2060,10 @@ const ColorworkCanvasEditor = ({
                                                                                     alignItems: 'center', 
                                                                                     gap: 8 
                                                                                 }}>
-                                                                                    <Text style={textStyle11}>{colorInfo.label}</Text>
+                                                                                    <Text style={textStyle11}>{(colorInfo as any).label}</Text>
                                                                                     <ColorPicker
                                                                                         value={isTransparent ? '#ffffff' : currentColor}
-                                                                                        onChange={(newColor) => handleLayerColorChange(layer.id, colorId, newColor)}
+                                                                                        onChange={(newColor: any) => handleLayerColorChange(layer.id, colorId, newColor)}
                                                                                         showText={false}
                                                                                         size="small"
                                                                                         disabled={isTransparent}
@@ -2056,7 +2072,7 @@ const ColorworkCanvasEditor = ({
                                                                                         size="small"
                                                                                         type={isTransparent ? "primary" : "default"}
                                                                                         onClick={() => {
-                                                                                            const newColor = isTransparent ? colorInfo.color : 'transparent';
+                                                                                            const newColor = isTransparent ? (colorInfo as any).color : 'transparent';
                                                                                             handleLayerColorChange(layer.id, colorId, newColor);
                                                                                         }}
                                                                                         style={{ 
@@ -2093,8 +2109,8 @@ const ColorworkCanvasEditor = ({
 
 // Helper pattern creation functions
 function createSolidPattern(colors = [{ color: '#ffffff' }]) {
-    const colorMap = {};
-    colors.forEach((colorConfig, index: number) => {
+    const colorMap: Record<number, any> = {};
+    colors.forEach((colorConfig: any, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
 
@@ -2129,8 +2145,8 @@ function createCheckerboardPattern(cellSize = 2, colors = [{ color: '#ffffff' },
         grid.push(gridRow);
     }
 
-    const colorMap = {};
-    colors.forEach((colorConfig, index: number) => {
+    const colorMap: Record<number, any> = {};
+    colors.forEach((colorConfig: any, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
 
@@ -2144,8 +2160,8 @@ function createCheckerboardPattern(cellSize = 2, colors = [{ color: '#ffffff' },
 }
 
 function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' }, { color: '#0000ff' }]) {
-    const colorMap = {};
-    colors.forEach((colorConfig, index: number) => {
+    const colorMap: Record<number, any> = {};
+    colors.forEach((colorConfig: any, index: number) => {
         colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
     });
 
@@ -2167,7 +2183,7 @@ function createArgylePattern(colors = [{ color: '#ffffff' }, { color: '#ff0000' 
     );
 }
 
-export function generatePattern(type, config, targetDimension = null) {
+export function generatePattern(type: any, config: any, targetDimension: any = null) {
     console.log('🎯 generatePattern called:', { type, hasConfig: !!config, configKeys: config ? Object.keys(config) : [] });
     
     if (type === 'stripes') {
@@ -2177,7 +2193,7 @@ export function generatePattern(type, config, targetDimension = null) {
         // use targetDimension, otherwise use sum of explicit row counts
         let patternHeight;
         const zeroRowColors = colors.filter((c: any) => c.rows === 0);
-        const definedRowsTotal = colors.reduce((sum, c) => sum + (c.rows || 0), 0);
+        const definedRowsTotal = colors.reduce((sum: number, c: any) => sum + (c.rows || 0), 0);
 
         if (zeroRowColors.length > 0 && targetDimension) {
             patternHeight = targetDimension;
@@ -2189,7 +2205,7 @@ export function generatePattern(type, config, targetDimension = null) {
         }
 
         const width = config.width || 4;
-        const grid = [];
+        const grid: any[] = [];
         let currentRow = 0;
         let colorIndex = 0;
 
@@ -2199,7 +2215,7 @@ export function generatePattern(type, config, targetDimension = null) {
             const rowsPerEndColor = Math.floor(remainingRows / 2);
             const extraRow = remainingRows % 2;
 
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 if (index === 0) {
                     // First color gets half of remaining rows (plus extra if odd)
                     const rowsToAdd = rowsPerEndColor + extraRow;
@@ -2223,7 +2239,7 @@ export function generatePattern(type, config, targetDimension = null) {
             // If all colors have 0 rows, split area evenly
             const rowsPerColor = Math.floor(patternHeight / colors.length);
             let extra = patternHeight - rowsPerColor * colors.length;
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 let thisRows = rowsPerColor + (index < extra ? 1 : 0);
                 for (let i = 0; i < thisRows; i++) {
                     grid.push(new Array(width).fill(index));
@@ -2232,7 +2248,7 @@ export function generatePattern(type, config, targetDimension = null) {
         } else {
             // Calculate remaining rows for zero-row colors
             const remainingRowsAfterDefined = Math.max(0, patternHeight - definedRowsTotal);
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 if (colorConfig.rows === 0) {
                     // For zero-row colors, behavior depends on position
                     if (index === 0) {
@@ -2277,8 +2293,8 @@ export function generatePattern(type, config, targetDimension = null) {
             grid.push(...patternToRepeat);
         }
 
-        const colorMap = {};
-        colors.forEach((colorConfig, index: number) => {
+        const colorMap: Record<number, any> = {};
+        colors.forEach((colorConfig: any, index: number) => {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
         return new ColorworkPattern(0, 0, grid, colorMap, { width, height: patternHeight });
@@ -2289,7 +2305,7 @@ export function generatePattern(type, config, targetDimension = null) {
         // use targetDimension, otherwise use sum of explicit column counts
         let patternWidth;
         const zeroColumnColors = colors.filter((c: any) => c.columns === 0);
-        const definedColumnsTotal = colors.reduce((sum, c) => sum + (c.columns || 0), 0);
+        const definedColumnsTotal = colors.reduce((sum: number, c: any) => sum + (c.columns || 0), 0);
 
         if (zeroColumnColors.length > 0 && targetDimension) {
             patternWidth = targetDimension;
@@ -2301,7 +2317,7 @@ export function generatePattern(type, config, targetDimension = null) {
         }
 
         const height = config.height || 4;
-        const grid = Array(height).fill().map(() => []);
+        const grid: any[][] = Array(height).fill(null).map(() => []);
         let currentColumn = 0;
         let colorIndex = 0;
 
@@ -2314,7 +2330,7 @@ export function generatePattern(type, config, targetDimension = null) {
             const colsPerEndColor = Math.floor(remainingColumns / 2);
             const extraCol = remainingColumns % 2;
 
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 if (index === 0) {
                     // First color gets half of remaining columns (plus extra if odd)
                     const colsToAdd = colsPerEndColor + extraCol;
@@ -2344,7 +2360,7 @@ export function generatePattern(type, config, targetDimension = null) {
             // If all colors have 0 columns, split area evenly
             const colsPerColor = Math.floor(patternWidth / colors.length);
             let extra = patternWidth - colsPerColor * colors.length;
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 let thisCols = colsPerColor + (index < extra ? 1 : 0);
                 for (let i = 0; i < thisCols; i++) {
                     for (let row = 0; row < height; row++) {
@@ -2353,7 +2369,7 @@ export function generatePattern(type, config, targetDimension = null) {
                 }
             });
         } else {
-            colors.forEach((colorConfig, index: number) => {
+            colors.forEach((colorConfig: any, index: number) => {
                 if (colorConfig.columns === 0) {
                     // For zero-column colors, behavior depends on position
                     if (index === 0) {
@@ -2408,8 +2424,8 @@ export function generatePattern(type, config, targetDimension = null) {
             }
         }
 
-        const colorMap = {};
-        colors.forEach((colorConfig, index: number) => {
+        const colorMap: Record<number, any> = {};
+        colors.forEach((colorConfig: any, index: number) => {
             colorMap[index] = { id: index, label: `Color ${index + 1}`, color: colorConfig.color };
         });
         return new ColorworkPattern(0, 0, grid, colorMap, { width: patternWidth, height });
@@ -2417,7 +2433,7 @@ export function generatePattern(type, config, targetDimension = null) {
         // Custom pattern from library - use the saved pattern data directly
         if (config.pattern && Array.isArray(config.pattern)) {
             // Convert colors from library format to ColorworkPattern format
-            const colorMap = {};
+            const colorMap: Record<string, any> = {};
             const libraryColors = config.colors || {};
             
             // Check if colors are already in the right format (with id, label, color)
@@ -2470,7 +2486,7 @@ export function generatePattern(type, config, targetDimension = null) {
     return createSolidPattern([{ color: '#ffffff' }]);
 }
 
-function createRowPattern(elements = [], availablePatternsRef = {}) {
+function createRowPattern(elements: any = [], availablePatternsRef: any = {}) {
     console.log('🎨 createRowPattern called:', elements);
     
     if (!elements || elements.length === 0) {
@@ -2480,26 +2496,26 @@ function createRowPattern(elements = [], availablePatternsRef = {}) {
     // Build unified color map with element-specific labels
     const colorMap = {};
     let colorIndex = 0;
-    const elementData = [];
+    const elementData: any[] = [];
 
-    elements.forEach((element, elemIndex) => {
+    elements.forEach((element: any, elemIndex: any) => {
         if (element.elementType === 'stripes' && element.stripeConfig) {
             // Generate stripe pattern
             const stripeColors = element.stripeConfig.colors || [];
-            const stripeColorMapping = {};
+            const stripeColorMapping: Record<string, any> = {};
             
-            stripeColors.forEach((stripe, sIndex) => {
+            stripeColors.forEach((stripe: any, sIndex: any) => {
                 const colorId = `c${colorIndex}`;
                 const label = stripeColors.length > 1 
                     ? `Stripes-${elemIndex + 1} C${sIndex + 1}`
                     : `Stripes-${elemIndex + 1}`;
                     
-                colorMap[colorId] = {
+                (colorMap as any)[colorId] = {
                     id: colorId,
                     label: label,
                     color: stripe.color || '#ffffff'
                 };
-                stripeColorMapping[sIndex] = colorId;
+                (stripeColorMapping as any)[sIndex] = colorId;
                 colorIndex++;
             });
 
@@ -2517,15 +2533,15 @@ function createRowPattern(elements = [], availablePatternsRef = {}) {
             const repeatCount = element.repeatCount || 1;
             
             // Map custom pattern colors to unified color map
-            const shapeColorMapping = {};
+            const shapeColorMapping: Record<string, any> = {};
             Object.entries(customPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
                 const colorId = `c${colorIndex}`;
-                colorMap[colorId] = {
+                (colorMap as any)[colorId] = {
                     id: colorId,
                     label: `${patternName} ${colorInfo.label}`,
                     color: colorInfo.color
                 };
-                shapeColorMapping[origColorId] = colorId;
+                (shapeColorMapping as any)[origColorId] = colorId;
                 colorIndex++;
             });
             
@@ -2551,9 +2567,9 @@ function createRowPattern(elements = [], availablePatternsRef = {}) {
     // For width, sum up the base widths (no repetition in the width calculation)
     const totalWidth = elementData.reduce((sum, elem) => sum + (elem.width || 4), 0);
     
-    const grid = [];
+    const grid: any[] = [];
     for (let row = 0; row < height; row++) {
-        const rowData = [];
+        const rowData: any[] = [];
         
         elementData.forEach((elem) => {
             if (elem.type === 'stripes') {
@@ -2587,7 +2603,7 @@ function createRowPattern(elements = [], availablePatternsRef = {}) {
     return new ColorworkPattern(0, 0, grid, colorMap, { width: totalWidth, height });
 }
 
-function createVStackPattern(elements = [], availablePatternsRef = {}) {
+function createVStackPattern(elements: any = [], availablePatternsRef: any = {}) {
     console.log('🎨 createVStackPattern called:', elements);
     
     if (!elements || elements.length === 0) {
@@ -2597,15 +2613,15 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
     // Build unified color map with element-specific labels
     const colorMap = {};
     let colorIndex = 0;
-    const elementData = [];
+    const elementData: any[] = [];
 
-    elements.forEach((element, elemIndex) => {
+    elements.forEach((element: any, elemIndex: any) => {
         if (element.elementType === 'stripes' && element.stripeConfig) {
             // Generate stripe pattern
             const stripeColors = element.stripeConfig.colors || [];
-            const stripeColorMapping = {};
+            const stripeColorMapping: Record<string, any> = {};
             
-            stripeColors.forEach((stripe, sIndex) => {
+            stripeColors.forEach((stripe: any, sIndex: any) => {
                 const colorId = `c${colorIndex}`;
                 const label = stripeColors.length > 1 
                     ? `Stripes-${elemIndex + 1} C${sIndex + 1}`
@@ -2616,12 +2632,12 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
                     ? element.colorMapping[`stripe-${sIndex}`]
                     : stripe.color || '#ffffff';
                     
-                colorMap[colorId] = {
+                (colorMap as any)[colorId] = {
                     id: colorId,
                     label: label,
                     color: effectiveColor
                 };
-                stripeColorMapping[sIndex] = colorId;
+                (stripeColorMapping as any)[sIndex] = colorId;
                 colorIndex++;
             });
 
@@ -2637,15 +2653,15 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
             const repeatCount = element.repeatCount || 1;
             
             // Map nested pattern colors to unified color map
-            const nestedColorMapping = {};
+            const nestedColorMapping: Record<string, any> = {};
             Object.entries(nestedPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
                 const colorId = `c${colorIndex}`;
-                colorMap[colorId] = {
+                (colorMap as any)[colorId] = {
                     id: colorId,
                     label: `Row-${elemIndex + 1} ${colorInfo.label}`,
                     color: colorInfo.color
                 };
-                nestedColorMapping[origColorId] = colorId;
+                (nestedColorMapping as any)[origColorId] = colorId;
                 colorIndex++;
             });
             
@@ -2672,7 +2688,7 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
             const implicitRowPattern = createRowPattern(rowElements, availablePatternsRef);
             
             // Map row pattern colors to unified color map, using element's color mapping if available
-            const rowColorMapping = {};
+            const rowColorMapping: Record<string, any> = {};
             Object.entries(implicitRowPattern.colors).forEach(([origColorId, colorInfo]: [string, any]) => {
                 const colorId = `c${colorIndex}`;
                 
@@ -2681,12 +2697,12 @@ function createVStackPattern(elements = [], availablePatternsRef = {}) {
                     ? element.colorMapping[origColorId]
                     : colorInfo.color;
                 
-                colorMap[colorId] = {
+                (colorMap as any)[colorId] = {
                     id: colorId,
                     label: colorInfo.label,
                     color: effectiveColor
                 };
-                rowColorMapping[origColorId] = colorId;
+                (rowColorMapping as any)[origColorId] = colorId;
                 colorIndex++;
             });
             

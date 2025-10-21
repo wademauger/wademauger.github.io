@@ -3,22 +3,46 @@ import { useDispatch } from 'react-redux';
 import { setDraftRecipe } from '../../../reducers/recipes.reducer';
 import './RecipeEditor.css';
 
-const RecipeEditor = ({ recipe }) => {
+interface Ingredient {
+  name: string;
+  quantity: string;
+  unit: string;
+}
+
+interface Recipe {
+  title: string;
+  description: string;
+  permalink: string;
+  defaultServings: number;
+  servingUnits: string;
+  scalable: boolean;
+  ingredients: Ingredient[];
+  instructions: string;
+  category: string;
+}
+
+interface RecipeEditorProps {
+  recipe?: Recipe | null;
+}
+
+const RecipeEditor: React.FC<RecipeEditorProps> = ({ recipe }) => {
   const dispatch = useDispatch();
-  const [localRecipe, setLocalRecipe] = useState(null);
+  const [localRecipe, setLocalRecipe] = useState<Recipe | null>(null);
 
   // Sync with Redux state
   useEffect(() => {
-    setLocalRecipe(recipe);
+    setLocalRecipe(recipe || null);
   }, [recipe]);
 
-  const updateRecipe = (updates) => {
+  const updateRecipe = (updates: Partial<Recipe>) => {
+    if (!localRecipe) return;
     const updatedRecipe = { ...localRecipe, ...updates };
     setLocalRecipe(updatedRecipe);
     dispatch(setDraftRecipe(updatedRecipe));
   };
 
-  const updateIngredient = (index, field, value: any) => {
+  const updateIngredient = (index: number, field: keyof Ingredient, value: string) => {
+    if (!localRecipe) return;
     const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
     const updatedIngredients = [...ingredients];
     updatedIngredients[index] = { ...updatedIngredients[index], [field]: value };
@@ -33,6 +57,7 @@ const RecipeEditor = ({ recipe }) => {
   };
 
   const removeIngredient = (index: number) => {
+    if (!localRecipe) return;
     const ingredients = Array.isArray(localRecipe.ingredients) ? localRecipe.ingredients : [];
     const updatedIngredients = ingredients.filter((_, i: number) => i !== index);
     updateRecipe({ ingredients: updatedIngredients });
@@ -102,10 +127,10 @@ const RecipeEditor = ({ recipe }) => {
             <label>Description</label>
             <textarea
               value={localRecipe.description || ''}
-              onChange={(e: any) => updateRecipe({ description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateRecipe({ description: e.target.value })}
               className="form-textarea"
               placeholder="Brief description of the recipe..."
-              rows="3"
+              rows={3}
             />
           </div>
 
@@ -198,10 +223,10 @@ const RecipeEditor = ({ recipe }) => {
           </div>
           <textarea
             value={localRecipe.instructions || ''}
-            onChange={(e: any) => updateRecipe({ instructions: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateRecipe({ instructions: e.target.value })}
             className="form-textarea instructions-textarea"
             placeholder="Enter cooking instructions..."
-            rows="10"
+            rows={10}
           />
         </div>
       </div>

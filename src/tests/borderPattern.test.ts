@@ -43,7 +43,7 @@ describe('Border Pattern Edge Detection', () => {
 
     it('should demonstrate shape-aware edge detection logic', () => {
         // Create a simple trapezoid shape for testing
-        const trapezoid = new Trapezoid(4, 6, 10, []);  // 4" height, 6" base, 10" top
+        const trapezoid = new Trapezoid(4, 6, 10, 0);  // 4" height, 6" base, 10" top
         const gauge = new Gauge(20, 24);  // 20 sts/4", 24 rows/4"
         
         // Get the stitch plan for this shape

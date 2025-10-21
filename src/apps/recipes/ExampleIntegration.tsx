@@ -8,7 +8,7 @@ import GoogleDriveRecipeService from './services/GoogleDriveRecipeService';
 const ExampleRecipesAppIntegration = () => {
   // Use the singleton instance instead of creating a new one
   const [googleDriveService] = useState(() => GoogleDriveRecipeService);
-  const [recipes, setRecipes] = useState([]);
+  const [recipes, setRecipes] = useState<any[]>([]);
 
   useEffect(() => {
     // Initialize the service
@@ -40,7 +40,7 @@ const ExampleRecipesAppIntegration = () => {
     }
   };
 
-  const handleRecipeAdded = (newRecipe) => {
+  const handleRecipeAdded = (newRecipe: any) => {
     // Add the new recipe to the local state
     setRecipes(prevRecipes => [...prevRecipes, newRecipe]);
     
@@ -61,6 +61,7 @@ const ExampleRecipesAppIntegration = () => {
         <Space>
           {/* Replace your old add recipe button with this */}
           <AddRecipeModal 
+            open={false}
             googleDriveService={googleDriveService}
             onRecipeAdded={handleRecipeAdded}
           />

@@ -214,7 +214,7 @@ const librarySlice = createSlice({
     // the full library and we want to reflect it in the Redux `library` slice
     // so UI that reads `state.library.entries` (for example HomePage badges)
     // will update without re-fetching from Drive.
-    setFullLibrary(state, action: PayloadAction<any>) {
+    setFullLibrary(state: LibraryState, action: PayloadAction<any>) {
       const lib = action.payload;
       state.fullLibrary = lib;
       const entries: any[] = [];
@@ -234,33 +234,33 @@ const librarySlice = createSlice({
       }
       state.entries = entries;
     },
-    clearLibraryError(state) {
+    clearLibraryError(state: LibraryState) {
       state.lastError = null;
     },
-    clearEntries(state) {
+    clearEntries(state: LibraryState) {
       state.entries = [];
     }
   },
-  extraReducers: (builder) => {
-    builder.addCase(initLibraryFromStorage.fulfilled, (state, action: PayloadAction<LibraryFileRef | null>) => {
+  extraReducers: (builder: any) => {
+    builder.addCase(initLibraryFromStorage.fulfilled, (state: LibraryState, action: PayloadAction<LibraryFileRef | null>) => {
       state.selectedFile = action.payload;
     });
 
-    builder.addCase(setLibraryFileAndPersist.fulfilled, (state, action: PayloadAction<LibraryFileRef>) => {
+    builder.addCase(setLibraryFileAndPersist.fulfilled, (state: LibraryState, action: PayloadAction<LibraryFileRef>) => {
       state.selectedFile = action.payload;
     });
 
-    builder.addCase(loadLibrary.pending, (state) => {
+    builder.addCase(loadLibrary.pending, (state: LibraryState) => {
       state.isLoading = true;
       state.lastError = null;
     });
-    builder.addCase(loadLibrary.fulfilled, (state, action: PayloadAction<any[]>) => {
+    builder.addCase(loadLibrary.fulfilled, (state: LibraryState, action: PayloadAction<any[]>) => {
       state.isLoading = false;
       state.entries = action.payload;
     });
     
     // When a full library is loaded via loadFullLibrary, store the full JSON blob
-    builder.addCase(loadFullLibrary.fulfilled, (state, action: PayloadAction<any>) => {
+    builder.addCase(loadFullLibrary.fulfilled, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
       state.fullLibrary = action.payload;
 
@@ -283,52 +283,52 @@ const librarySlice = createSlice({
       }
       state.entries = entries;
     });
-    builder.addCase(loadLibrary.rejected, (state, action) => {
+    builder.addCase(loadLibrary.rejected, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
-      state.lastError = action.payload as string || 'Load failed';
+      state.lastError = (action.payload as string) || 'Load failed';
     });
 
-    builder.addCase(saveEntry.pending, (state) => {
+    builder.addCase(saveEntry.pending, (state: LibraryState) => {
       state.isLoading = true;
       state.lastError = null;
     });
-    builder.addCase(saveEntry.fulfilled, (state, action: PayloadAction<any>) => {
+    builder.addCase(saveEntry.fulfilled, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
       // optimistic: push into entries (caller may re-run loadLibrary to get canonical list)
       state.entries.push(action.payload);
     });
-    builder.addCase(saveEntry.rejected, (state, action) => {
+    builder.addCase(saveEntry.rejected, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
-      state.lastError = action.payload as string || 'Save failed';
+      state.lastError = (action.payload as string) || 'Save failed';
     });
 
-    builder.addCase(openEntry.pending, (state) => {
+    builder.addCase(openEntry.pending, (state: LibraryState) => {
       state.isLoading = true;
       state.lastError = null;
     });
-    builder.addCase(openEntry.fulfilled, (state, action: PayloadAction<any>) => {
+    builder.addCase(openEntry.fulfilled, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
       // Do not mutate entries on open; consumer will receive payload
     });
-    builder.addCase(openEntry.rejected, (state, action) => {
+    builder.addCase(openEntry.rejected, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
-      state.lastError = action.payload as string || 'Open failed';
+      state.lastError = (action.payload as string) || 'Open failed';
     });
 
-    builder.addCase(saveFullLibrary.pending, (state) => {
+    builder.addCase(saveFullLibrary.pending, (state: LibraryState) => {
       state.isLoading = true;
       state.lastError = null;
     });
-    builder.addCase(saveFullLibrary.fulfilled, (state, action: PayloadAction<any>) => {
+    builder.addCase(saveFullLibrary.fulfilled, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
       // Update entries for convenience: re-run loadFullLibrary to get canonical entries if needed
       // For now, keep entries unchanged; callers may dispatch loadLibrary/loadFullLibrary after save
       // Also update the fullLibrary in state so consumers get the newest JSON
       state.fullLibrary = action.payload;
     });
-    builder.addCase(saveFullLibrary.rejected, (state, action) => {
+    builder.addCase(saveFullLibrary.rejected, (state: LibraryState, action: PayloadAction<any>) => {
       state.isLoading = false;
-      state.lastError = action.payload as string || 'Save failed';
+      state.lastError = (action.payload as string) || 'Save failed';
     });
   }
 });

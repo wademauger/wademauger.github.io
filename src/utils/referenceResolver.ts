@@ -1,13 +1,23 @@
 import { detectLegacyFormat, migrateLegacyToNamespaced } from './libraryFormat';
 
+interface ResolveOptions {
+  fileId?: string | null;
+  namespace: string;
+  entryId: string;
+  loader?: (fileId: string) => Promise<any>;
+  libraryObj?: any;
+  cache?: Map<string, any>;
+}
+
 // resolveEntryReference accepts an async loader: async function loadLibraryById(fileId) -> libraryObj
 // If fileId is null, the libraryObj parameter is expected instead.
-async function resolveEntryReference({ fileId, namespace, entryId, loader, libraryObj, cache }) {
+async function resolveEntryReference({ fileId, namespace, entryId, loader, libraryObj, cache }: ResolveOptions): Promise<{ entry: any; library: any }> {
   cache = cache || new Map();
   let lib = null;
   if (fileId) {
     if (cache.has(fileId)) lib = cache.get(fileId);
     else {
+      if (!loader) throw new Error('Loader required when fileId is provided');
       lib = await loader(fileId);
       if (!lib) throw new Error(`Library ${fileId} not found`);
       // migrate if needed
@@ -30,11 +40,16 @@ async function resolveEntryReference({ fileId, namespace, entryId, loader, libra
   return { entry, library: lib };
 }
 
-async function resolveAllRefs(entry, options = {}) {
+interface ResolveAllOptions {
+  loader?: (fileId: string) => Promise<any>;
+  cache?: Map<string, any>;
+}
+
+async function resolveAllRefs(entry: any, options: ResolveAllOptions = {}): Promise<Record<string, any[]>> {
   // options: loader, cache
   const loader = options.loader;
   const cache = options.cache || new Map();
-  const resolved = {};
+  const resolved: Record<string, any[]> = {};
   if (!entry || !entry.refs || !Array.isArray(entry.refs)) return resolved;
   for (const r of entry.refs) {
     try {
@@ -47,7 +62,8 @@ async function resolveAllRefs(entry, options = {}) {
     } catch (err: unknown) {
       // attach placeholder error entry
       if (!resolved[r.namespace]) resolved[r.namespace] = [];
-      resolved[r.namespace].push({ id: r.entryId, __missing: true, __error: err.message });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      resolved[r.namespace].push({ id: r.entryId, __missing: true, __error: errorMessage });
     }
   }
   return resolved;

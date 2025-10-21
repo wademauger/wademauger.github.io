@@ -20,11 +20,11 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setAuth(state, action: PayloadAction<{ isSignedIn: boolean; userInfo: UserInfo | null }>) {
+    setAuth(state: AuthState, action: PayloadAction<{ isSignedIn: boolean; userInfo: UserInfo | null }>) {
       state.isSignedIn = action.payload.isSignedIn;
       state.userInfo = action.payload.userInfo;
     },
-    clearAuth(state) {
+    clearAuth(state: AuthState) {
       state.isSignedIn = false;
       state.userInfo = null;
     }

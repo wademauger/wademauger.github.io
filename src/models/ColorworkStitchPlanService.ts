@@ -1,11 +1,16 @@
 import { PanelColorworkComposer } from './PanelColorworkComposer';
 import { InstructionGenerator } from './InstructionGenerator';
+import { Panel } from './Panel';
+import { ColorworkPattern } from './ColorworkPattern';
 
 /**
  * ColorworkStitchPlanService - Service for creating colorwork-enhanced stitch plans
  * Handles the integration between panels, colorwork patterns, and instruction generation
  */
 export class ColorworkStitchPlanService {
+    private composer: PanelColorworkComposer;
+    private instructionGenerator: InstructionGenerator;
+
     constructor() {
         this.composer = new PanelColorworkComposer();
         this.instructionGenerator = new InstructionGenerator();
@@ -14,7 +19,7 @@ export class ColorworkStitchPlanService {
     /**
      * Create an enhanced stitch plan with colorwork integration
      */
-    createColorworkStitchPlan(panel, colorworkPattern, options = {}) {
+    createColorworkStitchPlan(panel: Panel, colorworkPattern: ColorworkPattern, options: any = {}): any {
         // Use the composer to combine panel and colorwork
         const combinedPattern = this.composer.combinePatterns(panel, colorworkPattern, options);
         
@@ -25,7 +30,7 @@ export class ColorworkStitchPlanService {
     /**
      * Generate combined instructions for a panel with colorwork
      */
-    generateCombinedInstructions(panel, colorworkPattern, options = {}) {
+    generateCombinedInstructions(panel: Panel, colorworkPattern: ColorworkPattern, options: any = {}): any {
         const combinedPattern = this.composer.combinePatterns(panel, colorworkPattern, options);
         return this.instructionGenerator.generateCombinedInstructions(combinedPattern);
     }
@@ -33,7 +38,7 @@ export class ColorworkStitchPlanService {
     /**
      * Create a basic stitch plan without colorwork (for backward compatibility)
      */
-    createBasicStitchPlan(panel) {
+    createBasicStitchPlan(panel: Panel): any {
         if (!panel.shape) return { rows: [] };
         
         const gauge = panel.gauge;

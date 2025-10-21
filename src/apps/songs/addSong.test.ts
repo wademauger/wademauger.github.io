@@ -45,15 +45,15 @@ describe('GoogleDriveServiceModern addSong', () => {
       
       // Check that artist was created
       expect(libraryData.artists).toHaveLength(1);
-      expect(libraryData.artists[0].name).toBe('New Artist');
+      expect((libraryData.artists[0] as any).name).toBe('New Artist');
       
       // Check that album was created
-      expect(libraryData.artists[0].albums).toHaveLength(1);
-      expect(libraryData.artists[0].albums[0].title).toBe('New Album');
+      expect((libraryData.artists[0] as any).albums).toHaveLength(1);
+      expect((libraryData.artists[0] as any).albums[0].title).toBe('New Album');
       
       // Check that song was added
-      expect(libraryData.artists[0].albums[0].songs).toHaveLength(1);
-      expect(libraryData.artists[0].albums[0].songs[0].name).toBe('Test Song');
+      expect((libraryData.artists[0] as any).albums[0].songs).toHaveLength(1);
+      expect((libraryData.artists[0] as any).albums[0].songs[0].name).toBe('Test Song');
       
   // Check that saveLibrary was called on the mocked service
   expect(GoogleDriveServiceModern.saveLibrary).toHaveBeenCalledWith(libraryData);
@@ -94,7 +94,7 @@ describe('GoogleDriveServiceModern addSong', () => {
     
     // Check that song was added
     expect(libraryData.artists[0].albums[0].songs).toHaveLength(1);
-    expect(libraryData.artists[0].albums[0].songs[0].name).toBe('Test Song 2');
+    expect((libraryData.artists[0].albums[0].songs[0] as any).name).toBe('Test Song 2');
   });
 
   test('should create album if artist exists but album does not', async () => {
@@ -119,11 +119,11 @@ describe('GoogleDriveServiceModern addSong', () => {
     expect(libraryData.artists).toHaveLength(1);
     
     // Check that album was created
-    expect(libraryData.artists[0].albums).toHaveLength(1);
-    expect(libraryData.artists[0].albums[0].title).toBe('New Album');
+    expect((libraryData.artists[0] as any).albums).toHaveLength(1);
+    expect((libraryData.artists[0] as any).albums[0].title).toBe('New Album');
     
     // Check that song was added
-    expect(libraryData.artists[0].albums[0].songs).toHaveLength(1);
-    expect(libraryData.artists[0].albums[0].songs[0].name).toBe('Test Song 3');
+    expect((libraryData.artists[0] as any).albums[0].songs).toHaveLength(1);
+    expect((libraryData.artists[0] as any).albums[0].songs[0].name).toBe('Test Song 3');
   });
 });

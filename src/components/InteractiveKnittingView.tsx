@@ -16,9 +16,15 @@ const InteractiveKnittingView = ({
     knittingProgress,
     onRowComplete,
     onBackToSettings
+}: {
+    combinedPattern: any;
+    instructions?: any[];
+    knittingProgress: any;
+    onRowComplete: (rowIndex: number) => void;
+    onBackToSettings: () => void;
 }) => {
-    const [enhancedStitchPlan, setEnhancedStitchPlan] = useState(null);
-    const [currentRowInstructions, setCurrentRowInstructions] = useState(null);
+    const [enhancedStitchPlan, setEnhancedStitchPlan] = useState<any>(null);
+    const [currentRowInstructions, setCurrentRowInstructions] = useState<any>(null);
 
     useEffect(() => {
         if (combinedPattern) {
@@ -43,22 +49,22 @@ const InteractiveKnittingView = ({
     }, [combinedPattern]);
 
     useEffect(() => {
-        if (enhancedStitchPlan && enhancedStitchPlan.rows[knittingProgress.currentRow]) {
-            const currentRow = enhancedStitchPlan.rows[knittingProgress.currentRow];
+        if (enhancedStitchPlan && enhancedStitchPlan.rows[knittingProgress.currentRowIndex]) {
+            const currentRow = enhancedStitchPlan.rows[knittingProgress.currentRowIndex];
             setCurrentRowInstructions(currentRow);
         }
-    }, [enhancedStitchPlan, knittingProgress.currentRow]);
+    }, [enhancedStitchPlan, knittingProgress.currentRowIndex]);
 
     const handlePreviousRow = () => {
-        if (knittingProgress.currentRow > 0) {
+        if (knittingProgress.currentRowIndex > 0) {
             // Move back to previous row (but don't mark it incomplete)
             // This is just for navigation
         }
     };
 
     const handleNextRow = () => {
-        if (knittingProgress.currentRow < instructions.length - 1) {
-            onRowComplete(knittingProgress.currentRow);
+        if (knittingProgress.currentRowIndex < instructions.length - 1) {
+            onRowComplete(knittingProgress.currentRowIndex);
         }
     };
 
@@ -79,7 +85,7 @@ const InteractiveKnittingView = ({
                             Interactive Knitting
                         </Title>
                         <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
-                            Row {knittingProgress.currentRow + 1} of {instructions.length}
+                            Row {knittingProgress.currentRowIndex + 1} of {instructions.length}
                         </Text>
                     </Col>
                     <Col>
@@ -99,10 +105,10 @@ const InteractiveKnittingView = ({
                     <Space direction="vertical" style={{ width: '100%' }} size="large">
                         {/* Current Row Card */}
                         <Card 
-                            title={`Row ${knittingProgress.currentRow + 1}`}
+                            title={`Row ${knittingProgress.currentRowIndex + 1}`}
                             extra={
-                                <Tag color={knittingProgress.completedRows.includes(knittingProgress.currentRow) ? 'green' : 'blue'}>
-                                    {knittingProgress.completedRows.includes(knittingProgress.currentRow) ? 'Complete' : 'In Progress'}
+                                <Tag color={knittingProgress.completedRows.includes(knittingProgress.currentRowIndex) ? 'green' : 'blue'}>
+                                    {knittingProgress.completedRows.includes(knittingProgress.currentRowIndex) ? 'Complete' : 'In Progress'}
                                 </Tag>
                             }
                         >
@@ -125,7 +131,7 @@ const InteractiveKnittingView = ({
                                             <Text strong>Colorwork:</Text>
                                             <div style={{ marginTop: 8 }}>
                                                 <Space wrap>
-                                                    {currentRowInstructions.getColorworkInstructions().map((segment, index: number) => (
+                                                    {currentRowInstructions.getColorworkInstructions().map((segment: any, index: number) => (
                                                         <Tag 
                                                             key={index}
                                                             style={{ 
@@ -162,7 +168,7 @@ const InteractiveKnittingView = ({
                                             <Button 
                                                 icon={<LeftOutlined />}
                                                 onClick={handlePreviousRow}
-                                                disabled={knittingProgress.currentRow === 0}
+                                                disabled={knittingProgress.currentRowIndex === 0}
                                                 block
                                                 size="small"
                                             >
@@ -174,7 +180,7 @@ const InteractiveKnittingView = ({
                                                 type="primary"
                                                 icon={<CheckOutlined />}
                                                 onClick={handleNextRow}
-                                                disabled={knittingProgress.currentRow >= instructions.length - 1}
+                                                disabled={knittingProgress.currentRowIndex >= instructions.length - 1}
                                                 block
                                             >
                                                 Done
@@ -184,7 +190,7 @@ const InteractiveKnittingView = ({
                                             <Button 
                                                 icon={<RightOutlined />}
                                                 onClick={handleNextRow}
-                                                disabled={knittingProgress.currentRow >= instructions.length - 1}
+                                                disabled={knittingProgress.currentRowIndex >= instructions.length - 1}
                                                 block
                                                 size="small"
                                             >
@@ -231,12 +237,12 @@ const InteractiveKnittingView = ({
                                 {combinedPattern?.panel?.shape && combinedPattern?.panel?.gauge && (
                                     <UnifiedPanelDiagram
                                         shape={combinedPattern.panel.shape}
-                                        patternLayers={combinedPattern.colorworkPattern ? [combinedPattern.colorworkPattern] : []}
+                                        patternLayers={combinedPattern.colorworkLayers && combinedPattern.colorworkLayers.length > 0 ? combinedPattern.colorworkLayers.map((layer: any) => layer.pattern || layer) : []}
                                         gauge={combinedPattern.panel.gauge}
                                         size={400}
                                         showPatterns={true}
                                         showProgress={true}
-                                        highlightedRow={knittingProgress.currentRow}
+                                        highlightedRow={knittingProgress.currentRowIndex}
                                         completedRows={knittingProgress.completedRows}
                                         showLabels={false}
                                         showShortRows={true}
@@ -250,7 +256,6 @@ const InteractiveKnittingView = ({
                             {enhancedStitchPlan && (
                                 <RowByRowInstructions 
                                     stitchPlan={enhancedStitchPlan}
-                                    currentRow={knittingProgress.currentRow}
                                 />
                             )}
                         </Card>
@@ -264,7 +269,7 @@ const InteractiveKnittingView = ({
 /**
  * ColorworkRowBar - Visual representation of a single row's colorwork pattern
  */
-const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
+const ColorworkRowBar = ({ colorworkInstructions, totalStitches }: { colorworkInstructions: any[], totalStitches: number }) => {
     if (!colorworkInstructions || colorworkInstructions.length === 0) {
         return null;
     }
@@ -274,7 +279,7 @@ const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
     const barHeight = 20;
 
     let currentPosition = 0;
-    const segments = colorworkInstructions.map((segment, index: number) => {
+    const segments = colorworkInstructions.map((segment: any, index: number) => {
         const segmentWidth = segment.stitchCount * stitchWidth;
         const rect = (
             <rect
@@ -312,7 +317,7 @@ const ColorworkRowBar = ({ colorworkInstructions, totalStitches }) => {
 /**
  * Calculate contrast color for text visibility
  */
-const getContrastColor = (hexColor) => {
+const getContrastColor = (hexColor: string) => {
     // Remove # if present
     const hex = hexColor.replace('#', '');
     

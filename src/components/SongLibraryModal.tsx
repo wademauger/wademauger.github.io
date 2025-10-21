@@ -5,7 +5,33 @@ import GoogleDriveServiceModern from '../apps/songs/services/GoogleDriveServiceM
 
 const { Text, Paragraph } = Typography;
 
-const SongLibraryModal = ({ 
+interface SongLibraryModalProps {
+  visible: boolean;
+  onClose: () => void;
+  userInfo?: any;
+  currentSettings?: any;
+}
+
+interface FileStatus {
+  found: boolean;
+  fileId?: string;
+  fileName?: string;
+  folderPath?: string;
+  songCount?: number | string;
+  lastModified?: string;
+  fileSize?: string;
+  email?: string;
+  currentLocation?: string;
+  error?: string;
+}
+
+interface FolderOption {
+  value: string;
+  label: string;
+  key: string;
+}
+
+const SongLibraryModal: React.FC<SongLibraryModalProps> = ({ 
   visible, 
   onClose, 
   userInfo = null,
@@ -14,9 +40,9 @@ const SongLibraryModal = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [fileStatus, setFileStatus] = useState(null);
-  const [lastSearchSettings, setLastSearchSettings] = useState(null);
-  const [folderOptions, setFolderOptions] = useState([]);
+  const [fileStatus, setFileStatus] = useState<FileStatus | null>(null);
+  const [lastSearchSettings, setLastSearchSettings] = useState<any>(null);
+  const [folderOptions, setFolderOptions] = useState<FolderOption[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
 
   // Default settings for songs
@@ -54,8 +80,10 @@ const SongLibraryModal = ({
     const currentValues = form.getFieldsValue();
     if (currentValues.songsLibraryFile && currentValues.songsFolder) {
       // Debounce the search
-      clearTimeout(window.songSearchTimeout);
-      window.songSearchTimeout = setTimeout(() => {
+      if ((window as any).songSearchTimeout) {
+        clearTimeout((window as any).songSearchTimeout);
+      }
+      (window as any).songSearchTimeout = setTimeout(() => {
         searchForFile(currentValues);
       }, 1000);
     }
@@ -79,7 +107,7 @@ const SongLibraryModal = ({
       console.error('🚨 SongLibraryModal: Error loading folder suggestions:', error);
       
       // Check if it's a scope/permission error
-      if (error.message && error.message.includes('insufficient authentication scopes')) {
+      if (error instanceof Error && error.message && error.message.includes('insufficient authentication scopes')) {
         message.warning('Additional permissions needed. Please sign out and sign in again to browse folders.');
       }
       
@@ -128,8 +156,8 @@ const SongLibraryModal = ({
         found: false,
         fileName: searchSettings.songsLibraryFile,
         folderPath: searchSettings.songsFolder,
-        error: `Search failed: ${error.message}`
-      });
+        error: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      } as FileStatus);
     } finally {
       setSearching(false);
     }
@@ -191,8 +219,8 @@ const SongLibraryModal = ({
       
       // Move the file to the new location
       await GoogleDriveServiceModern.moveFile(
-        fileStatus.fileId,
-        settings.songsFolder,
+        fileStatus.fileId || '',
+        settings.songsFolder || '',
         settings.songsLibraryFile
       );
       
@@ -412,7 +440,7 @@ const SongLibraryModal = ({
               optionFilterProp="label"
               loading={loadingFolders}
               notFoundContent={loadingFolders ? <Spin size="small" /> : 'No folders found'}
-              dropdownRender={(menu) => (
+              dropdownRender={(menu: React.ReactElement) => (
                 <>
                   {menu}
                   <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>

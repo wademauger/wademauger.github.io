@@ -1,7 +1,31 @@
+import React from 'react';
 import { theme } from 'antd'; // Import theme from antd
 
+interface ShortRowSection {
+  id?: string;
+  label?: string | null;
+  posX?: number;
+  posY?: number;
+  width?: number;
+  height?: number;
+  baseStart?: number;
+  basePivot?: number;
+}
+
+interface Trapezoid {
+  id?: string;
+  label?: string | null;
+  baseA: number;
+  baseB: number;
+  baseBHorizontalOffset: number;
+  height: number;
+  successors: any[];
+  isHem: boolean;
+  shortRows: any[];
+}
+
 // Slightly darken an rgb hex color by a factor (0-1) where 0.5 is half brightness
-const darkenHex = (hex, factor = 0.7) => {
+const darkenHex = (hex: string | undefined, factor: number = 0.7): string | undefined => {
     if (!hex) return hex;
     let h = hex.replace('#', '');
     if (h.length === 3) h = h.split('').map((c: any) => c + c).join('');
@@ -14,7 +38,7 @@ const darkenHex = (hex, factor = 0.7) => {
 // --- Short-row helpers ---
 // Synthesize a trapezoid shape for a short-row section
 // section: { id, posX (0..1 center), posY (0..1 anchor between parent top/bottom), width (inches), height (inches), label }
-const makeShortRowTrap = (parent, section = {}) => {
+const makeShortRowTrap = (parent: any, section: ShortRowSection = {}): Trapezoid => {
     // Short row dimensions are specified in the same units (inches) as parent trapezoids.
     // Short rows can specify a start/end base and a pivot base separately so the overlay
     // can represent the mirrored pocket: `baseStart` (start/end base) and `basePivot` (turn/short-row base).
@@ -41,7 +65,7 @@ const makeShortRowTrap = (parent, section = {}) => {
 
 // Compute offsets (xOffset, yOffset) where the synthesized shortTrap should be rendered
 // All units are in the same coordinate space used by renderHierarchy (i.e., scale applied externally)
-const computeShortRowOffsets = (parent, shortTrap, section = {}, scale = 1, parentXOffset = 0, parentYOffset = 0) => {
+const computeShortRowOffsets = (parent: any, shortTrap: any, section: ShortRowSection = {}, scale: number = 1, parentXOffset: number = 0, parentYOffset: number = 0): { childXOffset: number; childYOffset: number; anchorX: number; anchorY: number } => {
     const posX = Math.max(0, Math.min(1, typeof section.posX === 'number' ? section.posX : 0.5));
     let posY = Math.max(0, Math.min(1, typeof section.posY === 'number' ? section.posY : 0));
 
@@ -64,7 +88,7 @@ const computeShortRowOffsets = (parent, shortTrap, section = {}, scale = 1, pare
     const xBottomLeft = parentXOffset + (trapWidth - parent.baseA * scale) / 2;
     const xBottomRight = parentXOffset + (trapWidth + parent.baseA * scale) / 2;
 
-    const lerp = (a, b, t) => a + (b - a) * t;
+    const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
     // interpolate left/right at anchor vertical position
     const leftAt = lerp(xTopLeft, xBottomLeft, posY);
@@ -100,7 +124,7 @@ const computeShortRowOffsets = (parent, shortTrap, section = {}, scale = 1, pare
 };
 
 // Render a short-row trapezoid overlay with reduced opacity
-const renderShortTrap = (trap, scale, xOffset = 0, yOffset = 0, fillColor) => {
+const renderShortTrap = (trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, fillColor: string): React.ReactElement => {
     const width = Math.max(trap.baseA, trap.baseB) * scale;
     const xTopLeft = xOffset + (width - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
     const xTopRight = xOffset + (width + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
@@ -128,7 +152,7 @@ const renderShortTrap = (trap, scale, xOffset = 0, yOffset = 0, fillColor) => {
 };
 
 
-const renderTrapezoid = (trap, scale, xOffset = 0, yOffset = 0, fillColor, selectedId, onSelect) => {
+const renderTrapezoid = (trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, fillColor: string, selectedId: string | null, onSelect: ((id: string) => void) | null): React.ReactElement => {
     const shape = trap;
     const effectiveHeight = (shape.isHem ? (shape.height * 0.5) : shape.height) * scale;
     const width = Math.max(shape.baseA, shape.baseB) * scale;
@@ -178,7 +202,7 @@ const renderTrapezoid = (trap, scale, xOffset = 0, yOffset = 0, fillColor, selec
     );
 };
 
-const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor, selectedId, onSelect, selectedShortRowId = null) => {
+const renderHierarchy = (trap: any, scale: number, xOffset: number = 0, yOffset: number = 0, dimensions: { minX: number; maxX: number; minY: number; maxY: number } = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, fillColor: string, selectedId: string | null, onSelect: ((id: string) => void) | null, selectedShortRowId: string | null = null): any => {
     const elements = [];
     const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
 
@@ -238,7 +262,7 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
         const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-        const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+        const totalSuccessorWidth = successorWidths.reduce((sum: number, w: number) => sum + w, 0);
 
         // Compute initial offset to center the row
         let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
@@ -268,7 +292,17 @@ const renderHierarchy = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { m
     return elements;
 };
 
-const PanelDiagram = ({ shape, label = '', size = 200, padding = 10, selectedId = null, onSelect = null, selectedShortRowId = null }) => {
+interface PanelDiagramProps {
+  shape: any;
+  label?: string;
+  size?: number;
+  padding?: number;
+  selectedId?: string | null;
+  onSelect?: ((id: string) => void) | null;
+  selectedShortRowId?: string | null;
+}
+
+const PanelDiagram: React.FC<PanelDiagramProps> = ({ shape, label = '', size = 200, padding = 10, selectedId = null, onSelect = null, selectedShortRowId = null }) => {
     const { token } = theme.useToken(); // Get the theme token
     const fillColor = token.colorPrimary; // Get the primary color from the theme
 

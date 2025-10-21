@@ -28,10 +28,10 @@ export interface FormField {
 }
 
 export interface FormProps extends BaseComponentProps {
-  onSubmit: (values: Record<string, any>) => void;
+  onSubmit: (values: Record<string, string | number | boolean>) => void;
   onCancel?: () => void;
   loading?: boolean;
-  initialValues?: Record<string, any>;
+  initialValues?: Record<string, string | number | boolean>;
 }
 
 // Layout component types
@@ -66,17 +66,17 @@ export interface BreadcrumbItem {
 }
 
 // Data display types
-export interface TableColumn<T = any> {
+export interface TableColumn<T = unknown> {
   key: string;
   title: string;
   dataIndex?: keyof T;
-  render?: (value: any, record: T, index: number) => React.ReactNode;
+  render?: (value: unknown, record: T, index: number) => React.ReactNode;
   width?: number | string;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
 }
 
-export interface TableProps<T = any> extends BaseComponentProps {
+export interface TableProps<T = unknown> extends BaseComponentProps {
   data: T[];
   columns: TableColumn<T>[];
   loading?: boolean;

@@ -11,7 +11,7 @@ const RecipeAssistantPanel = () => {
   const chatMessages = useSelector((state: any) => state.recipes.chatMessages);
 
   // Helper function to try parsing a recipe from assistant response
-  const tryParseRecipe = (text) => {
+  const tryParseRecipe = (text: string) => {
     try {
       // Look for JSON blocks in the text
       const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/\{[\s\S]*\}/);
@@ -32,7 +32,7 @@ const RecipeAssistantPanel = () => {
   };
 
   // Stub function for generating AI responses (to be replaced with actual model)
-  const generateResponse = async (messages) => {
+  const generateResponse = async (messages: any[]) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -120,7 +120,7 @@ What kind of dish are you thinking about making today?`;
     }
   };
 
-  const handleSendMessage = async (message) => {
+  const handleSendMessage = async (message: string) => {
     // Add user message
     const userMessage = { role: 'user', content: message, timestamp: Date.now() };
     dispatch(addChatMessage(userMessage));

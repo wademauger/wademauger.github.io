@@ -9,7 +9,7 @@ import { bassUkuleleChords } from '../data/bassUkuleleChords';
 import { baritoneUkuleleChords } from '../data/baritoneUkuleleChords';
 
 // Simple chord generation for missing chords
-const generateBasicChord = (chordSymbol, instrument) => {
+const generateBasicChord = (chordSymbol: string, instrument: string) => {
   // Handle slash chords
   const parts = chordSymbol.split('/');
   const rootChord = parts[0];
@@ -49,12 +49,12 @@ const generateBasicChord = (chordSymbol, instrument) => {
   
   // Get base pattern for the root chord (including sharps/flats)
   const rootFull = rootChord.match(/^[A-G][#b]?/)?.[0];
-  let basePattern = basicPatterns[instrument]?.[rootFull];
+  let basePattern = rootFull ? (basicPatterns as any)[instrument]?.[rootFull] : null;
   
   // If exact match not found, try with just the natural note
   if (!basePattern) {
     const rootNote = rootChord.match(/^[A-G]/)?.[0];
-    basePattern = basicPatterns[instrument]?.[rootNote];
+    basePattern = rootNote ? (basicPatterns as any)[instrument]?.[rootNote] : null;
   }
   
   if (!basePattern) {
@@ -68,7 +68,7 @@ const generateBasicChord = (chordSymbol, instrument) => {
     const modifiedFingers = [...basePattern.fingers];
     
     // Map bass note to fret on A string (string index 3)
-    const bassNoteToFret = {
+    const bassNoteToFret: Record<string, number> = {
       'A': 0, 'A#': 1, 'Bb': 1,
       'B': 2, 'C': 3, 'C#': 4, 'Db': 4,
       'D': 5, 'D#': 6, 'Eb': 6,
@@ -118,9 +118,15 @@ const CHORD_DATA = {
   baritoneUkulele: baritoneUkuleleChords
 };
 
-const ChordChart = ({ chord, instrument, small = false }) => {
+interface ChordChartProps {
+  chord: string;
+  instrument: string;
+  small?: boolean;
+}
+
+const ChordChart: React.FC<ChordChartProps> = ({ chord, instrument, small = false }) => {
   const dispatch = useDispatch();
-  const chordFingerings = useSelector(state => state.chords.chordFingerings);
+  const chordFingerings = useSelector((state: any) => state.chords.chordFingerings);
   
   // Calculate new sizes with exact same aspect ratio as original
   // Original sizes were: small: width 120, height 150 (ratio 0.8)
@@ -137,8 +143,8 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     dispatch(cycleChordFingering(chord));
   };
   
-  const renderFretboardChord = (instrument) => {
-    let chordData = CHORD_DATA[instrument]?.[chord];
+  const renderFretboardChord = (instrument: string) => {
+    let chordData = (CHORD_DATA as any)[instrument]?.[chord];
     
     // Handle alternative fingerings
     if (chordData) {
@@ -247,7 +253,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         ))}
 
         {/* Adjust circle sizes for smaller overall dimensions */}
-        {chordData.frets.map((fret, stringIndex) => {
+        {chordData.frets.map((fret: number, stringIndex: number) => {
           if (fret === -1) {
             // X mark for muted string - make smaller
             return (
@@ -303,7 +309,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         })}
 
         {/* Smaller font for finger numbers */}
-        {chordData.fingers?.map((finger, stringIndex) => {
+        {chordData.fingers?.map((finger: number, stringIndex: number) => {
           const fret = chordData.frets[stringIndex];
           if (finger > 0 && fret > 0) {
             // Calculate relative fret position
@@ -346,7 +352,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
   };
 
   const renderPianoChord = () => {
-    let chordNotes = CHORD_DATA.piano[chord];
+    let chordNotes = (CHORD_DATA.piano as any)[chord];
     
     // If chord not found, generate basic chord notes
     if (!chordNotes) {
@@ -366,7 +372,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
         const perfectFifth = 7;
         
         // Note to semitone mapping
-        const noteToSemitone = {
+        const noteToSemitone: Record<string, number> = {
           'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4,
           'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
         };
@@ -481,7 +487,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
 
   // Calculate fingering info for display
   const getFingeringInfo = () => {
-    const baseChordData = CHORD_DATA[instrument]?.[chord];
+    const baseChordData = (CHORD_DATA as any)[instrument]?.[chord];
     if (!baseChordData) return { current: 1, total: 1 };
     
     const alternatives = baseChordData.inversions || [];
@@ -501,7 +507,7 @@ const ChordChart = ({ chord, instrument, small = false }) => {
     >
       {renderChordDiagram()}
       {/* Generated chord indicator for piano chords */}
-      {instrument === 'piano' && !CHORD_DATA.piano[chord] && (
+      {instrument === 'piano' && !(CHORD_DATA.piano as any)[chord] && (
         <div className="generated-chord-indicator">*</div>
       )}
       <div className="chord-name">

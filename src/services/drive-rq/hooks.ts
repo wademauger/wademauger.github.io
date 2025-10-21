@@ -108,7 +108,7 @@ export function useSaveLibrary(
   
   return useMutation({
     mutationFn: (data: LibraryData) => adapter.saveLibrary(data, fileId),
-    onMutate: async (newData) => {
+    onMutate: async (newData): Promise<{ previous: LibraryData | undefined }> => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: driveKeys.library(fileId) });
       
@@ -120,8 +120,9 @@ export function useSaveLibrary(
       
       return { previous };
     },
-    onError: (err, variables, context) => {
+    onError: (err: Error, variables: LibraryData, onMutateResult: unknown) => {
       // Rollback on error
+      const context = onMutateResult as { previous?: LibraryData } | undefined;
       if (context?.previous) {
         queryClient.setQueryData(driveKeys.library(fileId), context.previous);
       }
@@ -153,7 +154,7 @@ export function useMergeLibraries(
 // CRUD Hooks for Individual Entries
 // ============================================================================
 
-export function useEntry<T = any>(
+export function useEntry<T = unknown>(
   adapter: IDriveAdapter,
   collection: keyof LibraryData,
   id: string,
@@ -168,7 +169,7 @@ export function useEntry<T = any>(
   });
 }
 
-export function useCreateEntry<T = any>(
+export function useCreateEntry<T = unknown>(
   adapter: IDriveAdapter,
   collection: keyof LibraryData,
   fileId?: string,
@@ -189,7 +190,7 @@ export function useCreateEntry<T = any>(
   });
 }
 
-export function useUpdateEntry<T = any>(
+export function useUpdateEntry<T = unknown>(
   adapter: IDriveAdapter,
   collection: keyof LibraryData,
   id: string,
@@ -200,7 +201,7 @@ export function useUpdateEntry<T = any>(
   
   return useMutation({
     mutationFn: (data: T) => adapter.setEntry<T>(collection, id, data, fileId),
-    onMutate: async (newData) => {
+    onMutate: async (newData): Promise<{ previous: T | undefined }> => {
       const queryKey = driveKeys.entry(collection as string, id, fileId);
       
       // Cancel outgoing refetches
@@ -214,8 +215,9 @@ export function useUpdateEntry<T = any>(
       
       return { previous };
     },
-    onError: (err, variables, context) => {
+    onError: (err: Error, variables: T, onMutateResult: unknown) => {
       // Rollback on error
+      const context = onMutateResult as { previous?: T } | undefined;
       if (context?.previous) {
         const queryKey = driveKeys.entry(collection as string, id, fileId);
         queryClient.setQueryData(queryKey, context.previous);

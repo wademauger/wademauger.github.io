@@ -1,12 +1,39 @@
 // Utility functions for pattern manipulation and validation
 
+type Pattern = string[][];
+type ColorPalette = Record<string, any>;
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+interface PatternSize {
+  width: number;
+  height: number;
+}
+
+interface Selection {
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+}
+
+interface PatternStats {
+  colorCounts: Record<string, number>;
+  colorPercentages: Record<string, number>;
+  totalStitches: number;
+  uniqueColors: number;
+}
+
 /**
  * Validates a pattern grid
  * @param {Array<Array<string>>} pattern - 2D array of color codes
  * @param {Object} colors - Color palette object
  * @returns {Object} Validation result with isValid and errors
  */
-export const validatePattern = (pattern, colors) => {
+export const validatePattern = (pattern: Pattern, colors: ColorPalette): ValidationResult => {
   const errors = [];
   
   if (!Array.isArray(pattern) || pattern.length === 0) {
@@ -43,9 +70,9 @@ export const validatePattern = (pattern, colors) => {
  * @param {string} fillColor - Color to use for new cells
  * @returns {Array<Array<string>>} Resized pattern
  */
-export const resizePattern = (pattern, newSize, fillColor = 'CCX') => {
-  const newPattern = Array(newSize.height).fill(null).map((_, row: any) => 
-    Array(newSize.width).fill(null).map((_, col) => {
+export const resizePattern = (pattern: Pattern, newSize: PatternSize, fillColor: string = 'CCX'): Pattern => {
+  const newPattern = Array(newSize.height).fill(null).map((_, row: number) => 
+    Array(newSize.width).fill(null).map((_, col: number) => {
       // Preserve existing pattern data if within bounds
       if (row < pattern.length && col < pattern[0].length) {
         return pattern[row][col];
@@ -63,10 +90,10 @@ export const resizePattern = (pattern, newSize, fillColor = 'CCX') => {
  * @param {Object} selection - Selection bounds {startRow, endRow, startCol, endCol}
  * @returns {Array<Array<string>>} Copied area
  */
-export const copySelection = (pattern, selection) => {
-  const clipboardData = [];
+export const copySelection = (pattern: Pattern, selection: Selection): Pattern => {
+  const clipboardData: Pattern = [];
   for (let row = selection.startRow; row <= selection.endRow; row++) {
-    const clipboardRow = [];
+    const clipboardRow: string[] = [];
     for (let col = selection.startCol; col <= selection.endCol; col++) {
       clipboardRow.push(pattern[row][col]);
     }
@@ -83,7 +110,7 @@ export const copySelection = (pattern, selection) => {
  * @param {number} startCol - Column to start pasting at
  * @returns {Array<Array<string>>} Updated pattern
  */
-export const pasteSelection = (pattern, clipboardData, startRow, startCol) => {
+export const pasteSelection = (pattern: Pattern, clipboardData: Pattern, startRow: number, startCol: number): Pattern => {
   const newPattern = pattern.map((row: any) => [...row]);
   
   for (let r = 0; r < clipboardData.length; r++) {
@@ -106,8 +133,8 @@ export const pasteSelection = (pattern, clipboardData, startRow, startCol) => {
  * @param {string} color - Color to fill with
  * @returns {Array<Array<string>>} Updated pattern
  */
-export const fillSelection = (pattern, selection, color) => {
-  const newPattern = pattern.map((row: any) => [...row]);
+export const fillSelection = (pattern: Pattern, selection: Selection, color: string): Pattern => {
+  const newPattern = pattern.map((row: string[]) => [...row]);
   
   for (let row = selection.startRow; row <= selection.endRow; row++) {
     for (let col = selection.startCol; col <= selection.endCol; col++) {
@@ -123,19 +150,19 @@ export const fillSelection = (pattern, selection, color) => {
  * @param {Array<Array<string>>} pattern - Pattern to analyze
  * @returns {Object} Statistics including color counts and percentages
  */
-export const calculatePatternStats = (pattern) => {
-  const colorCounts = {};
+export const calculatePatternStats = (pattern: Pattern): PatternStats => {
+  const colorCounts: Record<string, number> = {};
   let totalStitches = 0;
   
-  pattern.forEach((row: any) => {
-    row.forEach((stitch: any) => {
+  pattern.forEach((row: string[]) => {
+    row.forEach((stitch: string) => {
       colorCounts[stitch] = (colorCounts[stitch] || 0) + 1;
       totalStitches++;
     });
   });
   
-  const colorPercentages = {};
-  Object.keys(colorCounts).forEach((color: any) => {
+  const colorPercentages: Record<string, number> = {};
+  Object.keys(colorCounts).forEach((color: string) => {
     colorPercentages[color] = Math.round((colorCounts[color] / totalStitches) * 100);
   });
   
@@ -154,7 +181,7 @@ export const calculatePatternStats = (pattern) => {
  * @param {string} format - Export format ('json', 'csv', 'txt')
  * @returns {string} Exported data
  */
-export const exportPattern = (pattern, colors, format = 'json') => {
+export const exportPattern = (pattern: Pattern, colors: ColorPalette, format: string = 'json'): string => {
   switch (format) {
     case 'json':
       return JSON.stringify({
@@ -182,7 +209,7 @@ export const exportPattern = (pattern, colors, format = 'json') => {
  * @param {string} jsonData - JSON string to import
  * @returns {Object} Imported pattern data
  */
-export const importPattern = (jsonData) => {
+export const importPattern = (jsonData: string): { pattern: Pattern; colors: ColorPalette; gridSize: PatternSize } => {
   try {
     const data = JSON.parse(jsonData);
     
@@ -201,6 +228,7 @@ export const importPattern = (jsonData) => {
       gridSize: data.gridSize || { width: data.pattern[0].length, height: data.pattern.length }
     };
   } catch (error: unknown) {
-    throw new Error(`Failed to import pattern: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to import pattern: ${errorMessage}`);
   }
 };

@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const LyricLineEditor = ({ line, onSave, onCancel }) => {
+interface LyricLineEditorProps {
+  line: string;
+  onSave: (line: string) => void;
+  onCancel: () => void;
+}
+
+const LyricLineEditor: React.FC<LyricLineEditorProps> = ({ line, onSave, onCancel }) => {
   const [editedLine, setEditedLine] = useState(line || '');
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     // Focus the input when the editor opens

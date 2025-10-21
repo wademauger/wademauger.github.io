@@ -4,12 +4,44 @@
  * - Provides Spotify Web API search functionality for album artwork and data
  */
 
+// Type definitions
+interface WorkerEnv {
+  SPOTIFY_CLIENT_ID?: string;
+  SPOTIFY_CLIENT_SECRET?: string;
+  ALLOWED_ORIGINS?: string;
+  GROK_API_KEY?: string;
+  MISTRAL_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  [key: string]: string | undefined;
+}
+
+interface ConversationMessage {
+  type: 'user' | 'ai';
+  content: string;
+}
+
+interface ChatRequest {
+  userMessage: string;
+  recipeContext?: any;
+  conversationHistory?: ConversationMessage[];
+  preferredProvider?: string;
+  isFullRecipeRequest?: boolean;
+  requestType?: string;
+}
+
+interface SpotifySearchRequest {
+  artist: string;
+  album?: string;
+  track?: string;
+  searchType?: string;
+}
+
 // AI Provider configurations
 const AI_PROVIDERS = {
   grok: {
     baseUrl: 'https://api.x.ai/v1',
     model: 'grok-beta',
-    headers: (apiKey) => ({
+    headers: (apiKey: string) => ({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     })
@@ -17,7 +49,7 @@ const AI_PROVIDERS = {
   mistral: {
     baseUrl: 'https://api.mistral.ai/v1',
     model: 'mistral-large-latest',
-    headers: (apiKey) => ({
+    headers: (apiKey: string) => ({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     })
@@ -25,7 +57,7 @@ const AI_PROVIDERS = {
   openai: {
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
-    headers: (apiKey) => ({
+    headers: (apiKey: string) => ({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     })
@@ -48,7 +80,7 @@ const CORS_HEADERS = {
 };
 
 // Spotify API Functions
-async function getSpotifyToken(env) {
+async function getSpotifyToken(env: WorkerEnv): Promise<string> {
   const clientId = env.SPOTIFY_CLIENT_ID;
   const clientSecret = env.SPOTIFY_CLIENT_SECRET;
   
@@ -83,7 +115,7 @@ async function getSpotifyToken(env) {
   return data.access_token;
 }
 
-async function searchSpotify(query, type, env) {
+async function searchSpotify(query: string, type: string, env: WorkerEnv): Promise<any> {
   const token = await getSpotifyToken(env);
   
   const searchParams = new URLSearchParams({
@@ -107,9 +139,9 @@ async function searchSpotify(query, type, env) {
   return await response.json();
 }
 
-async function handleSpotifySearch(request, env) {
+async function handleSpotifySearch(request: Request, env: WorkerEnv): Promise<Response> {
   try {
-    const { artist, album, track, searchType } = await request.json();
+    const { artist, album, track, searchType }: SpotifySearchRequest = await request.json();
     
     if (!artist) {
       return new Response(JSON.stringify({ error: 'Artist name is required' }), {
@@ -154,7 +186,7 @@ async function handleSpotifySearch(request, env) {
     console.error('Spotify search error:', error);
     return new Response(JSON.stringify({ 
       error: 'Spotify search failed',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
@@ -162,7 +194,7 @@ async function handleSpotifySearch(request, env) {
   }
 }
 
-function getCorsHeaders(request, env) {
+function getCorsHeaders(request: Request, env: WorkerEnv): Record<string, string> {
   const origin = request.headers.get('Origin');
   const allowedOrigins = env.ALLOWED_ORIGINS ? env.ALLOWED_ORIGINS.split(',') : [
     'https://wademauger.github.io',
@@ -170,7 +202,7 @@ function getCorsHeaders(request, env) {
     'http://localhost:3001'
   ];
   
-  if (allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.includes(origin)) {
     return {
       ...CORS_HEADERS,
       'Access-Control-Allow-Origin': origin
@@ -181,7 +213,7 @@ function getCorsHeaders(request, env) {
 }
 
 // Handle OPTIONS preflight requests
-function handleOptions(request, env) {
+function handleOptions(request: Request, env: WorkerEnv): Response {
   return new Response(null, {
     status: 204,
     headers: getCorsHeaders(request, env)
@@ -189,7 +221,7 @@ function handleOptions(request, env) {
 }
 
 // Transform conversation history to OpenAI format
-function formatMessages(userMessage, recipeContext, conversationHistory = [], isFullRecipeRequest = false) {
+function formatMessages(userMessage: string, recipeContext: any, conversationHistory: ConversationMessage[] = [], isFullRecipeRequest = false): Array<{ role: string; content: string }> {
   const messages = [];
   
   // Different system prompts based on request type
@@ -364,8 +396,8 @@ Guidelines:
 }
 
 // Call AI provider
-async function callAIProvider(provider, messages, env, isFullRecipeRequest = false) {
-  const config = AI_PROVIDERS[provider];
+async function callAIProvider(provider: string, messages: Array<{ role: string; content: string }>, env: WorkerEnv, isFullRecipeRequest = false): Promise<string> {
+  const config = AI_PROVIDERS[provider as keyof typeof AI_PROVIDERS];
   if (!config) {
     throw new Error(`Unknown provider: ${provider}`);
   }
@@ -406,7 +438,7 @@ async function callAIProvider(provider, messages, env, isFullRecipeRequest = fal
 }
 
 // Main request handler
-async function handleRequest(request, env) {
+async function handleRequest(request: Request, env: WorkerEnv): Promise<Response> {
   try {
     const { 
       userMessage, 
@@ -415,7 +447,7 @@ async function handleRequest(request, env) {
       preferredProvider,
       isFullRecipeRequest = false,
       requestType
-    } = await request.json();
+    }: ChatRequest = await request.json();
     
     if (!userMessage) {
       return new Response(JSON.stringify({ error: 'Missing userMessage' }), {
@@ -438,9 +470,9 @@ async function handleRequest(request, env) {
       ? [preferredProvider, 'grok', 'mistral', 'openai']
       : ['grok', 'mistral', 'openai'];
     
-    let lastError;
-    let usedProvider;
-    let response;
+    let lastError: Error | null = null;
+    let usedProvider: string | undefined;
+    let response: string | undefined;
     
     for (const provider of providers) {
       try {
@@ -449,8 +481,8 @@ async function handleRequest(request, env) {
         usedProvider = provider;
         break;
       } catch (error: unknown) {
-        console.error(`Provider ${provider} failed:`, error.message);
-        lastError = error;
+        console.error(`Provider ${provider} failed:`, error instanceof Error ? error.message : 'Unknown error');
+        lastError = error instanceof Error ? error : new Error('Unknown error');
         continue;
       }
     }
@@ -473,7 +505,7 @@ async function handleRequest(request, env) {
     return new Response(JSON.stringify({
       response,
       provider: usedProvider,
-      model: AI_PROVIDERS[usedProvider].model
+      model: usedProvider ? AI_PROVIDERS[usedProvider as keyof typeof AI_PROVIDERS].model : undefined
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
@@ -483,7 +515,7 @@ async function handleRequest(request, env) {
     console.error('Request handling error:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request, env) }
@@ -493,7 +525,7 @@ async function handleRequest(request, env) {
 
 // Main entry point
 export default {
-  async fetch(request, env) {
+  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return handleOptions(request, env);

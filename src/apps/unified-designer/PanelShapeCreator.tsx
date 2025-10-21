@@ -3,11 +3,17 @@ import { Card, Button, Space, message } from 'antd';
 import { CheckOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import BasePanelShapeCreator from '../../apps/colorwork-designer/PanelShapeCreator';
 
+interface PanelShapeCreatorProps {
+    onShapeCreated?: ((shape: any) => void) | null;
+    onContinueToColorwork?: ((shape: any) => void) | null;
+    initialShape?: any;
+}
+
 /**
  * Enhanced Panel Shape Creator with callback support
  * Wraps the base PanelShapeCreator with save and continue functionality
  */
-const PanelShapeCreator = ({
+const PanelShapeCreator: React.FC<PanelShapeCreatorProps> = ({
     onShapeCreated = null,
     onContinueToColorwork = null,
     initialShape = null

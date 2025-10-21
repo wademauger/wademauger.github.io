@@ -4,11 +4,20 @@ import { Button, Radio, Collapse, Steps } from 'antd';
 const { Panel: AntPanel } = Collapse;
 const { Step } = Steps;
 
-const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
+interface PatternInstructionsProps {
+  patternId: string;
+  panelId: string;
+  instructions?: any[];
+  isKnitting: boolean | string;
+  setIsKnitting: (panelId: string, resetCurrentStep?: any) => void;
+  handleCancel: (skipConfirm: boolean) => void;
+}
+
+const PatternInstructions: React.FC<PatternInstructionsProps> = ({ patternId, panelId, instructions = [], isKnitting, setIsKnitting, handleCancel }) => {
     const [currentStep, setCurrentStep] = useState(0); // State of which knitting instruction the user is on
     const [isCompleted, setIsCompleted] = useState(false); // State to control the completion message
-    const [activeKey, setActiveKey] = useState([]); // State to control the collapse panel, initially empty to keep it closed
-    const currentStepRef = useRef(null); // Create a ref for the current step element
+    const [activeKey, setActiveKey] = useState<string[]>([]); // State to control the collapse panel, initially empty to keep it closed
+    const currentStepRef = useRef<HTMLDivElement | null>(null); // Create a ref for the current step element
 
     const handleNextStep = useCallback(() => {
         if (currentStep + 1 === instructions.length) {
@@ -71,7 +80,7 @@ const PatternInstructions = ({ patternId, panelId, instructions = [], isKnitting
         setActiveKey(['1']); // Ensure the collapse is open
     };
 
-    const handleCancelClick = (skipConfirm) => {
+    const handleCancelClick = (skipConfirm: boolean) => {
         handleCancel(skipConfirm);
         setActiveKey([]); // Close the collapse
     };

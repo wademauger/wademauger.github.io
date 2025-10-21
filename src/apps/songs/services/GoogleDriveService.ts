@@ -7,6 +7,7 @@ class GoogleDriveService {
   LIBRARY_FILENAME: string;
   DISCOVERY_DOC: string;
   SCOPES: string;
+  authFailureCount: number;
 
   constructor() {
     this.isSignedIn = false;
@@ -16,11 +17,12 @@ class GoogleDriveService {
     this.LIBRARY_FILENAME = 'library.json';
     this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
     this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    this.authFailureCount = 0;
   }
 
-  async handleAuthError(error) {
+  async handleAuthError(error: unknown): Promise<void> {
     // Extract error details from various error types
-    const getErrorDetails = async (error) => {
+    const getErrorDetails = async (error: unknown): Promise<{status: number | undefined, message: string}> => {
       if (error instanceof Response) {
         const status = error.status;
         let message = '';
@@ -37,13 +39,13 @@ class GoogleDriveService {
         return { status, message };
       }
       return {
-        status: error?.response?.status || error?.result?.status || error?.status,
-        message: error?.message || 'Unknown error'
+        status: (error as any)?.response?.status || (error as any)?.result?.status || (error as any)?.status,
+        message: (error as any)?.message || 'Unknown error'
       };
     };
 
     // Check if error is authentication related
-    const isAuthFailure = async (error) => {
+    const isAuthFailure = async (error: unknown): Promise<boolean> => {
       const { status } = await getErrorDetails(error);
       return status === 401;
     };
@@ -83,7 +85,7 @@ class GoogleDriveService {
           this.isSignedIn = false;
           this.accessToken = null;
           this.userEmail = null;
-          window.gapi?.client?.setToken(null);
+          window.gapi?.client?.setToken({ access_token: '' });
           localStorage.removeItem('gdrive_access_token');
           localStorage.removeItem('gdrive_user_email');
 
@@ -115,8 +117,8 @@ class GoogleDriveService {
     throw new Error(errorMessage);
   }
 
-  initialize(clientId, apiKey) {
-    return new Promise((resolve, reject) => {
+  initialize(clientId: string, apiKey: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       if (!window.gapi) {
         reject(new Error('Google API not loaded'));
         return;
@@ -133,14 +135,14 @@ class GoogleDriveService {
           this.tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: this.SCOPES,
-            callback: (response) => {
+            callback: (response: any) => {
               if (response.error) {
                 console.error('Token response error:', response);
                 return;
               }
               this.accessToken = response.access_token;
               this.isSignedIn = true;
-              window.gapi.client.setToken({ access_token: this.accessToken });
+              window.gapi.client.setToken({ access_token: this.accessToken || '' });
               this.loadUserProfile();
             }
           });
@@ -156,15 +158,15 @@ class GoogleDriveService {
     });
   }
 
-  signIn() {
-    return new Promise((resolve, reject) => {
+  signIn(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       if (!this.tokenClient) {
         reject(new Error('Google Drive not initialized'));
         return;
       }
 
       // Request an access token
-      this.tokenClient.callback = (response) => {
+      this.tokenClient.callback = (response: any) => {
         if (response.error) {
           reject(new Error(response.error));
           return;
@@ -172,7 +174,7 @@ class GoogleDriveService {
         
         this.accessToken = response.access_token;
         this.isSignedIn = true;
-        window.gapi.client.setToken({ access_token: this.accessToken });
+        window.gapi.client.setToken({ access_token: this.accessToken || '' });
         this.loadUserProfile();
         this.persistSession();
         resolve();
@@ -184,12 +186,12 @@ class GoogleDriveService {
 
   signOut() {
     if (this.accessToken) {
-      window.google.accounts.oauth2.revoke(this.accessToken);
+      window.google.accounts.oauth2.revoke(this.accessToken, () => {});
     }
     this.isSignedIn = false;
     this.accessToken = null;
     this.userEmail = null;
-    window.gapi.client.setToken(null);
+    window.gapi.client.setToken({ access_token: '' });
     this.clearSession();
   }
 
@@ -212,7 +214,7 @@ class GoogleDriveService {
       }
       const userInfo = await response.json();
       this.userEmail = userInfo.email;
-      localStorage.setItem('gdrive_user_email', this.userEmail);
+      localStorage.setItem('gdrive_user_email', this.userEmail || '');
     } catch (error: unknown) {
       console.error('Failed to load user profile:', error);
       this.handleAuthError(error);
@@ -229,11 +231,11 @@ class GoogleDriveService {
     }
 
     try {
-      const response = await window.gapi.client.drive.files.list({
+      const response = await window.gapi.client.drive?.files.list({
         q: `name='${this.LIBRARY_FILENAME}' and trashed=false`,
         spaces: 'drive'
       });
-      return response.result.files.length > 0 ? response.result.files[0] : null;
+      return (response?.result?.files?.length ?? 0) > 0 ? response!.result.files[0] : null;
     } catch (error: unknown) {
       this.handleAuthError(error);
       throw error;
@@ -290,44 +292,47 @@ class GoogleDriveService {
         file = await this.createLibraryFile();
       }
 
-      const response = await window.gapi.client.drive.files.get({
-        fileId: file.id,
+      const response = await window.gapi.client.drive?.files.get({
+        fileId: (file as any).id,
         alt: 'media'
-      });
+      }) as any;
 
-      if (!response.body) {
+      if (!response?.body) {
         throw new Error('Empty response from Google Drive API');
       }
 
       try {
         return JSON.parse(response.body);
       } catch (jsonError: unknown) {
-        throw new Error(`Invalid JSON in library file: ${jsonError.message}`);
+        const message = jsonError instanceof Error ? jsonError.message : String(jsonError);
+        throw new Error(`Invalid JSON in library file: ${message}`);
       }
     } catch (error: unknown) {
       // Enhanced error handling with specific messages
-      if (error.message?.includes('JSON')) {
+      const errorObj = error as any;
+      if (error instanceof Error && error.message?.includes('JSON')) {
         throw error; // Re-throw JSON parsing errors as-is
       }
       
-      if (error.status === 401) {
+      if (errorObj.status === 401) {
         throw new Error('Google Drive authentication expired (401)');
-      } else if (error.status === 403) {
+      } else if (errorObj.status === 403) {
         throw new Error('Access forbidden to Google Drive (403) - check permissions');
-      } else if (error.status === 404) {
+      } else if (errorObj.status === 404) {
         throw new Error('Library file not found in Google Drive (404)');
-      } else if (error.status === 500) {
+      } else if (errorObj.status === 500) {
         throw new Error('Google Drive server error (500) - try again later');
-      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')) {
+      } else if (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error'))) {
         throw new Error('Network error - check your internet connection');
       }
       
       await this.handleAuthError(error);
-      throw new Error(`Google Drive API error: ${error.message || error.toString()}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Google Drive API error: ${errorMessage}`);
     }
   }
 
-  async saveLibrary(library) {
+  async saveLibrary(library: any): Promise<void> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -336,7 +341,7 @@ class GoogleDriveService {
       const file = await this.findLibraryFile();
       
       if (file) {
-        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`, {
+        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${(file as any).id}?uploadType=media`, {
           method: 'PATCH',
           headers: new Headers({
             'Authorization': `Bearer ${this.accessToken}`,
@@ -357,7 +362,7 @@ class GoogleDriveService {
     }
   }
 
-  async addArtist(artistName) {
+  async addArtist(artistName: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -389,7 +394,7 @@ class GoogleDriveService {
     }
   }
 
-  async addAlbum(artistName, albumTitle) {
+  async addAlbum(artistName: string, albumTitle: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -427,7 +432,7 @@ class GoogleDriveService {
     }
   }
 
-  async addSong(artistName, albumTitle, songTitle) {
+  async addSong(artistName: string, albumTitle: string, songTitle: string): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -473,7 +478,7 @@ class GoogleDriveService {
     }
   }
 
-  async updateSong(artistName, albumTitle, updatedSong) {
+  async updateSong(artistName: string, albumTitle: string, updatedSong: any): Promise<any> {
     if (!this.isSignedIn || !this.accessToken) {
       throw new Error('User not signed in to Google Drive');
     }
@@ -519,7 +524,7 @@ class GoogleDriveService {
         return;
       }
       // Set up callback for silent sign-in
-      this.tokenClient.callback = (response) => {
+      this.tokenClient.callback = (response: any) => {
         if (response.error || !response.access_token) {
           // Not signed in silently
           this.isSignedIn = false;
@@ -528,7 +533,7 @@ class GoogleDriveService {
         }
         this.accessToken = response.access_token;
         this.isSignedIn = true;
-        window.gapi.client.setToken({ access_token: this.accessToken });
+        window.gapi.client.setToken({ access_token: this.accessToken || '' });
         this.loadUserProfile();
         this.persistSession();
         resolve(true);
@@ -584,7 +589,7 @@ class GoogleDriveService {
         this.isSignedIn = true;
         const userInfo = await response.json();
         this.userEmail = userInfo.email;
-        localStorage.setItem('gdrive_user_email', this.userEmail);
+        localStorage.setItem('gdrive_user_email', this.userEmail || '');
         // Important: Set the token in the Google API client for subsequent calls
         window.gapi?.client?.setToken({ access_token: this.accessToken });
         return true;
@@ -595,7 +600,7 @@ class GoogleDriveService {
         this.isSignedIn = false;
         this.accessToken = null;
         this.userEmail = null;
-        window.gapi?.client?.setToken(null);
+        window.gapi?.client?.setToken({ access_token: '' });
         return false;
       }
     } catch (error: unknown) {
@@ -605,7 +610,7 @@ class GoogleDriveService {
       this.isSignedIn = false;
       this.accessToken = null;
       this.userEmail = null;
-      window.gapi?.client?.setToken(null);
+      window.gapi?.client?.setToken({ access_token: '' });
       return false;
     }
   }

@@ -1,5 +1,5 @@
 // Simple library merge helper used by PanelShapeCreator
-export function mergePanelIntoLibrary(library, panelName, panelPayload) {
+export function mergePanelIntoLibrary(library: any, panelName: string, panelPayload: any): any {
   const lib = (library && typeof library === 'object') ? { ...library } : {};
   lib.panels = lib.panels && typeof lib.panels === 'object' ? { ...lib.panels } : {};
   lib.panels[panelName] = panelPayload;

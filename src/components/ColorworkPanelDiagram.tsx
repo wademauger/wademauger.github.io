@@ -8,9 +8,9 @@ import { generatePattern } from './ColorworkCanvasEditor';
  * Replaces SVG DOM elements with Canvas 2D context for complex colorwork visualization
  */
 
-const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0, fillColor, patternLayers = [], gauge = null, borderConfig = null) => {
+const renderUnifiedShapeToCanvas = (ctx: any, shape: any, scale: any, xOffset = 0, yOffset = 0, fillColor: any, patternLayers: any = [], gauge: any = null, borderConfig: any = null) => {
     // Collect all trapezoid coordinates into one unified path
-    const allCoordinates = [];
+    const allCoordinates: any[] = [];
     collectTrapezoidCoordinates(shape, scale, xOffset, yOffset, allCoordinates);
     
     if (allCoordinates.length === 0) return;
@@ -102,7 +102,7 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
         const borderStitches = borderConfig.thickness;
         
         // Convert trapezoids to polygon-clipping format
-        const polygons = allCoordinates.map((coord: any) => {
+        const polygons: any[] = allCoordinates.map((coord: any) => {
             return [[
                 [coord.topLeft.x, coord.topLeft.y],
                 [coord.topRight.x, coord.topRight.y],
@@ -113,14 +113,14 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
         });
         
         // Perform geometric union to merge all trapezoids
-        const mergedPolygons = polygonClipping.union(...polygons);
+        const mergedPolygons = (polygonClipping.union as any)(...polygons);
         
         // Draw border as filled region between outer and inner polygons
         ctx.save();
         ctx.fillStyle = borderConfig.color;
         
-        mergedPolygons.forEach((polygon) => {
-            polygon.forEach((ring) => {
+        mergedPolygons.forEach((polygon: any) => {
+            polygon.forEach((ring: any) => {
                 if (ring.length < 3) return;
                 
                 // Calculate inset polygon with angle-dependent offset
@@ -243,7 +243,7 @@ const renderUnifiedShapeToCanvas = (ctx, shape, scale, xOffset = 0, yOffset = 0,
     }
 };
 
-const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coordinates = []) => {
+const collectTrapezoidCoordinates = (trap: any, scale: any, xOffset = 0, yOffset = 0, coordinates: any = []) => {
     const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
     const xTopLeft = xOffset + (trapWidth - trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
     const xTopRight = xOffset + (trapWidth + trap.baseB * scale) / 2 + (trap.baseBHorizontalOffset || 0) * scale;
@@ -261,7 +261,7 @@ const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coor
 
     if (trap.successors && trap.successors.length > 0) {
         const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-        const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+        const totalSuccessorWidth = successorWidths.reduce((sum: any, w: any) => sum + w, 0);
         let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
         for (let i = trap.successors.length - 1; i >= 0; i--) {
@@ -279,7 +279,7 @@ const collectTrapezoidCoordinates = (trap, scale, xOffset = 0, yOffset = 0, coor
     }
 };
 
-const renderColorworkLayersToCanvasCentered = (ctx, patternLayers, shape, x, y, displayWidth, displayHeight, scale, gauge) => {
+const renderColorworkLayersToCanvasCentered = (ctx: any, patternLayers: any, shape: any, x: any, y: any, displayWidth: any, displayHeight: any, scale: any, gauge: any) => {
     // Calculate base dimensions in inches
     const baseWidthInches = Math.max(shape.baseA, shape.baseB);
     const baseHeightInches = shape.height;
@@ -328,19 +328,19 @@ const renderColorworkLayersToCanvasCentered = (ctx, patternLayers, shape, x, y, 
     }
 };
 
-const createCombinedGridCentered = (totalStitches, totalRows, patternLayers) => {
+const createCombinedGridCentered = (totalStitches: any, totalRows: any, patternLayers: any) => {
     // Initialize grid with transparent background
-    const grid = Array(totalRows).fill().map(() => Array(totalStitches).fill('transparent'));
+    const grid: any[][] = Array(totalRows).fill(null).map(() => Array(totalStitches).fill('transparent'));
     
     // Process layers from bottom to top (lower priority to higher priority)
-    patternLayers.sort((a, b) => a.priority - b.priority).forEach((layer: any) => {
+    patternLayers.sort((a: any, b: any) => a.priority - b.priority).forEach((layer: any) => {
         applyPatternLayerCentered(grid, totalStitches, totalRows, layer);
     });
     
     return grid;
 };
 
-const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
+const applyPatternLayerCentered = (grid: any, totalStitches: any, totalRows: any, layer: any) => {
     let { pattern, settings } = layer;
     
     // For stripe patterns with zero-row/zero-column colors, regenerate with actual target dimensions
@@ -491,16 +491,16 @@ const applyPatternLayerCentered = (grid, totalStitches, totalRows, layer) => {
 };
 
 const renderHierarchyToCanvas = (
-    ctx,
-    trap, 
-    scale, 
+    ctx: any,
+    trap: any, 
+    scale: any, 
     xOffset = 0, 
     yOffset = 0, 
-    dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, 
-    fillColor,
-    patternLayers = [],
-    gauge = null,
-    borderConfig = null
+    dimensions: any = { minX: 0, maxX: 0, minY: 0, maxY: 0 }, 
+    fillColor: any,
+    patternLayers: any = [],
+    gauge: any = null,
+    borderConfig: any = null
 ) => {
     // Calculate dimensions first
     calculateTrapezoidDimensions(trap, scale, xOffset, yOffset, dimensions);
@@ -509,7 +509,7 @@ const renderHierarchyToCanvas = (
     renderUnifiedShapeToCanvas(ctx, trap, scale, xOffset, yOffset, fillColor, patternLayers, gauge, borderConfig);
 };
 
-const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
+const calculateTrapezoidDimensions = (trap: any, scale: any, xOffset = 0, yOffset = 0, dimensions: any = { minX: 0, maxX: 0, minY: 0, maxY: 0 }) => {
     const trapWidth = Math.max(trap.baseA, trap.baseB) * scale;
 
     // Compute bounding box of the current trapezoid
@@ -529,7 +529,7 @@ const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dim
     if (trap.successors && trap.successors.length > 0) {
         // Compute total width of all successors
         const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scale);
-        const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+        const totalSuccessorWidth = successorWidths.reduce((sum: any, w: any) => sum + w, 0);
 
         // Compute initial offset to center the row
         let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
@@ -558,7 +558,7 @@ const calculateTrapezoidDimensions = (trap, scale, xOffset = 0, yOffset = 0, dim
  * Draw row highlight overlays on the panel
  * Draws a red line across each trapezoid at the specified row positions
  */
-const drawRowHighlights = (ctx, shape, scale, translateX, translateY, gauge, highlightedRow, completedRows) => {
+const drawRowHighlights = (ctx: any, shape: any, scale: any, translateX: any, translateY: any, gauge: any, highlightedRow: any, completedRows: any) => {
     // Calculate total rows and row positions for the entire shape hierarchy
     const rowPositions = calculateRowPositionsRecursive(shape, scale, 0, 0, 0, gauge);
     
@@ -568,7 +568,7 @@ const drawRowHighlights = (ctx, shape, scale, translateX, translateY, gauge, hig
     ctx.translate(translateX, translateY);
     
     // Draw completed rows with a subtle green overlay
-    completedRows.forEach(rowNum => {
+    completedRows.forEach((rowNum: any) => {
         if (rowNum >= 0 && rowNum < rowPositions.length) {
             const pos = rowPositions[rowNum];
             ctx.strokeStyle = 'rgba(82, 196, 26, 0.6)'; // Green with transparency
@@ -616,8 +616,8 @@ const drawRowHighlights = (ctx, shape, scale, translateX, translateY, gauge, hig
 /**
  * Recursively calculate Y positions for each row across all trapezoids in the hierarchy
  */
-const calculateRowPositionsRecursive = (shape, scale, xOffset, yOffset, startRow, gauge) => {
-    const positions = [];
+const calculateRowPositionsRecursive = (shape: any, scale: any, xOffset: any, yOffset: any, startRow: any, gauge: any): any => {
+    const positions: any[] = [];
     
     if (!shape || !gauge) return positions;
     
@@ -665,7 +665,7 @@ const calculateRowPositionsRecursive = (shape, scale, xOffset, yOffset, startRow
         // For multiple successors, they're arranged horizontally
         if (shape.successors.length > 1) {
             let currentXOffset = xOffset;
-            shape.successors.forEach(successor => {
+            shape.successors.forEach((successor: any) => {
                 const successorPositions = calculateRowPositionsRecursive(
                     successor,
                     scale,
@@ -708,16 +708,17 @@ const ColorworkPanelDiagram = ({
     showPatterns = true,
     highlightedRow = null, // Row number to highlight (0-indexed)
     completedRows = [] // Array of completed row numbers
-}) => {
+}: any) => {
     const { token } = theme.useToken();
     const fillColor = token.colorPrimary;
-    const canvasRef = useRef(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !shape) return;
 
         const ctx = canvas.getContext('2d');
+        if (!ctx) return;
         const devicePixelRatio = window.devicePixelRatio || 1;
         
         // Set canvas size with device pixel ratio for crisp rendering

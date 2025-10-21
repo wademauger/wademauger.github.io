@@ -25,13 +25,34 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+interface SortableLyricLineProps {
+  line: string;
+  index: number;
+  id: string | number;
+  editingLineIndex: number | null;
+  editingEnabled: boolean;
+  hoveredLineIndex: number | null;
+  setHoveredLineIndex: (i: number | null) => void;
+  handleEditLine: (i: number) => void;
+  handleInsertAfter: (i: number) => void;
+  handleDeleteLine: (i: number) => void;
+  handleSaveLine: (line: string, index: number) => Promise<void> | void;
+  handleCancelEdit: () => void;
+  renderLyricLine: (line: string) => React.ReactNode;
+  isThisLinePending?: boolean;
+  isDragDisabled?: boolean;
+  isPendingDelete?: boolean;
+  isAddingLine?: boolean;
+  isPendingSave?: boolean;
+}
+
 // Sortable line component for drag and drop
-const SortableLyricLine = ({ 
-  line, 
-  index, 
-  id, 
-  editingLineIndex, 
-  editingEnabled, 
+const SortableLyricLine: React.FC<SortableLyricLineProps> = ({ 
+  line,
+  index,
+  id,
+  editingLineIndex,
+  editingEnabled,
   hoveredLineIndex,
   setHoveredLineIndex,
   handleEditLine,
@@ -75,7 +96,7 @@ const SortableLyricLine = ({
       {editingLineIndex === index && !isAddingLine && editingEnabled ? (
         <LyricLineEditor
           line={line}
-          onSave={(newLine) => handleSaveLine(newLine, index)}
+          onSave={(newLine: string) => handleSaveLine(newLine, index)}
           onCancel={handleCancelEdit}
         />
       ) : (
@@ -150,21 +171,29 @@ const SortableLyricLine = ({
   );
 };
 
-const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = true }) => {
+interface SongDetailProps {
+  song: any;
+  artist: { name: string } | any;
+  onPinChord: (chord: string) => void;
+  onUpdateSong: (updated: any) => Promise<void> | void;
+  editingEnabled?: boolean;
+}
+
+const SongDetail: React.FC<SongDetailProps> = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = true }) => {
   const { message } = App.useApp();
-  const [editingLineIndex, setEditingLineIndex] = useState(null);
-  const [isAddingLine, setIsAddingLine] = useState(false);
-  const [hoveredLineIndex, setHoveredLineIndex] = useState(null);
-  const [localTranspose, setLocalTranspose] = useState(0);
-  const [isEditingWholeSong, setIsEditingWholeSong] = useState(false);
-  const [wholeSongText, setWholeSongText] = useState('');
-  const [pendingSaves, setPendingSaves] = useState(new Set());
-  const [optimisticLyrics, setOptimisticLyrics] = useState(null);
-  const [pendingLineIndex, setPendingLineIndex] = useState(null);
-  const [pendingDeleteLines, setPendingDeleteLines] = useState(new Set());
-  const [isPendingAnyOperation, setIsPendingAnyOperation] = useState(false);
-  const [isSavingTranspose, setIsSavingTranspose] = useState(false);
-  const [isSavingWholeSong, setIsSavingWholeSong] = useState(false);
+  const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null);
+  const [isAddingLine, setIsAddingLine] = useState<boolean>(false);
+  const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+  const [localTranspose, setLocalTranspose] = useState<number>(0);
+  const [isEditingWholeSong, setIsEditingWholeSong] = useState<boolean>(false);
+  const [wholeSongText, setWholeSongText] = useState<string>('');
+  const [pendingSaves, setPendingSaves] = useState<Set<number>>(new Set());
+  const [optimisticLyrics, setOptimisticLyrics] = useState<string[] | null>(null);
+  const [pendingLineIndex, setPendingLineIndex] = useState<number | null>(null);
+  const [pendingDeleteLines, setPendingDeleteLines] = useState<Set<number>>(new Set());
+  const [isPendingAnyOperation, setIsPendingAnyOperation] = useState<boolean>(false);
+  const [isSavingTranspose, setIsSavingTranspose] = useState<boolean>(false);
+  const [isSavingWholeSong, setIsSavingWholeSong] = useState<boolean>(false);
   const dispatch = useDispatch();
   const instrument = useSelector((state: any) => state.chords.currentInstrument);
   const transpose = useSelector((state: any) => state.chords.transposeBy?.[song.title] || 0);
@@ -180,11 +209,11 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   );
 
   // Extract unique chords from lyrics
-  const extractChords = (lyrics) => {
+  const extractChords = (lyrics: string[]): string[] => {
     const chordRegex = /\[(.*?)\]/g;
-    const allChords = [];
+    const allChords: string[] = [];
     
-    lyrics?.forEach((line: any) => {
+    lyrics?.forEach((line: string) => {
       let match;
       while ((match = chordRegex.exec(line)) !== null) {
         if (!allChords.includes(match[1])) {
@@ -198,9 +227,9 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
 
   // Helper to shift a chord name by a number of semitones
   const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const FLAT_EQUIV = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
+  const FLAT_EQUIV: Record<string, string> = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
 
-  function transposeChord(chord, semitones) {
+  function transposeChord(chord: string, semitones: number): string {
     // Handle slashed chords (e.g. A/C# -> A#/D)
     if (chord.includes('/')) {
       const [rootPart, bassPart] = chord.split('/');
@@ -222,7 +251,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   }
 
   // Helper function to convert complex lyrics format to simple array format
-  const convertLyricsToArray = (lyrics) => {
+  const convertLyricsToArray = (lyrics: any): string[] => {
     if (!lyrics) return [];
     
     // If it's already an array of strings, return as-is
@@ -237,14 +266,14 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     
     // If it's the complex nested format from tabs.js
     if (Array.isArray(lyrics) && lyrics.length > 0 && Array.isArray(lyrics[0])) {
-      const converted = [];
+      const converted: string[] = [];
       
-      lyrics.forEach((verse, verseIndex) => {
+      lyrics.forEach((verse: any, verseIndex: number) => {
         if (verseIndex > 0) {
           converted.push(''); // Add blank line between verses
         }
         
-        verse.forEach((lineObj) => {
+        verse.forEach((lineObj: any) => {
           if (lineObj && lineObj.text) {
             let line = lineObj.text;
             
@@ -279,7 +308,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setIsAddingLine(false);
   };
 
-  const handleInsertAfter = (afterIndex) => {
+  const handleInsertAfter = (afterIndex: number) => {
     // Block if there are pending operations
     if (isPendingAnyOperation || pendingDeleteLines.size > 0) {
       message.warning('Please wait for current operation to complete before inserting a new line.');
@@ -297,7 +326,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     }
   };
 
-  const handleSaveLine = async (newLine, index: number) => {
+  const handleSaveLine = async (newLine: string, index: number): Promise<void> => {
     const updatedLyrics = [...lyricsArray];
     
     if (isAddingLine) {
@@ -323,7 +352,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       onUpdateSong({
         ...song,
         lyrics: updatedLyrics
-      }).then(() => {
+      })?.then(() => {
         message.success('Line added successfully!');
         setOptimisticLyrics(null);
         setIsPendingAnyOperation(false);
@@ -335,7 +364,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
         // Ensure we completely reset editing state
         setEditingLineIndex(null);
         setIsAddingLine(false);
-      }).catch((error) => {
+      }).catch((error: unknown) => {
         console.error('Failed to add line:', error);
         message.error('Failed to add new line. Please try again.');
         // Revert optimistic update
@@ -362,31 +391,35 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       setEditingLineIndex(null);
       
       // Save the edit operation
-      onUpdateSong({
+      const result = onUpdateSong({
         ...song,
         lyrics: updatedLyrics
-      }).then(() => {
-        message.success('Line updated successfully!');
-        setOptimisticLyrics(null);
-        setIsPendingAnyOperation(false);
-        setPendingSaves(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(index);
-          return newSet;
-        });
-      }).catch((error) => {
-        console.error('Failed to update line:', error);
-        message.error('Failed to update line. Please try again.');
-        // Revert optimistic update
-        setOptimisticLyrics(null);
-        setIsPendingAnyOperation(false);
-        setPendingSaves(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(index);
-          return newSet;
-        });
-        setEditingLineIndex(index);
       });
+      
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          message.success('Line updated successfully!');
+          setOptimisticLyrics(null);
+          setIsPendingAnyOperation(false);
+          setPendingSaves(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
+        }).catch((error: unknown) => {
+          console.error('Failed to update line:', error);
+          message.error('Failed to update line. Please try again.');
+          // Revert optimistic update
+          setOptimisticLyrics(null);
+          setIsPendingAnyOperation(false);
+          setPendingSaves(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
+          setEditingLineIndex(index);
+        });
+      }
     }
   };
 
@@ -459,22 +492,26 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
       setPendingLineIndex(newIndex); // Track which line is pending
       
       // Save the reorder operation
-      onUpdateSong({
+      const result = onUpdateSong({
         ...song,
         lyrics: newLyrics
-      }).then(() => {
-        message.success('Lines reordered successfully!');
-        setOptimisticLyrics(null);
-        setIsPendingAnyOperation(false);
-        setPendingLineIndex(null);
-      }).catch((error) => {
-        console.error('Failed to reorder lines:', error);
-        message.error('Failed to reorder lines. Please try again.');
-        // Revert optimistic update
-        setOptimisticLyrics(null);
-        setIsPendingAnyOperation(false);
-        setPendingLineIndex(null);
       });
+      
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          message.success('Lines reordered successfully!');
+          setOptimisticLyrics(null);
+          setIsPendingAnyOperation(false);
+          setPendingLineIndex(null);
+        }).catch((error: unknown) => {
+          console.error('Failed to reorder lines:', error);
+          message.error('Failed to reorder lines. Please try again.');
+          // Revert optimistic update
+          setOptimisticLyrics(null);
+          setIsPendingAnyOperation(false);
+          setPendingLineIndex(null);
+        });
+      }
     }
   };
 
@@ -506,9 +543,9 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   // Helper function to check if error is authentication-related
-  const isAuthError = (error) => {
+  const isAuthError = (error: unknown) => {
     if (!error) return false;
-    const message = error.message || error || '';
+    const message = (error as any).message || error || '';
     const authErrorPatterns = [
       'User not signed in to Google Drive',
       'Expected OAuth 2 access token',
@@ -557,7 +594,7 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
         dispatch(setUserInfo(null));
         message.error('Your Google Drive session has expired. Please sign in again to delete songs.');
       } else {
-        message.error(error.message || 'Failed to delete song. Please try again.');
+        message.error((error as any).message || 'Failed to delete song. Please try again.');
       }
     }
   };
@@ -568,9 +605,9 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
   };
 
   // Function to render a lyric line with chord formatting above text
-  const renderLyricLine = (line) => {
+  const renderLyricLine = (line: string) => {
     const chordRegex = /\[(.*?)\]/g;
-    const chordPositions = [];
+    const chordPositions: Array<{ chord: string; position: number; length: number }> = [];
     let plainText = line;
     let match;
     
@@ -639,9 +676,9 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
     setIsSavingTranspose(true);
     try {
       // Apply transposition to all lyrics inline
-      const transposedLyrics = lyricsArray.map((line: any) => {
+      const transposedLyrics = lyricsArray.map((line: string) => {
         const chordRegex = /\[([^\]]+)\]/g;
-        return line.replace(chordRegex, (match, chord) => {
+        return line.replace(chordRegex, (match: string, chord: string) => {
           const transposedChord = transposeChord(chord, localTranspose);
           return `[${transposedChord}]`;
         });
@@ -834,9 +871,8 @@ const SongDetail = ({ song, onPinChord, onUpdateSong, artist, editingEnabled = t
                 {isAddingLine && editingLineIndex === (optimisticLyrics || lyricsArray).length && (
                   <LyricLineEditor
                     line=""
-                    onSave={(newLine) => handleSaveLine(newLine, (optimisticLyrics || lyricsArray).length)}
+                    onSave={(newLine: string) => handleSaveLine(newLine, (optimisticLyrics || lyricsArray).length)}
                     onCancel={handleCancelEdit}
-                    isAdding
                   />
                 )}
               </SortableContext>

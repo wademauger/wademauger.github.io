@@ -12,12 +12,12 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> 
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, info: any) {
+  override componentDidCatch(error: any, info: any) {
     // Log to console so devtools capture it
     console.error('ErrorBoundary caught error', error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       const err = this.state.error;
       return (

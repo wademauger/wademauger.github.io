@@ -101,11 +101,11 @@ export const RECIPE_CATEGORY_EMOJIS = {
  * @param {string} categoryName - The category name (case insensitive)
  * @returns {string} The emoji for the category
  */
-export const getCategoryEmoji = (categoryName) => {
+export const getCategoryEmoji = (categoryName: string) => {
   if (!categoryName) return RECIPE_CATEGORY_EMOJIS.default;
   
   const normalized = categoryName.toLowerCase().trim();
-  return RECIPE_CATEGORY_EMOJIS[normalized] || RECIPE_CATEGORY_EMOJIS.default;
+  return RECIPE_CATEGORY_EMOJIS[normalized as keyof typeof RECIPE_CATEGORY_EMOJIS] || RECIPE_CATEGORY_EMOJIS.default;
 };
 
 /**

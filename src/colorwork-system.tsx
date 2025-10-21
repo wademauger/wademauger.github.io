@@ -1,7 +1,8 @@
 // Core Models
 export { ColorworkPattern } from './models/ColorworkPattern';
 export { ColorworkVisualizer } from './models/ColorworkVisualizer';
-export { PanelColorworkComposer, CombinedPattern } from './models/PanelColorworkComposer';
+export { PanelColorworkComposer } from './models/PanelColorworkComposer';
+export { CombinedPattern } from './models/CombinedPattern';
 export { InstructionGenerator, CombinedInstruction } from './models/InstructionGenerator';
 
 // UI Components

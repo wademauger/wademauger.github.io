@@ -104,11 +104,11 @@ export const chordInversions = {
 };
 
 // Helper function to get inversions for a specific chord and instrument
-export const getChordInversions = (chord, instrument) => {
-  return chordInversions[instrument]?.[chord] || [];
+export const getChordInversions = (chord: string, instrument: string) => {
+  return (chordInversions as any)[instrument]?.[chord] || [];
 };
 
 // Helper function to get all available inversions for an instrument
-export const getInstrumentInversions = (instrument) => {
-  return chordInversions[instrument] || {};
+export const getInstrumentInversions = (instrument: string) => {
+  return (chordInversions as any)[instrument] || {};
 };

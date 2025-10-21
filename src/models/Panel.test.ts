@@ -5,9 +5,9 @@ import { Gauge } from './Gauge';
 import testGarments from '../data/garments.testdata';
 
 describe('Panel Model', () => {
-    let panel;
-    let shape;
-    let gauge;
+    let panel: Panel;
+    let shape: Trapezoid;
+    let gauge: Gauge;
 
     beforeEach(() => {
         shape = new Trapezoid(10, 20, 30);
@@ -52,7 +52,7 @@ describe('Panel Model', () => {
     });
 
     it('should return empty array if shape is null', () => {
-        panel.shape = null;
+        (panel as any).shape = null;
         const instructions = panel.generateKnittingInstructions();
         assert.deepStrictEqual(instructions, []);
     });
@@ -88,13 +88,13 @@ describe('Panel Model', () => {
         });
 
         it('should handle shape without toJSON method', () => {
-            panel.shape = { height: 10, baseA: 20, baseB: 30 };
+            (panel as any).shape = { height: 10, baseA: 20, baseB: 30 };
             const json = panel.toJSON();
             assert.deepStrictEqual(json.shapes, panel.shape);
         });
 
         it('should handle null shape', () => {
-            panel.shape = null;
+            (panel as any).shape = null;
             const json = panel.toJSON();
             assert.strictEqual(json.shapes, null);
         });

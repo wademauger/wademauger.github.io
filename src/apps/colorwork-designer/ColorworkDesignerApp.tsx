@@ -415,7 +415,7 @@ const ColorworkDesignerApp = () => {
                 {
                     key: 'colorwork-open-home',
                     label: 'Open...',
-                    onClick: () => dispatch(openLibrarySettingsModal('panels', { intent: 'open' }))
+                    onClick: () => dispatch(openLibrarySettingsModal(null, { intent: 'open' }))
                 }
             ];
         }

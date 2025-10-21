@@ -1,15 +1,15 @@
 import { Trapezoid } from './Trapezoid';
-import { defaultGauge } from './Gauge';
+import { Gauge, defaultGauge } from './Gauge';
 
 class Panel {
-    shape: any;
-    gauge: any;
+    shape: Trapezoid;
+    gauge: Gauge;
     sizeModifier: number;
     visualMotif: any;
     /**
      * Responsible for gauge and sizing, and motifs
      */
-    constructor(shape: any, gauge: any = defaultGauge, sizeModifier: number = 1.006, visualMotif: any = null) {
+    constructor(shape: any, gauge: Gauge = defaultGauge, sizeModifier: number = 1.006, visualMotif: any = null) {
         // Accept either a Trapezoid instance or a plain object (parsed JSON)
         if (!(shape instanceof Trapezoid)) {
             // If shape is a plain object or missing, attempt to create a Trapezoid.
@@ -29,7 +29,7 @@ class Panel {
         }
     }
 
-    generateKnittingInstructions() {
+    generateKnittingInstructions(): any[] {
         if (!this.shape) return [];
         return this.shape.generateKnittingInstructions(this.gauge, this.sizeModifier, 1, true, this.visualMotif);
     }

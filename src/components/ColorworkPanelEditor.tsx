@@ -2,7 +2,8 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle, useMemo, u
 import { Button, Space, Typography } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { ColorworkPattern } from '../models/ColorworkPattern';
-import { CombinedPattern, PanelColorworkComposer } from '../models/PanelColorworkComposer';
+import { CombinedPattern } from '../models/CombinedPattern';
+import { PanelColorworkComposer } from '../models/PanelColorworkComposer';
 import { CombinedInstruction, InstructionGenerator } from '../models/InstructionGenerator';
 import { Trapezoid } from '../models/Trapezoid';
 import { Panel } from '../models/Panel';

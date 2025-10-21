@@ -6,7 +6,19 @@ import SwatchViewer from './SwatchViewer';
 const { Text } = Typography;
 const { Option } = Select;
 
-const PatternEditor = ({ 
+interface PatternEditorProps {
+  pattern?: any[];
+  colors?: string[];
+  patternType?: 'stranded' | 'intarsia' | 'stripes';
+  patternSize?: { width: number; height: number };
+  gauge?: { stitches: number; rows: number };
+  onPatternChange?: (pattern: any) => void;
+  onColorsChange?: (colors: string[]) => void;
+  onSave?: (data: any) => void;
+  title?: string;
+}
+
+const PatternEditor: React.FC<PatternEditorProps> = ({ 
   pattern = [],
   colors = ['#ffffff'],
   patternType = 'stranded', // 'stranded', 'intarsia', 'stripes'
@@ -39,7 +51,7 @@ const PatternEditor = ({
   const currentPattern = initializePattern();
 
   // Handle stitch clicks
-  const handleStitchClick = useCallback((row, stitch) => {
+  const handleStitchClick = useCallback((row: number, stitch: number) => {
     const newPattern = [...currentPattern];
     
     if (patternType === 'stripes') {
@@ -73,14 +85,14 @@ const PatternEditor = ({
     }
   };
 
-  const updateColor = (index, color) => {
+  const updateColor = (index: number, color: string) => {
     const newColors = [...colors];
     newColors[index] = color;
     onColorsChange(newColors);
   };
 
   // Handle pattern size changes
-  const handleSizeChange = (dimension, value: any) => {
+  const handleSizeChange = (dimension: string, value: number) => {
     const newSize = { ...patternSize, [dimension]: value };
     
     // Resize pattern array
@@ -232,14 +244,14 @@ const PatternEditor = ({
             marginTop: '8px'
           }}>
             <SwatchViewer
-              pattern={currentPattern}
+              pattern={currentPattern as any}
               colors={colors}
               gauge={gauge}
               size={{ 
                 width: patternType === 'stripes' ? 4 : patternSize.width / gauge.stitches,
                 height: patternSize.height / gauge.rows 
               }}
-              onStitchClick={handleStitchClick}
+              onStitchClick={handleStitchClick as any}
             />
           </div>
         </div>

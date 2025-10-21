@@ -4,10 +4,10 @@ import VisualMotif from '../models/VisualMotif';
 // Based on 10% scaling per size, with Men's Medium = Women's Large as base (1.0)
 const generateGarmentSizes = () => {
     const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
-    const getSizeIndex = (size) => sizeOrder.indexOf(size) - 3; // M = index 0
-    const calculateSizeMultiplier = (sizeIndex) => Math.pow(1.1, sizeIndex);
+    const getSizeIndex = (size: string) => sizeOrder.indexOf(size) - 3; // M = index 0
+    const calculateSizeMultiplier = (sizeIndex: number) => Math.pow(1.1, sizeIndex);
 
-    const sizes = {};
+    const sizes: Record<string, number> = {};
 
     // Generate all combinations based on Men's M = Women's L equivalency
     sizeOrder.forEach((mensSize: any) => {
@@ -370,41 +370,54 @@ const visualMotifs = {
             height: 5|undefined, // if *motif* properties are defined, height is unused (infer from motifs+repeats)
         },
     */
-    blackAndWhiteStripes: new VisualMotif({
-        type: 'SOLID',
-        defaultColors: ['#ffffff'],
-        verticalRepeat: 10,
-        height: 4,
-        successor: {
-            type: 'SOLID',
-            defaultColors: ['#ffffff'],
-            height: 2
-        }
-    }),
-    redAndWhiteStripes: new VisualMotif({
-        type: 'SOLID',
-        defaultColors: ['#ff0000'],
-        verticalRepeat: 10,
-        height: 4,
-        successor: {
-            type: 'SOLID',
-            defaultColors: ['#ffffff'],
-            verticalRepeat: 10,
-            height: 4
-        }
-    }),
-    checkerboard: new VisualMotif({
-        type: 'STRANDED',
-        defaultColors: ['#ffffff', '#000000'],
-        primaryMotif: 'Checkerboard',
-        verticalRepeat: 4
-    }),
-    solidWhite: new VisualMotif({
-        type: 'SOLID',
-        defaultColors: ['#ffffff'],
-        verticalRepeat: 10,
-        height: 4
-    })
+    blackAndWhiteStripes: new VisualMotif(
+        'SOLID',
+        null,
+        [],
+        '#ffffff',
+        [],
+        new VisualMotif('SOLID', null, [], '#ffffff', [], null, 0, 0, 10, 2),
+        0,
+        0,
+        10,
+        4
+    ),
+    redAndWhiteStripes: new VisualMotif(
+        'SOLID',
+        null,
+        [],
+        '#ff0000',
+        [],
+        new VisualMotif('SOLID', null, [], '#ffffff', [], null, 0, 0, 10, 4),
+        0,
+        0,
+        10,
+        4
+    ),
+    checkerboard: new VisualMotif(
+        'STRANDED',
+        'Checkerboard',
+        [],
+        '',
+        ['#ffffff', '#000000'],
+        null,
+        0,
+        0,
+        4,
+        0
+    ),
+    solidWhite: new VisualMotif(
+        'SOLID',
+        null,
+        [],
+        '#ffffff',
+        [],
+        null,
+        0,
+        0,
+        10,
+        4
+    )
 
 };
 

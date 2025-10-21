@@ -21,6 +21,34 @@ import WorkspaceView from './components/WorkspaceView';
 import { selectUiMode, setUiMode, updatePatternData } from '@/store/knittingDesignSlice';
 
 // Lightweight selection types used by the app during incremental typing
+
+/**
+ * Panel - Represents a shaped section of a knitted item
+ * Combines geometry (Trapezoid), gauge, and optional motif
+ * Used for generating knitting instructions for a specific panel
+ * See: src/models/Panel.ts
+ */
+// ...existing code...
+/**
+ * Actualizer - Transforms a stitch plan into structured knitting instructions
+ * Abstract base: KnittingInstructionActualizer
+ * Concrete implementations: HandKnittingActualizer, MachineKnittingActualizer
+ * Supports extensibility for different knitting techniques
+ * See: src/models/KnittingInstructionActualizer.ts, src/models/HandKnittingActualizer.ts, src/models/MachineKnittingActualizer.ts
+ */
+// ...existing code...
+/**
+ * colorworkPatterns - Core model for representing colorwork grids and color definitions
+ * Used to map colorwork onto panels and generate instructions
+ * See: src/models/ColorworkPattern.ts
+ */
+// ...existing code...
+/**
+ * knittingProjects - Represents a saved or merged knitting project
+ * Managed in library, supports merging by id or name
+ * See: src/utils/libraryMergeKnittingProject.ts
+ */
+// ...existing code...
 type RectSelection = { startRow: number; endRow: number; startCol: number; endCol: number };
 type CellSelection = { row: number; col: number };
 type Selection = RectSelection | CellSelection | RectSelection[] | null;
@@ -65,7 +93,7 @@ const KnittingDesignerApp: React.FC = () => {
     });
 
     // Tool state
-    const [activeTool, setActiveTool] = useState('pencil'); // 'pencil' or 'area-select'
+    const [activeTool, setActiveTool] = useState<'pencil' | 'area-select' | 'eraser'>('pencil'); // 'pencil' or 'area-select'
 
     // Symmetry state
     const [symmetry, setSymmetry] = useState({
@@ -155,9 +183,10 @@ const KnittingDesignerApp: React.FC = () => {
     }, [selection, selectedCells, pattern, gridSize, saveToHistory]);
 
     // rotateCounterclockwise: boolean. false => rotate right (clockwise), true => rotate left (counter-clockwise).
-    const rotateSelection = useCallback((rotateCounterclockwise: boolean = false): void => {
+    const rotateSelection = useCallback((direction: string = 'clockwise'): void => {
         if (!selection) return;
 
+        const rotateCounterclockwise = direction === 'counterclockwise';
         const newPattern = [...pattern];
     let newSelection: any[] = [];
 
@@ -488,7 +517,7 @@ const KnittingDesignerApp: React.FC = () => {
     }, [pattern, activeTool, activeColor, pasteMode, clipboard, saveToHistory, applySymmetry, selection, selectedCells, cellKey]);
 
     // Handle area selection with support for irregular shapes
-    const handleAreaSelect = useCallback((startRow: number, startCol: number, endRow: number, endCol: number, modifierKey?: string) => {
+    const handleAreaSelect = useCallback((startRow: number, startCol: number, endRow: number, endCol: number, modifierKey: 'shift' | 'ctrl' | null = null) => {
         const minRow = Math.min(startRow, endRow);
         const maxRow = Math.max(startRow, endRow);
         const minCol = Math.min(startCol, endCol);
@@ -930,7 +959,7 @@ const KnittingDesignerApp: React.FC = () => {
             gridSize={gridSize}
             activeTool={activeTool}
             activeColor={activeColor}
-            selection={selection}
+            selection={selection as Array<{startRow: number; endRow: number; startCol: number; endCol: number}> | null}
             selectedCells={selectedCells}
             onStitchClick={handleStitchClick}
             onAreaSelect={handleAreaSelect}
@@ -940,7 +969,7 @@ const KnittingDesignerApp: React.FC = () => {
             clipboard={clipboard}
             activeColorData={activeColorData}
             // RibbonUI props
-            onToolChange={setActiveTool}
+            onToolChange={(tool: string) => setActiveTool(tool as 'pencil' | 'area-select' | 'eraser')}
             hasClipboard={!!clipboard}
             onCopy={handleCopy}
             onPaste={handlePaste}

@@ -425,7 +425,7 @@ export function executeCrudOperation<T = any>(
           error: 'ID is required for delete operation'
         };
       }
-      return deleteEntry(library, collection, id);
+      return deleteEntry(library, collection, id) as CrudResult<T>;
       
     default:
       return {

@@ -4,11 +4,26 @@ import { FolderOutlined, FileOutlined, CheckCircleOutlined, ExclamationCircleOut
 
 const { Title, Text, Paragraph } = Typography;
 
-const GoogleDriveSettings = ({ 
+interface GoogleDriveSettingsProps {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (settings: any) => void;
+  onCleanupFiles?: () => Promise<any>;
+  userInfo?: any;
+  currentSettings?: any;
+}
+
+interface ConnectionStatus {
+  songsFile: { found: boolean; error: string | null };
+  recipesFile: { found: boolean; error: string | null };
+  access: { valid: boolean; error: string | null };
+}
+
+const GoogleDriveSettings: React.FC<GoogleDriveSettingsProps> = ({ 
   visible, 
   onClose, 
   onSave,
-  onCleanupFiles, // New prop for cleanup function
+  onCleanupFiles,
   userInfo = null,
   currentSettings = {}
 }) => {
@@ -16,8 +31,8 @@ const GoogleDriveSettings = ({
   const [loading, setLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState(null);
-  const [cleanupResults, setCleanupResults] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
+  const [cleanupResults, setCleanupResults] = useState<any>(null);
 
   // Default file locations
   const defaultSettings = {
@@ -44,7 +59,7 @@ const GoogleDriveSettings = ({
       const testSettings = settings || form.getFieldsValue();
       
       // Simulate Google Drive API calls to test the configuration
-      const results = {
+      const results: ConnectionStatus = {
         songsFile: { found: false, error: null },
         recipesFile: { found: false, error: null },
         access: { valid: true, error: null }
@@ -57,7 +72,8 @@ const GoogleDriveSettings = ({
         await new Promise(resolve => setTimeout(resolve, 1000));
         results.access = { valid: true, error: null };
       } catch (error: unknown) {
-        results.access = { valid: false, error: `Unable to access Google Drive. Please check your permissions. (${error.message})` };
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        results.access = { valid: false, error: `Unable to access Google Drive. Please check your permissions. (${errorMessage})` };
       }
 
       // Test 2: Check songs library file
@@ -67,10 +83,11 @@ const GoogleDriveSettings = ({
         const fileExists = Math.random() > 0.5; // Random for demo
         results.songsFile = { 
           found: fileExists, 
-          error: fileExists ? null : `File "${testSettings.songsLibraryFile}" not found in folder "${testSettings.songsFolder}"`
+          error: fileExists ? null : `File "${testSettings.songsLibraryFile}" not found in folder "${testSettings.songsFolder}"` as string | null
         };
       } catch (error: unknown) {
-        results.songsFile = { found: false, error: `Error accessing songs file: ${error.message}` };
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        results.songsFile = { found: false, error: `Error accessing songs file: ${errorMessage}` as string | null };
       }
 
       // Test 3: Check recipes library file
@@ -80,16 +97,18 @@ const GoogleDriveSettings = ({
         const fileExists = Math.random() > 0.3; // Random for demo
         results.recipesFile = { 
           found: fileExists, 
-          error: fileExists ? null : `File "${testSettings.recipesLibraryFile}" not found in folder "${testSettings.recipesFolder}"`
+          error: fileExists ? null : `File "${testSettings.recipesLibraryFile}" not found in folder "${testSettings.recipesFolder}"` as string | null
         };
       } catch (error: unknown) {
-        results.recipesFile = { found: false, error: `Error accessing recipes file: ${error.message}` };
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        results.recipesFile = { found: false, error: `Error accessing recipes file: ${errorMessage}` as string | null };
       }
 
       setConnectionStatus(results);
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setConnectionStatus({
-        access: { valid: false, error: `Connection test failed: ${error.message}` },
+        access: { valid: false, error: `Connection test failed: ${errorMessage}` },
         songsFile: { found: false, error: 'Could not test file access' },
         recipesFile: { found: false, error: 'Could not test file access' }
       });
@@ -144,7 +163,7 @@ const GoogleDriveSettings = ({
             <div>
               <Text strong>Potentially problematic files:</Text>
               <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-                {cleanupResults.problematicFiles.map((file, index: number) => (
+                {cleanupResults.problematicFiles.map((file: any, index: number) => (
                   <li key={index}>
                     <Text code>{file.name}</Text> - {file.reason} (Size: {file.size} bytes)
                     <br />

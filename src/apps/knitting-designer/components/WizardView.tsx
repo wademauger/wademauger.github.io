@@ -282,6 +282,22 @@ const WizardView: React.FC = () => {
     persistGauge({ scaleFactor: value });
   };
 
+  const persistKnittingOptions = (options: Partial<{ castOnMethod: string; bindOffMethod: string; shortRowTechnique: string }>) => {
+    dispatch(updatePatternData({ section: 'knittingOptions', data: options }) as any);
+  };
+
+  const onCastOnMethodChange = (value: string) => {
+    persistKnittingOptions({ castOnMethod: value });
+  };
+
+  const onBindOffMethodChange = (value: string) => {
+    persistKnittingOptions({ bindOffMethod: value });
+  };
+
+  const onShortRowTechniqueChange = (value: string) => {
+    persistKnittingOptions({ shortRowTechnique: value });
+  };
+
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     setName(v);
@@ -742,6 +758,90 @@ const WizardView: React.FC = () => {
           </div>
         )}
 
+        {/* Step 2: Knitting Techniques & Finishing Options */}
+        {currentStep >= 2 && (
+          <div
+            ref={el => { stepRefs.current[2] = el; return; }}
+            key="step-2"
+            style={{ padding: 12, borderRadius: 6, background: '#fff', marginTop: 4 }}
+          >
+            <Typography.Title level={4} style={{ margin: '0 0 16px 0' }}>
+              Knitting Techniques
+            </Typography.Title>
+            
+            <Card style={{ marginBottom: 16 }}>
+              <Space direction="vertical" style={{ width: '100%' }} size="large">
+                
+                {/* Cast-on Method */}
+                <div>
+                  <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+                    Cast-on Method
+                  </Typography.Text>
+                  <Select
+                    style={{ width: '100%' }}
+                    value={patternData?.knittingOptions?.castOnMethod || 'long-tail'}
+                    onChange={onCastOnMethodChange}
+                    options={[
+                      { label: 'Long-tail Cast-on', value: 'long-tail' },
+                      { label: 'Cable Cast-on', value: 'cable' },
+                      { label: 'Thumb Cast-on', value: 'thumb' },
+                      { label: 'Provisional Cast-on', value: 'provisional' },
+                      { label: 'German Twisted Cast-on', value: 'german-twisted' },
+                      { label: 'Backward Loop Cast-on', value: 'backward-loop' }
+                    ]}
+                  />
+                  <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    This will be included in your cast-on instruction
+                  </Typography.Text>
+                </div>
+
+                {/* Bind-off Method */}
+                <div>
+                  <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+                    Bind-off Method
+                  </Typography.Text>
+                  <Select
+                    style={{ width: '100%' }}
+                    value={patternData?.knittingOptions?.bindOffMethod || 'knitwise'}
+                    onChange={onBindOffMethodChange}
+                    options={[
+                      { label: 'Knitwise Bind-off', value: 'knitwise' },
+                      { label: 'Purlwise Bind-off', value: 'purlwise' },
+                      { label: 'Decrease Bind-off', value: 'decrease' },
+                      { label: 'Stretchy Bind-off', value: 'stretchy' },
+                      { label: 'Two-together Bind-off', value: 'two-together' },
+                      { label: 'Suspended Bind-off', value: 'suspended' }
+                    ]}
+                  />
+                  <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    This will be included in your bind-off instruction
+                  </Typography.Text>
+                </div>
+
+                {/* Short Row Technique */}
+                <div>
+                  <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
+                    Short Row Technique
+                  </Typography.Text>
+                  <Select
+                    style={{ width: '100%' }}
+                    value={patternData?.knittingOptions?.shortRowTechnique || 'wraps'}
+                    onChange={onShortRowTechniqueChange}
+                    options={[
+                      { label: 'Wrap and Turn (W&T)', value: 'wraps' },
+                      { label: 'Gaps (No Wrapping)', value: 'gaps' },
+                      { label: 'German Short Rows', value: 'german' }
+                    ]}
+                  />
+                  <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    How to handle turning points in short row sections
+                  </Typography.Text>
+                </div>
+
+              </Space>
+            </Card>
+          </div>
+        )}
 
       </div>
 
@@ -752,12 +852,12 @@ const WizardView: React.FC = () => {
         <Button 
           type="primary" 
           onClick={goNext}
-          disabled={currentStep >= 1}
+          disabled={currentStep >= 2}
         >
-          {currentStep >= 1 ? 'Complete' : 'Next'}
+          {currentStep >= 2 ? 'Complete' : 'Next'}
         </Button>
         
-        {selectedPanels.length > 0 && currentStep >= 1 && (
+        {selectedPanels.length > 0 && currentStep >= 2 && (
           <Button 
             type="default"
             style={{ marginLeft: 8 }}

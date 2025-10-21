@@ -4,6 +4,8 @@
  * Minimal types for a thin API client - React Query handles caching, states, etc.
  */
 
+import { Recipe, Artist } from '../../types';
+
 /**
  * Authentication state
  */
@@ -39,19 +41,46 @@ export interface DriveFile {
 }
 
 /**
+ * Panel and project types for knitting-related data
+ */
+interface KnittingPanel {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface KnittingProject {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface ColorworkPattern {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface LibraryEntry {
+  id: string;
+  type: string;
+  [key: string]: unknown;
+}
+
+/**
  * Unified library structure
  */
 export interface LibraryData {
-  recipes?: Record<string, any>;
-  artists?: Array<{ name: string; albums: any[] }>;
-  panels?: Record<string, any>;
-  projects?: Record<string, any>;
-  knittingProjects?: Record<string, any>;
-  colorworkPatterns?: Record<string, any>;
-  entries?: Array<any>;
+  recipes?: Record<string, Recipe>;
+  artists?: Artist[];
+  panels?: Record<string, KnittingPanel>;
+  projects?: Record<string, KnittingProject>;
+  knittingProjects?: Record<string, KnittingProject>;
+  colorworkPatterns?: Record<string, ColorworkPattern>;
+  entries?: LibraryEntry[];
   version?: string;
   lastModified?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -79,8 +108,8 @@ export interface IDriveAdapter {
   mergeLibraries(fileIds: string[], options?: MergeOptions): Promise<LibraryData>;
   
   // CRUD operations (React Query will cache these)
-  getEntry<T = any>(collection: keyof LibraryData, id: string, fileId?: string): Promise<T | null>;
-  setEntry<T = any>(collection: keyof LibraryData, id: string, data: T, fileId?: string): Promise<void>;
+  getEntry<T = unknown>(collection: keyof LibraryData, id: string, fileId?: string): Promise<T | null>;
+  setEntry<T = unknown>(collection: keyof LibraryData, id: string, data: T, fileId?: string): Promise<void>;
   deleteEntry(collection: keyof LibraryData, id: string, fileId?: string): Promise<void>;
 }
 

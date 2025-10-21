@@ -90,7 +90,7 @@ describe('MockDriveAdapter', () => {
       const data: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Test Artist' }]
+        artists: [{ id: 'artist-1', name: 'Test Artist' } as any]
       };
       
       const fileId = await adapter.saveLibrary(data);
@@ -138,13 +138,13 @@ describe('MockDriveAdapter', () => {
       const lib1: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Artist 1' }]
+        artists: [{ id: 'artist-1', name: 'Artist 1' } as any]
       };
       
       const lib2: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-2', name: 'Artist 2' }]
+        artists: [{ id: 'artist-2', name: 'Artist 2' } as any]
       };
       
       const id1 = await adapter.saveLibrary(lib1, 'file1');
@@ -159,13 +159,13 @@ describe('MockDriveAdapter', () => {
       const lib1: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Artist 1' }]
+        artists: [{ id: 'artist-1', name: 'Artist 1' } as any]
       };
       
       const lib2: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Updated Artist' }]
+        artists: [{ id: 'artist-1', name: 'Updated Artist' } as any]
       };
       
       const id1 = await adapter.saveLibrary(lib1, 'file1');
@@ -189,8 +189,8 @@ describe('MockDriveAdapter', () => {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
         artists: [
-          { id: 'artist-1', name: 'Artist 1' },
-          { id: 'artist-2', name: 'Artist 2' }
+          { id: 'artist-1', name: 'Artist 1' } as any,
+          { id: 'artist-2', name: 'Artist 2' } as any
         ]
       };
       
@@ -201,7 +201,7 @@ describe('MockDriveAdapter', () => {
       const entry = await adapter.getEntry('artists', 'artist-1', 'test-file');
       
       expect(entry).toBeTruthy();
-      expect(entry.name).toBe('Artist 1');
+      expect((entry as any).name).toBe('Artist 1');
     });
     
     it('should return null for non-existent entry', async () => {
@@ -214,14 +214,14 @@ describe('MockDriveAdapter', () => {
       await adapter.setEntry('artists', 'artist-3', { name: 'Artist 3' }, 'test-file');
       
       const entry = await adapter.getEntry('artists', 'artist-3', 'test-file');
-      expect(entry.name).toBe('Artist 3');
+      expect((entry as any).name).toBe('Artist 3');
     });
     
     it('should update existing entry', async () => {
       await adapter.setEntry('artists', 'artist-1', { name: 'Updated Artist' }, 'test-file');
       
       const entry = await adapter.getEntry('artists', 'artist-1', 'test-file');
-      expect(entry.name).toBe('Updated Artist');
+      expect((entry as any).name).toBe('Updated Artist');
     });
     
     it('should delete entry', async () => {
@@ -267,7 +267,7 @@ describe('MockDriveAdapter', () => {
       const library: LibraryData = {
         version: '1.0.0',
         lastModified: new Date().toISOString(),
-        artists: [{ id: 'artist-1', name: 'Seeded Artist' }]
+        artists: [{ id: 'artist-1', name: 'Seeded Artist' } as any]
       };
       
       adapter.seedFile('seeded-file', library);

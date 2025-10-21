@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function LibraryOpenDialog({ visible, onClose, onOpen }: Props) {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   const entries = useSelector((state: RootState) => state.library.entries || []);
   const isLoading = useSelector((state: RootState) => state.library.isLoading);
   const isSignedIn = useSelector((state: RootState) => state.auth?.isSignedIn);
@@ -135,7 +135,7 @@ export default function LibraryOpenDialog({ visible, onClose, onOpen }: Props) {
   };
 
   const handleOpenSettings = () => {
-    dispatch(openLibrarySettingsModal('panels'));
+    dispatch(openLibrarySettingsModal(null));
     onClose();
   };
 

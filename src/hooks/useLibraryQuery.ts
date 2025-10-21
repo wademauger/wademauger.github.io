@@ -12,8 +12,8 @@ export function useLibraryQuery() {
         console.log('📚 useLibraryQuery: Library loaded successfully:', {
           hasArtists: !!(lib?.artists),
           artistCount: lib?.artists?.length || 0,
-          totalSongs: lib?.artists ? lib.artists.reduce((total, artist) => {
-            return total + (artist.albums || []).reduce((albumTotal, album) => {
+          totalSongs: lib?.artists ? lib.artists.reduce((total: number, artist: any) => {
+            return total + (artist.albums || []).reduce((albumTotal: number, album: any) => {
               return albumTotal + (album.songs || []).length;
             }, 0);
           }, 0) : 0,

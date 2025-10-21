@@ -5,8 +5,12 @@ import { SaveOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { clearDraftRecipe } from '../reducers/recipes.reducer';
 import './DraftRecipePreview.css';
 
-const DraftRecipePreview = ({ showEmpty = false }) => {
-  const draftRecipe = useSelector(state => state.recipes.draftRecipe);
+interface DraftRecipePreviewProps {
+  showEmpty?: boolean;
+}
+
+const DraftRecipePreview: React.FC<DraftRecipePreviewProps> = ({ showEmpty = false }) => {
+  const draftRecipe = useSelector((state: any) => state.recipes.draftRecipe);
   const dispatch = useDispatch();
 
   // Show empty template if requested and no draft recipe exists
@@ -124,7 +128,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
           <div className="ingredients-section">
             <h4>Ingredients:</h4>
             <ul className="ingredients-list">
-              {(Array.isArray(draftRecipe.ingredients) ? draftRecipe.ingredients : []).map((ingredient, index: number) => (
+              {(Array.isArray(draftRecipe.ingredients) ? draftRecipe.ingredients : []).map((ingredient: any, index: number) => (
                 <li key={index}>
                   {typeof ingredient === 'object' && ingredient !== null ? (
                     `${ingredient.quantity || ''} ${ingredient.unit || ingredient.units || ''} ${ingredient.name || ingredient.ingredient || ''}`.trim()
@@ -141,7 +145,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
           <div className="steps-section">
             <h4>Steps:</h4>
             <ol className="steps-list">
-              {draftRecipe.steps?.map((step, index: number) => (
+              {draftRecipe.steps?.map((step: string, index: number) => (
                 <li key={index}>{step}</li>
               ))}
             </ol>
@@ -153,7 +157,7 @@ const DraftRecipePreview = ({ showEmpty = false }) => {
               <div className="notes-section">
                 <h4>Notes:</h4>
                 <ul className="notes-list">
-                  {draftRecipe.notes.map((note, index: number) => (
+                  {draftRecipe.notes.map((note: string, index: number) => (
                     <li key={index}>{note}</li>
                   ))}
                 </ul>

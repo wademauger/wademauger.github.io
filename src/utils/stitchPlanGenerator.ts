@@ -12,6 +12,21 @@ import { ColorworkPattern } from '../models/ColorworkPattern';
 import { compressColorwork, decompressColorwork, ColorworkSegment } from './colorworkCompression';
 
 /**
+ * Short row information for a row that is part of a short row section
+ */
+export interface ShortRowInfo {
+  shortRowId: string; // ID of the short row section this row belongs to
+  shortRowLabel?: string;
+  posX?: number; // Horizontal position (0-1) for distinguishing left/right short rows
+  rowInShortRowSequence: number; // Which row within the short row sequence (1-based)
+  totalRowsInShortRow: number; // Total rows in this short row sequence
+  heldStitchesLeft: number; // Number of stitches held on left needle
+  heldStitchesRight: number; // Number of stitches held on right needle
+  activeStitchesLeft: number; // Number of stitches being worked on left
+  activeStitchesRight: number; // Number of stitches being worked on right
+}
+
+/**
  * Concrete stitch data for a single row
  */
 export interface StitchRow {
@@ -19,6 +34,12 @@ export interface StitchRow {
   leftStitchesInWork: number;
   rightStitchesInWork: number;
   totalStitches: number;
+  sectionLabel?: string; // Label of the shape section this row belongs to (e.g., "A", "B", "C")
+  sectionStartRow?: number; // The first row number of this section
+  sectionEndRow?: number; // The last row number of this section
+  
+  // Short row information - present if this row is part of a short row section
+  shortRowInfo?: ShortRowInfo;
   
   // Colorwork data - can be stored in compressed or uncompressed format
   colorwork?: string[]; // LEGACY: Array of color IDs, one per stitch (uncompressed)
@@ -55,7 +76,8 @@ export function generateConcreteStitchPlan(
   shape: any, // Trapezoid shape data (can be plain object from JSON)
   gauge: any, // Gauge data
   colorworkLayers: any[], // Array of colorwork layers from wizard
-  panelName: string
+  panelName: string,
+  sizeModifier: number = 1.006 // Default to match Panel constructor
 ): ConcreteStitchPlan {
   try {
     // Reconstruct the Trapezoid from shape data
@@ -68,12 +90,13 @@ export function generateConcreteStitchPlan(
       gauge.scaleFactor || gauge.scalingFactor || 1
     );
     
-    // Create Panel
-    const panel = new Panel(trapezoid, gaugeInstance);
+    // Create Panel with the sizeModifier
+    const panel = new Panel(trapezoid, gaugeInstance, sizeModifier);
     
     // Generate the COMPLETE stitch plan including ALL successors
     // This is critical - we need to get every row in the entire shape tree!
-    const fullStitchPlan = generateCompleteStitchPlan(trapezoid, gaugeInstance, 1);
+    // Pass the sizeModifier to ensure gauge calculations match legacy Panel behavior
+    const fullStitchPlan = generateCompleteStitchPlan(trapezoid, gaugeInstance, sizeModifier, 1);
     
     // If there are colorwork layers, combine them into a single pattern
     // We need to composite ALL layers together, not just use the first one
@@ -151,7 +174,12 @@ export function generateConcreteStitchPlan(
         leftStitchesInWork: row.leftStitchesInWork,
         rightStitchesInWork: row.rightStitchesInWork,
         totalStitches,
-        colorworkCompressed // Store compressed format
+        colorworkCompressed, // Store compressed format
+        // Preserve important metadata
+        shortRowInfo: row.shortRowInfo, // CRITICAL: Preserve short row metadata!
+        sectionLabel: row.sectionLabel, // Preserve section labels for grouping
+        sectionStartRow: row.sectionStartRow,
+        sectionEndRow: row.sectionEndRow
         // Note: 'colorwork' field is omitted - use getRowColorwork() to access
       };
     });
@@ -194,22 +222,158 @@ export function generateConcreteStitchPlan(
  * Generate a complete stitch plan including ALL successors (children)
  * This recursively walks the shape tree to get every single row
  */
-function generateCompleteStitchPlan(trapezoid: Trapezoid, gauge: Gauge, startRow: number): any {
-  // Get the stitch plan for this trapezoid
-  const stitchPlan = trapezoid.getStitchPlan(gauge, 1, startRow);
+/**
+ * Generate a complete stitch plan for a trapezoid and all successors
+ * @param trapezoid - The Trapezoid shape
+ * @param gauge - The Gauge instance
+ * @param sizeModifier - The size modifier (default 1.006 to match Panel)
+ * @param startRow - The starting row number
+ */
+function generateCompleteStitchPlan(trapezoid: Trapezoid, gauge: Gauge, sizeModifier: number, startRow: number): any {
+  console.log('[generateCompleteStitchPlan] Processing trapezoid:', { 
+    label: trapezoid.label, 
+    height: trapezoid.height,
+    hasShortRows: !!(trapezoid.shortRows && trapezoid.shortRows.length > 0),
+    shortRowsCount: trapezoid.shortRows?.length || 0,
+    shortRowsData: trapezoid.shortRows
+  });
+  
+  // Get the stitch plan for this trapezoid with the correct sizeModifier
+  const stitchPlan = trapezoid.getStitchPlan(gauge, sizeModifier, startRow);
+  
+  // Add section metadata to all rows of this trapezoid
+  const sectionStartRow = startRow;
+  const sectionEndRow = stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber : startRow - 1;
+  
+  for (const row of stitchPlan.rows) {
+    row.sectionLabel = trapezoid.label || 'Unknown';
+    row.sectionStartRow = sectionStartRow;
+    row.sectionEndRow = sectionEndRow;
+  }
+  
+  // Insert short rows into the main panel rows
+  if (trapezoid.shortRows && trapezoid.shortRows.length > 0) {
+    console.log('[generateCompleteStitchPlan] Calling integrateShortRows for section', trapezoid.label);
+    stitchPlan.rows = integrateShortRows(stitchPlan.rows as any, trapezoid.shortRows, gauge, sizeModifier, trapezoid.height) as any;
+  } else {
+    console.log('[generateCompleteStitchPlan] No short rows for section', trapezoid.label);
+  }
   
   // If this trapezoid has successors, recursively add their rows
   if (trapezoid.successors && trapezoid.successors.length > 0) {
-    const lastRow = stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber : startRow - 1;
+    const lastRow = stitchPlan.rows.length > 0 ? stitchPlan.rows[stitchPlan.rows.length - 1].rowNumber : sectionEndRow;
     
     for (const successor of trapezoid.successors) {
-      const successorPlan = generateCompleteStitchPlan(successor, gauge, lastRow + 1);
+      const successorPlan = generateCompleteStitchPlan(successor, gauge, sizeModifier, lastRow + 1);
       // Append all successor rows to our plan
       stitchPlan.rows.push(...successorPlan.rows);
     }
   }
   
   return stitchPlan;
+}
+
+/**
+ * Integrate short rows into the main panel rows
+ * Short rows are rows worked on a portion of stitches (with others held)
+ * They are inserted at appropriate points within the section based on posY position
+ * 
+ * @param mainRows - The regular panel rows
+ * @param shortRowDefs - Array of short row definitions from the trapezoid
+ * @param gauge - The gauge instance
+ * @param sizeModifier - Size modifier
+ * @param sectionHeight - The DEFINED height of the section (in inches) - used to calculate correct row position
+ * @returns Updated rows array with short rows interleaved
+ */
+function integrateShortRows(mainRows: StitchRow[], shortRowDefs: any[], gauge: Gauge, sizeModifier: number, sectionHeight?: number): StitchRow[] {
+  if (!mainRows || mainRows.length === 0 || !shortRowDefs || shortRowDefs.length === 0) {
+    console.log('[integrateShortRows] Skipping: mainRows=', mainRows?.length, 'shortRowDefs=', shortRowDefs?.length);
+    return mainRows;
+  }
+  
+  console.log('[integrateShortRows] Starting integration:', { mainRowsCount: mainRows.length, shortRowDefsCount: shortRowDefs.length, sectionHeight, trapezoidHeight: sectionHeight });
+  console.log('[integrateShortRows] Short row definitions:', shortRowDefs.map(sr => ({ id: sr.id, posY: sr.posY, height: sr.height })));
+  
+  const result: StitchRow[] = [];
+  const rowsPerInch = gauge.getRowsPerInch() * sizeModifier;
+  console.log('[integrateShortRows] Gauge info:', { rowsPerInch, gaugeRowsPerInch: gauge.getRowsPerInch(), sizeModifier });
+  
+  // Calculate the correct row position based on section height, not total rows
+  // If sectionHeight is provided, use it to calculate posY accurately
+  // Otherwise fall back to using mainRows.length
+  const referenceRowCount = sectionHeight ? Math.round(sectionHeight * rowsPerInch) : mainRows.length;
+  console.log('[integrateShortRows] Reference row count calculation:', { sectionHeight, rowsPerInch, referenceRowCount, mainRowsLength: mainRows.length });
+  
+  // Sort short rows by posY so they appear in order
+  const sortedShortRows = [...shortRowDefs]
+    .map(sr => ({ 
+      ...sr, 
+      insertAfterRowIndex: Math.floor((sr.posY || 0.5) * (referenceRowCount - 1)),
+      calculatedRowNumber: Math.floor((sr.posY || 0.5) * referenceRowCount)
+    }))
+    .sort((a, b) => a.insertAfterRowIndex - b.insertAfterRowIndex);
+  
+  console.log('[integrateShortRows] Sorted short rows with positions:', sortedShortRows.map(sr => ({ 
+    id: sr.id, 
+    posY: sr.posY,
+    referenceRowCount,
+    mainRowsLength: mainRows.length,
+    insertAfterRowIndex: sr.insertAfterRowIndex,
+    calculatedRowNumber: sr.calculatedRowNumber
+  })));
+  
+  let shortRowInsertIndex = 0;
+  let nextRowNumber = mainRows[0]?.rowNumber || 1;
+  
+  for (let i = 0; i < mainRows.length; i++) {
+    result.push(mainRows[i]);
+    nextRowNumber = mainRows[i].rowNumber + 1;
+    
+    // Check if we should insert short rows after this main row
+    while (shortRowInsertIndex < sortedShortRows.length && sortedShortRows[shortRowInsertIndex].insertAfterRowIndex === i) {
+      const shortRowDef = sortedShortRows[shortRowInsertIndex];
+      const shortRowHeight = shortRowDef.height || 0;
+      const shortRowRowsCount = Math.max(1, Math.round(shortRowHeight * rowsPerInch));
+      
+      console.log(`[integrateShortRows] Inserting short row after main row ${i}:`, { id: shortRowDef.id, height: shortRowHeight, rowsCount: shortRowRowsCount });
+      
+      const baseStart = shortRowDef.baseStart || 0;
+      const basePivot = shortRowDef.basePivot || 0;
+      
+      // Generate the short row rows
+      for (let srIndex = 1; srIndex <= shortRowRowsCount; srIndex++) {
+        const shortRow: StitchRow = {
+          rowNumber: nextRowNumber++,
+          // In a short row, only a portion of stitches are in work
+          leftStitchesInWork: Math.round(basePivot * gauge.getStitchesPerInch() * sizeModifier),
+          rightStitchesInWork: Math.round((baseStart - basePivot) * gauge.getStitchesPerInch() * sizeModifier),
+          totalStitches: Math.round(baseStart * gauge.getStitchesPerInch() * sizeModifier),
+          sectionLabel: mainRows[i].sectionLabel,
+          sectionStartRow: mainRows[i].sectionStartRow,
+          sectionEndRow: mainRows[i].sectionEndRow,
+          shortRowInfo: {
+            shortRowId: shortRowDef.id || `sr-${nextRowNumber}`,
+            shortRowLabel: shortRowDef.label,
+            posX: shortRowDef.posX, // Store horizontal position
+            rowInShortRowSequence: srIndex,
+            totalRowsInShortRow: shortRowRowsCount,
+            heldStitchesLeft: Math.round((baseStart - basePivot) * gauge.getStitchesPerInch() * sizeModifier),
+            heldStitchesRight: Math.round(basePivot * gauge.getStitchesPerInch() * sizeModifier),
+            activeStitchesLeft: Math.round(basePivot * gauge.getStitchesPerInch() * sizeModifier),
+            activeStitchesRight: Math.round((baseStart - basePivot) * gauge.getStitchesPerInch() * sizeModifier)
+          }
+        };
+        
+        result.push(shortRow);
+      }
+      
+      shortRowInsertIndex++;
+    }
+  }
+  
+  console.log('[integrateShortRows] Final result:', { originalCount: mainRows.length, finalCount: result.length, shortRowsAdded: result.length - mainRows.length });
+  
+  return result;
 }
 
 /**
@@ -223,7 +387,7 @@ function reconstructTrapezoid(shapeData: any): Trapezoid {
   // Recursively reconstruct successors
   const successors = (shapeData.successors || []).map((s: any) => reconstructTrapezoid(s));
   
-  return new Trapezoid(
+  const trapezoid = new Trapezoid(
     shapeData.height || 0,
     shapeData.baseA || 0,
     shapeData.baseB || 0,
@@ -233,6 +397,12 @@ function reconstructTrapezoid(shapeData: any): Trapezoid {
     shapeData.modificationScale || 1,
     shapeData.label || null
   );
+  
+  // Preserve shortRows and isHem properties
+  trapezoid.shortRows = Array.isArray(shapeData.shortRows) ? shapeData.shortRows : [];
+  trapezoid.isHem = !!shapeData.isHem;
+  
+  return trapezoid;
 }
 
 /**

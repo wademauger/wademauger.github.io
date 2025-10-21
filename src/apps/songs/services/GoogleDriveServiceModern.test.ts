@@ -3,9 +3,15 @@
  * @jest-environment jsdom
  */
 
+// Import to make this a module so declare global works
+import { jest } from '@jest/globals';
+
+// Extend global type to include gapi and google
+// Skip declaration since it's already declared elsewhere
+
 // Mock the Google APIs
-global.gapi = {
-  load: jest.fn((apis, callback) => callback()),
+(global as any).gapi = {
+  load: jest.fn((apis: any, callback: any) => callback()),
   client: {
     init: jest.fn(() => Promise.resolve()),
     setToken: jest.fn(),
@@ -20,7 +26,7 @@ global.gapi = {
   }
 };
 
-global.google = {
+(global as any).google = {
   accounts: {
     oauth2: {
       initTokenClient: jest.fn(() => ({
@@ -33,6 +39,23 @@ global.google = {
 
 // Mock the GoogleDriveServiceModern class
 class MockGoogleDriveServiceModern {
+  isSignedIn: boolean;
+  tokenClient: any;
+  authRetryAttempts: Map<string, number>;
+  maxRetryAttempts: number;
+  accessToken: string | null;
+  userEmail: string | null;
+  userName: string | null;
+  userPicture: string | null;
+  SESSION_KEYS: {
+    ACCESS_TOKEN: string;
+    USER_EMAIL: string;
+    USER_NAME: string;
+    USER_PICTURE: string;
+    IS_SIGNED_IN: string;
+    TOKEN_EXPIRY: string;
+  };
+
   constructor() {
     this.isSignedIn = false;
     this.tokenClient = null;
@@ -54,7 +77,7 @@ class MockGoogleDriveServiceModern {
     };
   }
 
-  saveSession() {
+  saveSession(): void {
     if (this.accessToken) {
       localStorage.setItem(this.SESSION_KEYS.ACCESS_TOKEN, this.accessToken);
       localStorage.setItem(this.SESSION_KEYS.IS_SIGNED_IN, 'true');
@@ -66,7 +89,7 @@ class MockGoogleDriveServiceModern {
     if (this.userPicture) localStorage.setItem(this.SESSION_KEYS.USER_PICTURE, this.userPicture);
   }
 
-  restoreSession() {
+  restoreSession(): void {
     const savedToken = localStorage.getItem(this.SESSION_KEYS.ACCESS_TOKEN);
     const tokenExpiry = localStorage.getItem(this.SESSION_KEYS.TOKEN_EXPIRY);
     const isSignedIn = localStorage.getItem(this.SESSION_KEYS.IS_SIGNED_IN) === 'true';
@@ -81,21 +104,21 @@ class MockGoogleDriveServiceModern {
         this.userEmail = localStorage.getItem(this.SESSION_KEYS.USER_EMAIL);
         this.userName = localStorage.getItem(this.SESSION_KEYS.USER_NAME);
         this.userPicture = localStorage.getItem(this.SESSION_KEYS.USER_PICTURE);
-        return true;
+        return true as any;
       } else {
         this.clearSession();
       }
     }
-    return false;
+    return false as any;
   }
 
-  clearSession() {
+  clearSession(): void {
     Object.values(this.SESSION_KEYS).forEach((key: any) => {
       localStorage.removeItem(key);
     });
   }
 
-  getSignInStatus() {
+  getSignInStatus(): any {
     return {
       isSignedIn: this.isSignedIn,
       userEmail: this.userEmail,
@@ -104,13 +127,13 @@ class MockGoogleDriveServiceModern {
     };
   }
 
-  async withAutoAuth(operation, operationName, ...args) {
+  async withAutoAuth(operation: any, operationName: string, ...args: any[]): Promise<any> {
     const retryKey = operationName;
     
     try {
       this.authRetryAttempts.delete(retryKey);
       return await operation.apply(this, args);
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (error.message === 'User not signed in to Google Drive') {
         const retryCount = this.authRetryAttempts.get(retryKey) || 0;
         
@@ -118,11 +141,11 @@ class MockGoogleDriveServiceModern {
           this.authRetryAttempts.set(retryKey, retryCount + 1);
           
           try {
-            await this.signIn();
+            await (this as any).signIn();
             const result = await operation.apply(this, args);
             this.authRetryAttempts.delete(retryKey);
             return result;
-          } catch (authError: unknown) {
+          } catch (authError: any) {
             this.authRetryAttempts.delete(retryKey);
             throw new Error(`Authentication failed: ${authError.message}`);
           }
@@ -137,20 +160,20 @@ class MockGoogleDriveServiceModern {
   }
 
   async loadLibrary() {
-    return this.withAutoAuth(this._loadLibraryInternal, 'loadLibrary');
+    return this.withAutoAuth((this as any)._loadLibraryInternal, 'loadLibrary');
   }
 
-  async saveLibrary(libraryData) {
-    return this.withAutoAuth(this._saveLibraryInternal, 'saveLibrary', libraryData);
+  async saveLibrary(libraryData: any) {
+    return this.withAutoAuth((this as any)._saveLibraryInternal, 'saveLibrary', libraryData);
   }
 }
 
 describe('GoogleDriveServiceModern - Automatic Authentication Retry', () => {
-  let service;
+  let service: any;
 
   beforeEach(() => {
     // Mock localStorage
-    const localStorageMock = {
+    const localStorageMock: any = {
       getItem: jest.fn(),
       setItem: jest.fn(),
       removeItem: jest.fn(),

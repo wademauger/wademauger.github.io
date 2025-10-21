@@ -1,7 +1,63 @@
+interface ColorworkPattern {
+    getRowCount(): number;
+    getStitchCount(): number;
+    getRowInstructions(rowIndex: number): RowInstruction[];
+    grid: number[][];
+    colors: Record<number, PatternColor>;
+    getColorsUsed(): PatternColor[];
+}
+
+interface PatternColor {
+    id: string | number;
+    label: string;
+    color: string;
+}
+
+interface RowInstruction {
+    colorId: string | number;
+    color?: PatternColor;
+    stitchCount: number;
+}
+
+interface ChartOptions {
+    cellSize?: number;
+    showGrid?: boolean;
+    showRowNumbers?: boolean;
+    showStitchNumbers?: boolean;
+    width?: number | null;
+    height?: number | null;
+}
+
+interface ChartResult {
+    svg: string;
+    dimensions: { width: number; height: number };
+    cellSize: number;
+    pattern: ColorworkPattern | null;
+}
+
+interface RowInstructionResult {
+    row: number;
+    stitches: RowInstruction[];
+    totalStitches: number;
+    description: string;
+}
+
+interface LegendItem {
+    id: string | number;
+    label: string;
+    color: string;
+    description: string;
+}
+
 /**
  * ColorworkVisualizer - Transforms colorwork patterns into visual charts and instructions
  */
 export class ColorworkVisualizer {
+    cellSize: number;
+    showGrid: boolean;
+    showRowNumbers: boolean;
+    showStitchNumbers: boolean;
+
     constructor() {
         this.cellSize = 20; // Default cell size in pixels
         this.showGrid = true;
@@ -12,7 +68,7 @@ export class ColorworkVisualizer {
     /**
      * Generate an SVG chart for the colorwork pattern
      */
-    generateChart(pattern, options = {}) {
+    generateChart(pattern: ColorworkPattern, options: ChartOptions = {}): ChartResult {
         const {
             cellSize = this.cellSize,
             showGrid = this.showGrid,
@@ -43,8 +99,8 @@ export class ColorworkVisualizer {
     /**
      * Generate row-by-row color instructions
      */
-    generateRowInstructions(pattern) {
-        const instructions = [];
+    generateRowInstructions(pattern: ColorworkPattern): RowInstructionResult[] {
+        const instructions: RowInstructionResult[] = [];
         
         for (let rowIndex = 0; rowIndex < pattern.getRowCount(); rowIndex++) {
             const rowInstructions = pattern.getRowInstructions(rowIndex);
@@ -62,7 +118,7 @@ export class ColorworkVisualizer {
     /**
      * Render SVG element for the colorwork pattern
      */
-    renderSVG(pattern, options = {}) {
+    renderSVG(pattern: ColorworkPattern, options: ChartOptions = {}): string {
         const {
             cellSize = this.cellSize,
             showGrid = this.showGrid,
@@ -123,10 +179,10 @@ export class ColorworkVisualizer {
     /**
      * Format row instructions into human-readable text
      */
-    formatRowInstructions(rowInstructions, rowNumber) {
+    formatRowInstructions(rowInstructions: RowInstruction[], rowNumber: number): string {
         if (rowInstructions.length === 0) return `Row ${rowNumber}: No stitches`;
         
-        const parts = rowInstructions.map((instruction: any) => {
+        const parts = rowInstructions.map((instruction: RowInstruction) => {
             const colorLabel = instruction.color ? instruction.color.label : instruction.colorId;
             return `${instruction.stitchCount} ${colorLabel}`;
         });
@@ -137,7 +193,7 @@ export class ColorworkVisualizer {
     /**
      * Create an empty chart for when no pattern is available
      */
-    createEmptyChart() {
+    createEmptyChart(): ChartResult {
         return {
             svg: '<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><text x="50" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">No Pattern</text></svg>',
             dimensions: { width: 100, height: 50 },
@@ -149,9 +205,9 @@ export class ColorworkVisualizer {
     /**
      * Generate a legend for the colorwork pattern
      */
-    generateLegend(pattern) {
+    generateLegend(pattern: ColorworkPattern): LegendItem[] {
         const colorsUsed = pattern.getColorsUsed();
-        return colorsUsed.map((color: any) => ({
+        return colorsUsed.map((color: PatternColor) => ({
             id: color.id,
             label: color.label,
             color: color.color,

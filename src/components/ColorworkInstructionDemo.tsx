@@ -9,17 +9,43 @@ import RowByRowInstructions from './RowByRowInstructions';
 
 const { Title, Text } = Typography;
 
+interface ColorworkSegment {
+    colorHex: string;
+    colorLabel: string;
+    stitchCount: number;
+}
+
+interface StitchPlanRow {
+    leftStitchesInWork: number;
+    rightStitchesInWork: number;
+    getColorworkInstructions?: () => ColorworkSegment[];
+}
+
+interface ColorworkMapping {
+    mappedRows: any[];
+}
+
+interface StitchPlan {
+    rows: StitchPlanRow[];
+    hasColorwork: () => boolean;
+    colorworkMapping: ColorworkMapping;
+}
+
+interface ColorworkDetailProps {
+    colorworkInstructions: ColorworkSegment[];
+}
+
 /**
  * ColorworkInstructionDemo - Demo component showing enhanced stitch plan with colorwork
  */
-const ColorworkInstructionDemo = () => {
-    const [stitchPlan, setStitchPlan] = useState(null);
+const ColorworkInstructionDemo: React.FC = () => {
+    const [stitchPlan, setStitchPlan] = useState<StitchPlan | null>(null);
     const [currentRow, setCurrentRow] = useState(0);
 
     // Create demo data
     const createDemoPanel = useCallback(() => {
         // Create a simple trapezoid shape
-        const shape = new Trapezoid(5, 8, 12, []); // height: 5", baseA: 8", baseB: 12"
+        const shape = new Trapezoid(5, 8, 12, 0); // height: 5", baseA: 8", baseB: 12"
         const gauge = new Gauge(20, 28); // 20 sts/4", 28 rows/4"
         return new Panel(shape, gauge, 1.0);
     }, []);
@@ -61,7 +87,7 @@ const ColorworkInstructionDemo = () => {
         setCurrentRow(0);
     }, [createDemoPanel, createDemoColorworkPattern]);
 
-    const handleRowProgress = useCallback((direction) => {
+    const handleRowProgress = useCallback((direction: 'next' | 'prev') => {
         if (!stitchPlan) return;
         
         const newRow = direction === 'next' 
@@ -121,8 +147,7 @@ const ColorworkInstructionDemo = () => {
                     <Col span={16}>
                         <Card title="Row-by-Row Instructions" size="small">
                             <RowByRowInstructions 
-                                stitchPlan={stitchPlan} 
-                                currentRow={currentRow}
+                                stitchPlan={stitchPlan as any}
                             />
                         </Card>
                     </Col>
@@ -177,14 +202,14 @@ const ColorworkInstructionDemo = () => {
 /**
  * ColorworkDetail - Shows detailed colorwork information for a single row
  */
-const ColorworkDetail = ({ colorworkInstructions }) => {
+const ColorworkDetail: React.FC<ColorworkDetailProps> = ({ colorworkInstructions }) => {
     if (!colorworkInstructions || colorworkInstructions.length === 0) {
         return <Text type="secondary">No colorwork for this row</Text>;
     }
 
     return (
         <Space direction="vertical" style={{ width: '100%' }}>
-            {colorworkInstructions.map((segment, index: number) => (
+            {colorworkInstructions.map((segment: ColorworkSegment, index: number) => (
                 <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div 
                         style={{

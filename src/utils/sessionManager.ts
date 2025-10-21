@@ -5,13 +5,16 @@ const SESSION_STORAGE_KEY = 'knittingDesignSession';
 const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 
 class SessionManager {
+  autoSaveInterval: NodeJS.Timeout | null;
+  isGoogleDriveEnabled: boolean;
+
   constructor() {
     this.autoSaveInterval = null;
     this.isGoogleDriveEnabled = false; // Future feature
   }
 
   // Load session from browser storage
-  loadSession() {
+  loadSession(): any {
     try {
       const savedSession = sessionStorage.getItem(SESSION_STORAGE_KEY);
       if (savedSession) {
@@ -31,7 +34,7 @@ class SessionManager {
   }
 
   // Save session to browser storage
-  saveSession(sessionData) {
+  saveSession(sessionData: any): boolean {
     try {
       const sessionToSave = {
         ...sessionData,
@@ -43,7 +46,7 @@ class SessionManager {
       
       // Future: Also save to Google Drive if enabled
       if (this.isGoogleDriveEnabled) {
-        this.saveToGoogleDrive(sessionToSave);
+        this.saveToGoogleDrive();
       }
       
       return true;
@@ -70,7 +73,7 @@ class SessionManager {
   }
 
   // Validate session structure
-  isValidSession(session) {
+  isValidSession(session: any): boolean {
     return (
       session &&
       typeof session === 'object' &&
@@ -81,7 +84,7 @@ class SessionManager {
   }
 
   // Start auto-save
-  startAutoSave(saveCallback) {
+  startAutoSave(saveCallback: () => void): void {
     if (this.autoSaveInterval) {
       clearInterval(this.autoSaveInterval);
     }
@@ -94,7 +97,7 @@ class SessionManager {
   }
 
   // Stop auto-save
-  stopAutoSave() {
+  stopAutoSave(): void {
     if (this.autoSaveInterval) {
       clearInterval(this.autoSaveInterval);
       this.autoSaveInterval = null;
@@ -102,7 +105,7 @@ class SessionManager {
   }
 
   // Generate session export data
-  exportSession(sessionData) {
+  exportSession(sessionData: any): { data: any; filename: string; blob: Blob } {
     const exportData = {
       ...sessionData,
       exportedAt: new Date().toISOString(),
@@ -118,7 +121,7 @@ class SessionManager {
   }
 
   // Import session data
-  importSession(jsonData) {
+  importSession(jsonData: string | any): any {
     try {
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
       
@@ -151,7 +154,7 @@ class SessionManager {
   }
 
   // Generate auto-pattern name based on garment and gauge
-  generatePatternName(patternData) {
+  generatePatternName(patternData: any): string {
     const { basePattern, gauge } = patternData;
     
     if (!basePattern) return 'Untitled Pattern';
@@ -159,7 +162,7 @@ class SessionManager {
     let name = basePattern.name || 'Custom Pattern';
     
     if (gauge && gauge.yarnWeight) {
-      const yarnWeightNames = {
+      const yarnWeightNames: Record<string, string> = {
         'lace': 'Lace Weight',
         'light': 'Light Weight',
         'dk': 'DK Weight',
@@ -168,7 +171,7 @@ class SessionManager {
         'bulky': 'Bulky Weight'
       };
       
-      const weightName = yarnWeightNames[gauge.yarnWeight] || gauge.yarnWeight;
+      const weightName = yarnWeightNames[gauge.yarnWeight as string] || gauge.yarnWeight;
       name += ` (${weightName})`;
     }
     

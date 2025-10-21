@@ -1,22 +1,36 @@
+import { CombinedPattern } from './CombinedPattern';
+
 class StitchPlan {
-    rows: any[];
-    colorworkMapping: any;
+    rows: StitchPlanRow[];
+    colorworkMapping: CombinedPattern | null;
+    static Row: typeof StitchPlanRow;
 
     constructor() {
         this.rows = [];
         this.colorworkMapping = null; // New: Store colorwork data
     }
 
-    addRow(row: any) {
+    addRow(row: StitchPlanRow) {
         this.rows.push(row);
     }
 
-    // New: Add colorwork mapping from PanelColorworkComposer
-    setColorworkMapping(mappedRows: any, colorworkPattern: any) {
-        this.colorworkMapping = {
-            mappedRows,
-            colorworkPattern
-        };
+    // Accept either a CombinedPattern or legacy (mappedRows, colorworkPattern)
+    setColorworkMapping(combinedOrMappedRows: any, maybePattern?: any) {
+        // If caller passed a CombinedPattern-like object
+        if (combinedOrMappedRows && combinedOrMappedRows.mappedRows) {
+            this.colorworkMapping = combinedOrMappedRows as CombinedPattern;
+            return;
+        }
+
+        // Legacy signature: (mappedRows, colorworkPattern)
+        if (Array.isArray(combinedOrMappedRows) && maybePattern) {
+            // Create a lightweight CombinedPattern wrapper for backward compatibility
+            this.colorworkMapping = new CombinedPattern(null as any, maybePattern, combinedOrMappedRows, this);
+            return;
+        }
+
+        // Fallback: clear mapping
+        this.colorworkMapping = null;
     }
 
     generateKnittingInstructions() {
@@ -27,8 +41,9 @@ class StitchPlan {
     // New: Generate colorwork instructions for each row
     generateColorworkInstructions() {
         if (!this.colorworkMapping) return [];
-        
-        return this.colorworkMapping.mappedRows.map((mappedRow, index: number) => ({
+
+        const mappedRows = this.colorworkMapping.mappedRows || [];
+        return mappedRows.map((mappedRow: any, index: number) => ({
             row: index + 1,
             machineRow: this.rows[index]?.rowNumber || index + 1,
             colorwork: this.generateRowColorworkSequence(mappedRow.colorwork),
@@ -38,8 +53,8 @@ class StitchPlan {
 
     // New: Convert colorwork array to sequence format
     generateRowColorworkSequence(colorworkRow: any) {
-        const sequence = [];
-        let currentColor = null;
+        const sequence: any[] = [];
+        let currentColor: string | null = null;
         let stitchCount = 0;
 
         for (const colorId of colorworkRow) {
@@ -72,7 +87,7 @@ class StitchPlan {
         if (this.rows.length === 0) {
             return [];
         }
-        const instructions = [];
+        const instructions: string[] = [];
         // case: rectangular panel, no shaping
         const lowerLeft = this.rows[0].leftStitchesInWork;
         const lowerRight = this.rows[0].rightStitchesInWork;
@@ -116,16 +131,30 @@ class StitchPlan {
     }
 }
 
-StitchPlan.Row = class {
-    constructor(rowNumber, leftStitchesInWork, rightStitchesInWork) {
+export class StitchPlanRow {
+    rowNumber: number;
+    leftStitchesInWork: number;
+    rightStitchesInWork: number;
+    totalStitches: number;
+    colorwork: { colors: string[]; pattern: any } | null;
+    
+    // Optional properties added by stitchPlanGenerator
+    sectionLabel?: string;
+    sectionStartRow?: number;
+    sectionEndRow?: number;
+    shortRowInfo?: any; // ShortRowInfo from stitchPlanGenerator
+    colorworkCompressed?: any[]; // ColorworkSegment[] from colorworkCompression
+
+    constructor(rowNumber: number, leftStitchesInWork: number, rightStitchesInWork: number) {
         this.rowNumber = rowNumber;
         this.leftStitchesInWork = leftStitchesInWork;
         this.rightStitchesInWork = rightStitchesInWork;
+        this.totalStitches = leftStitchesInWork + rightStitchesInWork;
         this.colorwork = null; // New: Store colorwork for this row
     }
 
     // New: Set colorwork data for this row
-    setColorwork(colorworkArray, colorworkPattern) {
+    setColorwork(colorworkArray: string[], colorworkPattern: any) {
         this.colorwork = {
             colors: colorworkArray,
             pattern: colorworkPattern
@@ -135,9 +164,9 @@ StitchPlan.Row = class {
     // New: Get formatted colorwork instructions for this row
     getColorworkInstructions() {
         if (!this.colorwork) return null;
-        
-        const sequence = [];
-        let currentColor = null;
+
+        const sequence: any[] = [];
+        let currentColor: string | null = null;
         let stitchCount = 0;
 
         for (const colorId of this.colorwork.colors) {
@@ -170,6 +199,9 @@ StitchPlan.Row = class {
 
         return sequence;
     }
-};
+}
+
+// Add static property for backward compatibility
+StitchPlan.Row = StitchPlanRow;
 
 export { StitchPlan };

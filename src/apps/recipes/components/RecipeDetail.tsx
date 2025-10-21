@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Input, message, Button, Popconfirm } from 'antd';
-import { FaPlus, FaTrash, FaGripVertical, FaEdit } from 'react-icons/fa';
-import { PlusOutlined } from '@ant-design/icons';
+const { TextArea } = Input;
+import { FaPlus, FaTrash, FaGripVertical, FaEdit, FaPencilAlt } from 'react-icons/fa';
+import { PlusOutlined, CheckOutlined, CloseOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { updateDriveRecipe } from '../../../reducers/recipes.reducer';
 import IngredientDivider from './IngredientDivider';
@@ -27,7 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 
 // Utility function to convert quantities to numbers
-const convertQuantityToNumber = (quantity) => {
+const convertQuantityToNumber = (quantity: any): number => {
   if (typeof quantity === 'number') {
     return quantity;
   }
@@ -68,7 +69,26 @@ const convertQuantityToNumber = (quantity) => {
 };
 
 // Sortable ingredient component
-const SortableIngredient = ({ 
+interface SortableIngredientProps {
+  ingredient: any;
+  index: number;
+  id: string;
+  editingIndex: number | null;
+  editingEnabled: boolean;
+  hoveredIndex: number | null;
+  setHoveredIndex: (index: number | null) => void;
+  handleEdit: (index: number) => void;
+  handleInsertAfter: (index: number) => void;
+  handleInsertDividerAfter: (index: number) => void;
+  handleDelete: (index: number) => void;
+  handleSave: (index: number, values: any) => void;
+  handleCancel: () => void;
+  scale: number;
+  isPendingSave?: boolean;
+  isPendingDelete?: boolean;
+}
+
+const SortableIngredient: React.FC<SortableIngredientProps> = ({ 
   ingredient, 
   index, 
   id, 
@@ -100,13 +120,13 @@ const SortableIngredient = ({
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
     backgroundColor: isPendingDelete ? '#f5f5f5' : 'transparent',
     color: isPendingDelete ? '#999' : 'inherit',
-    pointerEvents: isPendingDelete ? 'none' : 'auto'
+    pointerEvents: isPendingDelete ? ('none' as const) : ('auto' as const)
   };
 
   const isEditing = editingIndex === index;
@@ -159,7 +179,7 @@ const SortableIngredient = ({
         <>
           <td className="quantity-column">
             {ingredient.quantity !== undefined ? 
-              (ingredient.quantity * scale).toFixed(2).replace(/\.?0+$/, '') : 
+              (convertQuantityToNumber(ingredient.quantity) * scale).toFixed(2).replace(/\.?0+$/, '') : 
               ''}
           </td>
           <td className="unit-column">{ingredient.unit || ''}</td>
@@ -267,7 +287,24 @@ const SortableIngredient = ({
 };
 
 // Sortable step component
-const SortableStep = ({ 
+interface SortableStepProps {
+  step: any;
+  index: number;
+  id: string;
+  editingIndex: number | null;
+  editingEnabled: boolean;
+  hoveredIndex: number | null;
+  setHoveredIndex: (index: number | null) => void;
+  handleEdit: (index: number) => void;
+  handleInsertAfter: (index: number) => void;
+  handleDelete: (index: number) => void;
+  handleSave: (index: number, value: string) => void;
+  handleCancel: () => void;
+  isPendingSave?: boolean;
+  isPendingDelete?: boolean;
+}
+
+const SortableStep: React.FC<SortableStepProps> = ({ 
   step, 
   index, 
   id, 
@@ -302,13 +339,13 @@ const SortableStep = ({
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
     backgroundColor: isPendingDelete ? '#f5f5f5' : 'transparent',
     color: isPendingDelete ? '#999' : 'inherit',
-    pointerEvents: isPendingDelete ? 'none' : 'auto',
+    pointerEvents: isPendingDelete ? ('none' as const) : ('auto' as const),
     marginBottom: '8px',
     padding: '8px',
     border: '1px solid #f0f0f0',
@@ -369,7 +406,7 @@ const SortableStep = ({
             )}
           </div>
           <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-            <Button size="small" type="primary" onClick={() => handleSave(editValue, index)}>
+            <Button size="small" type="primary" onClick={() => handleSave(index, editValue)}>
               <CheckOutlined />
             </Button>
             <Button size="small" onClick={handleCancel}>
@@ -475,8 +512,26 @@ const SortableStep = ({
   );
 };
 
+// Props interface for SortableNote component
+interface SortableNoteProps {
+  note: any;
+  index: number;
+  id: string;
+  editingIndex: number | null;
+  editingEnabled: boolean;
+  hoveredIndex: number | null;
+  setHoveredIndex: (index: number | null) => void;
+  handleEdit: (index: number) => void;
+  handleInsertAfter: (index: number) => void;
+  handleDelete: (index: number) => void;
+  handleSave: (index: number, value: any) => void;
+  handleCancel: () => void;
+  isPendingSave?: boolean;
+  isPendingDelete?: boolean;
+}
+
 // Sortable note component (similar to step but for notes)
-const SortableNote = ({ 
+const SortableNote: React.FC<SortableNoteProps> = ({ 
   note, 
   index, 
   id, 
@@ -506,13 +561,13 @@ const SortableNote = ({
     disabled: editingIndex !== null || isPendingSave || isPendingDelete
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : (isPendingDelete ? 0.6 : 1),
     backgroundColor: isPendingDelete ? '#f5f5f5' : 'transparent',
     color: isPendingDelete ? '#999' : 'inherit',
-    pointerEvents: isPendingDelete ? 'none' : 'auto',
+    pointerEvents: isPendingDelete ? ('none' as const) : ('auto' as const),
     marginBottom: '8px',
     padding: '8px',
     border: '1px solid #f0f0f0',
@@ -670,14 +725,14 @@ const RecipeDetail = ({
   const [showAIChat, setShowAIChat] = useState(false);
   
   // Individual editing states
-  const [editingIngredientIndex, setEditingIngredientIndex] = useState(null);
-  const [editingStepIndex, setEditingStepIndex] = useState(null);
-  const [editingNoteIndex, setEditingNoteIndex] = useState(null);
+  const [editingIngredientIndex, setEditingIngredientIndex] = useState<number | null>(null);
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
   
   // Hover states
-  const [hoveredIngredientIndex, setHoveredIngredientIndex] = useState(null);
-  const [hoveredStepIndex, setHoveredStepIndex] = useState(null);
-  const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
+  const [hoveredIngredientIndex, setHoveredIngredientIndex] = useState<number | null>(null);
+  const [hoveredStepIndex, setHoveredStepIndex] = useState<number | null>(null);
+  const [hoveredNoteIndex, setHoveredNoteIndex] = useState<number | null>(null);
   
   const dispatch = useDispatch();
 
@@ -701,7 +756,7 @@ const RecipeDetail = ({
   };
 
   // Helper function to save recipe changes
-  const saveRecipeChanges = async (updatedRecipe) => {
+  const saveRecipeChanges = async (updatedRecipe: any) => {
     // Check if this is a draft recipe
     if (isDraft) {
       message.warning('Cannot modify draft recipes. Please save the recipe first.');
@@ -761,7 +816,7 @@ const RecipeDetail = ({
     setEditingIngredientIndex(index);
   };
 
-  const handleSaveIngredient = async (newIngredient, index: number) => {
+  const handleSaveIngredient = async (newIngredient: any, index: number) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
     const updatedIngredients = [...ingredients];
     
@@ -790,7 +845,7 @@ const RecipeDetail = ({
 
   const handleDeleteIngredient = async (index: number) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-    const updatedIngredients = ingredients.filter((_, i: number) => i !== index);
+    const updatedIngredients = ingredients.filter((_: any, i: number) => i !== index);
     const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -804,7 +859,7 @@ const RecipeDetail = ({
     setEditingStepIndex(index);
   };
 
-  const handleSaveStep = async (newStep, index: number) => {
+  const handleSaveStep = async (newStep: any, index: number) => {
     const updatedSteps = [...recipe.steps];
     updatedSteps[index] = newStep;
     const updatedRecipe = { ...recipe, steps: updatedSteps };
@@ -822,7 +877,7 @@ const RecipeDetail = ({
   };
 
   const handleDeleteStep = async (index: number) => {
-    const updatedSteps = recipe.steps.filter((_, i: number) => i !== index);
+    const updatedSteps = recipe.steps.filter((_: any, i: number) => i !== index);
     const updatedRecipe = { ...recipe, steps: updatedSteps };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -836,7 +891,7 @@ const RecipeDetail = ({
     setEditingNoteIndex(index);
   };
 
-  const handleSaveNote = async (newNote, index: number) => {
+  const handleSaveNote = async (newNote: any, index: number) => {
     const updatedNotes = [...recipe.notes];
     updatedNotes[index] = newNote;
     const updatedRecipe = { ...recipe, notes: updatedNotes };
@@ -854,7 +909,7 @@ const RecipeDetail = ({
   };
 
   const handleDeleteNote = async (index: number) => {
-    const updatedNotes = recipe.notes.filter((_, i: number) => i !== index);
+    const updatedNotes = recipe.notes.filter((_: any, i: number) => i !== index);
     const updatedRecipe = { ...recipe, notes: updatedNotes };
     await saveRecipeChanges(updatedRecipe);
   };
@@ -869,8 +924,8 @@ const RecipeDetail = ({
     
     if (active.id !== over.id) {
       const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-      const oldIndex = ingredients.findIndex((_, index: number) => `ingredient-${index}` === active.id);
-      const newIndex = ingredients.findIndex((_, index: number) => `ingredient-${index}` === over.id);
+      const oldIndex = ingredients.findIndex((_: any, index: number) => `ingredient-${index}` === active.id);
+      const newIndex = ingredients.findIndex((_: any, index: number) => `ingredient-${index}` === over.id);
       
       const updatedIngredients = arrayMove(ingredients, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, ingredients: updatedIngredients };
@@ -882,8 +937,8 @@ const RecipeDetail = ({
     const { active, over } = event;
     
     if (active.id !== over.id) {
-      const oldIndex = recipe.steps.findIndex((_, index: number) => `step-${index}` === active.id);
-      const newIndex = recipe.steps.findIndex((_, index: number) => `step-${index}` === over.id);
+      const oldIndex = recipe.steps.findIndex((_: any, index: number) => `step-${index}` === active.id);
+      const newIndex = recipe.steps.findIndex((_: any, index: number) => `step-${index}` === over.id);
       
       const updatedSteps = arrayMove(recipe.steps, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, steps: updatedSteps };
@@ -895,8 +950,8 @@ const RecipeDetail = ({
     const { active, over } = event;
     
     if (active.id !== over.id) {
-      const oldIndex = recipe.notes.findIndex((_, index: number) => `note-${index}` === active.id);
-      const newIndex = recipe.notes.findIndex((_, index: number) => `note-${index}` === over.id);
+      const oldIndex = recipe.notes.findIndex((_: any, index: number) => `note-${index}` === active.id);
+      const newIndex = recipe.notes.findIndex((_: any, index: number) => `note-${index}` === over.id);
       
       const updatedNotes = arrayMove(recipe.notes, oldIndex, newIndex);
       const updatedRecipe = { ...recipe, notes: updatedNotes };
@@ -978,7 +1033,7 @@ const RecipeDetail = ({
   if (!recipe) return null;
   
   // Helper function to parse multi-line instructions into separate steps
-  const parseMultilineInstructions = (text) => {
+  const parseMultilineInstructions = (text: any) => {
     if (!text || typeof text !== 'string') {
       return [text];
     }
@@ -1034,7 +1089,7 @@ const RecipeDetail = ({
   };
 
   // Enhanced step save handler that can handle multi-line text
-  const handleSaveStepWithMultiline = async (newStepText, index: number) => {
+  const handleSaveStepWithMultiline = async (index: number, newStepText: any) => {
     const parsedSteps = parseMultilineInstructions(newStepText);
     
     if (parsedSteps.length === 1) {
@@ -1233,14 +1288,14 @@ const RecipeDetail = ({
                 </thead>
                 <tbody>
                   <SortableContext 
-                    items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_, index: number) => `ingredient-${index}`) : []}
+                    items={Array.isArray(recipe.ingredients) ? recipe.ingredients.map((_: any, index: number) => `ingredient-${index}`) : []}
                     strategy={verticalListSortingStrategy}
                   >
                     {(() => {
                     // Handle both flat array and grouped object ingredients
                       if (Array.isArray(recipe.ingredients)) {
                       // Flat array format - render as before with full editing support
-                        return recipe.ingredients.map((ingredient, index: number) => {
+                        return recipe.ingredients.map((ingredient: any, index: number) => {
                         // Check if this is a divider
                           if (ingredient.isDivider) {
                             return (
@@ -1294,7 +1349,7 @@ const RecipeDetail = ({
                             <React.Fragment key={groupName}>
                               {/* Group header row */}
                               <tr style={{ backgroundColor: '#f8f9fa' }}>
-                                <td colSpan="4" style={{ 
+                                <td colSpan={4} style={{ 
                                   padding: '8px 12px', 
                                   fontWeight: 'bold', 
                                   fontSize: '14px',
@@ -1309,14 +1364,14 @@ const RecipeDetail = ({
                                 const currentIndex = ingredientIndex++;
                                 return (
                                   <tr key={`ingredient-${currentIndex}`}>
-                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    <td style={{ padding: '8px', fontSize: `${fontSize}px` }}>
                                       {typeof ingredient === 'object' && ingredient.quantity !== undefined ? 
                                         (ingredient.quantity * scale).toFixed(2).replace(/\.?0+$/, '') : ''}
                                     </td>
-                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    <td style={{ padding: '8px', fontSize: `${fontSize}px` }}>
                                       {typeof ingredient === 'object' ? ingredient.unit : ''}
                                     </td>
-                                    <td style={{ padding: '8px', fontSize: fontSize === 'small' ? '12px' : fontSize === 'large' ? '16px' : '14px' }}>
+                                    <td style={{ padding: '8px', fontSize: `${fontSize}px` }}>
                                       {typeof ingredient === 'object' ? (
                                         <>
                                           {ingredient.name}
@@ -1341,7 +1396,7 @@ const RecipeDetail = ({
                       // No ingredients or invalid format
                         return (
                           <tr>
-                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                            <td colSpan={4} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
                             No ingredients found. Click "Add" to add ingredients.
                             </td>
                           </tr>
@@ -1381,10 +1436,10 @@ const RecipeDetail = ({
               onDragEnd={handleStepDragEnd}
             >
               <SortableContext 
-                items={recipe.steps.map((_, index: number) => `step-${index}`)}
+                items={recipe.steps.map((_: any, index: number) => `step-${index}`)}
                 strategy={verticalListSortingStrategy}
               >
-                {recipe.steps.map((step, index: number) => (
+                {recipe.steps.map((step: any, index: number) => (
                   <SortableStep
                     key={`step-${index}`}
                     id={`step-${index}`}
@@ -1429,10 +1484,10 @@ const RecipeDetail = ({
                   onDragEnd={handleNoteDragEnd}
                 >
                   <SortableContext 
-                    items={recipe.notes.map((_, index: number) => `note-${index}`)}
+                    items={recipe.notes.map((_: any, index: number) => `note-${index}`)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {recipe.notes.map((note, index: number) => (
+                    {recipe.notes.map((note: any, index: number) => (
                       <SortableNote
                         key={`note-${index}`}
                         id={`note-${index}`}

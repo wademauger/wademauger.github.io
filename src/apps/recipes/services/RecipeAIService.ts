@@ -6,6 +6,12 @@ env.allowLocalModels = false;
 env.allowRemoteModels = true;
 
 class RecipeAIService {
+  isLoading: boolean;
+  isInitialized: boolean;
+  preferredProvider: string;
+  workerUrl: string;
+  availableProviders: Record<string, { name: string; description: string; model: string }>;
+
   constructor() {
     this.isLoading = false;
     this.isInitialized = true; // Always initialized for cloud service
@@ -35,15 +41,15 @@ class RecipeAIService {
     };
   }
 
-  getAvailableModels() {
+  getAvailableModels(): Record<string, { name: string; description: string; model: string }> {
     return this.availableProviders;
   }
 
-  getCurrentModel() {
+  getCurrentModel(): string {
     return this.preferredProvider;
   }
 
-  async switchModel(providerName) {
+  async switchModel(providerName: string): Promise<void> {
     if (!this.availableProviders[providerName]) {
       throw new Error(`Provider ${providerName} is not available`);
     }
@@ -51,7 +57,7 @@ class RecipeAIService {
     console.log(`Switched to AI provider: ${providerName}`);
   }
 
-  async initialize(providerName = null) {
+  async initialize(providerName: string | null = null): Promise<void> {
     // Cloud service is always ready
     if (providerName) {
       await this.switchModel(providerName);
@@ -59,7 +65,7 @@ class RecipeAIService {
     return Promise.resolve();
   }
 
-  async generateResponse(userMessage, recipeContext, conversationHistory = []) {
+  async generateResponse(userMessage: string, recipeContext: any, conversationHistory: any[] = []): Promise<any> {
     await this.initialize();
     
     if (!this.isInitialized) {
@@ -148,7 +154,7 @@ NOT like:
   }
 
   // No need for local model initialization with cloud service
-  async _validateConnection() {
+  async _validateConnection(): Promise<boolean> {
     console.log('🔍 Checking worker URL:', this.workerUrl);
     console.log('🔍 Environment variable:', import.meta.env.VITE_AI_WORKER_URL);
     
@@ -160,7 +166,7 @@ NOT like:
     return true;
   }
 
-  _isFullRecipeRequest(userMessage) {
+  _isFullRecipeRequest(userMessage: string): boolean {
     const lowerMessage = userMessage.toLowerCase();
     
     // Direct recipe creation keywords
@@ -220,7 +226,7 @@ NOT like:
     return false;
   }
 
-  _createSystemPrompt(recipe, isFullRecipeRequest = false) {
+  _createSystemPrompt(recipe: any, isFullRecipeRequest: boolean = false): string {
     if (isFullRecipeRequest) {
       return `You are a professional chef and recipe developer. Generate complete, detailed recipes with all necessary information.
 
@@ -304,7 +310,7 @@ Create recipes that are clear, detailed, and easy to follow. Make your commentar
       
       // Format ingredients with full details (ensure recipe.ingredients is an array)
       const ingredientsList = recipe?.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 
-        ? recipe.ingredients.map((ing, index: number) => {
+        ? recipe.ingredients.map((ing: any, index: number) => {
             if (typeof ing === 'object' && ing !== null) {
               return `${index + 1}. ${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
             } else {
@@ -315,12 +321,12 @@ Create recipes that are clear, detailed, and easy to follow. Make your commentar
       
       // Format instructions with full details
       const instructionsList = recipe?.steps?.length > 0
-        ? recipe.steps.map((step, index: number) => `${index + 1}. ${step}`).join('\n')
+        ? recipe.steps.map((step: any, index: number) => `${index + 1}. ${step}`).join('\n')
         : 'No instructions listed yet';
       
       // Format notes
       const notesList = recipe?.notes?.length > 0
-        ? recipe.notes.map((note) => `• ${note}`).join('\n')
+        ? recipe.notes.map((note: any) => `• ${note}`).join('\n')
         : 'No notes added yet';
 
       return `You are an expert recipe assistant helping with "${recipeTitle}".
@@ -387,7 +393,7 @@ Choose the most appropriate format based on what the user is asking for.`;
     }
   }
 
-  _buildConversationPrompt(systemPrompt, history, userMessage, isFullRecipeRequest = false) {
+  _buildConversationPrompt(systemPrompt: string, history: any[], userMessage: string, isFullRecipeRequest: boolean = false): string {
     let prompt = systemPrompt + '\n\nCONVERSATION:\n';
     
     if (isFullRecipeRequest) {
@@ -513,7 +519,7 @@ Choose the most appropriate format based on what the user is asking for.`;
     return prompt;
   }
 
-  _postProcessResponse(response, userMessage, recipe, isFullRecipeRequest = false) {
+  _postProcessResponse(response: string, userMessage: string, recipe: any, isFullRecipeRequest: boolean = false): string {
     // Clean up common issues with generated text
     response = response
       .replace(/\n\n+/g, '\n\n') // Remove excessive newlines
@@ -531,7 +537,7 @@ Choose the most appropriate format based on what the user is asking for.`;
       
       // If response is too short, generate fallback
       if (response.length < 100) {
-        return this._generateFullRecipeFallback(userMessage, recipe);
+        return this._generateFullRecipeFallback(userMessage);
       }
       
       // Try to convert markdown to JSON if it looks like a recipe
@@ -554,7 +560,7 @@ Choose the most appropriate format based on what the user is asking for.`;
     return response;
   }
 
-  _convertMarkdownToJson(markdownText, userMessage) {
+  _convertMarkdownToJson(markdownText: string, userMessage: string): string | null {
     try {
       // Extract components from markdown
       const titleMatch = markdownText.match(/##\s*(.+)/);
@@ -616,12 +622,13 @@ Choose the most appropriate format based on what the user is asking for.`;
       
       return null;
     } catch (error: unknown) {
-      console.log('❌ Failed to convert markdown to JSON:', error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('❌ Failed to convert markdown to JSON:', errorMessage);
       return null;
     }
   }
 
-  _generateFullRecipeFallback(userMessage) {
+  _generateFullRecipeFallback(userMessage: string): string {
     const dishName = this._extractDishName(userMessage) || 'this dish';
     
     return `# Recipe for ${dishName}
@@ -652,12 +659,12 @@ Choose the most appropriate format based on what the user is asking for.`;
 What specific type of ${dishName} would you like me to help you create? I can provide more detailed instructions for specific cuisines or cooking methods!`;
   }
 
-  _extractDishName(userMessage) {
+  _extractDishName(userMessage: string): string | null {
     const match = userMessage.match(/(?:recipe for|make|create|generate)\s+(?:a\s+)?([^.!?]+)/i);
     return match ? match[1].trim() : null;
   }
 
-  _formatAsRecipe(content, userMessage) {
+  _formatAsRecipe(content: string, userMessage: string): string {
     const dishName = this._extractDishName(userMessage) || 'Recipe';
     
     return `# ${dishName}
@@ -669,7 +676,7 @@ ${content}
   }
 
   // Helper function to create structured response object
-  _createResponseObject(text, provider = 'fallback', model = 'assistant') {
+  _createResponseObject(text: string, provider: string = 'fallback', model: string = 'assistant'): any {
     const providerName = this.availableProviders[provider]?.name || 'Recipe Assistant';
     return {
       text,
@@ -679,7 +686,7 @@ ${content}
     };
   }
 
-  _getFallbackResponse(userMessage, recipe, chatGptLink = null) {
+  _getFallbackResponse(userMessage: string, recipe: any, chatGptLink: string | null = null): any {
     const lowerMessage = userMessage.toLowerCase();
     const recipeTitle = recipe?.title || 'this recipe';
     const hasIngredients = recipe?.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0;
@@ -749,7 +756,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       if (hasIngredients) {
         const ingredientsArray = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
         response += `Your current recipe has ${ingredientsArray.length} ingredient${ingredientsArray.length > 1 ? 's' : ''}:\n`;
-        response += ingredientsArray.slice(0, 3).map((ing) => {
+        response += ingredientsArray.slice(0, 3).map((ing: any) => {
           const ingredientText = typeof ing === 'object' && ing !== null
             ? `${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim()
             : ing;
@@ -803,7 +810,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     return this._createResponseObject(contextualHelp);
   }
 
-  async generateRecipeChanges(userRequest, recipe) {
+  async generateRecipeChanges(userRequest: string, recipe: any) {
     // Check if this is a request to populate/create a full recipe
     const isPopulateRequest = this._isFullRecipeRequest(userRequest);
     
@@ -825,7 +832,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     };
   }
 
-  extractActionableChanges(response, recipe, isFullRecipe = false) {
+  extractActionableChanges(response: string, recipe: any, isFullRecipe: boolean = false): any {
     const changes = {
       ingredients: [],
       steps: [],
@@ -892,7 +899,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     }
   }
 
-  _parseJsonRecipe(response) {
+  _parseJsonRecipe(response: string): any {
     try {
       // Clean the response to extract only JSON content
       let jsonString = response.trim();
@@ -918,12 +925,13 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
       
       return null;
     } catch (error: unknown) {
-      console.log('JSON parsing failed:', error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('JSON parsing failed:', errorMessage);
       return null;
     }
   }
 
-  _parseMarkdownRecipe(response, changes) {
+  _parseMarkdownRecipe(response: string, changes: any): void {
     // Existing markdown parsing logic (kept as fallback)
     
     // Try to extract title
@@ -996,7 +1004,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     return changes;
   }
 
-  _parsePartialChanges(response, changes) {
+  _parsePartialChanges(response: string, changes: any): void {
     const lowerResponse = response.toLowerCase();
     
     // Look for ingredient suggestions
@@ -1046,7 +1054,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     return changes;
   }
 
-  getModelStatus() {
+  getModelStatus(): any {
     return {
       isInitialized: this.isInitialized,
       isLoading: this.isLoading,
@@ -1056,7 +1064,7 @@ Try asking: "Create a recipe for ${dishName}" and I'll generate a complete recip
     };
   }
 
-  _parseIngredientString(ingredientStr) {
+  _parseIngredientString(ingredientStr: string): any {
     // Parse an ingredient string like "2 cups all-purpose flour, sifted" into structured format
     
     // Clean the string

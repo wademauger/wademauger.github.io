@@ -30,7 +30,7 @@ describe('Enhanced StitchPlan with Colorwork', () => {
             stitchPlan.setColorworkMapping(mappedRows, colorworkPattern);
 
             expect(stitchPlan.hasColorwork()).toBe(true);
-            expect(stitchPlan.colorworkMapping.mappedRows).toHaveLength(1);
+            expect(stitchPlan.colorworkMapping!.mappedRows).toHaveLength(1);
         });
 
         it('should generate colorwork instructions', () => {
@@ -72,13 +72,13 @@ describe('Enhanced StitchPlan with Colorwork', () => {
 
             const instructions = row.getColorworkInstructions();
             expect(instructions).toHaveLength(2);
-            expect(instructions[0]).toEqual({
+            expect(instructions![0]).toEqual({
                 colorId: 'MC',
                 colorLabel: 'Main Color',
                 colorHex: '#ffffff',
                 stitchCount: 2
             });
-            expect(instructions[1]).toEqual({
+            expect(instructions![1]).toEqual({
                 colorId: 'CC',
                 colorLabel: 'Contrast Color',
                 colorHex: '#000000',

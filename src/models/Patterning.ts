@@ -14,20 +14,23 @@ class Pattern {
     }
 
     // Abstract method to get the stitch pattern for a given row and stitch
-    getStitchPatterning() {
+    getStitchPatterning(rowNumber?: number, stitchIndex?: number): any {
         throw new Error('Method \'getStitchPatterning(rowNumber, stitchIndex)\' must be implemented.');
     }
 }
 
 // Stripe Pattern
 class Stripe extends Pattern {
-    constructor(color, length) {
+    color: string;
+    length: number;
+
+    constructor(color: string, length: number) {
         super();
         this.color = color;
         this.length = length;
     }
 
-    getStitchPatterning(rowNumber, stitchIndex) {
+    override getStitchPatterning(rowNumber: number, stitchIndex?: number): any {
         if (stitchIndex === undefined || stitchIndex === null) {
             // Return the whole row as an array
             if (rowNumber % this.length === 0) {
@@ -47,7 +50,13 @@ class Stripe extends Pattern {
 
 // Motif Pattern
 class Motif extends Pattern {
-    constructor(motifData, colorMap, repeatX = 'single', repeatY = 'single', alignment = Alignment.LEFT) {
+    motifData: any[][];
+    colorMap: any;
+    repeatX: string;
+    repeatY: string;
+    alignment: string;
+
+    constructor(motifData: any[][], colorMap: any, repeatX: string = 'single', repeatY: string = 'single', alignment: string = Alignment.LEFT) {
         super();
         this.motifData = motifData; // 2D array of color indexes
         this.colorMap = colorMap; // Map of color indexes to actual colors
@@ -56,7 +65,7 @@ class Motif extends Pattern {
         this.alignment = alignment; // Alignment of the motif
     }
 
-    getStitchPatterning(rowNumber, stitchIndex) {
+    override getStitchPatterning(rowNumber: number, stitchIndex?: number): any {
         const motifHeight = this.motifData.length;
         const motifWidth = this.motifData[0].length;
         const rowLength = 20; // Assuming a default row length of 20
@@ -116,13 +125,16 @@ class Motif extends Pattern {
 
 // Pattern Combinator (for complex combinations)
 class ComplexPattern extends Pattern {
-    constructor(patterns, combinationMode = 'overlay') {
+    patterns: Pattern[];
+    combinationMode: string;
+
+    constructor(patterns: Pattern[], combinationMode: string = 'overlay') {
         super();
         this.patterns = patterns; // Array of Pattern objects
         this.combinationMode = combinationMode; // 'overlay', 'replace', etc.
     }
 
-    getStitchPatterning(rowNumber, stitchIndex) {
+    override getStitchPatterning(rowNumber: number, stitchIndex?: number): any {
         if (stitchIndex === undefined || stitchIndex === null) {
             // Return the whole row as an array
             let combinedRow = Array(20).fill({}); // Assuming a default row length of 20

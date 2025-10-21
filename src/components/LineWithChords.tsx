@@ -1,11 +1,16 @@
 import React from 'react';
 import { Flex } from 'antd';
 
-const LineWithChords = ({ line, togglePinChord }) => (
+interface LineWithChordsProps {
+  line: { chords: string[]; text: string }[];
+  togglePinChord: (chord: string) => void;
+}
+
+const LineWithChords: React.FC<LineWithChordsProps> = ({ line, togglePinChord }) => (
   <Flex style={{ fontFamily: 'monospace', whiteSpace: 'pre' }} align="end" wrap="wrap">
-    {line.map((section, idx: number) => (
+    {line.map((section: { chords: string[]; text: string }, idx: number) => (
       <div key={idx} style={{ float: 'left' }}>
-        {section.chords.map((chord, chordIdx) => (
+        {section.chords.map((chord: string, chordIdx: number) => (
           <strong
             key={chordIdx}
             style={{ textAlign: 'left', width: '100%', display: 'inline-block', cursor: 'pointer' }}

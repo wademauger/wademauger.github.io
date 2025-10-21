@@ -142,7 +142,8 @@ export const ColorworkEditorSection: React.FC<ColorworkEditorSectionProps> = ({
                 const inst = allInstances.find(i => i.instanceId === instanceId);
                 return inst ? inst.panelName : instanceId;
               }}
-              onRequestPreviewKeyChange={(instanceId: string) => {
+              onRequestPreviewKeyChange={(instanceId: string | null) => {
+                if (!instanceId) return;
                 const instanceIndex = allInstances.findIndex(i => i.instanceId === instanceId);
                 if (instanceIndex >= 0) {
                   // Navigate to that instance

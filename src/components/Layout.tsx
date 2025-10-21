@@ -144,7 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                     const app = (function(p: string) {
                       if (p.startsWith('/crafts/recipes')) return 'recipes';
                       if (p.startsWith('/crafts/tabs')) return 'songs';
-                      if (p.startsWith('/crafts/colorwork-designer') || p.startsWith('/crafts/unified-designer') || p.startsWith('/crafts/knitting')) return 'colorwork';
+                      if (p.startsWith('/crafts/colorwork-designer') || p.startsWith('/crafts/unified-designer') || p.startsWith('/crafts/knitting')) return null;
                       return 'songs';
                     })(location.pathname);
                     dispatch(openLibrarySettingsModal(app, {}));

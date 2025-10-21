@@ -1,7 +1,7 @@
 import { ShapePerimeterDetector } from '../utils/ShapePerimeterDetector';
 
 describe('ShapePerimeterDetector', () => {
-    let detector;
+    let detector: ShapePerimeterDetector;
     
     beforeEach(() => {
         detector = new ShapePerimeterDetector();

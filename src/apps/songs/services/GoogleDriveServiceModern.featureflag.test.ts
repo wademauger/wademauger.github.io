@@ -1,7 +1,7 @@
 import googleDriveServiceModern from './GoogleDriveServiceModern';
 
 describe('GoogleDriveServiceModern upload fallback feature flag', () => {
-  const originalGapi = global.gapi;
+  const originalGapi = (global as any).gapi;
 
   beforeEach(() => {
     // stub auth state
@@ -9,7 +9,7 @@ describe('GoogleDriveServiceModern upload fallback feature flag', () => {
     googleDriveServiceModern.accessToken = 'fake-token';
 
     // Mock gapi client drive.files.update and get
-    global.gapi = {
+    (global as any).gapi = {
       client: {
         drive: {
           files: {
@@ -25,8 +25,8 @@ describe('GoogleDriveServiceModern upload fallback feature flag', () => {
   });
 
   afterEach(() => {
-    global.gapi = originalGapi;
-    delete global.fetch;
+    (global as any).gapi = originalGapi;
+    delete (global as any).fetch;
     // reset flag to default true
     googleDriveServiceModern.setUseUploadFallback(true);
   });

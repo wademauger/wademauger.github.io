@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import SpotifyService from '../services/SpotifyService';
 
+interface AlbumData {
+  albumArt: string;
+  albumName: string;
+  artistName: string;
+  releaseDate?: string;
+  spotifyUrl?: string;
+  totalTracks?: number;
+  trackName?: string;
+}
+
+interface AlbumArtProps {
+  artist: string;
+  album?: string;
+  size?: number;
+}
+
 // Cache utility functions
 const CACHE_KEY_PREFIX = 'albumArt_';
 const CACHE_EXPIRY_HOURS = 24; // Cache for 24 hours
 
-const getCacheKey = (artist, album: any) => {
+const getCacheKey = (artist: string, album?: string): string => {
   // Cache by artist and album only (not track)
   return `${CACHE_KEY_PREFIX}${artist}_${album || 'unknown'}`.replace(/[^a-zA-Z0-9_]/g, '_');
 };
 
-const getCachedData = (cacheKey) => {
+const getCachedData = (cacheKey: string): AlbumData | null => {
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -31,7 +47,7 @@ const getCachedData = (cacheKey) => {
   return null;
 };
 
-const setCachedData = (cacheKey, data: any) => {
+const setCachedData = (cacheKey: string, data: AlbumData): void => {
   try {
     const cacheObject = {
       data,
@@ -43,10 +59,10 @@ const setCachedData = (cacheKey, data: any) => {
   }
 };
 
-const AlbumArt = ({ artist, album, size = 150 }) => {
-  const [albumData, setAlbumData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const AlbumArt: React.FC<AlbumArtProps> = ({ artist, album, size = 150 }) => {
+  const [albumData, setAlbumData] = useState<AlbumData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAlbumArt = async () => {
@@ -67,7 +83,7 @@ const AlbumArt = ({ artist, album, size = 150 }) => {
       
       try {
         console.log('🌐 API call for:', artist, album ? `- ${album}` : '(searching artist albums)');
-        const data = await SpotifyService.searchAlbumArt(artist, album);
+        const data = await SpotifyService.searchAlbumArt(artist as any, album as any);
         setAlbumData(data);
         
         // Cache the result
@@ -78,30 +94,33 @@ const AlbumArt = ({ artist, album, size = 150 }) => {
         // Detailed error handling
         let errorMessage = 'Failed to load album art';
         
-        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-          errorMessage = 'Network error: Cannot reach Spotify API service';
-        } else if (err.message.includes('JSON')) {
-          errorMessage = `JSON Parse Error: ${err.message}`;
-        } else if (err.message.includes('404')) {
-          errorMessage = 'API endpoint not found (404)';
-        } else if (err.message.includes('401')) {
-          errorMessage = 'Authentication failed (401) - Check Spotify credentials';
-        } else if (err.message.includes('403')) {
-          errorMessage = 'Access forbidden (403) - API quota exceeded?';
-        } else if (err.message.includes('500')) {
-          errorMessage = 'Server error (500) - Spotify API or Worker issue';
-        } else if (err.message) {
-          errorMessage = `Error: ${err.message}`;
+        if (err instanceof Error) {
+          if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+            errorMessage = 'Network error: Cannot reach Spotify API service';
+          } else if (err.message.includes('JSON')) {
+            errorMessage = `JSON Parse Error: ${err.message}`;
+          } else if (err.message.includes('404')) {
+            errorMessage = 'API endpoint not found (404)';
+          } else if (err.message.includes('401')) {
+            errorMessage = 'Authentication failed (401) - Check Spotify credentials';
+          } else if (err.message.includes('403')) {
+            errorMessage = 'Access forbidden (403) - API quota exceeded?';
+          } else if (err.message.includes('500')) {
+            errorMessage = 'Server error (500) - Spotify API or Worker issue';
+          } else {
+            errorMessage = `Error: ${err.message}`;
+          }
+          
+          console.error('Album art fetch error details:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+            artist,
+            album
+          });
         }
         
         setError(errorMessage);
-        console.error('Album art fetch error details:', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-          artist,
-          album
-        });
       } finally {
         setLoading(false);
       }

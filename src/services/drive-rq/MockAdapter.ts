@@ -175,7 +175,7 @@ export class MockDriveAdapter implements IDriveAdapter {
     return mergeLibraries(libraries, options);
   }
   
-  async getEntry<T = any>(
+  async getEntry<T = unknown>(
     collection: keyof LibraryData,
     id: string,
     fileId?: string
@@ -190,18 +190,18 @@ export class MockDriveAdapter implements IDriveAdapter {
     if (!col) return null;
     
     if (Array.isArray(col)) {
-      const entry = col.find((item: any) => item.id === id);
-      return entry || null;
+      const entry = col.find((item) => (item as { id?: string }).id === id);
+      return (entry as T) || null;
     }
     
-    if (typeof col === 'object') {
-      return col[id] || null;
+    if (typeof col === 'object' && col !== null) {
+      return ((col as Record<string, unknown>)[id] as T) || null;
     }
     
     return null;
   }
   
-  async setEntry<T = any>(
+  async setEntry<T = unknown>(
     collection: keyof LibraryData,
     id: string,
     data: T,
@@ -220,17 +220,17 @@ export class MockDriveAdapter implements IDriveAdapter {
     }
     
     const col = library[collection];
-    const entry = { ...data, id } as any;
+    const entry = { ...(data as object), id };
     
     if (Array.isArray(col)) {
-      const index = col.findIndex((item: any) => item.id === id);
+      const index = col.findIndex((item) => (item as { id?: string }).id === id);
       if (index >= 0) {
         col[index] = entry;
       } else {
         col.push(entry);
       }
-    } else if (typeof col === 'object') {
-      col[id] = entry;
+    } else if (typeof col === 'object' && col !== null) {
+      (col as Record<string, unknown>)[id] = entry;
     }
     
     await this.saveLibrary(library, fileId);
@@ -253,12 +253,12 @@ export class MockDriveAdapter implements IDriveAdapter {
     }
     
     if (Array.isArray(col)) {
-      const index = col.findIndex((item: any) => item.id === id);
+      const index = col.findIndex((item) => (item as { id?: string }).id === id);
       if (index >= 0) {
         col.splice(index, 1);
       }
-    } else if (typeof col === 'object') {
-      delete col[id];
+    } else if (typeof col === 'object' && col !== null) {
+      delete (col as Record<string, unknown>)[id];
     }
     
     await this.saveLibrary(library, fileId);

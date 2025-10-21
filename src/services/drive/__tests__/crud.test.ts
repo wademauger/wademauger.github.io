@@ -92,7 +92,7 @@ describe('CRUD Operations', () => {
     it('should prevent duplicate IDs in array collections', () => {
       const library: LibraryData = {
         artists: [
-          { id: 'artist-1', name: 'Existing Artist', albums: [] }
+          { id: 'artist-1', name: 'Existing Artist', albums: [] } as any
         ]
       };
       
@@ -138,7 +138,7 @@ describe('CRUD Operations', () => {
     it('should read entry from array-based collection', () => {
       const library: LibraryData = {
         artists: [
-          { id: 'artist-1', name: 'Test Artist', albums: [] }
+          { id: 'artist-1', name: 'Test Artist', albums: [] } as any
         ]
       };
       
@@ -202,7 +202,7 @@ describe('CRUD Operations', () => {
     it('should update entry in array-based collection', () => {
       const library: LibraryData = {
         artists: [
-          { id: 'artist-1', name: 'Original Name', albums: [] }
+          { id: 'artist-1', name: 'Original Name', albums: [] } as any
         ]
       };
       
@@ -298,8 +298,8 @@ describe('CRUD Operations', () => {
     it('should delete entry from array-based collection', () => {
       const library: LibraryData = {
         artists: [
-          { id: 'artist-1', name: 'Artist 1', albums: [] },
-          { id: 'artist-2', name: 'Artist 2', albums: [] }
+          { id: 'artist-1', name: 'Artist 1', albums: [] } as any,
+          { id: 'artist-2', name: 'Artist 2', albums: [] } as any
         ]
       };
       
@@ -307,7 +307,7 @@ describe('CRUD Operations', () => {
       
       expect(result.success).toBe(true);
       expect(library.artists).toHaveLength(1);
-      expect(library.artists?.[0].id).toBe('artist-2');
+      expect((library.artists?.[0] as any).id).toBe('artist-2');
     });
     
     it('should fail when collection does not exist', () => {

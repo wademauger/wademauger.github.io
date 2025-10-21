@@ -3,7 +3,7 @@ import assert from 'assert';
 import { StitchPlan } from './StitchPlan';
 
 describe('StitchPlan Model', () => {
-    let stitchPlan;
+    let stitchPlan: StitchPlan;
 
     beforeEach(() => {
         stitchPlan = new StitchPlan();

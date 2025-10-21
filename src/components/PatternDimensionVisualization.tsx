@@ -7,7 +7,21 @@ import { PanelDiagram } from './PanelDiagram';
 
 const { Text } = Typography;
 
-const PatternDimensionVisualization = ({ 
+interface PatternDimensionVisualizationProps {
+  panel: any;
+  title?: string;
+  subtitle?: string;
+  scaleFactor?: number;
+  showInfoText?: boolean;
+  infoText?: string;
+  containerPadding?: string;
+  diagramSizeMin?: number;
+  diagramSizeMax?: number;
+  scalingMultiplier?: number;
+  [key: string]: any;
+}
+
+const PatternDimensionVisualization: React.FC<PatternDimensionVisualizationProps> = ({ 
     panel,
     title = 'Pattern Dimensions',
     subtitle = 'Pattern dimensions with current scaling applied.',
@@ -39,11 +53,11 @@ const PatternDimensionVisualization = ({
     }
 
     // Calculate actual pattern dimensions using the exact same logic as PanelDiagram
-    const calculatePatternDimensions = (shape, scale = 1) => {
+    const calculatePatternDimensions = (shape: any, scale = 1) => {
         let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         
         // Use the same hierarchy rendering logic as PanelDiagram to get accurate dimensions
-        const renderHierarchyForDimensions = (trap, scaleParam, xOffset = 0, yOffset = 0) => {
+        const renderHierarchyForDimensions = (trap: any, scaleParam: number, xOffset = 0, yOffset = 0) => {
             const trapWidth = Math.max(trap.baseA, trap.baseB) * scaleParam;
 
             // Compute bounding box of the current trapezoid
@@ -62,7 +76,7 @@ const PatternDimensionVisualization = ({
 
             if (trap.successors && trap.successors.length > 0) {
                 const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scaleParam);
-                const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+                const totalSuccessorWidth = successorWidths.reduce((sum: number, w: number) => sum + w, 0);
                 let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
                 for (let i = trap.successors.length - 1; i >= 0; i--) {
@@ -86,10 +100,10 @@ const PatternDimensionVisualization = ({
     };
 
     // Calculate pattern bounds and visual positioning to match PanelDiagram exactly
-    const calculatePanelDiagramBounds = (shape, size, padding = 10) => {
+    const calculatePanelDiagramBounds = (shape: any, size: number, padding = 10) => {
         // First pass: Compute bounding box including negative coordinates (same as PanelDiagram)
         let dimensions = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        const renderHierarchyForDimensions = (trap, scaleParam, xOffset = 0, yOffset = 0) => {
+        const renderHierarchyForDimensions = (trap: any, scaleParam: number, xOffset = 0, yOffset = 0) => {
             const trapWidth = Math.max(trap.baseA, trap.baseB) * scaleParam;
             const xTopLeft = xOffset + (trapWidth - trap.baseB * scaleParam) / 2 + (trap.baseBHorizontalOffset || 0) * scaleParam;
             const xTopRight = xOffset + (trapWidth + trap.baseB * scaleParam) / 2 + (trap.baseBHorizontalOffset || 0) * scaleParam;
@@ -105,7 +119,7 @@ const PatternDimensionVisualization = ({
 
             if (trap.successors && trap.successors.length > 0) {
                 const successorWidths = trap.successors.map((s: any) => Math.max(s.baseA, s.baseB) * scaleParam);
-                const totalSuccessorWidth = successorWidths.reduce((sum, w) => sum + w, 0);
+                const totalSuccessorWidth = successorWidths.reduce((sum: number, w: number) => sum + w, 0);
                 let childXOffset = xOffset + (trapWidth - totalSuccessorWidth) / 2;
 
                 for (let i = trap.successors.length - 1; i >= 0; i--) {

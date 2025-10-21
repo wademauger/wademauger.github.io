@@ -2,7 +2,20 @@ import React from 'react';
 import { SaveOutlined, FolderOpenOutlined, LogoutOutlined } from '@ant-design/icons';
 import GoogleAuthButton from '@/components/GoogleAuthButton';
 
-const GoogleSignInButton = ({ onSuccess, onError, onSignOut, onOpen, onSaveAs, disabled = false, loading = false, isSignedIn = false, userInfo = null, buttonText = 'Sign in with Google' }) => {
+interface GoogleSignInButtonProps {
+  onSuccess: (response: any) => void;
+  onError: (error: any) => void;
+  onSignOut: () => void;
+  onOpen?: () => void;
+  onSaveAs?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  isSignedIn?: boolean;
+  userInfo?: any;
+  buttonText?: string;
+}
+
+const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ onSuccess, onError, onSignOut, onOpen, onSaveAs, disabled = false, loading = false, isSignedIn = false, userInfo = null, buttonText = 'Sign in with Google' }) => {
   const menuItems = [
     {
       key: 'saveas',

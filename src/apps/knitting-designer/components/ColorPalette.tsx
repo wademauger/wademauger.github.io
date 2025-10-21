@@ -5,17 +5,24 @@ import '../styles/ColorPalette.css';
 
 const { Text } = Typography;
 
-const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => {
+interface ColorPaletteProps {
+  colors: Record<string, string>;
+  activeColor: string;
+  onColorChange: (colorCode: string) => void;
+  onColorUpdate: (colors: Record<string, string>) => void;
+}
+
+const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, activeColor, onColorChange, onColorUpdate }) => {
   const [newColorName, setNewColorName] = useState('');
   const [showAddColor, setShowAddColor] = useState(false);
   
   // Handle color selection
-  const handleColorSelect = (colorCode) => {
+  const handleColorSelect = (colorCode: string) => {
     onColorChange(colorCode);
   };
   
   // Handle color value change
-  const handleColorValueChange = (colorCode, newValue) => {
+  const handleColorValueChange = (colorCode: string, newValue: string) => {
     const newColors = { ...colors, [colorCode]: newValue };
     onColorUpdate(newColors);
   };
@@ -31,7 +38,7 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
   };
   
   // Delete color
-  const handleDeleteColor = (colorCode) => {
+  const handleDeleteColor = (colorCode: string) => {
     if (colorCode === 'MC') return; // Don't allow deleting main color
     
     const newColors = { ...colors };
@@ -45,12 +52,12 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
   };
   
   // Color picker content
-  const getColorPickerContent = (colorCode) => (
+  const getColorPickerContent = (colorCode: string) => (
     <div className="color-picker-content">
       <Input
         type="color"
         value={colors[colorCode]}
-        onChange={(e: any) => handleColorValueChange(colorCode, e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleColorValueChange(colorCode, e.target.value)}
         style={{ width: '100%', height: '40px' }}
       />
       <div style={{ marginTop: '8px' }}>
@@ -96,7 +103,9 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
   return (
     <div className="color-palette">
       <div className="color-grid">
-        {Object.entries(colors).map(([colorCode, colorValue]) => (
+        {Object.entries(colors).map(([colorCode, colorValue]) => {
+          const color = colorValue as string;
+          return (
           <Popover
             key={colorCode}
             content={getColorPickerContent(colorCode)}
@@ -105,16 +114,16 @@ const ColorPalette = ({ colors, activeColor, onColorChange, onColorUpdate }) => 
           >
             <div
               className={`color-swatch ${activeColor === colorCode ? 'active' : ''}`}
-              style={{ backgroundColor: colorValue }}
+              style={{ backgroundColor: color }}
               onClick={() => handleColorSelect(colorCode)}
-              title={`${colorCode}: ${colorValue}`}
+              title={`${colorCode}: ${color}`}
             >
               {activeColor === colorCode && (
                 <div className="active-indicator">●</div>
               )}
             </div>
           </Popover>
-        ))}
+        )})}
         
         {/* Add color button */}
         <Popover

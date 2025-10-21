@@ -2,10 +2,10 @@ import assert from 'assert';
 import { Gauge } from './Gauge';
 
 describe('Gauge Model', () => {
-    let gauge;
+    let gauge: Gauge;
 
     beforeEach(() => {
-        gauge = new Gauge();
+        gauge = new Gauge(0, 0);
     });
 
     describe('getStitchesPerInch', () => {

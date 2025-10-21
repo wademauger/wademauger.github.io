@@ -2,7 +2,7 @@
 // This provides fallback chord generation when static data is not available
 
 // Note mapping for semitone calculations
-const noteToSemitone = {
+const noteToSemitone: Record<string, number> = {
   'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5,
   'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
 };
@@ -10,7 +10,7 @@ const noteToSemitone = {
 const semitoneToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 // Chord intervals (semitones from root)
-const chordIntervals = {
+const chordIntervals: Record<string, number[]> = {
   'major': [0, 4, 7],
   'minor': [0, 3, 7],
   'm': [0, 3, 7],
@@ -31,7 +31,7 @@ const chordIntervals = {
 };
 
 // Parse chord symbol to extract root, quality, and bass note
-export function parseChord(chordSymbol) {
+export function parseChord(chordSymbol: string) {
   // Handle slash chords
   const parts = chordSymbol.split('/');
   const mainChord = parts[0];
@@ -48,7 +48,7 @@ export function parseChord(chordSymbol) {
 }
 
 // Generate chord notes from chord symbol
-export function getChordNotes(chordSymbol) {
+export function getChordNotes(chordSymbol: string) {
   const parsed = parseChord(chordSymbol);
   if (!parsed) return null;
   
@@ -73,14 +73,14 @@ export function getChordNotes(chordSymbol) {
 }
 
 // Generate a basic chord fingering for guitar (6 strings)
-export function generateGuitarChord(chordSymbol) {
+export function generateGuitarChord(chordSymbol: string) {
   const notes = getChordNotes(chordSymbol);
   if (!notes) return null;
   
   // Standard guitar tuning: E-A-D-G-B-E (low to high)
   const tuning = ['E', 'A', 'D', 'G', 'B', 'E'];
-  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
-  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: string) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: string) => noteToSemitone[note]);
   
   // Simple algorithm: find the lowest fret position that contains all chord tones
   const frets = new Array(6).fill(-1); // Start with all muted
@@ -111,14 +111,14 @@ export function generateGuitarChord(chordSymbol) {
 }
 
 // Generate a basic chord fingering for ukulele (4 strings)
-export function generateUkuleleChord(chordSymbol) {
+export function generateUkuleleChord(chordSymbol: string) {
   const notes = getChordNotes(chordSymbol);
   if (!notes) return null;
   
   // Standard ukulele tuning: G-C-E-A (low to high)
   const tuning = ['G', 'C', 'E', 'A'];
-  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
-  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: string) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: string) => noteToSemitone[note]);
   
   const frets = new Array(4).fill(-1);
   
@@ -147,14 +147,14 @@ export function generateUkuleleChord(chordSymbol) {
 }
 
 // Generate basic chord fingering for bass guitar (4 strings)
-export function generateBassGuitarChord(chordSymbol) {
+export function generateBassGuitarChord(chordSymbol: string) {
   const notes = getChordNotes(chordSymbol);
   if (!notes) return null;
   
   // Standard bass tuning: E-A-D-G (low to high)
   const tuning = ['E', 'A', 'D', 'G'];
-  const tuningSemitones = tuning.map((note: any) => noteToSemitone[note]);
-  const targetSemitones = notes.map((note: any) => noteToSemitone[note]);
+  const tuningSemitones = tuning.map((note: string) => noteToSemitone[note]);
+  const targetSemitones = notes.map((note: string) => noteToSemitone[note]);
   
   const frets = new Array(4).fill(-1);
   
@@ -183,7 +183,7 @@ export function generateBassGuitarChord(chordSymbol) {
 }
 
 // Generate piano chord (note list)
-export function generatePianoChord(chordSymbol) {
+export function generatePianoChord(chordSymbol: string) {
   const notes = getChordNotes(chordSymbol);
   if (!notes) return null;
   
@@ -192,7 +192,7 @@ export function generatePianoChord(chordSymbol) {
 }
 
 // Main generator function that dispatches to instrument-specific generators
-export function generateChord(chordSymbol, instrument) {
+export function generateChord(chordSymbol: string, instrument: string) {
   switch (instrument) {
     case 'guitar':
       return generateGuitarChord(chordSymbol);

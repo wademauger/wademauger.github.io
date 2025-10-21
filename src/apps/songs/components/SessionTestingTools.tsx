@@ -1,13 +1,43 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Alert, Collapse, Tag } from 'antd';
 
 const { Text, Paragraph } = Typography;
 const { Panel } = Collapse;
 
-const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
+interface LogEntry {
+  id: number;
+  timestamp: string;
+  message: string;
+  type: string;
+}
+
+interface SessionInfo {
+  hasToken: boolean;
+  tokenPreview: string;
+  email: string;
+  isSignedIn: boolean;
+  expiry: number | null;
+  isExpired: boolean;
+  timeRemaining: number | null;
+}
+
+interface SessionTestingToolsProps {
+  googleDriveService: any;
+  enabled?: boolean;
+}
+
+const SessionTestingTools: React.FC<SessionTestingToolsProps> = ({ googleDriveService, enabled = false }) => {
   // Initialize all hooks first (React requirement)
-  const [sessionInfo, setSessionInfo] = useState({});
-  const [logs, setLogs] = useState([]);
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo>({
+    hasToken: false,
+    tokenPreview: 'None',
+    email: 'None',
+    isSignedIn: false,
+    expiry: null,
+    isExpired: false,
+    timeRemaining: null
+  });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpiring, setIsExpiring] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
@@ -21,9 +51,9 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
     TOKEN_EXPIRY: 'googleDrive_tokenExpiry'
   };
 
-  const addLog = (message, type = 'info') => {
+  const addLog = (message: string, type: string = 'info') => {
     const timestamp = new Date().toLocaleString();
-    const newLog = {
+    const newLog: LogEntry = {
       id: Date.now(),
       timestamp,
       message,
@@ -38,7 +68,7 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
     const email = localStorage.getItem(SESSION_KEYS.USER_EMAIL);
     const isSignedIn = localStorage.getItem(SESSION_KEYS.IS_SIGNED_IN);
 
-    const info = {
+    const info: SessionInfo = {
       hasToken: !!token,
       tokenPreview: token ? token.substring(0, 20) + '...' : 'None',
       email: email || 'None',
@@ -58,17 +88,19 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
   };
 
   useEffect(() => {
-    if (enabled) {
-      updateSessionInfo();
-      const interval = setInterval(updateSessionInfo, 2000);
-      return () => clearInterval(interval);
+    if (!enabled) {
+      return undefined;
     }
+    
+    updateSessionInfo();
+    const interval = setInterval(updateSessionInfo, 2000);
+    return () => clearInterval(interval);
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) return undefined;
     
-    let countdownInterval;
+    let countdownInterval: NodeJS.Timeout | undefined;
     if (isExpiring && countdown > 0) {
       countdownInterval = setInterval(() => {
         setCountdown(prev => {
@@ -153,13 +185,14 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
         addLog(`Token test failed: ${result.error}`, 'error');
       }
     } catch (error: unknown) {
-      addLog(`Token test failed: ${error.message}`, 'error');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      addLog(`Token test failed: ${errorMessage}`, 'error');
       
       // Check for specific 401 error (expired token)
-      if (error.message.includes('401') || error.message.includes('UNAUTHENTICATED')) {
+      if (errorMessage.includes('401') || errorMessage.includes('UNAUTHENTICATED')) {
         addLog('❌ 401 UNAUTHENTICATED error detected!', 'error');
         
-        if (error.message.includes('Expected OAuth 2 access token')) {
+        if (errorMessage.includes('Expected OAuth 2 access token')) {
           addLog('🎯 This is the exact error pattern we fixed!', 'error');
           addLog('The service should now detect this and trigger re-authentication.', 'info');
         }
@@ -203,9 +236,10 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
         addLog(`Library loading failed: ${result.error}`, 'error');
       }
     } catch (error: unknown) {
-      addLog(`Library loading failed: ${error.message}`, 'error');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      addLog(`Library loading failed: ${errorMessage}`, 'error');
       
-      if (error.message.includes('401') || error.message.includes('UNAUTHENTICATED')) {
+      if (errorMessage.includes('401') || errorMessage.includes('UNAUTHENTICATED')) {
         addLog('❌ Authentication error during library load!', 'error');
         addLog('In the real app, this would trigger automatic re-authentication.', 'info');
       }
@@ -216,14 +250,14 @@ const SessionTestingTools = ({ googleDriveService, enabled = false }) => {
     setLogs([]);
   };
 
-  const formatTimeRemaining = (timeMs) => {
+  const formatTimeRemaining = (timeMs: number | null): string => {
     if (!timeMs || timeMs <= 0) return 'Expired';
     const minutes = Math.floor(timeMs / (1000 * 60));
     const seconds = Math.floor((timeMs % (1000 * 60)) / 1000);
     return `${minutes}m ${seconds}s`;
   };
 
-  const getLogTypeColor = (type) => {
+  const getLogTypeColor = (type: string): string => {
     switch (type) {
       case 'error': return '#ff4d4f';
       case 'warning': return '#faad14';

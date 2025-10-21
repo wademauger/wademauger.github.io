@@ -5,18 +5,24 @@ import '../styles/PatternPreview.css';
 
 const { Text } = Typography;
 
-const PatternPreview = ({ pattern, colors, gridSize }) => {
+interface PatternPreviewProps {
+  pattern: number[][];
+  colors: Record<number | string, string>;
+  gridSize: { width: number; height: number };
+}
+
+const PatternPreview: React.FC<PatternPreviewProps> = ({ pattern, colors, gridSize }) => {
   const [scale, setScale] = React.useState(1);
   const maxScale = 3;
   const minScale = 0.25;
 
   // Calculate pattern statistics
   const patternStats = useMemo(() => {
-    const colorCounts = {};
+    const colorCounts: Record<number, number> = {};
     let totalStitches = 0;
 
-    pattern.forEach((row: any) => {
-      row.forEach((stitch: any) => {
+    pattern.forEach((row: number[]) => {
+      row.forEach((stitch: number) => {
         colorCounts[stitch] = (colorCounts[stitch] || 0) + 1;
         totalStitches++;
       });
@@ -33,8 +39,8 @@ const PatternPreview = ({ pattern, colors, gridSize }) => {
 
     return (
         <svg width={width} height={height} className="pattern-preview-svg">
-          {pattern.map((row, rowIndex) =>
-            row.map((stitch, colIndex) => {
+          {pattern.map((row: number[], rowIndex: number) =>
+            row.map((stitch: number, colIndex: number) => {
               const x = colIndex * cellSize;
               const y = rowIndex * cellSize;
               const color = colors[stitch] || colors['MC'];
@@ -110,15 +116,17 @@ const PatternPreview = ({ pattern, colors, gridSize }) => {
       <div className="pattern-statistics">
         <Text strong>Color Usage</Text>
         <div className="color-stats">
-          {Object.entries(patternStats.colorCounts).map(([colorCode, count]) => (
+          {Object.entries(patternStats.colorCounts).map(([colorCode, count]) => {
+            const numCount = count as number;
+            return (
             <div key={colorCode} className="color-stat">
               <div
                 className="color-stat-swatch"
                 style={{ backgroundColor: colors[colorCode] }}
               />
-              <Text>{colorCode}: {count} ({Math.round(count / patternStats.totalStitches * 100)}%)</Text>
+              <Text>{colorCode}: {numCount} ({Math.round(numCount / patternStats.totalStitches * 100)}%)</Text>
             </div>
-          ))}
+          )})}
         </div>
       </div>
 
