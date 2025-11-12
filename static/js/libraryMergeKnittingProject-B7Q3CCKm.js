@@ -1,0 +1,2 @@
+function k(i,t){const n=i&&typeof i=="object"?{...i}:{};n.knittingProjects=Array.isArray(n.knittingProjects)?[...n.knittingProjects]:[];const s=t&&t.id?n.knittingProjects.findIndex(e=>e.id===t.id):-1,g=t&&t.name?n.knittingProjects.findIndex(e=>e.name===t.name):-1;return s!==-1?n.knittingProjects[s]=t:g!==-1?n.knittingProjects[g]=t:n.knittingProjects.push(t),n.lastUpdated=new Date().toISOString(),n}export{k as default,k as mergeKnittingProjectIntoLibrary};
+//# sourceMappingURL=libraryMergeKnittingProject-B7Q3CCKm.js.map
